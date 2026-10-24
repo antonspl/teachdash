@@ -1,0 +1,23 @@
+# OS / IDE
+.DS_Store
+.idea/
+*.iml
+.vscode/
+
+# Java / Gradle / Maven
+build/
+target/
+.gradle/
+out/
+
+# Node
+node_modules/
+dist/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Claude Code local settings
+.claude/settings.local.json
