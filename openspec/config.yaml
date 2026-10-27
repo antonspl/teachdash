@@ -1,28 +1,36 @@
 schema: spec-driven
 
 context: |
-  Language: English
-  All artifacts must be written in English.
+  Project: teachdash — a lightweight teaching platform for language teachers
+  (lessons, exercises, shared whiteboard, video calls).
+  Language: English. All artifacts must be written in English.
   Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+  The project constitution is openspec/constitution.md. Every artifact and all
+  code MUST comply with it. Read it before creating any artifact.
+  Stack: Java Spring Boot + PostgreSQL (Flyway) backend, React + TypeScript + Vite
+  frontend, Docker Compose on one VPS behind Caddy.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always state what is out of scope
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Start with a "Clarifications" section listing the questions asked and the owner's answers
+    - State what is out of scope
+  specs:
+    - Every requirement has at least one Given/When/Then scenario
+    - Give every scenario a stable ID in the form <capability>/R<n>-S<n>
+  design:
+    - Justify every new dependency
+    - List Flyway migrations the change adds
+  tasks:
+    - Section 1 is "Failing tests" - one backend test per scenario (JUnit 5, Testcontainers, RestAssured), plus stubs so tests compile
+    - Section 2 is a single task "Owner reviews and approves tests" - a hard stop
+    - Implementation tasks come only after the review task
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+operations:
+  apply:
+    guidance:
+      - Work in two passes. Pass 1 - complete only the "Failing tests" section, run the tests, confirm they fail for the right reason, then STOP and ask the owner to review. Do not write production code in pass 1.
+      - Pass 2 starts only after the owner approves the tests. Do not modify approved tests; if one seems wrong, stop and ask.
+      - Finish pass 2 only when the full test suite is green.
+  archive:
+    guidance:
+      - Before archiving, confirm every scenario ID has a matching test
