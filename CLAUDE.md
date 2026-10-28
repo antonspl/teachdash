@@ -20,3 +20,9 @@ write production code itself.
   Fix confirmed findings via the implementer, then re-review if the fix was non-trivial.
 
 Agents' reports are not shown to the owner — relay what matters in a few lines.
+
+## Git flow
+
+- `main` is protected: changes land only through pull requests, merged by the owner.
+- Work on a branch per change (named after the OpenSpec change), push it, open a PR.
+- Claude never merges PRs, never pushes to `main`, never force-pushes shared branches.
