@@ -61,9 +61,9 @@ The system SHALL end the current session on logout.
 - **THEN** the current-user endpoint returns 401 for that session
 
 ### Requirement: R4 Role-based access
-Every endpoint except login, set-password-by-link and join-by-link SHALL require a
-session. Admin endpoints SHALL be allowed only for admins, teacher endpoints only for
-teachers, student endpoints only for students.
+Every endpoint except login and set-password-by-link SHALL require a session. Admin
+endpoints SHALL be allowed only for admins. Later capabilities apply the same rule to
+teacher and student endpoints.
 
 #### Scenario: accounts/R4-S1 No session is rejected
 - **WHEN** a request without a session calls the current-user endpoint
@@ -74,9 +74,9 @@ teachers, student endpoints only for students.
 - **WHEN** the teacher calls the admin endpoint that lists teachers
 - **THEN** the response is 403
 
-#### Scenario: accounts/R4-S3 Student cannot call teacher endpoints
+#### Scenario: accounts/R4-S3 Student cannot call admin endpoints
 - **GIVEN** a logged-in student
-- **WHEN** the student calls the teacher endpoint that lists students
+- **WHEN** the student calls the admin endpoint that lists teachers
 - **THEN** the response is 403
 
 ### Requirement: R5 Admin creates teacher accounts
@@ -138,22 +138,16 @@ same account is issued. A successful use SHALL start a session for that account.
 - **WHEN** its holder sets a 7-character password
 - **THEN** the response is 400 and the link can still be used with a valid password
 
-### Requirement: R8 Issuing password reset links
-An admin SHALL be able to issue a reset link for any account. A teacher SHALL be able
-to issue a reset link only for students linked to them. After a reset, the old
+### Requirement: R8 Admin issues password reset links
+An admin SHALL be able to issue a reset link for any account. After a reset, the old
 password MUST stop working and the account's other sessions MUST end.
 
-#### Scenario: accounts/R8-S1 Teacher issues a reset link for own student
-- **GIVEN** a teacher and a student linked to that teacher
-- **WHEN** the teacher requests a reset link for the student
+#### Scenario: accounts/R8-S1 Admin issues a reset link
+- **GIVEN** a logged-in admin and a teacher account
+- **WHEN** the admin requests a reset link for the teacher
 - **THEN** the response is 201 with a link
 
-#### Scenario: accounts/R8-S2 Teacher cannot reset another teacher's student
-- **GIVEN** a student linked only to teacher B
-- **WHEN** teacher A requests a reset link for that student
-- **THEN** the response is 404
-
-#### Scenario: accounts/R8-S3 Reset replaces the old password and ends sessions
+#### Scenario: accounts/R8-S2 Reset replaces the old password and ends sessions
 - **GIVEN** a logged-in student and a reset link issued for them
 - **WHEN** the link is used to set a new password
 - **THEN** the old password gets 401 on login and the student's earlier session gets 401
