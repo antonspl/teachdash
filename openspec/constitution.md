@@ -95,3 +95,14 @@ openspec/   specs and changes
 - Lessons and exercises (own or copied) can be copied into homework the same way.
 - A student may study with more than one teacher and sees data from each of them.
 - Admin manages teacher accounts and can see all data.
+
+## 9. Languages taught
+
+- teachdash teaches **English and Russian**. Every course and exercise has a target
+  language: English or Russian.
+- Translation works between English and Russian in both directions.
+- Every feature that handles learning content (exercises, answer checking,
+  translation, textbook import, LLM features) MUST work for both languages,
+  including Cyrillic text. Specs for such features include scenarios for both.
+- The UI language is separate from the target language. UI is English for now and
+  every UI string goes through i18n, so more UI languages can be added later.

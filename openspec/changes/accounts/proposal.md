@@ -13,6 +13,9 @@ Questions asked on 2026-10-28 and the owner's answers.
 | 5 | Login method? | Email + password. Google login maybe later. |
 | 6 | Time zones? | Users live in different time zones, so every account stores its time zone. |
 | 7 | Size of the first change? | Split in three for reviewable PRs: `accounts` (this), `student-enrolment`, `cabinets-ui`. |
+| 8 | Login errors: same response for every failure? | No (PR review). Tell the user the reason: unknown email, wrong password, deactivated, password not set. |
+| 9 | CI in this change? | No (PR review). A separate DevOps task; this change only needs to run locally in Docker. |
+| 10 | Secrets? | None for now, local build only. Production secret storage is a separate DevOps task. |
 
 Defaults chosen by Claude (owner may override during review):
 
@@ -23,13 +26,13 @@ Defaults chosen by Claude (owner may override during review):
 ## Why
 
 Every feature of teachdash needs accounts and roles. This first change also sets up
-the backend skeleton and CI, so later changes only add features.
+the backend skeleton and a local Docker setup, so later changes only add features.
 
 ## What Changes
 
-- Backend skeleton: `backend/` (Spring Boot, Flyway, Testcontainers), local
-  `docker-compose` for Postgres, GitHub Actions CI running backend tests and the
-  scenario coverage check.
+- Backend skeleton: `backend/` (Spring Boot, Flyway, Testcontainers) and a local
+  `docker compose` setup that runs Postgres and the backend.
+- A local script that checks every spec scenario has a test.
 - Accounts with roles admin, teacher, student; login and logout with email + password.
 - First admin created from environment variables on startup.
 - Admin creates, deactivates and reactivates teacher accounts.
@@ -42,7 +45,8 @@ the backend skeleton and CI, so later changes only add features.
 - Students joining teachers, teacher reset links for students — `student-enrolment`.
 - All UI — `cabinets-ui`. This change is backend only.
 - Email sending; Google or other external login; teacher self-registration.
-- Production deployment (VPS, Caddy, SOPS secrets, Grafana) — a separate change.
+- CI (GitHub Actions) — separate DevOps task.
+- Production deployment, production secrets, observability — separate DevOps tasks.
 - Login rate limiting and account lockout.
 - Deleting accounts and personal data export.
 
@@ -59,8 +63,9 @@ None.
 
 ## Impact
 
-- New `backend/`, `infra/` (local compose only), `scripts/`, `.github/workflows/`.
+- New `backend/`, `infra/` (local compose only), `scripts/`.
 - New REST API under `/api`.
 - New tables: users, one-time tokens, HTTP sessions.
-- New environment variables: database connection, `ADMIN_EMAIL`, `ADMIN_PASSWORD`,
-  `ADMIN_NAME`, `APP_BASE_URL` for links.
+- Environment variables for local runs only, with dev defaults in `.env.example`:
+  database connection, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`, `APP_BASE_URL`.
+  No real secrets.

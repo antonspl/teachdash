@@ -16,16 +16,15 @@
 ## 3. Backend implementation
 
 - [ ] 3.1 Flyway `V1__accounts.sql`, `V2__spring_session.sql`; verify the app starts on an empty database
-- [ ] 3.2 Security config: JSON login/logout, JDBC sessions, CSRF cookie, admin role rule, uniform 401 body; verify R2–R4 tests pass
+- [ ] 3.2 Security config: JSON login/logout, JDBC sessions, CSRF cookie, admin role rule, 401 with reason codes; verify R2–R4 tests pass
 - [ ] 3.3 Admin bootstrap runner; verify R1 tests pass
 - [ ] 3.4 One-time links (issue, hash, expire, invalidate older, use) and profile endpoints; verify R7, R9 tests pass
 - [ ] 3.5 Admin teacher management and admin reset links, ending sessions on deactivation/reset; verify R5, R6, R8 tests pass
 - [ ] 3.6 Structured JSON logging and Actuator health; verify logs are JSON with no tokens or passwords, and full `./gradlew test` is green
 
-## 4. Local dev and CI
+## 4. Local run
 
-- [ ] 4.1 `infra/docker-compose.dev.yml` (Postgres), `.env.example` with every variable, README "Run locally" section; verify a fresh clone runs by following the README
-- [ ] 4.2 GitHub Actions workflow: backend tests + scenario coverage; verify it is green on the PR, then add it as a required check in the `protect-main` ruleset
+- [ ] 4.1 `backend/Dockerfile`, `infra/docker-compose.yml` (Postgres + backend), `.env.example` with dev defaults for every variable, README "Run locally" section; verify `docker compose up` from a fresh clone starts the backend, the admin can log in, and `/actuator/health` is UP
 
 ## 5. Review
 

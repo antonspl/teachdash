@@ -14,7 +14,8 @@ no CORS) and the test approach. This change is backend only.
 
 **Non-Goals:**
 - Frontend (`cabinets-ui`), enrolment (`student-enrolment`).
-- Production deployment, observability shipping (only JSON logs + Actuator health now).
+- CI, production deployment, production secrets, observability shipping (only JSON
+  logs + Actuator health now).
 - Any outgoing email.
 
 ## Decisions
@@ -53,7 +54,8 @@ is reusable: `student-enrolment` will issue links for students through it.
 A `Clock` bean, so tests can move time (R7-S3 expiry) without sleeping.
 
 ### D7. Errors
-RFC 7807 `ProblemDetail` for all errors. Login failures always return the same body.
+RFC 7807 `ProblemDetail` for all errors, with a machine-readable `code` property
+(e.g. `WRONG_PASSWORD`) that the UI maps to a translated message.
 
 ### D8. API (all under `/api`)
 
@@ -79,7 +81,7 @@ RFC 7807 `ProblemDetail` for all errors. Login failures always return the same b
 An `ApplicationRunner` reads `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` and creates
 the admin only if no admin exists (R1).
 
-### D11. Tests and CI
+### D11. Tests and local run
 - A base class `ApiTest` starts the app on a random port with a Testcontainers
   Postgres (reused across tests), cleans tables between tests, and offers helpers to
   create users of any role directly and log in (RestAssured with cookie + CSRF).
@@ -88,9 +90,10 @@ the admin only if no admin exists (R1).
 - `scripts/check-scenario-coverage.sh`: collects scenario IDs from
   `openspec/specs/**/spec.md` and `openspec/changes/*/specs/**/spec.md` (excluding
   `archive/`) and fails if any ID has no `@DisplayName("[<id>]` in `backend/src/test`.
-- GitHub Actions on push and PR: backend tests and the coverage script. After this
-  workflow exists, the `protect-main` ruleset gets it as a required status check.
-- Local: `infra/docker-compose.dev.yml` with Postgres; `.env.example` lists all vars.
+- Local: `backend/Dockerfile` and `infra/docker-compose.yml` running Postgres and the
+  backend (`docker compose up` from a fresh clone). `.env.example` lists every
+  variable with dev defaults; `.env` is gitignored. CI comes in a separate task and
+  reuses the same test command and coverage script.
 
 ### D12. Logging
 Spring Boot structured logging (`logging.structured.format.console`) to stdout. No
@@ -98,8 +101,9 @@ passwords, tokens or token hashes in logs. Actuator `health` exposed only.
 
 ## Risks / Trade-offs
 
-- [No login rate limiting — password guessing is possible] → minimum length now;
-  add rate limiting before public launch.
+- [Login errors reveal whether an email is registered (owner's choice for clearer
+  UX); together with no rate limiting this helps targeted password guessing] →
+  add rate limiting before real users join (backlog task).
 - [Without email, a user who loses their password depends on the admin (later also
   their teacher)] → reset links can be issued at any time.
 - [Backend without UI is hard to try by hand] → `cabinets-ui` follows; until then,

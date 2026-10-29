@@ -24,9 +24,9 @@ values. If an admin already exists, the system MUST NOT create or change any acc
 
 ### Requirement: R2 Login with email and password
 The system SHALL sign in an active account with a matching email and password and
-start a session. Email matching MUST be case-insensitive. Failed logins MUST return
-the same response whether the email is unknown, the password is wrong or the account
-is deactivated.
+start a session. Email matching MUST be case-insensitive. A failed login MUST return
+401 with an error code naming the reason: `UNKNOWN_EMAIL`, `WRONG_PASSWORD`,
+`ACCOUNT_DEACTIVATED` or `PASSWORD_NOT_SET`.
 
 #### Scenario: accounts/R2-S1 Valid credentials start a session
 - **GIVEN** an active teacher account
@@ -36,11 +36,11 @@ is deactivated.
 #### Scenario: accounts/R2-S2 Wrong password is rejected
 - **GIVEN** an active teacher account
 - **WHEN** someone logs in with the teacher's email and a wrong password
-- **THEN** the response is 401 and no session is started
+- **THEN** the response is 401 with code `WRONG_PASSWORD` and no session is started
 
-#### Scenario: accounts/R2-S3 Unknown email gets the same response
+#### Scenario: accounts/R2-S3 Unknown email is reported
 - **WHEN** someone logs in with an email that has no account
-- **THEN** the response is 401 with the same body as for a wrong password
+- **THEN** the response is 401 with code `UNKNOWN_EMAIL`
 
 #### Scenario: accounts/R2-S4 Email is case-insensitive
 - **GIVEN** an account with email "anna@example.com"
@@ -50,7 +50,7 @@ is deactivated.
 #### Scenario: accounts/R2-S5 Deactivated account cannot log in
 - **GIVEN** a deactivated teacher account
 - **WHEN** the teacher logs in with the correct email and password
-- **THEN** the response is 401 with the same body as for a wrong password
+- **THEN** the response is 401 with code `ACCOUNT_DEACTIVATED`
 
 ### Requirement: R3 Logout
 The system SHALL end the current session on logout.
@@ -87,7 +87,7 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 #### Scenario: accounts/R5-S1 Admin creates a teacher
 - **GIVEN** a logged-in admin
 - **WHEN** the admin creates a teacher with a new email
-- **THEN** the response is 201 with the teacher's id and a set-password link, and the teacher cannot log in until the password is set
+- **THEN** the response is 201 with the teacher's id and a set-password link, and a login before the password is set gets 401 with code `PASSWORD_NOT_SET`
 
 #### Scenario: accounts/R5-S2 Duplicate email is rejected
 - **GIVEN** an account with email "anna@example.com"
