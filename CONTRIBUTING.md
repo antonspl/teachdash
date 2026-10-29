@@ -7,26 +7,40 @@ Labels: `area:backend`, `area:frontend`, `area:devops`, `type:task`, `type:bug`,
 `needs-spec`.
 
 1. Take an open issue without an assignee and assign it to yourself.
-2. Issues labelled `needs-spec` have no OpenSpec change yet — the spec comes first
-   (see below) and the owner approves it before any code.
+2. Issues labelled `needs-spec` have no OpenSpec change yet — the spec comes first.
 3. Bugs: reproduce, write a failing test, fix.
 
-## How work is done
+## How a change is done
 
-Read `openspec/constitution.md` first. In short:
+Read `openspec/constitution.md` first (section 1 is the workflow).
 
-1. Spec: an OpenSpec change in `openspec/changes/<name>/` (proposal, specs, design,
-   tasks). The owner approves it in a PR.
-2. Red: one failing backend test per spec scenario, scenario ID in `@DisplayName`.
-3. Test review: the owner approves the tests. No production code before that.
-4. Green: implement until all tests pass. Approved tests are not changed.
-5. Archive the change.
+**One change = one branch = one PR.** The PR passes three review gates, each
+approved by a reviewer — any team member except the author:
+
+| Phase | Author does | Gate |
+|---|---|---|
+| Spec | OpenSpec change in `openspec/changes/<name>/`; open a **draft** PR | reviewer approves the spec |
+| Tests | one failing backend test per scenario, scenario ID in `@DisplayName` | reviewer approves the tests |
+| Code | implement until all tests pass; approved tests are not changed | reviewer approves the code |
+
+Then the author archives the change (in the same PR) and marks the PR ready. The
+**owner** reviews spec, tests and code together and merges.
+
+To approve a gate: leave a GitHub review "Approve" or a comment such as
+"tests approved", and tick the box in the PR description. Request changes the
+usual way.
+
+## Reviewing
+
+Anyone on the team can review any PR except their own. Open PRs waiting for a gate:
+[draft PRs](https://github.com/antonspl/teachdash/pulls?q=is%3Apr+is%3Aopen+draft%3Atrue).
+Check against the constitution: one test per scenario, tests assert the scenario's
+THEN, per-teacher data scoping, no secrets.
 
 ## Git
 
-- `main` is protected. Work on a branch named after the change or issue, open a PR,
-  link the issue (`Closes #N`).
-- Only the owner merges into `main`.
+- `main` is protected. Only the owner merges into it.
+- Branch name = change name. Link the issue in the PR (`Closes #N`).
 
 ## Run locally
 

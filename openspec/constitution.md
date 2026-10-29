@@ -5,18 +5,31 @@ MUST comply. Changing this file requires explicit approval from the project owne
 
 ## 1. Workflow
 
+One change = one branch = one pull request. The PR goes through three review gates
+by a **reviewer** (any team member other than the author; the owner while the team
+has no other reviewers), then the **owner** reviews the whole PR and merges it.
+
 1. **Explore** (optional) — discuss the idea; no artifacts.
 2. **Clarify** — before writing a proposal, list open questions and ambiguities
    and get the owner's answers. Record the answers in the proposal.
 3. **Propose** — proposal, spec deltas, design, tasks. Every requirement has at
-   least one Given/When/Then scenario. No code.
-4. **Red** — write backend tests for every scenario; they MUST compile and fail
+   least one Given/When/Then scenario. No code. Push the branch, open a draft PR.
+4. **Spec review gate** — STOP. A reviewer approves the spec in the PR. No tests
+   until approved.
+5. **Red** — write backend tests for every scenario; they MUST compile and fail
    for the right reason (missing behaviour, not missing classes — add stubs).
-5. **Test review gate** — STOP. The owner reviews the tests. No production code
-   until the owner approves.
-6. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
-   if a test looks wrong, stop and ask the owner.
-7. **Archive** — merge spec deltas into `openspec/specs/`.
+6. **Test review gate** — STOP. A reviewer approves the tests in the PR. No
+   production code until approved.
+7. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
+   if a test looks wrong, stop and ask the reviewer.
+8. **Code review** — a reviewer approves the code in the PR.
+9. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
+10. **Owner review** — mark the PR ready. The owner reviews spec, tests and code
+    together and merges. Only the owner merges into `main`.
+
+Gate approvals are recorded in the PR: a GitHub review "Approve" or a comment
+naming the gate (e.g. "spec approved"), and the matching box ticked in the PR
+description.
 
 All artifacts, code, comments and commit messages are in English.
 
@@ -24,7 +37,7 @@ All artifacts, code, comments and commit messages are in English.
 
 - JUnit 5 + Testcontainers (real Postgres, never H2) + RestAssured.
 - One test per spec scenario. `@DisplayName` starts with the scenario ID, e.g.
-  `@DisplayName("[accounts-and-roles/R1-S2] Teacher cannot open admin panel")`.
+  `@DisplayName("[accounts/R4-S2] Teacher cannot call admin endpoints")`.
 - Test body is structured with `// given`, `// when`, `// then` comments.
 - CI fails if any spec scenario has no matching test.
 - Frontend: Vitest for logic, Playwright E2E for key user flows. No review gate.

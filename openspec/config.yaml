@@ -24,15 +24,17 @@ rules:
     - List Flyway migrations the change adds
   tasks:
     - Section 1 is "Failing tests" - one backend test per scenario (JUnit 5, Testcontainers, RestAssured), plus stubs so tests compile
-    - Section 2 is a single task "Owner reviews and approves tests" - a hard stop
+    - Section 2 is a single task "Reviewer approves tests in the PR" - a hard stop
     - Implementation tasks come only after the review task
+    - End with a "Workflow follow-up" section: code review gate, archive in the same PR, mark the PR ready for the owner
 
 operations:
   apply:
     guidance:
-      - Work in two passes. Pass 1 - complete only the "Failing tests" section, run the tests, confirm they fail for the right reason, then STOP and ask the owner to review. Do not write production code in pass 1.
-      - Pass 2 starts only after the owner approves the tests. Do not modify approved tests; if one seems wrong, stop and ask.
+      - Work in two passes. Pass 1 - complete only the "Failing tests" section, run the tests, confirm they fail for the right reason, then push and STOP: ask for test review in the PR. Do not write production code in pass 1.
+      - Pass 2 starts only after a reviewer approves the tests in the PR. Do not modify approved tests; if one seems wrong, stop and ask the reviewer.
       - Finish pass 2 only when the full test suite is green.
   archive:
     guidance:
       - Before archiving, confirm every scenario ID has a matching test
+      - Archive in the change's own PR, before the owner's final review
