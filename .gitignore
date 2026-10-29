@@ -9,6 +9,10 @@ build/
 target/
 .gradle/
 out/
+# IDEA generates a root wrapper on sync; the real one is in backend/
+/gradlew
+/gradlew.bat
+/gradle/
 
 # Node
 node_modules/
