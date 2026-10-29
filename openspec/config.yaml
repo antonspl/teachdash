@@ -1,8 +1,10 @@
 schema: spec-driven
 
 context: |
-  Project: teachdash — a lightweight teaching platform for language teachers
-  (lessons, exercises, shared whiteboard, video calls).
+  Project: teachdash — a lightweight teaching platform for teachers of English
+  and Russian (lessons, exercises, shared whiteboard, video calls). All learning
+  content features must support both target languages; for now only the
+  English–Russian pair, without hard-coding it (constitution section 9).
   Language: English. All artifacts must be written in English.
   Keep OpenSpec structural headings and SHALL/MUST keywords in English.
   The project constitution is openspec/constitution.md. Every artifact and all
