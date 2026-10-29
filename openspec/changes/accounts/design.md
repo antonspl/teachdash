@@ -33,6 +33,8 @@ level) mixes features and grows badly.
 Simple aggregates, explicit SQL in Flyway, no lazy-loading surprises.
 Alternative: JPA/Hibernate — more magic than this project needs.
 Dependency: `spring-boot-starter-data-jdbc`.
+Request validation (e.g. password rules, required fields) uses Bean Validation:
+`spring-boot-starter-validation`, the standard Spring way, instead of hand-written checks.
 
 ### D4. Authentication — server-side session + cookie
 Spring Security with a JSON login endpoint, `HttpSession` stored in Postgres via
@@ -40,6 +42,9 @@ Spring Security with a JSON login endpoint, `HttpSession` stored in Postgres via
 restarts and can be ended per user (deactivation, password reset).
 Cookie: `HttpOnly`, `SameSite=Lax`, `Secure` in prod. CSRF protection with a
 cookie-held token (`XSRF-TOKEN` → `X-XSRF-TOKEN` header), which the future SPA sends.
+The token cookie is set eagerly on every response, also for anonymous requests
+(a logged-out `GET /api/me` returns 401 and sets `XSRF-TOKEN`), and the raw cookie
+value is accepted in the header (SPA-style handler), so a client can log in.
 Alternative: JWT — no clean way to revoke sessions, and no benefit on one domain.
 Passwords: Spring Security `DelegatingPasswordEncoder` (bcrypt).
 
@@ -71,6 +76,18 @@ RFC 7807 `ProblemDetail` for all errors, with a machine-readable `code` property
 | POST | `/admin/teachers/{id}/deactivate`, `/reactivate` | admin | R6 |
 | POST | `/admin/users/{id}/reset-link` | admin | R8 |
 
+JSON shapes:
+- User (`GET/PATCH /me`, teacher list items): `id`, `name`, `email`, `role`
+  (`ADMIN` / `TEACHER` / `STUDENT`), `timeZone` (IANA id, e.g. `Europe/Moscow`).
+- `POST /auth/login`: `{email, password}`. `PATCH /me`: `{name, timeZone}`.
+  `POST /me/password`: `{currentPassword, newPassword}`.
+- `POST /admin/teachers`: request `{name, email, timeZone}`, response 201
+  `{id, setPasswordLink}`.
+- `POST /admin/users/{id}/reset-link`: response `{link}`.
+- `POST /password-links/{token}`: request `{password}`; 200 starts a session; a used,
+  expired or replaced link returns 410.
+- Errors: `ProblemDetail` with a top-level `code` property (D7).
+
 ### D9. Data model and Flyway migrations
 - `V1__accounts.sql` — `users` (id uuid, email, name, role, password_hash nullable,
   time_zone, active, created_at; unique index on `lower(email)`),
@@ -78,7 +95,8 @@ RFC 7807 `ProblemDetail` for all errors, with a machine-readable `code` property
 - `V2__spring_session.sql` — Spring Session JDBC tables (copied from its schema).
 
 ### D10. Admin bootstrap
-An `ApplicationRunner` reads `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` and creates
+An `ApplicationRunner` reads the properties `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`
+(by these exact names, e.g. `${ADMIN_EMAIL}`, not relaxed-bound `admin.*`) and creates
 the admin only if no admin exists (R1).
 
 ### D11. Tests and local run

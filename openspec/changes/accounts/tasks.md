@@ -2,12 +2,13 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Create `backend/` skeleton (Gradle Kotlin DSL, Java 25, Spring Boot, Security, Data JDBC, Flyway, Spring Session JDBC, Actuator, Testcontainers, RestAssured) and verify `./gradlew build -x test` succeeds
-- [ ] 1.2 Add the `ApiTest` base class (Testcontainers Postgres, random port, table cleanup, user/login helpers with CSRF) and a `Clock` bean that tests can move; verify an empty smoke test starts the context
-- [ ] 1.3 Add stubs so tests compile: request/response records and controllers for every endpoint in design D8 returning 501; verify compilation
-- [ ] 1.4 Write one test per scenario in `specs/accounts/spec.md` (25 scenarios) with the scenario ID in `@DisplayName` and `// given / when / then`; verify they compile
-- [ ] 1.5 Add `scripts/check-scenario-coverage.sh` and verify it passes (every scenario ID has a test)
-- [ ] 1.6 Run `./gradlew test` and verify every scenario test fails for the right reason (501 or missing behaviour, not setup errors); list any exceptions
+- [x] 1.1 Create `backend/` skeleton (Gradle Kotlin DSL, Java 25, Spring Boot, Security, Data JDBC, Flyway, Spring Session JDBC, Actuator, Testcontainers, RestAssured) and verify `./gradlew build -x test` succeeds
+- [x] 1.2 Add the `ApiTest` base class (Testcontainers Postgres, random port, table cleanup, user/login helpers with CSRF) and a `Clock` bean that tests can move; verify an empty smoke test starts the context
+- [x] 1.3 Add stubs so tests compile: request/response records and controllers for every endpoint in design D8 returning 501; verify compilation
+- [x] 1.3a Flyway `V1__accounts.sql`, `V2__spring_session.sql` (DDL only, per design D9; needed by test helpers so tests fail for the right reason); verify the app starts on an empty database
+- [x] 1.4 Write one test per scenario in `specs/accounts/spec.md` (25 scenarios) with the scenario ID in `@DisplayName` and `// given / when / then`; verify they compile
+- [x] 1.5 Add `scripts/check-scenario-coverage.sh` and verify it passes (every scenario ID has a test)
+- [x] 1.6 Run `./gradlew test` and verify every scenario test fails for the right reason (501 or missing behaviour, not setup errors); list any exceptions
 
 ## 2. Test review
 
@@ -15,7 +16,6 @@
 
 ## 3. Backend implementation
 
-- [ ] 3.1 Flyway `V1__accounts.sql`, `V2__spring_session.sql`; verify the app starts on an empty database
 - [ ] 3.2 Security config: JSON login/logout, JDBC sessions, CSRF cookie, admin role rule, 401 with reason codes; verify R2–R4 tests pass
 - [ ] 3.3 Admin bootstrap runner; verify R1 tests pass
 - [ ] 3.4 One-time links (issue, hash, expire, invalidate older, use) and profile endpoints; verify R7, R9 tests pass
