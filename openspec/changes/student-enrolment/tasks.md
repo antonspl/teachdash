@@ -8,7 +8,7 @@
 
 ## 2. Test review
 
-- [ ] 2.1 Owner reviews and approves tests — HARD STOP, no production code before approval
+- [ ] 2.1 Reviewer approves tests in the PR — HARD STOP, no production code before approval
 
 ## 3. Implementation
 
@@ -23,4 +23,6 @@
 
 ## Workflow follow-up
 
-- Archive after the owner accepts it; verify every scenario ID has a matching test before archiving.
+- Code review gate: a reviewer approves the code in the PR.
+- Archive in the same PR; verify every scenario ID has a matching test before archiving.
+- Mark the PR ready; the owner reviews everything and merges.
