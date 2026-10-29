@@ -96,13 +96,20 @@ openspec/   specs and changes
 - A student may study with more than one teacher and sees data from each of them.
 - Admin manages teacher accounts and can see all data.
 
-## 9. Languages taught
+## 9. Subjects and languages
 
-- teachdash teaches **English and Russian**. Every course and exercise has a target
-  language: English or Russian.
-- Translation works between English and Russian in both directions.
-- Every feature that handles learning content (exercises, answer checking,
-  translation, textbook import, LLM features) MUST work for both languages,
-  including Cyrillic text. Specs for such features include scenarios for both.
+- **Initial scope: only the English–Russian pair.** Courses teach English or Russian,
+  and translation works between English and Russian. Other languages and other
+  subjects are not built until there is a request.
+- The core (courses, lessons, exercises, schedule) MUST NOT depend on the subject,
+  so other subjects can be added later.
+- A course MAY have a target language, stored as an ISO 639-1 code. Supported
+  languages are a configured list, initially `en` and `ru`. Code MUST NOT hard-code
+  specific languages; language-specific behaviour (answer normalisation, LLM
+  prompts) comes from per-language settings.
+- Language features (translation, vocabulary) apply to courses with a target
+  language. Translation works between any two supported languages.
+- Features that handle learning content MUST work for every supported language,
+  including Cyrillic text; specs include scenarios for `en` and `ru`.
 - The UI language is separate from the target language. UI is English for now and
-  every UI string goes through i18n, so more UI languages can be added later.
+  every UI string goes through i18n.
