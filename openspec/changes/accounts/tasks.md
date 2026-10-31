@@ -9,7 +9,7 @@
 - [x] 1.4 Flyway `V1__accounts.sql`, `V2__spring_session.sql` per design D9 (`principal_name varchar(320)`); verify the app starts on an empty database
 - [x] 1.5 One test per scenario in `specs/accounts/spec.md` (25 scenarios), scenario ID in `@DisplayName`, `// given / when / then`; R2-S2 and R1 as in D11; verify they compile
 - [x] 1.6 Run `scripts/check-scenario-coverage.sh` and `./gradlew test`; verify every scenario test fails at its THEN step (501 or missing behaviour), none in setup; list any exceptions
-- [ ] 1.7 PR description lists pass 1 production code (stubs: temporary; migrations: permanent, review as production code) and the commit range for the tests review
+- [x] 1.7 PR description lists pass 1 production code (stubs: temporary; migrations: permanent, review as production code) and the commit range for the tests review
 
 ## 2. Test review
 
