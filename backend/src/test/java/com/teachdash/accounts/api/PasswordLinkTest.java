@@ -77,7 +77,9 @@ class PasswordLinkTest extends ApiTest {
 	@Test
 	@DisplayName("[accounts/R7-S4] Newer link replaces older one")
 	void newerLinkReplacesOlderOne() {
-		// given an unused link for an account and a logged-in admin
+		// given an unused link for an account and a logged-in admin. The older link is inserted
+		// directly and the newer one is issued through the admin API in the "when" step, because
+		// the replacement of the older link at issuing time is the behaviour under test.
 		UUID teacherId = createTeacher("anna@example.com", "old-password-1");
 		String older = createToken(teacherId, "RESET_PASSWORD", false);
 		TestClient admin = loggedInAdmin();
@@ -134,7 +136,6 @@ class PasswordLinkTest extends ApiTest {
 		var response = useLink(newClient(), token, "new-password-1");
 
 		// then the link works, the old password gets 401 on login and the student's earlier session gets 401
-		response.then().statusCode(200);
 		response.then().statusCode(200);
 		newClient().login("student@example.com", "old-password-1").then().statusCode(401);
 		student.get("/api/me").then().statusCode(401);

@@ -94,17 +94,19 @@ class LoginTest extends ApiTest {
 	@Test
 	@DisplayName("[accounts/R3-S1] Logout ends the session")
 	void logoutEndsTheSession() {
-		// given a logged-in student (and a copy of their session cookie)
+		// given a student logged in on two devices (and a copy of the first session cookie)
 		createStudent("student@example.com", "student-pass-1");
 		TestClient client = loggedInAs("student@example.com");
+		TestClient otherDevice = loggedInAs("student@example.com");
 		TestClient oldSession = client.snapshot();
 
 		// when the student logs out
 		var logout = client.logout();
 
-		// then logout succeeds and the current-user endpoint returns 401 for that session
+		// then logout succeeds and the current-user endpoint returns 401 for that session and 200 for the other one
 		logout.then().statusCode(org.hamcrest.Matchers.lessThan(300));
 		oldSession.get("/api/me").then().statusCode(401);
 		client.get("/api/me").then().statusCode(401);
+		otherDevice.get("/api/me").then().statusCode(200);
 	}
 }

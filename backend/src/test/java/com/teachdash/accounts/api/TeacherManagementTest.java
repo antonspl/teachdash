@@ -32,6 +32,9 @@ class TeacherManagementTest extends ApiTest {
 		response.then().statusCode(201)
 				.body("id", notNullValue())
 				.body("setPasswordLink", containsString("/set-password?token="));
+		// and the id is the id of the stored account
+		assertEquals(jdbc.sql("select id from users where lower(email) = 'anna@example.com'")
+				.query(UUID.class).single().toString(), response.path("id"));
 		// and a login before the password is set gets 401 with code PASSWORD_NOT_SET
 		newClient().login("anna@example.com", "any-password-1").then()
 				.statusCode(401).body("code", equalTo("PASSWORD_NOT_SET"));

@@ -57,9 +57,16 @@ The token cookie is set eagerly on every response, also for anonymous requests
 value is accepted in the header (SPA-style handler), so a client can log in.
 Alternative: JWT — no clean way to revoke sessions, and no benefit on one domain.
 Passwords: Spring Security `DelegatingPasswordEncoder` (bcrypt).
+Session contents (tests create sessions this way, D11): the `SecurityContext` under
+`SPRING_SECURITY_CONTEXT` holds a standard Spring `User` principal, name = email,
+authorities `ROLE_ADMIN` / `ROLE_TEACHER` / `ROLE_STUDENT`; no custom principal
+class. The current user is looked up by `authentication.getName()`. Spring Session
+defaults: `SESSION` cookie (base64 id), JDK-serialized attributes, principal-name
+index = email.
 
 ### D5. One-time links
-Token = 32 random bytes, base64url. Only the SHA-256 hash is stored, with purpose
+Token = 32 random bytes, base64url. Only the hash is stored —
+`hex(SHA-256(UTF-8 bytes of the base64url string))`, 64 characters — with purpose
 (`SET_PASSWORD`, `RESET_PASSWORD`), account, expiry (7 days), `used_at`. Issuing a
 new token marks older unused tokens of that account as used. The API returns the
 full URL built from `APP_BASE_URL`: `{base}/set-password?token=…`. The token service
@@ -126,9 +133,10 @@ the admin only if no admin exists (R1).
     unimplemented endpoint and fail at their THEN step. Only R2 tests call
     `/auth/login`.
 - `TestClient` keeps cookies like a browser: keyed by name and path, a cookie with
-  `Max-Age=0` deletes it, later `Set-Cookie` headers win. `login()` sends one POST and
-  reads the CSRF token from the previous response (the token is set on every
-  response, D4) — no extra GETs.
+  `Max-Age=0` deletes it, later `Set-Cookie` headers win. A new client makes its own
+  `XSRF-TOKEN` cookie + header pair (double-submit), so `login()` is one POST with no
+  extra GETs. Known gap: no test checks that the server sets `XSRF-TOKEN` on every
+  response (D4); `cabinets-ui` E2E tests cover it.
 - `MutableClock` (the movable test clock for D6): one shared instant; `withZone(z)`
   returns a clock with that zone over the same instant, so zone bugs are not hidden.
 - The R1 bootstrap test starts the app like production: only main configuration,
