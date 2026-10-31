@@ -30,12 +30,13 @@ class SessionStarter {
 		var authentication = UsernamePasswordAuthenticationToken.authenticated(
 				new org.springframework.security.core.userdetails.User(user.getId().toString(), "", authorities), null,
 				authorities);
-		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		var strategy = SecurityContextHolder.getContextHolderStrategy();
+		SecurityContext context = strategy.createEmptyContext();
 		context.setAuthentication(authentication);
 		if (request.getSession(false) != null) {
 			request.changeSessionId();
 		}
-		SecurityContextHolder.setContext(context);
+		strategy.setContext(context);
 		contextRepository.saveContext(context, request, response);
 		csrfStrategy.onAuthentication(authentication, request, response);
 	}

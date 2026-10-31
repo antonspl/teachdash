@@ -12,9 +12,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.savedrequest.NullRequestCache;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -58,11 +60,13 @@ class SecurityConfig {
 						.anyRequest().authenticated())
 				.csrf(c -> c.csrfTokenRepository(csrfRepository).csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
 				.addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+				.requestCache(c -> c.requestCache(new NullRequestCache()))
 				.logout(l -> l.logoutUrl("/api/auth/logout")
 						.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler()))
 				.exceptionHandling(e -> e
 						.authenticationEntryPoint((req, res, ex) -> problem(res, 401, "Unauthorized", "UNAUTHENTICATED"))
-						.accessDeniedHandler((req, res, ex) -> problem(res, 403, "Forbidden", "FORBIDDEN")))
+						.accessDeniedHandler((req, res, ex) -> problem(res, 403, "Forbidden",
+								ex instanceof CsrfException ? "CSRF_INVALID" : "FORBIDDEN")))
 				.build();
 	}
 

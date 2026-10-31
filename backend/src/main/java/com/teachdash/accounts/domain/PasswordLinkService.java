@@ -60,6 +60,7 @@ public class PasswordLinkService {
 	/** Sets the password, consumes the link and ends the account's sessions; returns the user. */
 	@Transactional
 	public User use(String token, String password) {
+		AccountService.requireEncodable(password);
 		OneTimeToken stored = tokens.findById(hash(token)).orElseThrow(PasswordLinkService::invalid);
 		if (tokens.markUsed(stored.getId(), clock.instant()) != 1) {
 			throw invalid();

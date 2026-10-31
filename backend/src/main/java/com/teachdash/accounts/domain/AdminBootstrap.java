@@ -2,6 +2,8 @@ package com.teachdash.accounts.domain;
 
 import java.time.Clock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -14,6 +16,8 @@ import com.teachdash.accounts.persistence.UserRepository;
 /** Creates the first admin from ADMIN_* variables when no admin exists (R1). */
 @Component
 public class AdminBootstrap implements ApplicationRunner {
+
+	private static final Logger log = LoggerFactory.getLogger(AdminBootstrap.class);
 
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
@@ -39,7 +43,12 @@ public class AdminBootstrap implements ApplicationRunner {
 				|| users.existsByRole(Role.ADMIN)) {
 			return;
 		}
+		if (users.findByEmailIgnoreCase(email.strip()).isPresent()) {
+			log.warn("No admin exists but ADMIN_EMAIL {} belongs to another account; admin not created", email);
+			return;
+		}
 		users.save(User.create(email.strip(), name.strip(), Role.ADMIN, passwordEncoder.encode(password), "UTC",
 				clock.instant()));
+		log.info("Admin created: {}", email);
 	}
 }

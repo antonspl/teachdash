@@ -1,5 +1,6 @@
 package com.teachdash.accounts.domain;
 
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.UUID;
 
@@ -34,6 +35,7 @@ public class AccountService {
 		if (user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
 		}
+		requireEncodable(newPassword);
 		user.setPasswordHash(passwordEncoder.encode(newPassword));
 		users.save(user);
 	}
@@ -45,7 +47,7 @@ public class AccountService {
 		if (user.getPasswordHash() == null) {
 			throw unauthorized("PASSWORD_NOT_SET");
 		}
-		if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+		if (tooLongForBcrypt(password) || !passwordEncoder.matches(password, user.getPasswordHash())) {
 			throw unauthorized("WRONG_PASSWORD");
 		}
 		if (!user.isActive()) {
@@ -63,6 +65,17 @@ public class AccountService {
 		User user = get(id);
 		user.updateProfile(name, timeZone);
 		return users.save(user);
+	}
+
+	/** bcrypt rejects passwords over 72 bytes; multi-byte characters can exceed it under a character limit. */
+	static void requireEncodable(String password) {
+		if (tooLongForBcrypt(password)) {
+			throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED");
+		}
+	}
+
+	private static boolean tooLongForBcrypt(String password) {
+		return password.getBytes(StandardCharsets.UTF_8).length > 72;
 	}
 
 	static void requireValidTimeZone(String timeZone) {
