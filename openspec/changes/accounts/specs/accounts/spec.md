@@ -101,9 +101,9 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 - **THEN** the response is 409 and no account is created
 
 #### Scenario: accounts/R5-S3 Link from teacher creation sets the password
-- **GIVEN** an admin created a teacher and got a set-password link
-- **WHEN** the link's token is used to set the password "new-password-1"
-- **THEN** the response is 200 and the teacher logs in with "new-password-1"
+- **GIVEN** a logged-in admin
+- **WHEN** the admin creates a teacher and the returned set-password link is used to set the password "new-password-1"
+- **THEN** the creation returns 201, setting the password returns 200, and the teacher logs in with "new-password-1"
 
 ### Requirement: R6 Admin deactivates and reactivates teachers
 An admin SHALL be able to deactivate and reactivate a teacher account. Deactivation

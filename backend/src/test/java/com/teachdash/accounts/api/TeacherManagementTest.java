@@ -43,16 +43,19 @@ class TeacherManagementTest extends ApiTest {
 	@Test
 	@DisplayName("[accounts/R5-S3] Link from teacher creation sets the password")
 	void linkFromTeacherCreationSetsThePassword() {
-		// given an admin created a teacher and got a set-password link
-		var created = loggedInAdmin().post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
-		created.then().statusCode(201);
-		String token = tokenFrom(created.path("setPasswordLink"));
+		// given a logged-in admin
+		TestClient admin = loggedInAdmin();
 
-		// when the link's token is used to set the password "new-password-1"
+		// when the admin creates a teacher and the returned link is used to set the password "new-password-1"
+		var created = admin.post("/api/admin/teachers",
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+		String link = created.getContentType() != null && created.getContentType().contains("json")
+				? created.path("setPasswordLink") : null;
+		String token = link == null ? "no-link" : tokenFrom(link);
 		var response = newClient().post("/api/password-links/" + token, Map.of("password", "new-password-1"));
 
-		// then the response is 200 and the teacher logs in with "new-password-1"
+		// then creation is 201, setting the password is 200, and the teacher logs in with "new-password-1"
+		created.then().statusCode(201);
 		response.then().statusCode(200);
 		newClient().login("anna@example.com", "new-password-1").then().statusCode(200);
 	}
