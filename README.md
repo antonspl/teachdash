@@ -10,12 +10,11 @@ Built spec-first with [OpenSpec](https://github.com/Fission-AI/OpenSpec): specs 
 Needs Docker.
 
 ```
-cp .env.example .env
-docker compose --env-file .env -f infra/docker-compose.yml up -d --build
+docker compose up --build
 ```
 
 The backend listens on http://localhost:8080 (`/actuator/health`). The first admin is
-created from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`. Stop with
-`docker compose --env-file .env -f infra/docker-compose.yml down -v`.
+`admin@example.com` / `admin-dev-password`. To override any setting, copy `.env.example`
+to `.env` in the repo root and edit it. Stop with `docker compose down -v`.
 
 Backend tests: `cd backend && ./gradlew test` (needs Docker for Testcontainers).
