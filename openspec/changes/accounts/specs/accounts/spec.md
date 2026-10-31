@@ -191,6 +191,8 @@ password MUST stop working and the account's other sessions MUST end.
 ### Requirement: R9 Profile
 A logged-in user SHALL be able to change their name and time zone, and change their
 password by giving the current one. The time zone MUST be a valid IANA zone name.
+A successful password change MUST end the account's other sessions; the session that
+made the change stays valid.
 
 #### Scenario: accounts/R9-S1 Update name and time zone
 - **GIVEN** a logged-in student
@@ -206,3 +208,8 @@ password by giving the current one. The time zone MUST be a valid IANA zone name
 - **GIVEN** a logged-in teacher
 - **WHEN** the teacher changes the password giving a wrong current password
 - **THEN** the response is 400 and the old password still works
+
+#### Scenario: accounts/R9-S4 Password change ends other sessions
+- **GIVEN** a teacher logged in on two devices
+- **WHEN** the teacher changes the password on the first device, giving the correct current password
+- **THEN** the response is 204, the second device's session gets 401, the first device's session still works, and the teacher logs in with the new password

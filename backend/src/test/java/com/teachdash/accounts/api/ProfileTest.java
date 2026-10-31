@@ -60,4 +60,23 @@ class ProfileTest extends ApiTest {
 		response.then().statusCode(400);
 		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(200);
 	}
+
+	@Test
+	@DisplayName("[accounts/R9-S4] Password change ends other sessions")
+	void passwordChangeEndsOtherSessions() {
+		// given a teacher logged in on two devices
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient first = loggedInAs("teacher@example.com");
+		TestClient second = loggedInAs("teacher@example.com");
+
+		// when the teacher changes the password on the first device, giving the correct current password
+		var response = first.post("/api/me/password",
+				Map.of("currentPassword", "teacher-pass-1", "newPassword", "brand-new-pass-1"));
+
+		// then the response is 204, the second device gets 401, the first still works, and the new password logs in
+		response.then().statusCode(204);
+		second.get("/api/me").then().statusCode(401);
+		first.get("/api/me").then().statusCode(200);
+		newClient().login("teacher@example.com", "brand-new-pass-1").then().statusCode(200);
+	}
 }
