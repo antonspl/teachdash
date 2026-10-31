@@ -16,6 +16,10 @@ tasks.withType<JavaCompile> {
 	options.release = 25
 }
 
+val mockitoAgent = configurations.create("mockitoAgent") {
+	isTransitive = false
+}
+
 repositories {
 	mavenCentral()
 }
@@ -41,9 +45,11 @@ dependencies {
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")
 	testImplementation("io.rest-assured:rest-assured:6.0.0")
+	mockitoAgent("org.mockito:mockito-core")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	jvmArgs("-javaagent:${mockitoAgent.asPath}")
 }
