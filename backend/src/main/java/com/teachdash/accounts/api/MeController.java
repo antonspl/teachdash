@@ -16,6 +16,7 @@ import com.teachdash.accounts.api.dto.UpdateProfileRequest;
 import com.teachdash.accounts.api.dto.UserResponse;
 import com.teachdash.accounts.domain.AccountService;
 
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
 @RestController
@@ -40,9 +41,10 @@ class MeController {
 	}
 
 	@PostMapping("/password")
-	ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request, Principal principal) {
+	ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request, Principal principal,
+			HttpSession session) {
 		accounts.changePassword(UUID.fromString(principal.getName()), request.currentPassword(),
-				request.newPassword());
+				request.newPassword(), session.getId());
 		return ResponseEntity.noContent().build();
 	}
 }

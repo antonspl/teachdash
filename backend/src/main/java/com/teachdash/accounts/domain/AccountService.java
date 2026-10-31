@@ -29,7 +29,13 @@ public class AccountService {
 
 	/** Deletes every session of the account (after commit when called inside a transaction) (the principal name is the user id, design D4). */
 	public void endSessions(UUID userId) {
-		Runnable end = () -> sessions.findByPrincipalName(userId.toString()).keySet().forEach(sessions::deleteById);
+		endSessionsExcept(userId, null);
+	}
+
+	/** Like endSessions, but keeps the session with the given id. */
+	public void endSessionsExcept(UUID userId, String keepSessionId) {
+		Runnable end = () -> sessions.findByPrincipalName(userId.toString()).keySet().stream()
+				.filter(id -> !id.equals(keepSessionId)).forEach(sessions::deleteById);
 		if (TransactionSynchronizationManager.isSynchronizationActive()) {
 			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 				@Override
@@ -42,7 +48,7 @@ public class AccountService {
 		}
 	}
 
-	public void changePassword(UUID id, String currentPassword, String newPassword) {
+	public void changePassword(UUID id, String currentPassword, String newPassword, String currentSessionId) {
 		User user = get(id);
 		if (user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
@@ -50,6 +56,7 @@ public class AccountService {
 		requireEncodable(newPassword);
 		user.setPasswordHash(passwordEncoder.encode(newPassword));
 		users.save(user);
+		endSessionsExcept(id, currentSessionId);
 	}
 
 	/** Checks credentials; the failure reason is an error code (design D7, R2). */

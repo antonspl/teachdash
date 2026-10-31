@@ -28,7 +28,7 @@
 - [x] 3.6 Structured JSON logging and Actuator health; verify logs are JSON with no tokens or passwords, and full `./gradlew test` is green
 
 - [x] 3.7 Fixes from the full code review (5.1): link use rejects deactivated accounts (R7-S6: failing test first, approved by the owner before the fix), new session survives link use in an already logged-in browser, concurrent link issue → 409 `LINK_CONFLICT`, `code` on every error incl. 404/405/415/500 and `/error` open, bootstrap logs no email, deactivation ends sessions after commit, Postgres gets only `POSTGRES_*`, token size limit, name trimmed on profile update
-- [ ] 3.8 Password change ends the account's other sessions (R9-S4: failing test first, approved by the owner before the fix)
+- [x] 3.8 Password change ends the account's other sessions (R9-S4: failing test first, approved by the owner before the fix)
 
 ## 4. Local run
 
