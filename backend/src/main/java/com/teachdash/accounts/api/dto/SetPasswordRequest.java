@@ -1,5 +1,7 @@
 package com.teachdash.accounts.api.dto;
 
-// STUB: compile scaffolding for pass 1; pass 2 may keep or rewrite it
-public record SetPasswordRequest(String token, String password) {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record SetPasswordRequest(@NotBlank String token, @NotBlank @Size(min = 8) String password) {
 }

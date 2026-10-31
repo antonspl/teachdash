@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -41,9 +42,14 @@ class SecurityConfig {
 	}
 
 	@Bean
-	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-		csrfRepository.setCookieCustomizer(c -> c.sameSite("Lax"));
+	CsrfTokenRepository csrfTokenRepository() {
+		CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+		repository.setCookieCustomizer(c -> c.sameSite("Lax"));
+		return repository;
+	}
+
+	@Bean
+	SecurityFilterChain filterChain(HttpSecurity http, CsrfTokenRepository csrfRepository) throws Exception {
 		return http
 				.authorizeHttpRequests(a -> a
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")

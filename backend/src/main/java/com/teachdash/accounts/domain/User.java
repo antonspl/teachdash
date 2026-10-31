@@ -83,6 +83,10 @@ public class User implements Persistable<UUID> {
 		return createdAt;
 	}
 
+	public void setPasswordHash(String passwordHash) {
+		this.passwordHash = passwordHash;
+	}
+
 	public void updateProfile(String name, String timeZone) {
 		this.name = name;
 		this.timeZone = timeZone;

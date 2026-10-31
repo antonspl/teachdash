@@ -3,7 +3,6 @@ package com.teachdash.accounts.api;
 import java.security.Principal;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -40,9 +39,10 @@ class MeController {
 				request.timeZone()));
 	}
 
-	// STUB: password change is implemented in task 3.4
 	@PostMapping("/password")
-	ResponseEntity<Void> changePassword(@RequestBody ChangePasswordRequest request) {
-		return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+	ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request, Principal principal) {
+		accounts.changePassword(UUID.fromString(principal.getName()), request.currentPassword(),
+				request.newPassword());
+		return ResponseEntity.noContent().build();
 	}
 }

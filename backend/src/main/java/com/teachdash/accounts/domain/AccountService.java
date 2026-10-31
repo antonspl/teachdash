@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
 import org.springframework.stereotype.Service;
 
 import com.teachdash.accounts.persistence.UserRepository;
@@ -15,10 +16,26 @@ public class AccountService {
 
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
+	private final JdbcIndexedSessionRepository sessions;
 
-	AccountService(UserRepository users, PasswordEncoder passwordEncoder) {
+	AccountService(UserRepository users, PasswordEncoder passwordEncoder, JdbcIndexedSessionRepository sessions) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
+		this.sessions = sessions;
+	}
+
+	/** Deletes every session of the account (the principal name is the user id, design D4). */
+	public void endSessions(UUID userId) {
+		sessions.findByPrincipalName(userId.toString()).keySet().forEach(sessions::deleteById);
+	}
+
+	public void changePassword(UUID id, String currentPassword, String newPassword) {
+		User user = get(id);
+		if (user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
+		}
+		user.setPasswordHash(passwordEncoder.encode(newPassword));
+		users.save(user);
 	}
 
 	/** Checks credentials; the failure reason is an error code (design D7, R2). */
