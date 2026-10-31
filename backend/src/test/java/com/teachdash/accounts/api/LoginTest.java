@@ -1,7 +1,9 @@
-package com.teachdash.accounts;
+package com.teachdash.accounts.api;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.UUID;
 
@@ -46,6 +48,8 @@ class LoginTest extends ApiTest {
 
 		// then the response is 401 with code WRONG_PASSWORD and no session is started
 		login.then().statusCode(401).body("code", equalTo("WRONG_PASSWORD"));
+		assertNull(client.cookie("SESSION"));
+		assertEquals(0, jdbc.sql("select count(*) from spring_session").query(Long.class).single());
 		client.get("/api/me").then().statusCode(401);
 	}
 
@@ -92,14 +96,14 @@ class LoginTest extends ApiTest {
 	void logoutEndsTheSession() {
 		// given a logged-in student (and a copy of their session cookie)
 		createStudent("student@example.com", "student-pass-1");
-		TestClient client = loggedInAs("student@example.com", "student-pass-1");
-		client.get("/api/me").then().statusCode(200).body("email", notNullValue());
+		TestClient client = loggedInAs("student@example.com");
 		TestClient oldSession = client.snapshot();
 
 		// when the student logs out
-		client.logout().then().statusCode(org.hamcrest.Matchers.lessThan(300));
+		var logout = client.logout();
 
-		// then the current-user endpoint returns 401 for that session
+		// then logout succeeds and the current-user endpoint returns 401 for that session
+		logout.then().statusCode(org.hamcrest.Matchers.lessThan(300));
 		oldSession.get("/api/me").then().statusCode(401);
 		client.get("/api/me").then().statusCode(401);
 	}

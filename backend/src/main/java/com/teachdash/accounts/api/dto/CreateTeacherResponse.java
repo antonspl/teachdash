@@ -1,4 +1,4 @@
-package com.teachdash.accounts;
+package com.teachdash.accounts.api.dto;
 
 import java.util.UUID;
 

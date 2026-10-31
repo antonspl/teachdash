@@ -1,4 +1,4 @@
-package com.teachdash.accounts;
+package com.teachdash.accounts.api.dto;
 
 public record LinkResponse(String link) {
 }

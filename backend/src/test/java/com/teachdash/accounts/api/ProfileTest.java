@@ -1,4 +1,4 @@
-package com.teachdash.accounts;
+package com.teachdash.accounts.api;
 
 import static org.hamcrest.Matchers.equalTo;
 
@@ -18,12 +18,13 @@ class ProfileTest extends ApiTest {
 	void updateNameAndTimeZone() {
 		// given a logged-in student
 		createStudent("student@example.com", "student-pass-1");
-		TestClient student = loggedInAs("student@example.com", "student-pass-1");
+		TestClient student = loggedInAs("student@example.com");
 
 		// when the student sets name "Ivan P." and time zone "Asia/Dubai"
-		student.patch("/api/me", Map.of("name", "Ivan P.", "timeZone", "Asia/Dubai")).then().statusCode(200);
+		var response = student.patch("/api/me", Map.of("name", "Ivan P.", "timeZone", "Asia/Dubai"));
 
-		// then the current-user endpoint returns the new name and time zone
+		// then the response is 200 and the current-user endpoint returns the new name and time zone
+		response.then().statusCode(200);
 		student.get("/api/me").then().statusCode(200)
 				.body("name", equalTo("Ivan P."))
 				.body("timeZone", equalTo("Asia/Dubai"));
@@ -34,7 +35,7 @@ class ProfileTest extends ApiTest {
 	void invalidTimeZoneIsRejected() {
 		// given a logged-in student
 		createStudent("student@example.com", "student-pass-1");
-		TestClient student = loggedInAs("student@example.com", "student-pass-1");
+		TestClient student = loggedInAs("student@example.com");
 
 		// when the student sets time zone "Mars/Olympus"
 		var response = student.patch("/api/me", Map.of("name", "Student", "timeZone", "Mars/Olympus"));
@@ -49,7 +50,7 @@ class ProfileTest extends ApiTest {
 	void passwordChangeNeedsTheCurrentPassword() {
 		// given a logged-in teacher
 		createTeacher("teacher@example.com", "teacher-pass-1");
-		TestClient teacher = loggedInAs("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
 
 		// when the teacher changes the password giving a wrong current password
 		var response = teacher.post("/api/me/password",

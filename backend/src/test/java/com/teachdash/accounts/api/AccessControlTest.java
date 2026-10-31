@@ -1,4 +1,4 @@
-package com.teachdash.accounts;
+package com.teachdash.accounts.api;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ class AccessControlTest extends ApiTest {
 	void teacherCannotCallAdminEndpoints() {
 		// given a logged-in teacher
 		createTeacher("teacher@example.com", "teacher-pass-1");
-		var teacher = loggedInAs("teacher@example.com", "teacher-pass-1");
+		var teacher = loggedInAs("teacher@example.com");
 
 		// when the teacher calls the admin endpoint that lists teachers
 		var response = teacher.get("/api/admin/teachers");
@@ -39,7 +39,7 @@ class AccessControlTest extends ApiTest {
 	void studentCannotCallAdminEndpoints() {
 		// given a logged-in student
 		createStudent("student@example.com", "student-pass-1");
-		var student = loggedInAs("student@example.com", "student-pass-1");
+		var student = loggedInAs("student@example.com");
 
 		// when the student calls the admin endpoint that lists teachers
 		var response = student.get("/api/admin/teachers");

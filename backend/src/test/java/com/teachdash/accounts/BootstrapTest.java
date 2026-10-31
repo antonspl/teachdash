@@ -9,15 +9,23 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 
+import java.time.Clock;
+
 import com.teachdash.TeachdashApplication;
 import com.teachdash.support.ApiTest;
+import com.teachdash.support.ExcludeTestClasses;
+import com.teachdash.support.MutableClock;
 import com.teachdash.support.TestClient;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * R1. The application is started a second time, against the same (emptied) database, with the
- * admin variables as properties named exactly ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME.
+ * admin variables as properties named exactly ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME. It starts
+ * like production: test classes are excluded from component scanning, so only main configuration
+ * and the real Clock are in the context.
  */
 class BootstrapTest extends ApiTest {
 
@@ -25,7 +33,10 @@ class BootstrapTest extends ApiTest {
 	private Environment environment;
 
 	private ConfigurableApplicationContext startApplication(String adminPassword) {
-		return new SpringApplicationBuilder(TeachdashApplication.class).run(
+		ConfigurableApplicationContext app = new SpringApplicationBuilder(TeachdashApplication.class)
+				.initializers(ctx -> ctx.getBeanFactory().registerSingleton("excludeTestClasses",
+						new ExcludeTestClasses()))
+				.run(
 				"--server.port=0",
 				"--spring.datasource.url=" + environment.getProperty("spring.datasource.url"),
 				"--spring.datasource.username=" + environment.getProperty("spring.datasource.username"),
@@ -33,6 +44,9 @@ class BootstrapTest extends ApiTest {
 				"--ADMIN_EMAIL=boss@example.com",
 				"--ADMIN_PASSWORD=" + adminPassword,
 				"--ADMIN_NAME=The Boss");
+		assertTrue(app.getBeansOfType(MutableClock.class).isEmpty(), "test beans must not be in the context");
+		assertFalse(app.getBean(Clock.class) instanceof MutableClock, "the real Clock must be used");
+		return app;
 	}
 
 	private long countUsers() {

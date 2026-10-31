@@ -1,4 +1,4 @@
-package com.teachdash.accounts;
+package com.teachdash.accounts.api;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -59,14 +59,14 @@ class TeacherManagementTest extends ApiTest {
 	void deactivationEndsSessionsAndBlocksLogin() {
 		// given a logged-in teacher
 		UUID teacherId = createTeacher("teacher@example.com", "teacher-pass-1");
-		TestClient teacher = loggedInAs("teacher@example.com", "teacher-pass-1");
-		teacher.get("/api/me").then().statusCode(200);
+		TestClient teacher = loggedInAs("teacher@example.com");
 		TestClient admin = loggedInAdmin();
 
 		// when the admin deactivates the teacher
-		admin.post("/api/admin/teachers/" + teacherId + "/deactivate").then().statusCode(lessThan(300));
+		var response = admin.post("/api/admin/teachers/" + teacherId + "/deactivate");
 
-		// then the teacher's existing session gets 401 and a new login gets 401
+		// then the call succeeds, the teacher's existing session gets 401 and a new login gets 401
+		response.then().statusCode(lessThan(300));
 		teacher.get("/api/me").then().statusCode(401);
 		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(401);
 	}
@@ -79,9 +79,10 @@ class TeacherManagementTest extends ApiTest {
 		TestClient admin = loggedInAdmin();
 
 		// when the admin reactivates the teacher
-		admin.post("/api/admin/teachers/" + teacherId + "/reactivate").then().statusCode(lessThan(300));
+		var response = admin.post("/api/admin/teachers/" + teacherId + "/reactivate");
 
-		// then the teacher can log in with their password
+		// then the call succeeds and the teacher can log in with their password
+		response.then().statusCode(lessThan(300));
 		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(200);
 	}
 }

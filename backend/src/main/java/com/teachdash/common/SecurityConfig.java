@@ -15,6 +15,7 @@ class SecurityConfig {
 
 	@Bean
 	SecurityFilterChain stubFilterChain(HttpSecurity http) throws Exception {
+		// STUB: permitAll + CSRF off must never reach main as is
 		return http
 				.authorizeHttpRequests(a -> a.anyRequest().permitAll())
 				.csrf(c -> c.disable())
