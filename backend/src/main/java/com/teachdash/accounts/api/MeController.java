@@ -13,7 +13,7 @@ import com.teachdash.accounts.api.dto.ChangePasswordRequest;
 import com.teachdash.accounts.api.dto.UpdateProfileRequest;
 import com.teachdash.accounts.api.dto.UserResponse;
 
-/** STUB (change accounts, task 1.3): every endpoint returns 501 until pass 2. */
+// STUB: all endpoints return 501 until pass 2
 @RestController
 @RequestMapping("/api/me")
 class MeController {

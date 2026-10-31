@@ -15,10 +15,7 @@ import com.teachdash.support.TestClient;
 
 import io.restassured.response.Response;
 
-/**
- * R7 single-use links, R8 admin reset links. Links the scenario does not test are inserted
- * directly (createToken), so setup never depends on the unimplemented admin endpoints.
- */
+/** R7, R8. Tokens not under test are inserted directly (createToken). */
 class PasswordLinkTest extends ApiTest {
 
 	private Response useLink(TestClient client, String token, String password) {
@@ -77,9 +74,7 @@ class PasswordLinkTest extends ApiTest {
 	@Test
 	@DisplayName("[accounts/R7-S4] Newer link replaces older one")
 	void newerLinkReplacesOlderOne() {
-		// given an unused link for an account and a logged-in admin. The older link is inserted
-		// directly and the newer one is issued through the admin API in the "when" step, because
-		// the replacement of the older link at issuing time is the behaviour under test.
+		// given an unused link (inserted directly; the newer one is issued via the API as replacement is under test)
 		UUID teacherId = createTeacher("anna@example.com", "old-password-1");
 		String older = createToken(teacherId, "RESET_PASSWORD", false);
 		TestClient admin = loggedInAdmin();

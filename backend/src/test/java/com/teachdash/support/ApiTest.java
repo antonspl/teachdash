@@ -27,10 +27,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-/**
- * Base class for API tests (design D11): real app on a random port, one Postgres
- * Testcontainer shared by all tests, tables emptied before each test, movable clock.
- */
+/** Real app on a random port, shared Postgres container, tables emptied before each test. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestClockConfig.class)
 public abstract class ApiTest {
@@ -88,17 +85,15 @@ public abstract class ApiTest {
 		return new TestClient(port);
 	}
 
-	/** Client for another running instance of the app (e.g. started by a test), not logged in. */
 	protected TestClient newClient(int otherPort) {
 		return new TestClient(otherPort);
 	}
 
-	/** Extracts the token from a link like {base}/set-password?token=... */
 	protected static String tokenFrom(String link) {
 		return link.substring(link.indexOf("token=") + "token=".length());
 	}
 
-	/** Inserts a user directly (design D9 schema); password null means "not set yet". */
+	/** Password null means "not set yet". */
 	protected UUID createUser(String role, String name, String email, String password, boolean active) {
 		UUID id = UUID.randomUUID();
 		jdbc.sql("""
@@ -128,19 +123,12 @@ public abstract class ApiTest {
 		return createUser("STUDENT", "Student", email, password, true);
 	}
 
-	/** Creates an admin and returns a client with a session for it. */
 	protected TestClient loggedInAdmin() {
 		createAdmin("admin@example.com", "admin-password-1");
 		return loggedInAs("admin@example.com");
 	}
 
-	/**
-	 * Returns a client with a session for the existing user, created directly in the Spring
-	 * Session JDBC store (design D11), never through /api/auth/login. The session holds a
-	 * security context for the user (authority ROLE_&lt;role&gt;, principal name = email) and the
-	 * client gets the SESSION cookie (Base64 of the session id, as Spring Session writes it) plus
-	 * a client-made XSRF-TOKEN cookie/header pair.
-	 */
+	/** Session is created in the store, not via /auth/login, so tests do not depend on it. */
 	protected TestClient loggedInAs(String email) {
 		String role = jdbc.sql("select role from users where lower(email) = lower(:email)")
 				.param("email", email).query(String.class).single();
@@ -156,11 +144,7 @@ public abstract class ApiTest {
 		return newClient().withCookie("SESSION", cookie);
 	}
 
-	/**
-	 * Inserts a one-time token directly (design D5: only the SHA-256 hash is stored, hex-encoded),
-	 * expiring 7 days after the test clock's now, and returns the raw token. Unlike the service it
-	 * does not mark older tokens as used.
-	 */
+	/** Inserts a token directly (SHA-256 hex hash stored); does not invalidate older tokens. */
 	protected String createToken(UUID userId, String purpose, boolean used) {
 		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(
 				(UUID.randomUUID().toString() + UUID.randomUUID()).substring(0, 32).getBytes(StandardCharsets.UTF_8));

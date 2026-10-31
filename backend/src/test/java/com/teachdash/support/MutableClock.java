@@ -7,10 +7,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Clock whose time tests can move (design D6). All clocks made with {@link #withZone} share
- * one instant but keep their own zone, so zone bugs are not hidden.
- */
+/** Movable clock; clocks from withZone share the instant but keep their own zone. */
 public class MutableClock extends Clock {
 
 	private final AtomicReference<Instant> now;

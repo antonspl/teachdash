@@ -6,12 +6,7 @@ import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 
-/**
- * Keeps classes from the test output directory out of component scanning. {@code @SpringBootTest}
- * does this itself; an application started with {@code SpringApplicationBuilder} inside a test does
- * not, and would pick up test configuration (e.g. the movable clock). Register an instance as a
- * singleton before refresh so that application starts like production.
- */
+/** Keeps test classes out of component scanning (SpringApplicationBuilder does not, unlike @SpringBootTest). */
 public class ExcludeTestClasses extends TypeExcludeFilter {
 
 	@Override

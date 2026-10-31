@@ -14,13 +14,7 @@ import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
-/**
- * One HTTP client with a browser-like cookie jar: cookies are keyed by name and path, a cookie
- * with Max-Age=0 (or a past Expires) is deleted, and Set-Cookie headers are applied in order, so
- * the last one wins. Echoes the XSRF-TOKEN cookie in the X-XSRF-TOKEN header on every request,
- * as the SPA will. A new client starts with a client-made XSRF-TOKEN (double-submit), so even
- * its first POST needs no extra GET; a token set by the server replaces it.
- */
+/** Browser-like cookie jar; starts with its own XSRF-TOKEN (double-submit), so no priming GET. */
 public class TestClient {
 
 	private record Cookie(String name, String path, String value) {
@@ -37,13 +31,11 @@ public class TestClient {
 		put(new Cookie("XSRF-TOKEN", "/", UUID.randomUUID().toString()));
 	}
 
-	/** A client that has this cookie (path "/") before its first request, e.g. a session set up by a test. */
 	public TestClient withCookie(String name, String value) {
 		put(new Cookie(name, "/", value));
 		return this;
 	}
 
-	/** A new client with a copy of this client's cookies now (e.g. to replay an old session later). */
 	public TestClient snapshot() {
 		TestClient copy = new TestClient(port);
 		copy.jar.clear();
@@ -51,7 +43,6 @@ public class TestClient {
 		return copy;
 	}
 
-	/** The value of the cookie with this name (any path), or null if the client has none. */
 	public String cookie(String name) {
 		return jar.values().stream().filter(c -> c.name().equals(name)).map(Cookie::value).findFirst().orElse(null);
 	}
@@ -118,14 +109,14 @@ public class TestClient {
 					try {
 						maxAge = Long.parseLong(val);
 					} catch (NumberFormatException ignored) {
-						// ignored like a browser does
+						// ignored
 					}
 				}
 				case "expires" -> {
 					try {
 						expires = ZonedDateTime.parse(val, DateTimeFormatter.RFC_1123_DATE_TIME);
 					} catch (RuntimeException ignored) {
-						// ignored like a browser does
+						// ignored
 					}
 				}
 				default -> {
@@ -160,10 +151,6 @@ public class TestClient {
 		return remember(path, spec(path).body(body).patch(path));
 	}
 
-	/**
-	 * Logs in via the JSON login endpoint with one POST. The CSRF token is the XSRF-TOKEN cookie
-	 * from an earlier response, or the one this client made itself (double-submit).
-	 */
 	public Response login(String email, String password) {
 		return post("/api/auth/login", Map.of("email", email, "password", password));
 	}

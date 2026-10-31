@@ -21,12 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * R1. The application is started a second time, against the same (emptied) database, with the
- * admin variables as properties named exactly ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME. It starts
- * like production: test classes are excluded from component scanning, so only main configuration
- * and the real Clock are in the context.
- */
+/** R1. Starts a second app like production: test classes are not scanned. */
 class BootstrapTest extends ApiTest {
 
 	@Autowired

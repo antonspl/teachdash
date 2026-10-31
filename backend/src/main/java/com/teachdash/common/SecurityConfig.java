@@ -6,10 +6,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
-/**
- * STUB (change accounts, task 1.3): lets every request reach the controllers.
- * Replaced by the real security configuration in task 3.2.
- */
+// STUB: replaced by the real security configuration in pass 2
 @Configuration(proxyBeanMethods = false)
 class SecurityConfig {
 
