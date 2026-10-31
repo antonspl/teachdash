@@ -2,7 +2,8 @@
 
 ## Context
 
-Empty repository except `openspec/`. See proposal.md for scope. The constitution
+Builds on `backend-skeleton` (Spring Boot app, Gradle, Testcontainers test base)
+and `workflow` (coverage script). See proposal.md for scope. The constitution
 fixes the stack (Spring Boot, Postgres + Flyway, one domain with `/api/*` proxied,
 no CORS) and the test approach. This change is backend only.
 
@@ -21,13 +22,22 @@ no CORS) and the test approach. This change is backend only.
 ## Decisions
 
 ### D1. Versions and build
-Java 25 (LTS), latest stable Spring Boot, Gradle with Kotlin DSL. The implementer pins
-exact versions at setup.
+Versions and the build come from `backend-skeleton` (Java 25, Spring Boot, Gradle
+Kotlin DSL). This change adds Spring Security, Spring Data JDBC, Spring Session JDBC
+and Bean Validation (reasons in D3, D4).
 
-### D2. Backend layout — package by feature
-`com.teachdash.accounts`, `com.teachdash.common` (security, errors). Later features
-add their own packages. Alternative (layered `controller/service/repository` at top
-level) mixes features and grows badly.
+### D2. Backend layout — feature first, then role (constitution §3 "Code layout")
+```
+com/teachdash/
+  accounts/
+    api/            AdminController, AuthController, MeController, PasswordLinkController
+      dto/          LoginRequest, CreateTeacherRequest, UserResponse, ...
+    domain/         Role (pass 2: User, AccountService, PasswordLinkService)
+    persistence/    (pass 2: UserRepository, OneTimeTokenRepository)
+  common/           ClockConfig, SecurityConfig, error handling
+```
+Classes used across subpackages are `public`. Alternative (one flat `accounts`
+package) mixes controllers, DTOs and domain and grows badly in pass 2.
 
 ### D3. Persistence — Spring Data JDBC
 Simple aggregates, explicit SQL in Flyway, no lazy-loading surprises.
@@ -92,7 +102,14 @@ JSON shapes:
 - `V1__accounts.sql` — `users` (id uuid, email, name, role, password_hash nullable,
   time_zone, active, created_at; unique index on `lower(email)`),
   `one_time_tokens` (token_hash, user_id, purpose, expires_at, used_at, created_at).
-- `V2__spring_session.sql` — Spring Session JDBC tables (copied from its schema).
+- `V2__spring_session.sql` — Spring Session JDBC tables (copied from its schema),
+  with `principal_name` widened to `varchar(320)` to match `users.email`; with the
+  default `varchar(100)` a long email fails on session save, and R6/R8 cannot find
+  that user's sessions.
+
+Both are written in pass 1 (tests need the schema) and are reviewed as production
+code at the tests gate. They are not applied anywhere yet, so they may still be
+edited until this change merges.
 
 ### D10. Admin bootstrap
 An `ApplicationRunner` reads the properties `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`
@@ -100,14 +117,25 @@ An `ApplicationRunner` reads the properties `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `AD
 the admin only if no admin exists (R1).
 
 ### D11. Tests and local run
-- A base class `ApiTest` starts the app on a random port with a Testcontainers
-  Postgres (reused across tests), cleans tables between tests, and offers helpers to
-  create users of any role directly and log in (RestAssured with cookie + CSRF).
-  Student accounts in tests are created by the helper, since enrolment does not
-  exist yet.
-- `scripts/check-scenario-coverage.sh`: collects scenario IDs from
-  `openspec/specs/**/spec.md` and `openspec/changes/*/specs/**/spec.md` (excluding
-  `archive/`) and fails if any ID has no `@DisplayName("[<id>]` in `backend/src/test`.
+- `ApiTest` (from `backend-skeleton`: app on a random port, shared Testcontainers
+  Postgres, tables cleaned between tests) gets accounts helpers:
+  - create users of any role directly in the database (students too, since
+    enrolment does not exist yet);
+  - `loggedInAs(user)` creates the session **directly in the session store**, not
+    through `/auth/login`, so tests that are not about login never depend on an
+    unimplemented endpoint and fail at their THEN step. Only R2 tests call
+    `/auth/login`.
+- `TestClient` keeps cookies like a browser: keyed by name and path, a cookie with
+  `Max-Age=0` deletes it, later `Set-Cookie` headers win. `login()` sends one POST and
+  reads the CSRF token from the previous response (the token is set on every
+  response, D4) — no extra GETs.
+- `MutableClock` (the movable test clock for D6): one shared instant; `withZone(z)`
+  returns a clock with that zone over the same instant, so zone bugs are not hidden.
+- The R1 bootstrap test starts the app like production: only main configuration,
+  the real `Clock`, no test beans (test configuration is not component-scanned).
+- R2-S2 checks "no session is started" directly: no `SESSION` cookie on the client
+  and no `spring_session` row.
+- Coverage: `scripts/check-scenario-coverage.sh` (from `workflow`), by hand until CI.
 - Local: `backend/Dockerfile` and `infra/docker-compose.yml` running Postgres and the
   backend (`docker compose up` from a fresh clone). `.env.example` lists every
   variable with dev defaults; `.env` is gitignored. CI comes in a separate task and
