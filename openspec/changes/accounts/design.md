@@ -141,7 +141,8 @@ the admin only if no admin exists (R1).
   jar). A new client makes its own
   `XSRF-TOKEN` cookie + header pair (double-submit), so `login()` is one POST with no
   extra GETs. The header always carries the current `XSRF-TOKEN` cookie value, so a
-  token the server rotates on login is picked up; `snapshot()` keeps that setting. Known gap: no test checks that the server sets `XSRF-TOKEN` on every
+  token the server rotates on login is picked up; `snapshot()` keeps that setting.
+  Known gap: no test checks that the server sets `XSRF-TOKEN` on every
   response (D4); `cabinets-ui` E2E tests cover it.
 - `MutableClock` (the movable test clock for D6): one shared instant; `withZone(z)`
   returns a clock with that zone over the same instant, so zone bugs are not hidden.
