@@ -60,12 +60,14 @@ class AccessControlTest extends ApiTest {
 		var teacher = loggedInAs("teacher@example.com");
 
 		// when the teacher changes their profile without sending the CSRF token
-		var response = teacher.withoutCsrfToken()
-				.patch("/api/me", Map.of("name", "Changed Name", "timeZone", "UTC"));
+		var response = teacher.withoutCsrfHeader()
+				.patch("/api/me", Map.of("name", "Changed Name", "timeZone", "Asia/Dubai"));
 
 		// then the response is 403 and the profile does not change
 		response.then().statusCode(403);
-		assertEquals("Teacher", jdbc.sql("select name from users where email = 'teacher@example.com'")
-				.query(String.class).single());
+		var row = jdbc.sql("select name, time_zone from users where email = 'teacher@example.com'")
+				.query().singleRow();
+		assertEquals("Teacher", row.get("name"));
+		assertEquals("UTC", row.get("time_zone"));
 	}
 }

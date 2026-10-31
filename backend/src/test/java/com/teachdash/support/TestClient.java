@@ -17,6 +17,7 @@ public class TestClient {
 
 	private final int port;
 	private final CookieFilter cookies = new CookieFilter();
+	private boolean sendCsrfHeader = true;
 
 	TestClient(int port) {
 		this.port = port;
@@ -35,11 +36,9 @@ public class TestClient {
 		return this;
 	}
 
-	/** The next requests carry neither the XSRF cookie nor the header. */
-	public TestClient withoutCsrfToken() {
-		var kept = store().getCookies().stream().filter(c -> !c.getName().equals("XSRF-TOKEN")).toList();
-		store().clear();
-		kept.forEach(store()::addCookie);
+	/** Keeps the XSRF cookie but sends no X-XSRF-TOKEN header, like a cross-site request. */
+	public TestClient withoutCsrfHeader() {
+		sendCsrfHeader = false;
 		return this;
 	}
 
@@ -58,7 +57,7 @@ public class TestClient {
 	private RequestSpecification spec() {
 		RequestSpecification spec = RestAssured.given().port(port).contentType("application/json").filter(cookies);
 		String xsrf = cookie("XSRF-TOKEN");
-		return xsrf == null ? spec : spec.header("X-XSRF-TOKEN", xsrf);
+		return xsrf == null || !sendCsrfHeader ? spec : spec.header("X-XSRF-TOKEN", xsrf);
 	}
 
 	public Response get(String path) {
