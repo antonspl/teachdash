@@ -1,5 +1,6 @@
 package com.teachdash.accounts.persistence;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +15,8 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 
 	@Query("select * from users where lower(email) = lower(:email)")
 	Optional<User> findByEmailIgnoreCase(@Param("email") String email);
+
+	List<User> findByRoleOrderByName(Role role);
 
 	boolean existsByRole(Role role);
 }

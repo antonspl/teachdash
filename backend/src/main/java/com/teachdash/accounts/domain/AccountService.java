@@ -59,12 +59,16 @@ public class AccountService {
 	}
 
 	public User updateProfile(UUID id, String name, String timeZone) {
-		if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TIME_ZONE");
-		}
+		requireValidTimeZone(timeZone);
 		User user = get(id);
 		user.updateProfile(name, timeZone);
 		return users.save(user);
+	}
+
+	static void requireValidTimeZone(String timeZone) {
+		if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
+			throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TIME_ZONE");
+		}
 	}
 
 	private static ApiException unauthorized(String code) {

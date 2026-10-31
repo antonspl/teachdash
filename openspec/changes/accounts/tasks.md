@@ -24,7 +24,7 @@
 - [x] 3.2 Security config: delete the stub `SecurityConfig` (`permitAll`, CSRF off, empty user store) and write the real one: JSON login/logout, JDBC sessions, CSRF cookie, admin role rule, 401 with reason codes; verify R2–R4 tests pass (R4-S4: CSRF enabled)
 - [x] 3.3 Admin bootstrap runner (replaces the `AdminBootstrap` stub) and production `ClockConfig` (D6); verify R1 tests pass
 - [x] 3.4 One-time links (issue, hash, expire, invalidate older, use) and profile endpoints; verify R7, R9 tests pass
-- [ ] 3.5 Admin teacher management and admin reset links, ending sessions on deactivation/reset; verify R5, R6, R8 tests pass
+- [x] 3.5 Admin teacher management and admin reset links, ending sessions on deactivation/reset; verify R5, R6, R8 tests pass
 - [ ] 3.6 Structured JSON logging and Actuator health; verify logs are JSON with no tokens or passwords, and full `./gradlew test` is green
 
 ## 4. Local run
