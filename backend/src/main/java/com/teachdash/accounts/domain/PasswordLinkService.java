@@ -12,6 +12,7 @@ import java.util.HexFormat;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -53,7 +54,11 @@ public class PasswordLinkService {
 		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 		Instant now = clock.instant();
 		tokens.markUnusedAsUsed(userId, now);
-		tokens.save(OneTimeToken.create(hash(token), userId, purpose, now, now.plus(VALIDITY)));
+		try {
+			tokens.save(OneTimeToken.create(hash(token), userId, purpose, now, now.plus(VALIDITY)));
+		} catch (DuplicateKeyException e) {
+			throw new ApiException(HttpStatus.CONFLICT, "LINK_CONFLICT");
+		}
 		return baseUrl + "/set-password#token=" + token;
 	}
 

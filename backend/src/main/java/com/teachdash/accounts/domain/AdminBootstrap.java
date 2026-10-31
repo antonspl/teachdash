@@ -44,11 +44,11 @@ public class AdminBootstrap implements ApplicationRunner {
 			return;
 		}
 		if (users.findByEmailIgnoreCase(email.strip()).isPresent()) {
-			log.warn("No admin exists but ADMIN_EMAIL {} belongs to another account; admin not created", email);
+			log.warn("No admin exists but ADMIN_EMAIL belongs to another account; admin not created");
 			return;
 		}
 		users.save(User.create(email.strip(), name.strip(), Role.ADMIN, passwordEncoder.encode(password), "UTC",
 				clock.instant()));
-		log.info("Admin created: {}", email);
+		log.info("Admin created");
 	}
 }

@@ -56,7 +56,7 @@ class SecurityConfig {
 				.authorizeHttpRequests(a -> a
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/password-links").permitAll()
-						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+						.requestMatchers("/actuator/health", "/actuator/health/**", "/error").permitAll()
 						.anyRequest().authenticated())
 				.csrf(c -> c.csrfTokenRepository(csrfRepository).csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
 				.addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)

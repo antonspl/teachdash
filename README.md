@@ -11,11 +11,11 @@ Needs Docker.
 
 ```
 cp .env.example .env
-docker compose -f infra/docker-compose.yml up -d --build
+docker compose --env-file .env -f infra/docker-compose.yml up -d --build
 ```
 
 The backend listens on http://localhost:8080 (`/actuator/health`). The first admin is
 created from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`. Stop with
-`docker compose -f infra/docker-compose.yml down -v`.
+`docker compose --env-file .env -f infra/docker-compose.yml down -v`.
 
 Backend tests: `cd backend && ./gradlew test` (needs Docker for Testcontainers).

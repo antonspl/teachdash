@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
@@ -25,9 +27,19 @@ public class AccountService {
 		this.sessions = sessions;
 	}
 
-	/** Deletes every session of the account (the principal name is the user id, design D4). */
+	/** Deletes every session of the account (after commit when called inside a transaction) (the principal name is the user id, design D4). */
 	public void endSessions(UUID userId) {
-		sessions.findByPrincipalName(userId.toString()).keySet().forEach(sessions::deleteById);
+		Runnable end = () -> sessions.findByPrincipalName(userId.toString()).keySet().forEach(sessions::deleteById);
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					end.run();
+				}
+			});
+		} else {
+			end.run();
+		}
 	}
 
 	public void changePassword(UUID id, String currentPassword, String newPassword) {
@@ -63,7 +75,7 @@ public class AccountService {
 	public User updateProfile(UUID id, String name, String timeZone) {
 		requireValidTimeZone(timeZone);
 		User user = get(id);
-		user.updateProfile(name, timeZone);
+		user.updateProfile(name.strip(), timeZone);
 		return users.save(user);
 	}
 

@@ -13,6 +13,7 @@ import com.teachdash.accounts.domain.User;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 /** Starts a session for a user: principal name = user id, authority ROLE_<role> (design D4). */
 @Component
@@ -33,9 +34,11 @@ class SessionStarter {
 		var strategy = SecurityContextHolder.getContextHolderStrategy();
 		SecurityContext context = strategy.createEmptyContext();
 		context.setAuthentication(authentication);
-		if (request.getSession(false) != null) {
-			request.changeSessionId();
+		HttpSession old = request.getSession(false);
+		if (old != null) {
+			old.invalidate();
 		}
+		request.getSession(true);
 		strategy.setContext(context);
 		contextRepository.saveContext(context, request, response);
 		csrfStrategy.onAuthentication(authentication, request, response);
