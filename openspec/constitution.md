@@ -17,7 +17,13 @@ has no other reviewers), then the **owner** reviews the whole PR and merges it.
 4. **Spec review gate** — STOP. A reviewer approves the spec in the PR. No tests
    until approved.
 5. **Red** — write backend tests for every scenario; they MUST compile and fail
-   for the right reason (missing behaviour, not missing classes — add stubs).
+   for the right reason: each test fails at its THEN step because the behaviour is
+   missing — not in setup, not because classes are missing. Test setup MUST NOT
+   depend on endpoints that are not implemented yet (create data and sessions
+   directly). Pass 1 may add only:
+   - **stubs** that return 501, each marked with a `STUB` comment; pass 2 rewrites them;
+   - **schema migrations** — permanent production code; the reviewer reviews them
+     as production code at the test review gate.
 6. **Test review gate** — STOP. A reviewer approves the tests in the PR. No
    production code until approved.
 7. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
@@ -27,9 +33,13 @@ has no other reviewers), then the **owner** reviews the whole PR and merges it.
 10. **Owner review** — mark the PR ready. The owner reviews spec, tests and code
     together and merges. Only the owner merges into `main`.
 
-Gate approvals are recorded in the PR: a GitHub review "Approve" or a comment
-naming the gate (e.g. "spec approved"), and the matching box ticked in the PR
-description.
+A gate is approved by a PR comment naming it (e.g. "tests approved") plus the
+matching box ticked in the PR description. A GitHub review "Approve" is used only
+for the final owner review: it does not say which gate it is for, and it stays on
+the PR when the next phase is pushed.
+
+When asking for a gate review, the author posts the commit range of that phase
+(e.g. `abc123..def456`), so the reviewer reads only what is new.
 
 All artifacts, code, comments and commit messages are in English.
 
@@ -39,7 +49,9 @@ All artifacts, code, comments and commit messages are in English.
 - One test per spec scenario. `@DisplayName` starts with the scenario ID, e.g.
   `@DisplayName("[accounts/R4-S2] Teacher cannot call admin endpoints")`.
 - Test body is structured with `// given`, `// when`, `// then` comments.
-- CI fails if any spec scenario has no matching test.
+- Every spec scenario has a matching test. Until CI exists (#7), the author runs
+  `scripts/check-scenario-coverage.sh` by hand before asking for the test review;
+  once CI exists, it runs the script and fails on a missing test.
 - Frontend: Vitest for logic, Playwright E2E for key user flows. No review gate.
 
 ## 3. Architecture
@@ -62,6 +74,23 @@ openspec/   specs and changes
   a lesson card holds a meeting link.
 - **Roles:** admin, teacher, student. Authorization is checked on the backend for
   every endpoint; the frontend only hides UI.
+
+### Code layout (backend)
+
+Package by feature first, then by role inside the feature:
+
+```
+com/teachdash/
+  <feature>/          e.g. accounts
+    api/              controllers
+      dto/            request/response records
+    domain/           entities, enums, services
+    persistence/      repositories
+  common/             cross-feature code: security, errors, clock
+```
+
+Classes used across subpackages are `public`. Tests mirror the main packages;
+shared test helpers live in `com.teachdash.support`.
 
 ## 4. Secrets
 

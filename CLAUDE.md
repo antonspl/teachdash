@@ -26,8 +26,9 @@ Agents' reports are not shown to the owner — relay what matters in a few lines
 - `main` is protected: changes land only through pull requests, merged by the owner.
 - One change = one branch (named after the OpenSpec change) = one PR, opened as a
   draft right after the spec is written. Spec, tests and code are added to it in
-  turn; each stops at its review gate (constitution §1). Check the PR for an
-  approval of the current gate before starting the next phase.
+  turn; each stops at its review gate (constitution §1). Check the PR for a
+  comment approving the current gate (e.g. "tests approved") before starting the
+  next phase. When asking for a gate review, post the commit range of that phase.
 - When the change is archived and all gates are approved, mark the PR ready for
   the owner's review.
 - Claude never merges PRs, never pushes to `main`, never force-pushes shared branches.

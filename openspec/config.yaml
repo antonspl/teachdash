@@ -23,7 +23,7 @@ rules:
     - Justify every new dependency
     - List Flyway migrations the change adds
   tasks:
-    - Section 1 is "Failing tests" - one backend test per scenario (JUnit 5, Testcontainers, RestAssured), plus stubs so tests compile
+    - Section 1 is "Failing tests" - one backend test per scenario (JUnit 5, Testcontainers, RestAssured), plus stubs (501, marked STUB) and schema migrations so tests compile and fail at their THEN step
     - Section 2 is a single task "Reviewer approves tests in the PR" - a hard stop
     - Implementation tasks come only after the review task
     - 'End with a "Workflow follow-up" section: code review gate, archive in the same PR, mark the PR ready for the owner'
@@ -31,7 +31,9 @@ rules:
 operations:
   apply:
     guidance:
-      - 'Work in two passes. Pass 1 - complete only the "Failing tests" section, run the tests, confirm they fail for the right reason, then push and STOP: ask for test review in the PR. Do not write production code in pass 1.'
+      - 'Work in two passes. Pass 1 - complete only the "Failing tests" section, run the tests and scripts/check-scenario-coverage.sh, confirm every test fails at its THEN step (not in setup), then push and STOP: ask for test review in the PR with the commit range of pass 1.'
+      - 'Pass 1 production code is limited to stubs returning 501 (each marked with a STUB comment) and schema migrations. List both in the PR description: stubs are temporary, migrations are permanent and reviewed as production code.'
+      - Test setup must not call endpoints that are not implemented yet; create data and sessions directly.
       - Pass 2 starts only after a reviewer approves the tests in the PR. Do not modify approved tests; if one seems wrong, stop and ask the reviewer.
       - Finish pass 2 only when the full test suite is green.
   archive:
