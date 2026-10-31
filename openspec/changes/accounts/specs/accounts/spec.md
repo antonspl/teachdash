@@ -18,9 +18,14 @@ values. If an admin already exists, the system MUST NOT create or change any acc
 - **THEN** an admin account with that email exists and can log in with that password
 
 #### Scenario: accounts/R1-S2 Existing admin is not changed
-- **GIVEN** an admin account exists with password "old-password"
+- **GIVEN** an admin account exists with the email from `ADMIN_EMAIL` and password "old-password"
 - **WHEN** the application starts with `ADMIN_PASSWORD` set to a different value
-- **THEN** no new account is created and the admin still logs in with "old-password"
+- **THEN** no new account is created, the admin account is unchanged (email, name, password hash, role, active), and the admin still logs in with "old-password"
+
+#### Scenario: accounts/R1-S3 Admin with another email blocks bootstrap
+- **GIVEN** an admin account exists with an email different from `ADMIN_EMAIL`
+- **WHEN** the application starts
+- **THEN** no account is created and no account with the `ADMIN_EMAIL` email exists
 
 ### Requirement: R2 Login with email and password
 The system SHALL sign in an active account with a matching email and password and
@@ -61,9 +66,11 @@ The system SHALL end the current session on logout.
 - **THEN** the current-user endpoint returns 401 for that session
 
 ### Requirement: R4 Role-based access
-Every endpoint except login and set-password-by-link SHALL require a session. Admin
+Every endpoint except login, set-password-by-link and the health check
+(`/actuator/health`) SHALL require a session. Admin
 endpoints SHALL be allowed only for admins. Later capabilities apply the same rule to
-teacher and student endpoints.
+teacher and student endpoints. A state-changing request (POST, PUT, PATCH, DELETE)
+without a valid CSRF token MUST be rejected with 403.
 
 #### Scenario: accounts/R4-S1 No session is rejected
 - **WHEN** a request without a session calls the current-user endpoint
@@ -79,6 +86,16 @@ teacher and student endpoints.
 - **WHEN** the student calls the admin endpoint that lists teachers
 - **THEN** the response is 403
 
+#### Scenario: accounts/R4-S4 Request without CSRF token is rejected
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher changes their profile without sending the CSRF token, and then sends the same request with the token
+- **THEN** the first response is 403 and leaves the profile unchanged, and the second response is 200
+
+#### Scenario: accounts/R4-S5 Non-admins cannot call admin endpoints that change data
+- **GIVEN** a logged-in teacher, a logged-in student, the admin account and another teacher
+- **WHEN** the teacher and the student each call every admin endpoint that changes data: create a teacher, deactivate and reactivate the other teacher, issue a reset link for the admin
+- **THEN** every response is 403, no account is created or changed, and no link is issued
+
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.
 The account has no password yet; the response SHALL contain a single-use set-password
@@ -87,31 +104,45 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 #### Scenario: accounts/R5-S1 Admin creates a teacher
 - **GIVEN** a logged-in admin
 - **WHEN** the admin creates a teacher with a new email
-- **THEN** the response is 201 with the teacher's id and a set-password link, and a login before the password is set gets 401 with code `PASSWORD_NOT_SET`
+- **THEN** the response is 201 with the teacher's id and a set-password link that starts with the configured base URL (`APP_BASE_URL`) and carries the token in the URL fragment, and a login before the password is set gets 401 with code `PASSWORD_NOT_SET`
 
 #### Scenario: accounts/R5-S2 Duplicate email is rejected
 - **GIVEN** an account with email "anna@example.com"
 - **WHEN** the admin creates a teacher with email "ANNA@example.com"
 - **THEN** the response is 409 and no account is created
 
+#### Scenario: accounts/R5-S3 Link from teacher creation sets the password
+- **GIVEN** a logged-in admin
+- **WHEN** the admin creates a teacher and the returned set-password link is used to set the password "new-password-1"
+- **THEN** the creation returns 201, setting the password returns 200, and the teacher logs in with "new-password-1"
+
 ### Requirement: R6 Admin deactivates and reactivates teachers
 An admin SHALL be able to deactivate and reactivate a teacher account. Deactivation
-MUST end the teacher's active sessions.
+MUST end the teacher's active sessions. Only teacher accounts can be deactivated or
+reactivated through these endpoints: an id that is not a teacher (an admin, including
+the caller, a student, or an unknown id) MUST get 404 and change nothing.
 
 #### Scenario: accounts/R6-S1 Deactivation ends sessions and blocks login
 - **GIVEN** a logged-in teacher
 - **WHEN** the admin deactivates the teacher
-- **THEN** the teacher's existing session gets 401 and a new login gets 401
+- **THEN** the teacher's existing session gets 401 and a new login gets 401 with code `ACCOUNT_DEACTIVATED`
 
 #### Scenario: accounts/R6-S2 Reactivated teacher can log in
 - **GIVEN** a deactivated teacher
 - **WHEN** the admin reactivates the teacher
 - **THEN** the teacher can log in with their password
 
+#### Scenario: accounts/R6-S3 Only teachers can be deactivated
+- **GIVEN** a logged-in admin and a student account
+- **WHEN** the admin tries to deactivate their own account and the student's account
+- **THEN** both responses are 404, both accounts stay active, and the admin's session still works
+
 ### Requirement: R7 Single-use password links
 A set-password or reset-password link SHALL let its holder set a new password once.
 A link MUST be rejected after it is used, after 7 days, or after a newer link for the
 same account is issued. A successful use SHALL start a session for that account.
+A link for a deactivated account MUST be rejected with 401 `ACCOUNT_DEACTIVATED`
+and change nothing.
 
 #### Scenario: accounts/R7-S1 Valid link sets the password
 - **GIVEN** an unused set-password link issued 1 day ago
@@ -124,9 +155,9 @@ same account is issued. A successful use SHALL start a session for that account.
 - **THEN** the response is 410 and the password does not change
 
 #### Scenario: accounts/R7-S3 Expired link is rejected
-- **GIVEN** an unused link issued 8 days ago
-- **WHEN** someone uses it
-- **THEN** the response is 410
+- **GIVEN** an unused link issued 8 days ago for an account with a password
+- **WHEN** someone uses it to set a new password
+- **THEN** the response is 410 and the old password still works
 
 #### Scenario: accounts/R7-S4 Newer link replaces older one
 - **GIVEN** two links issued for the same account, one after the other
@@ -138,6 +169,11 @@ same account is issued. A successful use SHALL start a session for that account.
 - **WHEN** its holder sets a 7-character password
 - **THEN** the response is 400 and the link can still be used with a valid password
 
+#### Scenario: accounts/R7-S6 Link for a deactivated account is rejected
+- **GIVEN** an admin created a teacher and got a set-password link
+- **WHEN** the admin deactivates the teacher and the link is then used to set a password
+- **THEN** the response is 401 with code `ACCOUNT_DEACTIVATED`, the teacher still has no password, and no session is started
+
 ### Requirement: R8 Admin issues password reset links
 An admin SHALL be able to issue a reset link for any account. After a reset, the old
 password MUST stop working and the account's other sessions MUST end.
@@ -145,16 +181,18 @@ password MUST stop working and the account's other sessions MUST end.
 #### Scenario: accounts/R8-S1 Admin issues a reset link
 - **GIVEN** a logged-in admin and a teacher account
 - **WHEN** the admin requests a reset link for the teacher
-- **THEN** the response is 201 with a link
+- **THEN** the response is 201 with a link that starts with the configured base URL (`APP_BASE_URL`) and carries the token in the URL fragment
 
 #### Scenario: accounts/R8-S2 Reset replaces the old password and ends sessions
 - **GIVEN** a logged-in student and a reset link issued for them
 - **WHEN** the link is used to set a new password
-- **THEN** the old password gets 401 on login and the student's earlier session gets 401
+- **THEN** the old password gets 401 on login, the student's earlier session gets 401, and the session started by the link stays valid
 
 ### Requirement: R9 Profile
 A logged-in user SHALL be able to change their name and time zone, and change their
 password by giving the current one. The time zone MUST be a valid IANA zone name.
+A successful password change MUST end the account's other sessions; the session that
+made the change stays valid.
 
 #### Scenario: accounts/R9-S1 Update name and time zone
 - **GIVEN** a logged-in student
@@ -170,3 +208,8 @@ password by giving the current one. The time zone MUST be a valid IANA zone name
 - **GIVEN** a logged-in teacher
 - **WHEN** the teacher changes the password giving a wrong current password
 - **THEN** the response is 400 and the old password still works
+
+#### Scenario: accounts/R9-S4 Password change ends other sessions
+- **GIVEN** a teacher logged in on two devices
+- **WHEN** the teacher changes the password on the first device, giving the correct current password
+- **THEN** the response is 204, the second device's session gets 401, the first device's session still works, and the teacher logs in with the new password

@@ -2,7 +2,8 @@
 
 ## Context
 
-Empty repository except `openspec/`. See proposal.md for scope. The constitution
+Builds on `backend-skeleton` (Spring Boot app, Gradle, Testcontainers test base)
+and `workflow` (coverage script). See proposal.md for scope. The constitution
 fixes the stack (Spring Boot, Postgres + Flyway, one domain with `/api/*` proxied,
 no CORS) and the test approach. This change is backend only.
 
@@ -21,18 +22,29 @@ no CORS) and the test approach. This change is backend only.
 ## Decisions
 
 ### D1. Versions and build
-Java 25 (LTS), latest stable Spring Boot, Gradle with Kotlin DSL. The implementer pins
-exact versions at setup.
+Versions and the build come from `backend-skeleton` (Java 25, Spring Boot, Gradle
+Kotlin DSL). This change adds Spring Security, Spring Data JDBC, Spring Session JDBC
+and Bean Validation (reasons in D3, D4).
 
-### D2. Backend layout — package by feature
-`com.teachdash.accounts`, `com.teachdash.common` (security, errors). Later features
-add their own packages. Alternative (layered `controller/service/repository` at top
-level) mixes features and grows badly.
+### D2. Backend layout — feature first, then role (constitution §3 "Code layout")
+```
+com/teachdash/
+  accounts/
+    api/            AdminController, AuthController, MeController, PasswordLinkController
+      dto/          LoginRequest, CreateTeacherRequest, UserResponse, ...
+    domain/         Role (pass 2: User, AccountService, PasswordLinkService)
+    persistence/    (pass 2: UserRepository, OneTimeTokenRepository)
+  common/           ClockConfig, SecurityConfig, error handling (ClockConfig: pass 2)
+```
+Classes used across subpackages are `public`. Alternative (one flat `accounts`
+package) mixes controllers, DTOs and domain and grows badly in pass 2.
 
 ### D3. Persistence — Spring Data JDBC
 Simple aggregates, explicit SQL in Flyway, no lazy-loading surprises.
 Alternative: JPA/Hibernate — more magic than this project needs.
 Dependency: `spring-boot-starter-data-jdbc`.
+Request validation (e.g. password rules, required fields) uses Bean Validation:
+`spring-boot-starter-validation`, the standard Spring way, instead of hand-written checks.
 
 ### D4. Authentication — server-side session + cookie
 Spring Security with a JSON login endpoint, `HttpSession` stored in Postgres via
@@ -40,18 +52,39 @@ Spring Security with a JSON login endpoint, `HttpSession` stored in Postgres via
 restarts and can be ended per user (deactivation, password reset).
 Cookie: `HttpOnly`, `SameSite=Lax`, `Secure` in prod. CSRF protection with a
 cookie-held token (`XSRF-TOKEN` → `X-XSRF-TOKEN` header), which the future SPA sends.
+The token cookie is set eagerly on every response, also for anonymous requests
+(a logged-out `GET /api/me` returns 401 and sets `XSRF-TOKEN`), and the raw cookie
+value is accepted in the header (SPA-style handler), so a client can log in.
 Alternative: JWT — no clean way to revoke sessions, and no benefit on one domain.
 Passwords: Spring Security `DelegatingPasswordEncoder` (bcrypt).
+Session contents (tests create sessions this way, D11): the `SecurityContext` under
+`SPRING_SECURITY_CONTEXT` holds a standard Spring `User` principal whose name is
+the **user's id (UUID)**, authorities `ROLE_ADMIN` / `ROLE_TEACHER` / `ROLE_STUDENT`;
+no custom principal class. The current user is looked up by id from
+`authentication.getName()`. Spring Session defaults: `SESSION` cookie (base64 id),
+JDK-serialized attributes, principal-name index = user id. Using the id, not the
+email, means a login typed in another letter case still lands on the same index,
+so deactivation and reset (R6, R8) always find every session, and a later email
+change does not orphan sessions. Login therefore looks the user up by
+case-insensitive email and builds the principal from the stored id.
 
 ### D5. One-time links
-Token = 32 random bytes, base64url. Only the SHA-256 hash is stored, with purpose
+Token = 32 random bytes, base64url. Only the hash is stored —
+`hex(SHA-256(UTF-8 bytes of the base64url string))`, 64 characters — with purpose
 (`SET_PASSWORD`, `RESET_PASSWORD`), account, expiry (7 days), `used_at`. Issuing a
-new token marks older unused tokens of that account as used. The API returns the
-full URL built from `APP_BASE_URL`: `{base}/set-password?token=…`. The token service
+new token marks older unused tokens of that account as used, in the same transaction;
+a partial unique index (D9) guarantees at most one unused token per account even with
+concurrent requests: a concurrent duplicate fails instead of leaving two valid links. The API
+returns the full URL built from `APP_BASE_URL`: `{base}/set-password#token=…`. The
+token never appears in a URL that reaches a server: it is in the fragment of the page
+link (browsers do not send fragments) and in the JSON body of the API call (D8), so
+proxy access logs (Caddy → Grafana) never contain it. The token service
 is reusable: `student-enrolment` will issue links for students through it.
 
 ### D6. Time source
-A `Clock` bean, so tests can move time (R7-S3 expiry) without sleeping.
+A `Clock` bean, so tests can move time (R7-S3 expiry) without sleeping. Tests supply
+their own `Clock` (`TestClockConfig`, `@Primary` so it wins over the production bean);
+the production `ClockConfig` is added in pass 2.
 
 ### D7. Errors
 RFC 7807 `ProblemDetail` for all errors, with a machine-readable `code` property
@@ -66,30 +99,74 @@ RFC 7807 `ProblemDetail` for all errors, with a machine-readable `code` property
 | GET | `/me` | any | R2, R9 |
 | PATCH | `/me` | any | R9 |
 | POST | `/me/password` | any | R9 |
-| POST | `/password-links/{token}` | — | R7 |
+| POST | `/password-links` | — | R7 |
 | GET/POST | `/admin/teachers` | admin | R4, R5 |
 | POST | `/admin/teachers/{id}/deactivate`, `/reactivate` | admin | R6 |
 | POST | `/admin/users/{id}/reset-link` | admin | R8 |
 
+JSON shapes:
+- User (`GET/PATCH /me`, teacher list items): `id`, `name`, `email`, `role`
+  (`ADMIN` / `TEACHER` / `STUDENT`), `timeZone` (IANA id, e.g. `Europe/Moscow`).
+- `POST /auth/login`: `{email, password}`. `PATCH /me`: `{name, timeZone}`.
+  `POST /me/password`: `{currentPassword, newPassword}`.
+- `POST /admin/teachers`: request `{name, email, timeZone}`, response 201
+  `{id, setPasswordLink}`.
+- `POST /admin/users/{id}/reset-link`: response `{link}`.
+- `POST /password-links`: request `{token, password}`; 200 starts a session; a used,
+  expired or replaced link returns 410. The token is never in the path or query.
+- Errors: `ProblemDetail` with a top-level `code` property (D7).
+
 ### D9. Data model and Flyway migrations
 - `V1__accounts.sql` — `users` (id uuid, email, name, role, password_hash nullable,
   time_zone, active, created_at; unique index on `lower(email)`),
-  `one_time_tokens` (token_hash, user_id, purpose, expires_at, used_at, created_at).
-- `V2__spring_session.sql` — Spring Session JDBC tables (copied from its schema).
+  `one_time_tokens` (token_hash, user_id, purpose, expires_at, used_at, created_at;
+  partial unique index on `user_id` where `used_at is null` — at most one unused
+  token per account, D5).
+- `V2__spring_session.sql` — Spring Session JDBC tables, unchanged from its
+  schema. `principal_name` holds the user id (36 characters, D4), so the default
+  `varchar(100)` fits.
+
+Both are written in pass 1 (tests need the schema) and are reviewed as production
+code at the tests gate. They are not applied anywhere yet, so they may still be
+edited until this change merges.
 
 ### D10. Admin bootstrap
-An `ApplicationRunner` reads `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` and creates
+An `ApplicationRunner` reads the properties `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`
+(by these exact names, e.g. `${ADMIN_EMAIL}`, not relaxed-bound `admin.*`) and creates
 the admin only if no admin exists (R1).
 
 ### D11. Tests and local run
-- A base class `ApiTest` starts the app on a random port with a Testcontainers
-  Postgres (reused across tests), cleans tables between tests, and offers helpers to
-  create users of any role directly and log in (RestAssured with cookie + CSRF).
-  Student accounts in tests are created by the helper, since enrolment does not
-  exist yet.
-- `scripts/check-scenario-coverage.sh`: collects scenario IDs from
-  `openspec/specs/**/spec.md` and `openspec/changes/*/specs/**/spec.md` (excluding
-  `archive/`) and fails if any ID has no `@DisplayName("[<id>]` in `backend/src/test`.
+- `ApiTest` (from `backend-skeleton`: app on a random port, shared Testcontainers
+  Postgres, tables cleaned between tests) gets accounts helpers:
+  - create users of any role directly in the database (students too, since
+    enrolment does not exist yet);
+  - create one-time tokens directly: 32 random bytes, base64url, hashed as in D5
+    with a library function (no hand-written hex);
+  - `loggedInAs(user)` creates the session **directly in the session store**, not
+    through `/auth/login`, so tests that are not about login never depend on an
+    unimplemented endpoint and fail at their THEN step. Only R2 tests call
+    `/auth/login`.
+- `TestClient` uses RestAssured's `CookieFilter` for cookies (no hand-written cookie
+  jar). A new client makes its own
+  `XSRF-TOKEN` cookie + header pair (double-submit), so `login()` is one POST with no
+  extra GETs. The header always carries the current `XSRF-TOKEN` cookie value, so a
+  token the server rotates on login is picked up; `snapshot()` keeps that setting.
+  Known gap: no test checks that the server sets `XSRF-TOKEN` on every
+  response (D4); `cabinets-ui` E2E tests cover it.
+- `MutableClock` (the movable test clock for D6): one shared instant; `withZone(z)`
+  returns a clock with that zone over the same instant, so zone bugs are not hidden.
+- R1 tests run the real bootstrap `ApplicationRunner` bean from a cached test
+  context that has the `ADMIN_*` properties set, calling `run()` after the tables are
+  emptied ("the application starts"). No second Spring app per test.
+- `TestClockConfig` stays `@TestConfiguration`, imported by `ApiTest`: Spring Boot's
+  test scan filter skips it, so the test clock exists only where imported (a plain
+  `@Configuration` there was checked: component scanning picks it up in every test).
+- Test setup sets `APP_BASE_URL`, so pass 2 can make it required.
+- `loggedInAs` uses the user's id as principal name (D4). Users created by helpers get a low-cost bcrypt hash (strength 4) to
+  keep tests fast; the app's encoder still verifies them.
+- R2-S2 checks "no session is started" directly: no `SESSION` cookie on the client
+  and no `spring_session` row.
+- Coverage: `scripts/check-scenario-coverage.sh` (from `workflow`), by hand until CI.
 - Local: `backend/Dockerfile` and `infra/docker-compose.yml` running Postgres and the
   backend (`docker compose up` from a fresh clone). `.env.example` lists every
   variable with dev defaults; `.env` is gitignored. CI comes in a separate task and
