@@ -7,7 +7,7 @@
 - [x] 1.2 Test helpers per design D11: users created directly, `loggedInAs()` via the session store, browser-like `TestClient` cookies, `login()` without extra GETs, zone-aware `MutableClock`; verify the smoke test passes
 - [x] 1.3 Stubs per design D2 layout: request/response records and controllers for every endpoint in D8 returning 501, each marked `STUB`; verify compilation
 - [x] 1.4 Flyway `V1__accounts.sql`, `V2__spring_session.sql` per design D9 (Spring Session schema unchanged; principal name = user id, D4); verify the app starts on an empty database
-- [x] 1.5 One test per scenario in `specs/accounts/spec.md` (30 scenarios), scenario ID in `@DisplayName`, `// given / when / then`; R2-S2 and R1 as in D11; verify they compile
+- [x] 1.5 One test per scenario in `specs/accounts/spec.md` (31 scenarios), scenario ID in `@DisplayName`, `// given / when / then`; R2-S2 and R1 as in D11; verify they compile
 - [x] 1.6 Run `scripts/check-scenario-coverage.sh` and `./gradlew test`; verify every scenario test fails at its THEN step (501 or missing behaviour), none in setup; list any exceptions
 - [x] 1.7 PR description lists pass 1 production code (stubs: temporary; migrations: permanent, review as production code) and the commit range for the tests review
 - [x] 1.8 Fixes from the owner's tests review on PR #17 (design D11): R4-S4 CSRF test, `APP_BASE_URL` in test setup, R1-S2 checks the whole admin row, `loggedInAs` uses the stored email, drop `ExcludeTestClasses`, R1 without a second app per test, RestAssured `CookieFilter`, low-cost bcrypt for test users; verify every scenario test fails at its THEN
@@ -26,6 +26,8 @@
 - [x] 3.4 One-time links (issue, hash, expire, invalidate older, use) and profile endpoints; verify R7, R9 tests pass
 - [x] 3.5 Admin teacher management and admin reset links, ending sessions on deactivation/reset; verify R5, R6, R8 tests pass
 - [x] 3.6 Structured JSON logging and Actuator health; verify logs are JSON with no tokens or passwords, and full `./gradlew test` is green
+
+- [ ] 3.7 Fixes from the full code review (5.1): link use rejects deactivated accounts (R7-S6: failing test first, approved by the owner before the fix), new session survives link use in an already logged-in browser, concurrent link issue → 409 `LINK_CONFLICT`, `code` on every error incl. 404/405/415/500 and `/error` open, bootstrap logs no email, deactivation ends sessions after commit, Postgres gets only `POSTGRES_*`, token size limit, name trimmed on profile update
 
 ## 4. Local run
 

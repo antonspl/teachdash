@@ -141,6 +141,8 @@ the caller, a student, or an unknown id) MUST get 404 and change nothing.
 A set-password or reset-password link SHALL let its holder set a new password once.
 A link MUST be rejected after it is used, after 7 days, or after a newer link for the
 same account is issued. A successful use SHALL start a session for that account.
+A link for a deactivated account MUST be rejected with 401 `ACCOUNT_DEACTIVATED`
+and change nothing.
 
 #### Scenario: accounts/R7-S1 Valid link sets the password
 - **GIVEN** an unused set-password link issued 1 day ago
@@ -166,6 +168,11 @@ same account is issued. A successful use SHALL start a session for that account.
 - **GIVEN** an unused link
 - **WHEN** its holder sets a 7-character password
 - **THEN** the response is 400 and the link can still be used with a valid password
+
+#### Scenario: accounts/R7-S6 Link for a deactivated account is rejected
+- **GIVEN** an admin created a teacher and got a set-password link
+- **WHEN** the admin deactivates the teacher and the link is then used to set a password
+- **THEN** the response is 401 with code `ACCOUNT_DEACTIVATED`, the teacher still has no password, and no session is started
 
 ### Requirement: R8 Admin issues password reset links
 An admin SHALL be able to issue a reset link for any account. After a reset, the old

@@ -107,6 +107,33 @@ class PasswordLinkTest extends ApiTest {
 	}
 
 	@Test
+	@DisplayName("[accounts/R7-S6] Link for a deactivated account is rejected")
+	void linkForADeactivatedAccountIsRejected() {
+		// given an admin created a teacher and got a set-password link
+		TestClient admin = loggedInAdmin();
+		var created = admin.post("/api/admin/teachers",
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+		String token = tokenFrom(created.path("setPasswordLink"));
+		UUID teacherId = UUID.fromString(created.path("id"));
+		TestClient holder = newClient();
+
+		// when the admin deactivates the teacher and the link is then used to set a password
+		var deactivated = admin.post("/api/admin/teachers/" + teacherId + "/deactivate");
+		var response = useLink(holder, token, "new-password-1");
+
+		// then the response is 401 with code ACCOUNT_DEACTIVATED, the teacher still has no password, and no session is started
+		created.then().statusCode(201);
+		deactivated.then().statusCode(org.hamcrest.Matchers.lessThan(300));
+		response.then().statusCode(401).body("code", equalTo("ACCOUNT_DEACTIVATED"));
+		org.junit.jupiter.api.Assertions.assertNull(jdbc.sql("select password_hash from users where id = :id")
+				.param("id", teacherId).query(String.class).single());
+		org.junit.jupiter.api.Assertions.assertNull(holder.cookie("SESSION"));
+		org.junit.jupiter.api.Assertions.assertEquals(0, jdbc.sql(
+				"select count(*) from spring_session where principal_name = :id")
+				.param("id", teacherId.toString()).query(Long.class).single());
+	}
+
+	@Test
 	@DisplayName("[accounts/R8-S1] Admin issues a reset link")
 	void adminIssuesAResetLink() {
 		// given a logged-in admin and a teacher account
