@@ -1,5 +1,6 @@
 package com.teachdash.accounts.api.dto;
 
-// STUB: compile scaffolding for pass 1; pass 2 may keep or rewrite it
-public record UpdateProfileRequest(String name, String timeZone) {
+import jakarta.validation.constraints.NotBlank;
+
+public record UpdateProfileRequest(@NotBlank String name, @NotBlank String timeZone) {
 }

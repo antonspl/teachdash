@@ -1,5 +1,6 @@
 package com.teachdash.accounts.api.dto;
 
-// STUB: compile scaffolding for pass 1; pass 2 may keep or rewrite it
-public record LoginRequest(String email, String password) {
+import jakarta.validation.constraints.NotBlank;
+
+public record LoginRequest(@NotBlank String email, @NotBlank String password) {
 }
