@@ -85,15 +85,15 @@ without a valid CSRF token MUST be rejected with 403.
 - **WHEN** the student calls the admin endpoint that lists teachers
 - **THEN** the response is 403
 
-#### Scenario: accounts/R4-S5 Non-admins cannot call admin endpoints that change data
-- **GIVEN** a logged-in teacher, a logged-in student, the admin account and another teacher
-- **WHEN** the teacher and the student each call every admin endpoint that changes data: create a teacher, deactivate and reactivate the other teacher, issue a reset link for the admin
-- **THEN** every response is 403, no account is created or changed, and no link is issued
-
 #### Scenario: accounts/R4-S4 Request without CSRF token is rejected
 - **GIVEN** a logged-in teacher
 - **WHEN** the teacher changes their profile without sending the CSRF token, and then sends the same request with the token
 - **THEN** the first response is 403 and leaves the profile unchanged, and the second response is 200
+
+#### Scenario: accounts/R4-S5 Non-admins cannot call admin endpoints that change data
+- **GIVEN** a logged-in teacher, a logged-in student, the admin account and another teacher
+- **WHEN** the teacher and the student each call every admin endpoint that changes data: create a teacher, deactivate and reactivate the other teacher, issue a reset link for the admin
+- **THEN** every response is 403, no account is created or changed, and no link is issued
 
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.

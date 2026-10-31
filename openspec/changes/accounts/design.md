@@ -74,7 +74,7 @@ Token = 32 random bytes, base64url. Only the hash is stored —
 (`SET_PASSWORD`, `RESET_PASSWORD`), account, expiry (7 days), `used_at`. Issuing a
 new token marks older unused tokens of that account as used, in the same transaction;
 a partial unique index (D9) guarantees at most one unused token per account even with
-concurrent requests (a losing request gets a conflict and retries once). The API
+concurrent requests: a concurrent duplicate fails instead of leaving two valid links. The API
 returns the full URL built from `APP_BASE_URL`: `{base}/set-password#token=…`. The
 token never appears in a URL that reaches a server: it is in the fragment of the page
 link (browsers do not send fragments) and in the JSON body of the API call (D8), so
@@ -83,7 +83,8 @@ is reusable: `student-enrolment` will issue links for students through it.
 
 ### D6. Time source
 A `Clock` bean, so tests can move time (R7-S3 expiry) without sleeping. Tests supply
-their own `Clock` (`TestClockConfig`); the production `ClockConfig` is added in pass 2.
+their own `Clock` (`TestClockConfig`, `@Primary` so it wins over the production bean);
+the production `ClockConfig` is added in pass 2.
 
 ### D7. Errors
 RFC 7807 `ProblemDetail` for all errors, with a machine-readable `code` property
