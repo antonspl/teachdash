@@ -29,7 +29,7 @@
 
 ## 4. Local run
 
-- [ ] 4.1 `backend/Dockerfile`, `infra/docker-compose.yml` (Postgres + backend), `.env.example` with dev defaults for every variable, README "Run locally" section; verify `docker compose up` from a fresh clone starts the backend, the admin can log in, and `/actuator/health` is UP
+- [x] 4.1 `backend/Dockerfile`, `infra/docker-compose.yml` (Postgres + backend), `.env.example` with dev defaults for every variable, README "Run locally" section; verify `docker compose up` from a fresh clone starts the backend, the admin can log in, and `/actuator/health` is UP
 
 ## 5. Review
 
