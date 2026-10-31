@@ -12,7 +12,7 @@ Before starting, read `openspec/constitution.md` and the change's `proposal.md`,
 Rules:
 - Pass 1 (tests): write one test per scenario as the constitution says, add stubs so
   they compile, run them, confirm they fail for the right reason. No production code.
-- Pass 2 (code): make the tests pass. Never modify tests the owner has approved; if
+- Pass 2 (code): make the tests pass. Never modify tests a reviewer has approved; if
   one looks wrong, stop and report it instead.
 - Run the relevant test suite before finishing and tick completed tasks in `tasks.md`.
 
