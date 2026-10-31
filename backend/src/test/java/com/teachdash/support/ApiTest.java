@@ -19,7 +19,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
@@ -43,10 +43,11 @@ public abstract class ApiTest {
 		registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
 		registry.add("spring.datasource.username", POSTGRES::getUsername);
 		registry.add("spring.datasource.password", POSTGRES::getPassword);
+		registry.add("APP_BASE_URL", () -> "http://localhost:5173");
 	}
 
-	protected static final PasswordEncoder PASSWORD_ENCODER =
-			PasswordEncoderFactories.createDelegatingPasswordEncoder();
+	// low cost keeps tests fast; the app's delegating encoder verifies the {bcrypt} prefix
+	private static final PasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder(4);
 
 	@LocalServerPort
 	protected int port;
@@ -85,10 +86,6 @@ public abstract class ApiTest {
 		return new TestClient(port);
 	}
 
-	protected TestClient newClient(int otherPort) {
-		return new TestClient(otherPort);
-	}
-
 	protected static String tokenFrom(String link) {
 		return link.substring(link.indexOf("token=") + "token=".length());
 	}
@@ -104,7 +101,7 @@ public abstract class ApiTest {
 				.param("email", email)
 				.param("name", name)
 				.param("role", role)
-				.param("hash", password == null ? null : PASSWORD_ENCODER.encode(password))
+				.param("hash", password == null ? null : "{bcrypt}" + PASSWORD_ENCODER.encode(password))
 				.param("active", active)
 				.param("now", Timestamp.from(Instant.now(clock)))
 				.update();
@@ -130,14 +127,17 @@ public abstract class ApiTest {
 
 	/** Session is created in the store, not via /auth/login, so tests do not depend on it. */
 	protected TestClient loggedInAs(String email) {
-		String role = jdbc.sql("select role from users where lower(email) = lower(:email)")
-				.param("email", email).query(String.class).single();
+		var user = jdbc.sql("select role, email from users where lower(email) = lower(:email)")
+				.param("email", email).query((rs, i) -> new String[] { rs.getString("role"), rs.getString("email") })
+				.single();
+		String role = user[0];
+		String storedEmail = user[1];
 		var authentication = UsernamePasswordAuthenticationToken.authenticated(
-				new User(email, "", AuthorityUtils.createAuthorityList("ROLE_" + role)), null,
+				new User(storedEmail, "", AuthorityUtils.createAuthorityList("ROLE_" + role)), null,
 				AuthorityUtils.createAuthorityList("ROLE_" + role));
 		org.springframework.session.Session session = sessions.createSession();
 		session.setAttribute("SPRING_SECURITY_CONTEXT", new SecurityContextImpl(authentication));
-		session.setAttribute(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, email);
+		session.setAttribute(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, storedEmail);
 		session.setMaxInactiveInterval(Duration.ofMinutes(30));
 		saveSession(session);
 		String cookie = Base64.getEncoder().encodeToString(session.getId().getBytes(StandardCharsets.UTF_8));

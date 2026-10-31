@@ -1,88 +1,75 @@
 package com.teachdash.accounts;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.Environment;
+import org.springframework.boot.DefaultApplicationArguments;
+import org.springframework.test.context.TestPropertySource;
 
-import java.time.Clock;
-
-import com.teachdash.TeachdashApplication;
+import com.teachdash.accounts.domain.AdminBootstrap;
 import com.teachdash.support.ApiTest;
-import com.teachdash.support.ExcludeTestClasses;
-import com.teachdash.support.MutableClock;
-import com.teachdash.support.TestClient;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-/** R1. Starts a second app like production: test classes are not scanned. */
+/** R1. "The application starts" = running the real bootstrap runner after the tables are emptied. */
+@TestPropertySource(properties = { "ADMIN_EMAIL=boss@example.com", "ADMIN_NAME=The Boss",
+		"ADMIN_PASSWORD=different-password" })
 class BootstrapTest extends ApiTest {
 
 	@Autowired
-	private Environment environment;
+	private AdminBootstrap bootstrap;
 
-	private ConfigurableApplicationContext startApplication(String adminPassword) {
-		ConfigurableApplicationContext app = new SpringApplicationBuilder(TeachdashApplication.class)
-				.initializers(ctx -> ctx.getBeanFactory().registerSingleton("excludeTestClasses",
-						new ExcludeTestClasses()))
-				.run(
-				"--server.port=0",
-				"--spring.datasource.url=" + environment.getProperty("spring.datasource.url"),
-				"--spring.datasource.username=" + environment.getProperty("spring.datasource.username"),
-				"--spring.datasource.password=" + environment.getProperty("spring.datasource.password"),
-				"--ADMIN_EMAIL=boss@example.com",
-				"--ADMIN_PASSWORD=" + adminPassword,
-				"--ADMIN_NAME=The Boss");
-		assertTrue(app.getBeansOfType(MutableClock.class).isEmpty(), "test beans must not be in the context");
-		assertFalse(app.getBean(Clock.class) instanceof MutableClock, "the real Clock must be used");
-		return app;
+	private void startApplication() throws Exception {
+		bootstrap.run(new DefaultApplicationArguments());
 	}
 
 	private long countUsers() {
 		return jdbc.sql("select count(*) from users").query(Long.class).single();
 	}
 
+	private Map<String, Object> adminRow() {
+		return jdbc.sql("""
+				select email, name, password_hash, role, active, created_at from users
+				where email = 'admin@example.com'
+				""").query().singleRow();
+	}
+
 	@Test
 	@DisplayName("[accounts/R1-S1] First start creates the admin")
-	void firstStartCreatesTheAdmin() {
+	void firstStartCreatesTheAdmin() throws Exception {
 		// given an empty database and the admin variables are set
 		assertEquals(0, countUsers());
 
 		// when the application starts
-		try (ConfigurableApplicationContext app = startApplication("first-password-1")) {
-			int appPort = Integer.parseInt(app.getEnvironment().getProperty("local.server.port"));
+		startApplication();
 
-			// then an admin account with that email exists and can log in with that password
-			assertEquals(1, jdbc.sql("select count(*) from users where role = 'ADMIN' and active "
-					+ "and lower(email) = 'boss@example.com'").query(Long.class).single());
-			TestClient client = newClient(appPort);
-			client.login("boss@example.com", "first-password-1").then().statusCode(200);
-			client.get("/api/me").then().statusCode(200)
-					.body("role", equalTo("ADMIN"))
-					.body("name", equalTo("The Boss"));
-		}
+		// then an admin account with that email exists and can log in with that password
+		assertEquals(1, jdbc.sql("select count(*) from users where role = 'ADMIN' and active "
+				+ "and lower(email) = 'boss@example.com'").query(Long.class).single());
+		var client = newClient();
+		client.login("boss@example.com", "different-password").then().statusCode(200);
+		client.get("/api/me").then().statusCode(200)
+				.body("role", equalTo("ADMIN"))
+				.body("name", equalTo("The Boss"));
 	}
 
 	@Test
 	@DisplayName("[accounts/R1-S2] Existing admin is not changed")
-	void existingAdminIsNotChanged() {
+	void existingAdminIsNotChanged() throws Exception {
 		// given an admin account exists with password "old-password"
 		createAdmin("admin@example.com", "old-password");
+		Map<String, Object> before = adminRow();
 
 		// when the application starts with ADMIN_PASSWORD set to a different value
-		try (ConfigurableApplicationContext app = startApplication("different-password")) {
-			int appPort = Integer.parseInt(app.getEnvironment().getProperty("local.server.port"));
+		startApplication();
 
-			// then no new account is created and the admin still logs in with "old-password"
-			assertEquals(1, countUsers());
-			newClient(appPort).login("admin@example.com", "old-password").then().statusCode(200);
-			newClient(appPort).login("admin@example.com", "different-password").then().statusCode(401);
-		}
+		// then no new account is created, the admin account is unchanged, and it still logs in with "old-password"
+		assertEquals(1, countUsers());
+		assertEquals(before, adminRow());
+		newClient().login("admin@example.com", "old-password").then().statusCode(200);
+		newClient().login("admin@example.com", "different-password").then().statusCode(401);
 	}
 }

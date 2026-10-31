@@ -1,5 +1,9 @@
 package com.teachdash.accounts.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.Map;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -46,5 +50,22 @@ class AccessControlTest extends ApiTest {
 
 		// then the response is 403
 		response.then().statusCode(403);
+	}
+
+	@Test
+	@DisplayName("[accounts/R4-S4] Request without CSRF token is rejected")
+	void requestWithoutCsrfTokenIsRejected() {
+		// given a logged-in teacher
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		var teacher = loggedInAs("teacher@example.com");
+
+		// when the teacher changes their profile without sending the CSRF token
+		var response = teacher.withoutCsrfToken()
+				.patch("/api/me", Map.of("name", "Changed Name", "timeZone", "UTC"));
+
+		// then the response is 403 and the profile does not change
+		response.then().statusCode(403);
+		assertEquals("Teacher", jdbc.sql("select name from users where email = 'teacher@example.com'")
+				.query(String.class).single());
 	}
 }

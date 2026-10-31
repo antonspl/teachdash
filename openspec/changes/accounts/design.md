@@ -132,15 +132,23 @@ the admin only if no admin exists (R1).
     through `/auth/login`, so tests that are not about login never depend on an
     unimplemented endpoint and fail at their THEN step. Only R2 tests call
     `/auth/login`.
-- `TestClient` keeps cookies like a browser: keyed by name and path, a cookie with
-  `Max-Age=0` deletes it, later `Set-Cookie` headers win. A new client makes its own
+- `TestClient` uses RestAssured's `CookieFilter` for cookies (no hand-written cookie
+  jar). A new client makes its own
   `XSRF-TOKEN` cookie + header pair (double-submit), so `login()` is one POST with no
   extra GETs. Known gap: no test checks that the server sets `XSRF-TOKEN` on every
   response (D4); `cabinets-ui` E2E tests cover it.
 - `MutableClock` (the movable test clock for D6): one shared instant; `withZone(z)`
   returns a clock with that zone over the same instant, so zone bugs are not hidden.
-- The R1 bootstrap test starts the app like production: only main configuration,
-  the real `Clock`, no test beans (test configuration is not component-scanned).
+- R1 tests run the real bootstrap `ApplicationRunner` bean from a cached test
+  context that has the `ADMIN_*` properties set, calling `run()` after the tables are
+  emptied ("the application starts"). No second Spring app per test.
+- `TestClockConfig` stays `@TestConfiguration`, imported by `ApiTest`: Spring Boot's
+  test scan filter skips it, so the test clock exists only where imported (a plain
+  `@Configuration` there was checked: component scanning picks it up in every test).
+- Test setup sets `APP_BASE_URL`, so pass 2 can make it required.
+- `loggedInAs` uses the email as stored in the database (principal name = stored
+  email, D9). Users created by helpers get a low-cost bcrypt hash (strength 4) to
+  keep tests fast; the app's encoder still verifies them.
 - R2-S2 checks "no session is started" directly: no `SESSION` cookie on the client
   and no `spring_session` row.
 - Coverage: `scripts/check-scenario-coverage.sh` (from `workflow`), by hand until CI.

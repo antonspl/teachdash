@@ -20,7 +20,7 @@ values. If an admin already exists, the system MUST NOT create or change any acc
 #### Scenario: accounts/R1-S2 Existing admin is not changed
 - **GIVEN** an admin account exists with password "old-password"
 - **WHEN** the application starts with `ADMIN_PASSWORD` set to a different value
-- **THEN** no new account is created and the admin still logs in with "old-password"
+- **THEN** no new account is created, the admin account is unchanged (email, name, password hash, role, active), and the admin still logs in with "old-password"
 
 ### Requirement: R2 Login with email and password
 The system SHALL sign in an active account with a matching email and password and
@@ -63,7 +63,8 @@ The system SHALL end the current session on logout.
 ### Requirement: R4 Role-based access
 Every endpoint except login and set-password-by-link SHALL require a session. Admin
 endpoints SHALL be allowed only for admins. Later capabilities apply the same rule to
-teacher and student endpoints.
+teacher and student endpoints. A state-changing request (POST, PUT, PATCH, DELETE)
+without a valid CSRF token MUST be rejected with 403.
 
 #### Scenario: accounts/R4-S1 No session is rejected
 - **WHEN** a request without a session calls the current-user endpoint
@@ -78,6 +79,11 @@ teacher and student endpoints.
 - **GIVEN** a logged-in student
 - **WHEN** the student calls the admin endpoint that lists teachers
 - **THEN** the response is 403
+
+#### Scenario: accounts/R4-S4 Request without CSRF token is rejected
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher changes their profile without sending the CSRF token
+- **THEN** the response is 403 and the profile does not change
 
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.
