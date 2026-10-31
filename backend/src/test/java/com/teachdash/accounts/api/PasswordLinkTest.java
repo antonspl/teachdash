@@ -126,7 +126,7 @@ class PasswordLinkTest extends ApiTest {
 		deactivated.then().statusCode(org.hamcrest.Matchers.lessThan(300));
 		response.then().statusCode(401).body("code", equalTo("ACCOUNT_DEACTIVATED"));
 		org.junit.jupiter.api.Assertions.assertNull(jdbc.sql("select password_hash from users where id = :id")
-				.param("id", teacherId).query(String.class).single());
+				.param("id", teacherId).query(String.class).optional().orElse(null));
 		org.junit.jupiter.api.Assertions.assertNull(holder.cookie("SESSION"));
 		org.junit.jupiter.api.Assertions.assertEquals(0, jdbc.sql(
 				"select count(*) from spring_session where principal_name = :id")
