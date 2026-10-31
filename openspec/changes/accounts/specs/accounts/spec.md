@@ -66,7 +66,8 @@ The system SHALL end the current session on logout.
 - **THEN** the current-user endpoint returns 401 for that session
 
 ### Requirement: R4 Role-based access
-Every endpoint except login and set-password-by-link SHALL require a session. Admin
+Every endpoint except login, set-password-by-link and the health check
+(`/actuator/health`) SHALL require a session. Admin
 endpoints SHALL be allowed only for admins. Later capabilities apply the same rule to
 teacher and student endpoints. A state-changing request (POST, PUT, PATCH, DELETE)
 without a valid CSRF token MUST be rejected with 403.
@@ -117,17 +118,24 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 
 ### Requirement: R6 Admin deactivates and reactivates teachers
 An admin SHALL be able to deactivate and reactivate a teacher account. Deactivation
-MUST end the teacher's active sessions.
+MUST end the teacher's active sessions. Only teacher accounts can be deactivated or
+reactivated through these endpoints: an id that is not a teacher (an admin, including
+the caller, a student, or an unknown id) MUST get 404 and change nothing.
 
 #### Scenario: accounts/R6-S1 Deactivation ends sessions and blocks login
 - **GIVEN** a logged-in teacher
 - **WHEN** the admin deactivates the teacher
-- **THEN** the teacher's existing session gets 401 and a new login gets 401
+- **THEN** the teacher's existing session gets 401 and a new login gets 401 with code `ACCOUNT_DEACTIVATED`
 
 #### Scenario: accounts/R6-S2 Reactivated teacher can log in
 - **GIVEN** a deactivated teacher
 - **WHEN** the admin reactivates the teacher
 - **THEN** the teacher can log in with their password
+
+#### Scenario: accounts/R6-S3 Only teachers can be deactivated
+- **GIVEN** a logged-in admin and a student account
+- **WHEN** the admin tries to deactivate their own account and the student's account
+- **THEN** both responses are 404, both accounts stay active, and the admin's session still works
 
 ### Requirement: R7 Single-use password links
 A set-password or reset-password link SHALL let its holder set a new password once.

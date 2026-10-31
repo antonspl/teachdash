@@ -88,10 +88,30 @@ class TeacherManagementTest extends ApiTest {
 		// when the admin deactivates the teacher
 		var response = admin.post("/api/admin/teachers/" + teacherId + "/deactivate");
 
-		// then the call succeeds, the teacher's existing session gets 401 and a new login gets 401
+		// then the call succeeds, the teacher's existing session gets 401 and a new login gets 401 with code ACCOUNT_DEACTIVATED
 		response.then().statusCode(lessThan(300));
 		teacher.get("/api/me").then().statusCode(401);
-		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(401);
+		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(401)
+				.body("code", equalTo("ACCOUNT_DEACTIVATED"));
+	}
+
+	@Test
+	@DisplayName("[accounts/R6-S3] Only teachers can be deactivated")
+	void onlyTeachersCanBeDeactivated() {
+		// given a logged-in admin and a student account
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		UUID studentId = createStudent("student@example.com", "student-pass-1");
+		TestClient admin = loggedInAs("admin@example.com");
+
+		// when the admin tries to deactivate their own account and the student's account
+		var ownResponse = admin.post("/api/admin/teachers/" + adminId + "/deactivate");
+		var studentResponse = admin.post("/api/admin/teachers/" + studentId + "/deactivate");
+
+		// then both responses are 404, both accounts stay active, and the admin's session still works
+		ownResponse.then().statusCode(404);
+		studentResponse.then().statusCode(404);
+		assertEquals(2, jdbc.sql("select count(*) from users where active").query(Long.class).single());
+		admin.get("/api/me").then().statusCode(200);
 	}
 
 	@Test
