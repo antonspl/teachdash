@@ -62,15 +62,27 @@ public class PasswordLinkService {
 		return baseUrl + "/set-password#token=" + token;
 	}
 
+	/** Makes all unused links of the account unusable. */
+	public void invalidateLinks(UUID userId) {
+		tokens.markUnusedAsUsed(userId, clock.instant());
+	}
+
 	/** Sets the password, consumes the link and ends the account's sessions; returns the user. */
 	@Transactional
 	public User use(String token, String password) {
 		AccountService.requireEncodable(password);
 		OneTimeToken stored = tokens.findById(hash(token)).orElseThrow(PasswordLinkService::invalid);
-		if (tokens.markUsed(stored.getId(), clock.instant()) != 1) {
+		Instant now = clock.instant();
+		User user = users.findById(stored.getUserId()).orElseThrow(PasswordLinkService::invalid);
+		if (!user.isActive()) {
+			throw new ApiException(HttpStatus.UNAUTHORIZED, "ACCOUNT_DEACTIVATED");
+		}
+		if (stored.getUsedAt() != null || !stored.getExpiresAt().isAfter(now)) {
 			throw invalid();
 		}
-		User user = users.findById(stored.getUserId()).orElseThrow(PasswordLinkService::invalid);
+		if (tokens.markUsed(stored.getId(), now) != 1) {
+			throw invalid();
+		}
 		user.setPasswordHash(passwordEncoder.encode(password));
 		users.save(user);
 		accounts.endSessions(user.getId());

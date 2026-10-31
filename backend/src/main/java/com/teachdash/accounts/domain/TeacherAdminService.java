@@ -56,6 +56,7 @@ public class TeacherAdminService {
 		teacher.setActive(active);
 		users.save(teacher);
 		if (!active) {
+			links.invalidateLinks(id);
 			accounts.endSessions(id);
 		}
 	}
