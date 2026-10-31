@@ -58,11 +58,15 @@ value is accepted in the header (SPA-style handler), so a client can log in.
 Alternative: JWT — no clean way to revoke sessions, and no benefit on one domain.
 Passwords: Spring Security `DelegatingPasswordEncoder` (bcrypt).
 Session contents (tests create sessions this way, D11): the `SecurityContext` under
-`SPRING_SECURITY_CONTEXT` holds a standard Spring `User` principal, name = email,
-authorities `ROLE_ADMIN` / `ROLE_TEACHER` / `ROLE_STUDENT`; no custom principal
-class. The current user is looked up by `authentication.getName()`. Spring Session
-defaults: `SESSION` cookie (base64 id), JDK-serialized attributes, principal-name
-index = email.
+`SPRING_SECURITY_CONTEXT` holds a standard Spring `User` principal whose name is
+the **user's id (UUID)**, authorities `ROLE_ADMIN` / `ROLE_TEACHER` / `ROLE_STUDENT`;
+no custom principal class. The current user is looked up by id from
+`authentication.getName()`. Spring Session defaults: `SESSION` cookie (base64 id),
+JDK-serialized attributes, principal-name index = user id. Using the id, not the
+email, means a login typed in another letter case still lands on the same index,
+so deactivation and reset (R6, R8) always find every session, and a later email
+change does not orphan sessions. Login therefore looks the user up by
+case-insensitive email and builds the principal from the stored id.
 
 ### D5. One-time links
 Token = 32 random bytes, base64url. Only the hash is stored —
@@ -109,10 +113,9 @@ JSON shapes:
 - `V1__accounts.sql` — `users` (id uuid, email, name, role, password_hash nullable,
   time_zone, active, created_at; unique index on `lower(email)`),
   `one_time_tokens` (token_hash, user_id, purpose, expires_at, used_at, created_at).
-- `V2__spring_session.sql` — Spring Session JDBC tables (copied from its schema),
-  with `principal_name` widened to `varchar(320)` to match `users.email`; with the
-  default `varchar(100)` a long email fails on session save, and R6/R8 cannot find
-  that user's sessions.
+- `V2__spring_session.sql` — Spring Session JDBC tables, unchanged from its
+  schema. `principal_name` holds the user id (36 characters, D4), so the default
+  `varchar(100)` fits.
 
 Both are written in pass 1 (tests need the schema) and are reviewed as production
 code at the tests gate. They are not applied anywhere yet, so they may still be
@@ -128,6 +131,8 @@ the admin only if no admin exists (R1).
   Postgres, tables cleaned between tests) gets accounts helpers:
   - create users of any role directly in the database (students too, since
     enrolment does not exist yet);
+  - create one-time tokens directly: 32 random bytes, base64url, hashed as in D5
+    with a library function (no hand-written hex);
   - `loggedInAs(user)` creates the session **directly in the session store**, not
     through `/auth/login`, so tests that are not about login never depend on an
     unimplemented endpoint and fail at their THEN step. Only R2 tests call
@@ -135,7 +140,8 @@ the admin only if no admin exists (R1).
 - `TestClient` uses RestAssured's `CookieFilter` for cookies (no hand-written cookie
   jar). A new client makes its own
   `XSRF-TOKEN` cookie + header pair (double-submit), so `login()` is one POST with no
-  extra GETs. Known gap: no test checks that the server sets `XSRF-TOKEN` on every
+  extra GETs. The header always carries the current `XSRF-TOKEN` cookie value, so a
+  token the server rotates on login is picked up; `snapshot()` keeps that setting. Known gap: no test checks that the server sets `XSRF-TOKEN` on every
   response (D4); `cabinets-ui` E2E tests cover it.
 - `MutableClock` (the movable test clock for D6): one shared instant; `withZone(z)`
   returns a clock with that zone over the same instant, so zone bugs are not hidden.
@@ -146,8 +152,7 @@ the admin only if no admin exists (R1).
   test scan filter skips it, so the test clock exists only where imported (a plain
   `@Configuration` there was checked: component scanning picks it up in every test).
 - Test setup sets `APP_BASE_URL`, so pass 2 can make it required.
-- `loggedInAs` uses the email as stored in the database (principal name = stored
-  email, D9). Users created by helpers get a low-cost bcrypt hash (strength 4) to
+- `loggedInAs` uses the user's id as principal name (D4). Users created by helpers get a low-cost bcrypt hash (strength 4) to
   keep tests fast; the app's encoder still verifies them.
 - R2-S2 checks "no session is started" directly: no `SESSION` cookie on the client
   and no `spring_session` row.

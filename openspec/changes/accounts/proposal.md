@@ -19,6 +19,7 @@ Questions asked on 2026-10-28 and the owner's answers.
 | 11 | Where do the backend skeleton and the coverage script live? (PR #17 review, 2026-10-31) | In separate PRs merged before this one: `backend-skeleton` (Spring Boot app, Gradle wrapper, Testcontainers test base, smoke test) and `workflow` (constitution, CONTRIBUTING, `scripts/check-scenario-coverage.sh`). |
 | 12 | May pass 1 add production code? (PR #17 review) | Only 501 stubs marked `STUB` and schema migrations. Migrations are reviewed as production code at the tests gate. |
 | 13 | Package layout? (PR #17 review) | Feature first, then role: `accounts/api`, `accounts/api/dto`, `accounts/domain`, `accounts/persistence`; shared code in `common`. |
+| 14 | Session principal: email or user id? (PR #17 tests review) | User id (UUID): no letter-case mismatch, survives email changes, fits Spring Session's default column. |
 
 Defaults chosen by Claude (owner may override during review):
 

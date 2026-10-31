@@ -44,6 +44,7 @@ public class TestClient {
 
 	public TestClient snapshot() {
 		TestClient copy = new TestClient(port);
+		copy.sendCsrfHeader = sendCsrfHeader;
 		copy.store().clear();
 		store().getCookies().forEach(copy.store()::addCookie);
 		return copy;

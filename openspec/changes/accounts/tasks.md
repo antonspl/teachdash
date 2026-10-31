@@ -6,10 +6,11 @@
 - [x] 1.1 Add the accounts dependencies (Security, Data JDBC, Spring Session JDBC, Validation) to `build.gradle.kts`
 - [x] 1.2 Test helpers per design D11: users created directly, `loggedInAs()` via the session store, browser-like `TestClient` cookies, `login()` without extra GETs, zone-aware `MutableClock`; verify the smoke test passes
 - [x] 1.3 Stubs per design D2 layout: request/response records and controllers for every endpoint in D8 returning 501, each marked `STUB`; verify compilation
-- [x] 1.4 Flyway `V1__accounts.sql`, `V2__spring_session.sql` per design D9 (`principal_name varchar(320)`); verify the app starts on an empty database
-- [x] 1.5 One test per scenario in `specs/accounts/spec.md` (26 scenarios), scenario ID in `@DisplayName`, `// given / when / then`; R2-S2 and R1 as in D11; verify they compile
+- [x] 1.4 Flyway `V1__accounts.sql`, `V2__spring_session.sql` per design D9 (Spring Session schema unchanged; principal name = user id, D4); verify the app starts on an empty database
+- [x] 1.5 One test per scenario in `specs/accounts/spec.md` (27 scenarios), scenario ID in `@DisplayName`, `// given / when / then`; R2-S2 and R1 as in D11; verify they compile
 - [x] 1.6 Run `scripts/check-scenario-coverage.sh` and `./gradlew test`; verify every scenario test fails at its THEN step (501 or missing behaviour), none in setup; list any exceptions
 - [x] 1.8 Fixes from the owner's tests review on PR #17 (design D11): R4-S4 CSRF test, `APP_BASE_URL` in test setup, R1-S2 checks the whole admin row, `loggedInAs` uses the stored email, drop `ExcludeTestClasses`, R1 without a second app per test, RestAssured `CookieFilter`, low-cost bcrypt for test users; verify every scenario test fails at its THEN
+- [x] 1.9 Fixes from the owner's second tests review on PR #17: principal name = user id (D4, D9), R5-S3 end-to-end link test, R8-S2 link session survives, R1-S2 same email as `ADMIN_EMAIL`, base URL checks in R5-S1/R8-S1, R7-S3 password unchanged, `TestClient` follows a rotated CSRF cookie, stub `SecurityConfig` logs no generated password, `BootstrapTest` in `accounts.domain`, `createToken` per D5; verify every scenario test fails at its THEN
 - [x] 1.7 PR description lists pass 1 production code (stubs: temporary; migrations: permanent, review as production code) and the commit range for the tests review
 
 ## 2. Test review

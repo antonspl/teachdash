@@ -1,9 +1,9 @@
 package com.teachdash.accounts.api;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Map;
@@ -31,13 +31,30 @@ class TeacherManagementTest extends ApiTest {
 		// then the response is 201 with the teacher's id and a set-password link
 		response.then().statusCode(201)
 				.body("id", notNullValue())
-				.body("setPasswordLink", containsString("/set-password?token="));
+				.body("setPasswordLink", startsWith(APP_BASE_URL + "/set-password?token="));
 		// and the id is the id of the stored account
 		assertEquals(jdbc.sql("select id from users where lower(email) = 'anna@example.com'")
 				.query(UUID.class).single().toString(), response.path("id"));
 		// and a login before the password is set gets 401 with code PASSWORD_NOT_SET
 		newClient().login("anna@example.com", "any-password-1").then()
 				.statusCode(401).body("code", equalTo("PASSWORD_NOT_SET"));
+	}
+
+	@Test
+	@DisplayName("[accounts/R5-S3] Link from teacher creation sets the password")
+	void linkFromTeacherCreationSetsThePassword() {
+		// given an admin created a teacher and got a set-password link
+		var created = loggedInAdmin().post("/api/admin/teachers",
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+		created.then().statusCode(201);
+		String token = tokenFrom(created.path("setPasswordLink"));
+
+		// when the link's token is used to set the password "new-password-1"
+		var response = newClient().post("/api/password-links/" + token, Map.of("password", "new-password-1"));
+
+		// then the response is 200 and the teacher logs in with "new-password-1"
+		response.then().statusCode(200);
+		newClient().login("anna@example.com", "new-password-1").then().statusCode(200);
 	}
 
 	@Test

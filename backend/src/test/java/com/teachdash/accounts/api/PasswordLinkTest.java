@@ -1,6 +1,6 @@
 package com.teachdash.accounts.api;
 
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.time.Duration;
@@ -59,16 +59,17 @@ class PasswordLinkTest extends ApiTest {
 	@Test
 	@DisplayName("[accounts/R7-S3] Expired link is rejected")
 	void expiredLinkIsRejected() {
-		// given an unused link issued 8 days ago
-		UUID annaId = createUser("TEACHER", "Anna", "anna@example.com", null, true);
+		// given an unused link issued 8 days ago for an account with a password
+		UUID annaId = createTeacher("anna@example.com", "old-password-1");
 		String token = createToken(annaId, "SET_PASSWORD", false);
 		testClock().advance(Duration.ofDays(8));
 
-		// when someone uses it
+		// when someone uses it to set a new password
 		var response = useLink(newClient(), token, "new-password-1");
 
-		// then the response is 410
+		// then the response is 410 and the old password still works
 		response.then().statusCode(410);
+		newClient().login("anna@example.com", "old-password-1").then().statusCode(200);
 	}
 
 	@Test
@@ -115,8 +116,8 @@ class PasswordLinkTest extends ApiTest {
 		// when the admin requests a reset link for the teacher
 		var response = admin.post("/api/admin/users/" + teacherId + "/reset-link");
 
-		// then the response is 201 with a link
-		response.then().statusCode(201).body("link", containsString("token="));
+		// then the response is 201 with a link that starts with the base URL
+		response.then().statusCode(201).body("link", startsWith(APP_BASE_URL + "/set-password?token="));
 	}
 
 	@Test
@@ -126,12 +127,14 @@ class PasswordLinkTest extends ApiTest {
 		UUID studentId = createStudent("student@example.com", "old-password-1");
 		TestClient student = loggedInAs("student@example.com");
 		String token = createToken(studentId, "RESET_PASSWORD", false);
+		TestClient holder = newClient();
 
 		// when the link is used to set a new password
-		var response = useLink(newClient(), token, "new-password-1");
+		var response = useLink(holder, token, "new-password-1");
 
-		// then the link works, the old password gets 401 on login and the student's earlier session gets 401
+		// then the old password gets 401, the earlier session gets 401, and the link's session stays valid
 		response.then().statusCode(200);
+		holder.get("/api/me").then().statusCode(200);
 		newClient().login("student@example.com", "old-password-1").then().statusCode(401);
 		student.get("/api/me").then().statusCode(401);
 	}

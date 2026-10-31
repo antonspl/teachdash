@@ -1,4 +1,4 @@
-package com.teachdash.accounts;
+package com.teachdash.accounts.domain;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.test.context.TestPropertySource;
 
-import com.teachdash.accounts.domain.AdminBootstrap;
 import com.teachdash.support.ApiTest;
 
 /** R1. "The application starts" = running the real bootstrap runner after the tables are emptied. */
@@ -33,7 +32,7 @@ class BootstrapTest extends ApiTest {
 	private Map<String, Object> adminRow() {
 		return jdbc.sql("""
 				select email, name, password_hash, role, active, created_at from users
-				where email = 'admin@example.com'
+				where email = 'boss@example.com'
 				""").query().singleRow();
 	}
 
@@ -59,8 +58,8 @@ class BootstrapTest extends ApiTest {
 	@Test
 	@DisplayName("[accounts/R1-S2] Existing admin is not changed")
 	void existingAdminIsNotChanged() throws Exception {
-		// given an admin account exists with password "old-password"
-		createAdmin("admin@example.com", "old-password");
+		// given an admin account exists with the ADMIN_EMAIL email and password "old-password"
+		createAdmin("boss@example.com", "old-password");
 		Map<String, Object> before = adminRow();
 
 		// when the application starts with ADMIN_PASSWORD set to a different value
@@ -69,7 +68,7 @@ class BootstrapTest extends ApiTest {
 		// then no new account is created, the admin account is unchanged, and it still logs in with "old-password"
 		assertEquals(1, countUsers());
 		assertEquals(before, adminRow());
-		newClient().login("admin@example.com", "old-password").then().statusCode(200);
-		newClient().login("admin@example.com", "different-password").then().statusCode(401);
+		newClient().login("boss@example.com", "old-password").then().statusCode(200);
+		newClient().login("boss@example.com", "different-password").then().statusCode(401);
 	}
 }

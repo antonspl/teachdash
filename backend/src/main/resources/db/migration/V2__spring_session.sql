@@ -6,7 +6,7 @@ create table spring_session (
     last_access_time     bigint   not null,
     max_inactive_interval int     not null,
     expiry_time          bigint   not null,
-    principal_name       varchar(320),
+    principal_name       varchar(100),
     constraint spring_session_pk primary key (primary_id)
 );
 

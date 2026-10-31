@@ -1,11 +1,15 @@
 package com.teachdash.support;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,6 +36,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @Import(TestClockConfig.class)
 public abstract class ApiTest {
 
+	protected static final String APP_BASE_URL = "http://localhost:5173";
+
 	private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
 	static {
@@ -43,7 +49,7 @@ public abstract class ApiTest {
 		registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
 		registry.add("spring.datasource.username", POSTGRES::getUsername);
 		registry.add("spring.datasource.password", POSTGRES::getPassword);
-		registry.add("APP_BASE_URL", () -> "http://localhost:5173");
+		registry.add("APP_BASE_URL", () -> APP_BASE_URL);
 	}
 
 	// low cost keeps tests fast; the app's delegating encoder verifies the {bcrypt} prefix
@@ -127,17 +133,17 @@ public abstract class ApiTest {
 
 	/** Session is created in the store, not via /auth/login, so tests do not depend on it. */
 	protected TestClient loggedInAs(String email) {
-		var user = jdbc.sql("select role, email from users where lower(email) = lower(:email)")
-				.param("email", email).query((rs, i) -> new String[] { rs.getString("role"), rs.getString("email") })
+		var user = jdbc.sql("select id, role from users where lower(email) = lower(:email)")
+				.param("email", email).query((rs, i) -> new String[] { rs.getString("id"), rs.getString("role") })
 				.single();
-		String role = user[0];
-		String storedEmail = user[1];
+		String principal = user[0];
+		String role = user[1];
 		var authentication = UsernamePasswordAuthenticationToken.authenticated(
-				new User(storedEmail, "", AuthorityUtils.createAuthorityList("ROLE_" + role)), null,
+				new User(principal, "", AuthorityUtils.createAuthorityList("ROLE_" + role)), null,
 				AuthorityUtils.createAuthorityList("ROLE_" + role));
 		org.springframework.session.Session session = sessions.createSession();
 		session.setAttribute("SPRING_SECURITY_CONTEXT", new SecurityContextImpl(authentication));
-		session.setAttribute(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, storedEmail);
+		session.setAttribute(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, principal);
 		session.setMaxInactiveInterval(Duration.ofMinutes(30));
 		saveSession(session);
 		String cookie = Base64.getEncoder().encodeToString(session.getId().getBytes(StandardCharsets.UTF_8));
@@ -146,8 +152,9 @@ public abstract class ApiTest {
 
 	/** Inserts a token directly (SHA-256 hex hash stored); does not invalidate older tokens. */
 	protected String createToken(UUID userId, String purpose, boolean used) {
-		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(
-				(UUID.randomUUID().toString() + UUID.randomUUID()).substring(0, 32).getBytes(StandardCharsets.UTF_8));
+		byte[] bytes = new byte[32];
+		new SecureRandom().nextBytes(bytes);
+		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 		Instant now = Instant.now(clock);
 		jdbc.sql("""
 				insert into one_time_tokens (token_hash, user_id, purpose, expires_at, used_at, created_at)
@@ -170,10 +177,9 @@ public abstract class ApiTest {
 
 	private static String sha256Hex(String value) {
 		try {
-			byte[] hash = java.security.MessageDigest.getInstance("SHA-256")
-					.digest(value.getBytes(StandardCharsets.UTF_8));
-			return java.util.HexFormat.of().formatHex(hash);
-		} catch (java.security.NoSuchAlgorithmException e) {
+			return HexFormat.of().formatHex(
+					MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+		} catch (NoSuchAlgorithmException e) {
 			throw new IllegalStateException(e);
 		}
 	}
