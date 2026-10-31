@@ -1,0 +1,7 @@
+/gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+
+gradlew linguist-generated
+gradlew.bat linguist-generated
+gradle/wrapper/* linguist-generated
