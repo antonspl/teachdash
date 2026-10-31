@@ -71,4 +71,19 @@ class BootstrapTest extends ApiTest {
 		newClient().login("boss@example.com", "old-password").then().statusCode(200);
 		newClient().login("boss@example.com", "different-password").then().statusCode(401);
 	}
+
+	@Test
+	@DisplayName("[accounts/R1-S3] Admin with another email blocks bootstrap")
+	void adminWithAnotherEmailBlocksBootstrap() throws Exception {
+		// given an admin account exists with an email different from ADMIN_EMAIL
+		createAdmin("other@example.com", "old-password");
+
+		// when the application starts
+		startApplication();
+
+		// then no account is created and no account with the ADMIN_EMAIL email exists
+		assertEquals(1, countUsers());
+		assertEquals(0, jdbc.sql("select count(*) from users where lower(email) = 'boss@example.com'")
+				.query(Long.class).single());
+	}
 }

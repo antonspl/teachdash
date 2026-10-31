@@ -37,10 +37,6 @@ public class MutableClock extends Clock {
 		return now.get();
 	}
 
-	public void set(Instant instant) {
-		now.set(instant);
-	}
-
 	public void advance(Duration duration) {
 		now.updateAndGet(i -> i.plus(duration));
 	}

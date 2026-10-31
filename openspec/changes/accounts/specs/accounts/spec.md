@@ -22,6 +22,11 @@ values. If an admin already exists, the system MUST NOT create or change any acc
 - **WHEN** the application starts with `ADMIN_PASSWORD` set to a different value
 - **THEN** no new account is created, the admin account is unchanged (email, name, password hash, role, active), and the admin still logs in with "old-password"
 
+#### Scenario: accounts/R1-S3 Admin with another email blocks bootstrap
+- **GIVEN** an admin account exists with an email different from `ADMIN_EMAIL`
+- **WHEN** the application starts
+- **THEN** no account is created and no account with the `ADMIN_EMAIL` email exists
+
 ### Requirement: R2 Login with email and password
 The system SHALL sign in an active account with a matching email and password and
 start a session. Email matching MUST be case-insensitive. A failed login MUST return
@@ -80,10 +85,15 @@ without a valid CSRF token MUST be rejected with 403.
 - **WHEN** the student calls the admin endpoint that lists teachers
 - **THEN** the response is 403
 
+#### Scenario: accounts/R4-S5 Non-admins cannot call admin endpoints that change data
+- **GIVEN** a logged-in teacher, a logged-in student, the admin account and another teacher
+- **WHEN** the teacher and the student each call every admin endpoint that changes data: create a teacher, deactivate and reactivate the other teacher, issue a reset link for the admin
+- **THEN** every response is 403, no account is created or changed, and no link is issued
+
 #### Scenario: accounts/R4-S4 Request without CSRF token is rejected
 - **GIVEN** a logged-in teacher
-- **WHEN** the teacher changes their profile without sending the CSRF token
-- **THEN** the response is 403 and the profile does not change
+- **WHEN** the teacher changes their profile without sending the CSRF token, and then sends the same request with the token
+- **THEN** the first response is 403 and leaves the profile unchanged, and the second response is 200
 
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.
@@ -93,7 +103,7 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 #### Scenario: accounts/R5-S1 Admin creates a teacher
 - **GIVEN** a logged-in admin
 - **WHEN** the admin creates a teacher with a new email
-- **THEN** the response is 201 with the teacher's id and a set-password link that starts with the configured base URL (`APP_BASE_URL`), and a login before the password is set gets 401 with code `PASSWORD_NOT_SET`
+- **THEN** the response is 201 with the teacher's id and a set-password link that starts with the configured base URL (`APP_BASE_URL`) and carries the token in the URL fragment, and a login before the password is set gets 401 with code `PASSWORD_NOT_SET`
 
 #### Scenario: accounts/R5-S2 Duplicate email is rejected
 - **GIVEN** an account with email "anna@example.com"
@@ -156,7 +166,7 @@ password MUST stop working and the account's other sessions MUST end.
 #### Scenario: accounts/R8-S1 Admin issues a reset link
 - **GIVEN** a logged-in admin and a teacher account
 - **WHEN** the admin requests a reset link for the teacher
-- **THEN** the response is 201 with a link that starts with the configured base URL (`APP_BASE_URL`)
+- **THEN** the response is 201 with a link that starts with the configured base URL (`APP_BASE_URL`) and carries the token in the URL fragment
 
 #### Scenario: accounts/R8-S2 Reset replaces the old password and ends sessions
 - **GIVEN** a logged-in student and a reset link issued for them

@@ -21,3 +21,4 @@ create table one_time_tokens (
 );
 
 create index one_time_tokens_user_idx on one_time_tokens (user_id);
+create unique index one_time_tokens_one_unused_idx on one_time_tokens (user_id) where used_at is null;

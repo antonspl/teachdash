@@ -34,7 +34,7 @@ com/teachdash/
       dto/          LoginRequest, CreateTeacherRequest, UserResponse, ...
     domain/         Role (pass 2: User, AccountService, PasswordLinkService)
     persistence/    (pass 2: UserRepository, OneTimeTokenRepository)
-  common/           ClockConfig, SecurityConfig, error handling
+  common/           ClockConfig, SecurityConfig, error handling (ClockConfig: pass 2)
 ```
 Classes used across subpackages are `public`. Alternative (one flat `accounts`
 package) mixes controllers, DTOs and domain and grows badly in pass 2.
@@ -72,12 +72,18 @@ case-insensitive email and builds the principal from the stored id.
 Token = 32 random bytes, base64url. Only the hash is stored —
 `hex(SHA-256(UTF-8 bytes of the base64url string))`, 64 characters — with purpose
 (`SET_PASSWORD`, `RESET_PASSWORD`), account, expiry (7 days), `used_at`. Issuing a
-new token marks older unused tokens of that account as used. The API returns the
-full URL built from `APP_BASE_URL`: `{base}/set-password?token=…`. The token service
+new token marks older unused tokens of that account as used, in the same transaction;
+a partial unique index (D9) guarantees at most one unused token per account even with
+concurrent requests (a losing request gets a conflict and retries once). The API
+returns the full URL built from `APP_BASE_URL`: `{base}/set-password#token=…`. The
+token never appears in a URL that reaches a server: it is in the fragment of the page
+link (browsers do not send fragments) and in the JSON body of the API call (D8), so
+proxy access logs (Caddy → Grafana) never contain it. The token service
 is reusable: `student-enrolment` will issue links for students through it.
 
 ### D6. Time source
-A `Clock` bean, so tests can move time (R7-S3 expiry) without sleeping.
+A `Clock` bean, so tests can move time (R7-S3 expiry) without sleeping. Tests supply
+their own `Clock` (`TestClockConfig`); the production `ClockConfig` is added in pass 2.
 
 ### D7. Errors
 RFC 7807 `ProblemDetail` for all errors, with a machine-readable `code` property
@@ -92,7 +98,7 @@ RFC 7807 `ProblemDetail` for all errors, with a machine-readable `code` property
 | GET | `/me` | any | R2, R9 |
 | PATCH | `/me` | any | R9 |
 | POST | `/me/password` | any | R9 |
-| POST | `/password-links/{token}` | — | R7 |
+| POST | `/password-links` | — | R7 |
 | GET/POST | `/admin/teachers` | admin | R4, R5 |
 | POST | `/admin/teachers/{id}/deactivate`, `/reactivate` | admin | R6 |
 | POST | `/admin/users/{id}/reset-link` | admin | R8 |
@@ -105,14 +111,16 @@ JSON shapes:
 - `POST /admin/teachers`: request `{name, email, timeZone}`, response 201
   `{id, setPasswordLink}`.
 - `POST /admin/users/{id}/reset-link`: response `{link}`.
-- `POST /password-links/{token}`: request `{password}`; 200 starts a session; a used,
-  expired or replaced link returns 410.
+- `POST /password-links`: request `{token, password}`; 200 starts a session; a used,
+  expired or replaced link returns 410. The token is never in the path or query.
 - Errors: `ProblemDetail` with a top-level `code` property (D7).
 
 ### D9. Data model and Flyway migrations
 - `V1__accounts.sql` — `users` (id uuid, email, name, role, password_hash nullable,
   time_zone, active, created_at; unique index on `lower(email)`),
-  `one_time_tokens` (token_hash, user_id, purpose, expires_at, used_at, created_at).
+  `one_time_tokens` (token_hash, user_id, purpose, expires_at, used_at, created_at;
+  partial unique index on `user_id` where `used_at is null` — at most one unused
+  token per account, D5).
 - `V2__spring_session.sql` — Spring Session JDBC tables, unchanged from its
   schema. `principal_name` holds the user id (36 characters, D4), so the default
   `varchar(100)` fits.

@@ -38,6 +38,8 @@ public abstract class ApiTest {
 
 	protected static final String APP_BASE_URL = "http://localhost:5173";
 
+	private static final SecureRandom RANDOM = new SecureRandom();
+
 	private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
 	static {
@@ -138,9 +140,9 @@ public abstract class ApiTest {
 				.single();
 		String principal = user[0];
 		String role = user[1];
+		var authorities = AuthorityUtils.createAuthorityList("ROLE_" + role);
 		var authentication = UsernamePasswordAuthenticationToken.authenticated(
-				new User(principal, "", AuthorityUtils.createAuthorityList("ROLE_" + role)), null,
-				AuthorityUtils.createAuthorityList("ROLE_" + role));
+				new User(principal, "", authorities), null, authorities);
 		org.springframework.session.Session session = sessions.createSession();
 		session.setAttribute("SPRING_SECURITY_CONTEXT", new SecurityContextImpl(authentication));
 		session.setAttribute(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, principal);
@@ -153,7 +155,7 @@ public abstract class ApiTest {
 	/** Inserts a token directly (SHA-256 hex hash stored); does not invalidate older tokens. */
 	protected String createToken(UUID userId, String purpose, boolean used) {
 		byte[] bytes = new byte[32];
-		new SecureRandom().nextBytes(bytes);
+		RANDOM.nextBytes(bytes);
 		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 		Instant now = Instant.now(clock);
 		jdbc.sql("""

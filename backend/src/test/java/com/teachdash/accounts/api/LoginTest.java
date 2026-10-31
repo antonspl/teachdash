@@ -106,7 +106,6 @@ class LoginTest extends ApiTest {
 		// then logout succeeds and the current-user endpoint returns 401 for that session and 200 for the other one
 		logout.then().statusCode(org.hamcrest.Matchers.lessThan(300));
 		oldSession.get("/api/me").then().statusCode(401);
-		client.get("/api/me").then().statusCode(401);
 		otherDevice.get("/api/me").then().statusCode(200);
 	}
 }

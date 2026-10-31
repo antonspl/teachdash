@@ -31,7 +31,7 @@ class TeacherManagementTest extends ApiTest {
 		// then the response is 201 with the teacher's id and a set-password link
 		response.then().statusCode(201)
 				.body("id", notNullValue())
-				.body("setPasswordLink", startsWith(APP_BASE_URL + "/set-password?token="));
+				.body("setPasswordLink", startsWith(APP_BASE_URL + "/set-password#token="));
 		// and the id is the id of the stored account
 		assertEquals(jdbc.sql("select id from users where lower(email) = 'anna@example.com'")
 				.query(UUID.class).single().toString(), response.path("id"));
@@ -52,7 +52,7 @@ class TeacherManagementTest extends ApiTest {
 		String link = created.getContentType() != null && created.getContentType().contains("json")
 				? created.path("setPasswordLink") : null;
 		String token = link == null ? "no-link" : tokenFrom(link);
-		var response = newClient().post("/api/password-links/" + token, Map.of("password", "new-password-1"));
+		var response = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
 
 		// then creation is 201, setting the password is 200, and the teacher logs in with "new-password-1"
 		created.then().statusCode(201);

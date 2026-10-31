@@ -19,7 +19,7 @@ import io.restassured.response.Response;
 class PasswordLinkTest extends ApiTest {
 
 	private Response useLink(TestClient client, String token, String password) {
-		return client.post("/api/password-links/" + token, Map.of("password", password));
+		return client.post("/api/password-links", Map.of("token", token, "password", password));
 	}
 
 	@Test
@@ -117,7 +117,7 @@ class PasswordLinkTest extends ApiTest {
 		var response = admin.post("/api/admin/users/" + teacherId + "/reset-link");
 
 		// then the response is 201 with a link that starts with the base URL
-		response.then().statusCode(201).body("link", startsWith(APP_BASE_URL + "/set-password?token="));
+		response.then().statusCode(201).body("link", startsWith(APP_BASE_URL + "/set-password#token="));
 	}
 
 	@Test
