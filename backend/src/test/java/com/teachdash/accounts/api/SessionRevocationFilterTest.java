@@ -63,4 +63,29 @@ class SessionRevocationFilterTest {
 		assertTrue(response.getContentAsString().contains("\"code\":\"INTERNAL_ERROR\""));
 		assertFalse(response.getContentAsString().contains(INTERNAL_DETAIL));
 	}
+
+	@Test
+	@DisplayName("[accounts/R4-S9] The coded error survives a later failure")
+	void theCodedErrorSurvivesALaterFailure() throws Exception {
+		// given a request with a session
+		UserRepository failingUsers = mock(UserRepository.class);
+		when(failingUsers.findById(any())).thenThrow(new IllegalStateException(INTERNAL_DETAIL));
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.getSession(true);
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		var authorities = AuthorityUtils.createAuthorityList("ROLE_TEACHER");
+		SecurityContextHolder.getContext().setAuthentication(
+				UsernamePasswordAuthenticationToken.authenticated(
+						new org.springframework.security.core.userdetails.User(
+								UUID.randomUUID().toString(), "", authorities),
+						null,
+						authorities));
+
+		// when the database fails during the session check
+		new SessionRevocationFilter(failingUsers).doFilter(request, response, new MockFilterChain());
+
+		// then the coded error response is already committed when the filter returns
+		assertTrue(response.isCommitted());
+		assertTrue(response.getContentAsString().contains("\"code\":\"INTERNAL_ERROR\""));
+	}
 }

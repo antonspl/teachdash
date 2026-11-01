@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -48,6 +49,23 @@ public class AdminBootstrap implements ApplicationRunner {
 		this.email = email;
 		this.password = password;
 		this.name = name;
+	}
+
+	// STUB: resolves placeholders like @Value does; task 3.21 reads the property sources directly
+	static AdminBootstrap fromEnvironment(
+			ConfigurableEnvironment environment,
+			UserRepository users,
+			PasswordEncoder passwordEncoder,
+			Clock clock,
+			Validator validator) {
+		return new AdminBootstrap(
+				users,
+				passwordEncoder,
+				clock,
+				validator,
+				environment.resolveRequiredPlaceholders("${ADMIN_EMAIL:}"),
+				environment.resolveRequiredPlaceholders("${ADMIN_PASSWORD:}"),
+				environment.resolveRequiredPlaceholders("${ADMIN_NAME:}"));
 	}
 
 	@Override

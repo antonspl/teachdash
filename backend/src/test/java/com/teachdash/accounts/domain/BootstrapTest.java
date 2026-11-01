@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Clock;
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.DefaultApplicationArguments;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 
@@ -154,6 +157,81 @@ class BootstrapTest extends ApiTest {
 		RuntimeException failure = assertThrows(
 				RuntimeException.class,
 				() -> invalidBootstrap.run(new DefaultApplicationArguments()));
+
+		// then startup fails with a message naming ADMIN_EMAIL, and no account is created
+		assertThat(failure.getMessage(), containsString("ADMIN_EMAIL"));
+		assertEquals(0, countUsers());
+	}
+
+	@Test
+	@DisplayName("[accounts/R1-S6] Admin variables are taken literally")
+	void adminVariablesAreTakenLiterally() {
+		// given no admin account exists and ADMIN_PASSWORD is "#{1+1}${x}aaaaaaa", read from the property sources
+		String literalPassword = "#{1+1}${x}aaaaaaa";
+		StandardEnvironment environment = new StandardEnvironment();
+		environment.getPropertySources().addFirst(new MapPropertySource("admin-variables", Map.of(
+				"ADMIN_EMAIL", "boss@example.com",
+				"ADMIN_PASSWORD", literalPassword,
+				"ADMIN_NAME", "The Boss")));
+		assertEquals(0, countUsers());
+
+		// when the application starts
+		Exception startupFailure = null;
+		try {
+			AdminBootstrap.fromEnvironment(environment, users, passwordEncoder, clock, validator)
+					.run(new DefaultApplicationArguments());
+		} catch (Exception e) {
+			startupFailure = e;
+		}
+
+		// then the admin account exists and logs in with exactly that password
+		assertNull(startupFailure);
+		assertEquals(1, countUsers());
+		newClient().login("boss@example.com", literalPassword).then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[accounts/R1-S7] A blank admin password stops startup")
+	void aBlankAdminPasswordStopsStartup() {
+		// given no admin account exists and ADMIN_PASSWORD is eight spaces
+		AdminBootstrap blankPasswordBootstrap = new AdminBootstrap(
+				users,
+				passwordEncoder,
+				clock,
+				validator,
+				"boss@example.com",
+				"        ",
+				"The Boss");
+		assertEquals(0, countUsers());
+
+		// when the application starts
+		RuntimeException failure = assertThrows(
+				RuntimeException.class,
+				() -> blankPasswordBootstrap.run(new DefaultApplicationArguments()));
+
+		// then startup fails with a message naming ADMIN_PASSWORD, and no account is created
+		assertThat(failure.getMessage(), containsString("ADMIN_PASSWORD"));
+		assertEquals(0, countUsers());
+	}
+
+	@Test
+	@DisplayName("[accounts/R1-S8] An invalid variable stops startup even if another is missing")
+	void anInvalidVariableStopsStartupEvenIfAnotherIsMissing() {
+		// given no admin account exists, ADMIN_EMAIL is "a,b@x" and ADMIN_NAME is not set
+		AdminBootstrap invalidEmailBootstrap = new AdminBootstrap(
+				users,
+				passwordEncoder,
+				clock,
+				validator,
+				"a,b@x",
+				"valid-password-1",
+				"");
+		assertEquals(0, countUsers());
+
+		// when the application starts
+		RuntimeException failure = assertThrows(
+				RuntimeException.class,
+				() -> invalidEmailBootstrap.run(new DefaultApplicationArguments()));
 
 		// then startup fails with a message naming ADMIN_EMAIL, and no account is created
 		assertThat(failure.getMessage(), containsString("ADMIN_EMAIL"));

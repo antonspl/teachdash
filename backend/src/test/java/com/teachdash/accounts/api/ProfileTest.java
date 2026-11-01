@@ -136,4 +136,35 @@ class ProfileTest extends ApiTest {
 		response.then().statusCode(400).body("code", equalTo("WRONG_PASSWORD"));
 		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(200);
 	}
+
+	@Test
+	@DisplayName("[accounts/R9-S10] An over-long ASCII current password counts as wrong")
+	void anOverLongAsciiCurrentPasswordCountsAsWrong() {
+		// given a logged-in teacher
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+
+		// when the teacher changes the password giving a current password of 73 ASCII characters
+		var response = teacher.post("/api/me/password",
+				Map.of("currentPassword", "a".repeat(73), "newPassword", "brand-new-pass-1"));
+
+		// then the response is 400 with code WRONG_PASSWORD and the old password still works
+		response.then().statusCode(400).body("code", equalTo("WRONG_PASSWORD"));
+		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[accounts/R9-S11] A name of only Unicode spaces is rejected")
+	void aNameOfOnlyUnicodeSpacesIsRejected() {
+		// given a logged-in teacher
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+
+		// when the teacher sets the name to a single U+2003 space
+		var response = teacher.patch("/api/me", Map.of("name", "\u2003", "timeZone", "UTC"));
+
+		// then the response is 400 and the name does not change
+		response.then().statusCode(400);
+		teacher.get("/api/me").then().statusCode(200).body("name", equalTo("Teacher"));
+	}
 }

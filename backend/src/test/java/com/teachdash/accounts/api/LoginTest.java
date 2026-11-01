@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -132,5 +133,35 @@ class LoginTest extends ApiTest {
 
 		// then the response is 401 with code UNAUTHENTICATED
 		logout.then().statusCode(401).body("code", equalTo("UNAUTHENTICATED"));
+	}
+
+	@Test
+	@DisplayName("[accounts/R2-S7] Deactivated account with no password")
+	void deactivatedAccountWithNoPassword() {
+		// given a deactivated teacher who never set a password
+		TestClient admin = loggedInAdmin();
+		var created = admin.post("/api/admin/teachers",
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+		UUID teacherId = UUID.fromString(created.path("id"));
+		admin.post("/api/admin/teachers/" + teacherId + "/deactivate");
+
+		// when the teacher logs in with any password
+		var login = newClient().login("anna@example.com", "any-password-1");
+
+		// then the response is 401 with code ACCOUNT_DEACTIVATED
+		login.then().statusCode(401).body("code", equalTo("ACCOUNT_DEACTIVATED"));
+	}
+
+	@Test
+	@DisplayName("[accounts/R2-S8] An over-long password is a wrong password")
+	void anOverLongPasswordIsAWrongPassword() {
+		// given an active teacher
+		createTeacher("teacher@example.com", "teacher-pass-1");
+
+		// when someone logs in with the teacher's email and a password of 73 ASCII characters
+		var login = newClient().login("teacher@example.com", "a".repeat(73));
+
+		// then the response is 401 with code WRONG_PASSWORD
+		login.then().statusCode(401).body("code", equalTo("WRONG_PASSWORD"));
 	}
 }
