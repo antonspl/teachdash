@@ -1,16 +1,23 @@
 package com.teachdash.accounts.domain;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.Clock;
 import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.DefaultApplicationArguments;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 
+import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.support.ApiTest;
 
 /**
@@ -88,5 +95,38 @@ class BootstrapTest extends ApiTest {
 		assertEquals(0, jdbc.sql("select count(*) from users where lower(email) = 'boss@example.com'")
 				.query(Long.class)
 				.single());
+	}
+
+	@Autowired
+	private UserRepository users;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	@Autowired
+	private Clock clock;
+
+	@Test
+	@DisplayName("[accounts/R1-S4] Invalid admin variables stop startup")
+	void invalidAdminVariablesStopStartup() {
+		// given no admin account exists and ADMIN_PASSWORD is "abc"
+		AdminBootstrap invalidBootstrap = new AdminBootstrap(
+				users,
+				passwordEncoder,
+				clock,
+				"boss@example.com",
+				"abc",
+				"The Boss");
+		assertEquals(0, countUsers());
+
+		// when the application starts
+		RuntimeException failure = assertThrows(
+				RuntimeException.class,
+				() -> invalidBootstrap.run(new DefaultApplicationArguments()));
+
+		// then startup fails with a message naming ADMIN_PASSWORD and not containing "abc", and no account is created
+		assertThat(failure.getMessage(), containsString("ADMIN_PASSWORD"));
+		assertFalse(failure.getMessage().contains("abc"));
+		assertEquals(0, countUsers());
 	}
 }

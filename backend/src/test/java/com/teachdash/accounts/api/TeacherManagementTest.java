@@ -137,4 +137,36 @@ class TeacherManagementTest extends ApiTest {
 		response.then().statusCode(lessThan(300));
 		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(200);
 	}
+
+	@Test
+	@DisplayName("[accounts/R6-S4] Every request re-checks that the account is active")
+	void everyRequestRechecksThatTheAccountIsActive() {
+		// given a logged-in teacher whose session still exists
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+
+		// when the account becomes inactive in the database without the session being touched
+		jdbc.sql("update users set active = false where email = 'teacher@example.com'").update();
+
+		// then the teacher's next request gets 401
+		teacher.get("/api/me").then().statusCode(401);
+	}
+
+	@Test
+	@DisplayName("[accounts/R6-S5] Teacher list shows who is active")
+	void teacherListShowsWhoIsActive() {
+		// given a logged-in admin, an active teacher and a deactivated teacher
+		TestClient admin = loggedInAdmin();
+		createUser("TEACHER", "Active", "active@example.com", "teacher-pass-1", true);
+		createUser("TEACHER", "Inactive", "inactive@example.com", "teacher-pass-1", false);
+
+		// when the admin lists teachers
+		var response = admin.get("/api/admin/teachers");
+
+		// then each list item has an active field with the right value
+		response.then()
+				.statusCode(200)
+				.body("find { it.email == 'active@example.com' }.active", equalTo(true))
+				.body("find { it.email == 'inactive@example.com' }.active", equalTo(false));
+	}
 }

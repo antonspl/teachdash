@@ -167,4 +167,19 @@ class PasswordLinkTest extends ApiTest {
 		newClient().login("student@example.com", "old-password-1").then().statusCode(401);
 		student.get("/api/me").then().statusCode(401);
 	}
+
+	@Test
+	@DisplayName("[accounts/R8-S3] A session from an older session version is rejected")
+	void sessionFromAnOlderSessionVersionIsRejected() {
+		// given a logged-in teacher whose session still exists
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+
+		// when the account's session version is raised in the database without the session being touched
+		jdbc.sql("update users set session_version = session_version + 1 where email = 'teacher@example.com'")
+				.update();
+
+		// then the teacher's next request gets 401
+		teacher.get("/api/me").then().statusCode(401);
+	}
 }

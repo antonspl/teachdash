@@ -6,6 +6,7 @@ create table users (
     password_hash varchar(200),
     time_zone     varchar(64)  not null,
     active        boolean      not null default true,
+    session_version int        not null default 0,
     created_at    timestamptz  not null
 );
 

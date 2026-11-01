@@ -108,4 +108,16 @@ class LoginTest extends ApiTest {
 		oldSession.get("/api/me").then().statusCode(401);
 		otherDevice.get("/api/me").then().statusCode(200);
 	}
+
+	@Test
+	@DisplayName("[accounts/R2-S6] NUL character in input is rejected")
+	void nulCharacterInInputIsRejected() {
+		// given no special state
+
+		// when someone logs in with an email containing a NUL character
+		var login = newClient().login("anna\u0000@example.com", "whatever-123");
+
+		// then the response is 400 with code VALIDATION_FAILED
+		login.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+	}
 }

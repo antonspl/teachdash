@@ -3,6 +3,7 @@ package com.teachdash.accounts.api;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -79,6 +80,26 @@ class ProfileTest extends ApiTest {
 		response.then().statusCode(204);
 		second.get("/api/me").then().statusCode(401);
 		first.get("/api/me").then().statusCode(200);
+		newClient().login("teacher@example.com", "brand-new-pass-1").then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[accounts/R9-S5] Password change invalidates unused links")
+	void passwordChangeInvalidatesUnusedLinks() {
+		// given a logged-in teacher with an unused reset link
+		UUID teacherId = createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+		String token = createToken(teacherId, "RESET_PASSWORD", false);
+
+		// when the teacher changes the password, and the link is then used
+		var change = teacher.post("/api/me/password",
+				Map.of("currentPassword", "teacher-pass-1", "newPassword", "brand-new-pass-1"));
+		var useLink = newClient().post("/api/password-links",
+				Map.of("token", token, "password", "attacker-pass-1"));
+
+		// then using the link returns 410 and the new password still works
+		change.then().statusCode(204);
+		useLink.then().statusCode(410);
 		newClient().login("teacher@example.com", "brand-new-pass-1").then().statusCode(200);
 	}
 }

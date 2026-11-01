@@ -1,5 +1,7 @@
 package com.teachdash.accounts.api;
 
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
@@ -108,5 +110,19 @@ class AccessControlTest extends ApiTest {
 				.query()
 				.listOfRows());
 		assertEquals(0, jdbc.sql("select count(*) from one_time_tokens").query(Long.class).single());
+	}
+
+	@Test
+	@DisplayName("[accounts/R4-S6] Anonymous response sets the CSRF cookie")
+	void anonymousResponseSetsTheCsrfCookie() {
+		// given a client with no cookies (plain request, not the test client that brings its own token)
+
+		// when it calls the current-user endpoint
+		var response = io.restassured.RestAssured.given().port(port).get("/api/me");
+
+		// then the response is 401 and sets a non-empty XSRF-TOKEN cookie
+		response.then()
+				.statusCode(401)
+				.cookie("XSRF-TOKEN", not(emptyOrNullString()));
 	}
 }
