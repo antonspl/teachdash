@@ -5,10 +5,10 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 ## 1. Project setup
 
-- [ ] 1.1 Create the Vite + React + TypeScript app in `frontend/` with the dependencies from `design.md`, `package-lock.json` and `.nvmrc`; verify `npm ci && npm run build` succeeds
-- [ ] 1.2 Configure ESLint and Prettier and add the `lint`, `format` and `format:check` scripts; verify `npm run lint` and `npm run format:check` pass
-- [ ] 1.3 Configure Vitest with jsdom and add a `test` script; verify `npm test` runs
-- [ ] 1.4 Add the Vite dev proxy from `/api` to `http://localhost:8080`; verify that with the backend running, `curl -i localhost:5173/api/me` returns the backend's 401 problem
+- [x] 1.1 Create the Vite + React + TypeScript app in `frontend/` with the dependencies from `design.md`, `package-lock.json` and `.nvmrc`; verify `npm ci && npm run build` succeeds
+- [x] 1.2 Configure ESLint and Prettier and add the `lint`, `format` and `format:check` scripts; verify `npm run lint` and `npm run format:check` pass
+- [x] 1.3 Configure Vitest with jsdom and add a `test` script; verify `npm test` runs
+- [x] 1.4 Add the Vite dev proxy from `/api` to `http://localhost:8080`; verify that with the backend running, `curl -i localhost:5173/api/me` returns the backend's 401 problem
 
 ## 2. i18n and API client
 
