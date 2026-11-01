@@ -112,7 +112,10 @@ the production `ClockConfig` is added in pass 2.
 ### D7. Errors
 RFC 7807 `ProblemDetail` for all errors, including those raised in security filters, with a machine-readable `code` property
 (e.g. `WRONG_PASSWORD`) that the UI maps to a translated message. Errors written from a
-filter are flushed at once, so a later failure while saving the session cannot replace them.
+filter are not flushed: saving the session runs on commit, so a flush can itself fail. A last-resort
+filter before the session filter catches any runtime failure on an uncommitted response, clears it
+and writes `INTERNAL_ERROR`. Once the response is committed nothing can be changed, so the failure
+is rethrown.
 
 ### D8. API (all under `/api`)
 

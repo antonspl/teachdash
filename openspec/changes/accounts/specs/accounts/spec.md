@@ -160,10 +160,15 @@ and its response SHALL carry the new one.
 - **WHEN** the database fails during the session check
 - **THEN** the response is 500 with code `INTERNAL_ERROR` and no internal details in the body
 
-#### Scenario: accounts/R4-S9 The coded error survives a later failure
+#### Scenario: accounts/R4-S9 The coded error survives a failure saving the session
 - **GIVEN** a request with a session
-- **WHEN** the database fails during the session check
-- **THEN** the coded error response is already committed when the filter returns, so a later failure saving the session cannot replace it
+- **WHEN** the database fails during the session check, and saving the session then fails too
+- **THEN** the response is 500 with code `INTERNAL_ERROR` and no internal details in the body
+
+#### Scenario: accounts/R4-S10 A failure loading the session returns a coded error
+- **GIVEN** a request with a session cookie
+- **WHEN** the database fails while the session is loaded
+- **THEN** the response is 500 with code `INTERNAL_ERROR` and no internal details in the body
 
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.
