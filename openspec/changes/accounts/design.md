@@ -58,6 +58,7 @@ cookie-held token (`XSRF-TOKEN` → `X-XSRF-TOKEN` header), which the future SPA
 The token cookie is set eagerly on every response, also for anonymous requests
 (a logged-out `GET /api/me` returns 401 and sets `XSRF-TOKEN`), and the raw cookie
 value is accepted in the header (SPA-style handler), so a client can log in.
+Login and link use replace the token, and that same response sets the new cookie.
 Alternative: JWT — no clean way to revoke sessions, and no benefit on one domain.
 Passwords: Spring Security `DelegatingPasswordEncoder` (bcrypt).
 Session contents (tests create sessions this way, D11): the `SecurityContext` under
@@ -73,8 +74,10 @@ every authenticated request (one primary-key lookup); if the account is inactive
 versions differ, it invalidates the session and the request gets 401. A session without
 the attribute counts as version 0. Deactivation, reset and password change raise the
 version in the same transaction as the change, so revocation cannot half-fail and a
-login finishing at the same moment still loses. A password change copies the new version
-into the current session, which keeps it valid. Revoked rows are not deleted one by one:
+login finishing at the same moment still loses. A password change updates the row only `where active and session_version = <the
+session's version>`; no row updated means the session was revoked meanwhile, so it gets
+401 and nothing changes. On success it copies the new version into the current session,
+which keeps it valid. Revoked rows are not deleted one by one:
 the filter removes them on next use and Spring Session's expiry cleanup removes the rest.
 Alternative (deleting sessions after commit) can fail after the change is saved, needs a
 second pooled connection, and misses a login that finishes just after the deletion.

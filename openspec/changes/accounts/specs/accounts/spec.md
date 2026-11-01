@@ -39,8 +39,8 @@ email), startup MUST fail with a message naming the variable, without its value.
 The system SHALL sign in an active account with a matching email and password and
 start a session. Email matching MUST be case-insensitive. A failed login MUST return
 401 with an error code naming the reason: `UNKNOWN_EMAIL`, `WRONG_PASSWORD`,
-`ACCOUNT_DEACTIVATED` or `PASSWORD_NOT_SET`. Text input containing a NUL character MUST
-be rejected with 400 `VALIDATION_FAILED` on every endpoint.
+`ACCOUNT_DEACTIVATED` or `PASSWORD_NOT_SET`. A JSON string field containing a NUL character
+MUST be rejected with 400 `VALIDATION_FAILED` on every endpoint.
 
 #### Scenario: accounts/R2-S1 Valid credentials start a session
 - **GIVEN** an active teacher account
@@ -83,7 +83,8 @@ Every endpoint except login, set-password-by-link and the health check
 (`/actuator/health`) SHALL require a session. Admin
 endpoints SHALL be allowed only for admins. Later capabilities apply the same rule to
 teacher and student endpoints. A state-changing request (POST, PUT, PATCH, DELETE)
-without a valid CSRF token MUST be rejected with 403.
+without a valid CSRF token MUST be rejected with 403. Login SHALL replace the CSRF token,
+and its response SHALL carry the new one.
 
 #### Scenario: accounts/R4-S1 No session is rejected
 - **WHEN** a request without a session calls the current-user endpoint
@@ -112,6 +113,11 @@ without a valid CSRF token MUST be rejected with 403.
 #### Scenario: accounts/R4-S6 Anonymous response sets the CSRF cookie
 - **WHEN** a client with no cookies calls the current-user endpoint
 - **THEN** the response is 401 and sets a non-empty `XSRF-TOKEN` cookie
+
+#### Scenario: accounts/R4-S7 Login response carries a new CSRF token
+- **GIVEN** a client with a CSRF cookie and an active account
+- **WHEN** the client logs in, and then sends a state-changing request with the token from the login response
+- **THEN** the login response sets a new non-empty `XSRF-TOKEN` cookie with `SameSite=Lax`, different from the old one, and the next request is not rejected for CSRF
 
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.
@@ -163,6 +169,11 @@ MUST get 404 and change nothing.
 - **GIVEN** a logged-in admin, an active teacher and a deactivated teacher
 - **WHEN** the admin lists teachers
 - **THEN** each list item has an `active` field with the right value
+
+#### Scenario: accounts/R6-S6 Reactivation does not revive an old session
+- **GIVEN** a logged-in teacher
+- **WHEN** the admin deactivates and then reactivates the teacher
+- **THEN** the teacher's old session gets 401 and a new login returns 200
 
 ### Requirement: R7 Single-use password links
 A set-password or reset-password link SHALL let its holder set a new password once.
@@ -225,7 +236,8 @@ a session version; a session started under an older version MUST NOT work.
 A logged-in user SHALL be able to change their name and time zone, and change their
 password by giving the current one. The time zone MUST be a valid IANA zone name.
 A successful password change MUST end the account's other sessions and invalidate its
-unused password links; the session that made the change stays valid.
+unused password links; the session that made the change stays valid. A password change
+that races a revocation MUST lose: it changes nothing and the session gets 401.
 
 #### Scenario: accounts/R9-S1 Update name and time zone
 - **GIVEN** a logged-in student
@@ -251,3 +263,8 @@ unused password links; the session that made the change stays valid.
 - **GIVEN** a logged-in teacher with an unused reset link
 - **WHEN** the teacher changes the password, and the link is then used
 - **THEN** using the link returns 410 and the new password still works
+
+#### Scenario: accounts/R9-S6 Password change from an outdated session changes nothing
+- **GIVEN** a teacher whose session version was raised after the session's check, so the change holds an older version
+- **WHEN** the password change runs with that older version
+- **THEN** it is rejected with 401, the old password still works, and the session version does not change
