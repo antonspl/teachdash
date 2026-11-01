@@ -17,8 +17,7 @@ write production code itself.
   - after every pass 2 slice;
   - whenever an implementer report raises doubt (unsure items, unexpected files,
     failing or changed tests, security-sensitive code);
-  - once per PR with `model: "opus"`, before asking for the code gate. Repeat race
-    tests only if the code touches them.
+  - once per PR with `model: "opus"`, before asking for the code gate.
   Fix findings as constitution §1 step 8 says, then re-review if the fix was non-trivial.
 
 Agents' reports are not shown to the owner — relay what matters in a few lines.
