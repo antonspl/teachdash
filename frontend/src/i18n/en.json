@@ -1,0 +1,19 @@
+{
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "UNAUTHENTICATED": "You are not signed in. Please sign in and try again.",
+    "FORBIDDEN": "You do not have permission to do this.",
+    "CSRF_INVALID": "Your session check failed. Please reload the page and try again.",
+    "VALIDATION_FAILED": "Some of the entered values are not valid.",
+    "MALFORMED_REQUEST": "The request could not be understood.",
+    "INTERNAL_ERROR": "Something went wrong on our side. Please try again later.",
+    "EMAIL_TAKEN": "An account with this email already exists.",
+    "NOT_FOUND": "We could not find what you asked for.",
+    "LINK_CONFLICT": "This link cannot be used right now. Please try again or ask for a new link.",
+    "LINK_INVALID": "This link is not valid or has expired. Please ask for a new one.",
+    "ACCOUNT_DEACTIVATED": "This account is deactivated.",
+    "WRONG_PASSWORD": "The password is incorrect.",
+    "UNKNOWN_EMAIL": "No account was found for this email.",
+    "PASSWORD_NOT_SET": "This account has no password yet. Use the link you were given to set one."
+  }
+}

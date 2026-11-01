@@ -12,9 +12,9 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 ## 2. i18n and API client
 
-- [ ] 2.1 Set up i18n with `src/i18n/en.json`, including `errors.generic` and an `errors.<CODE>` message for each code found by searching `backend/src/main`; verify the search result matches the keys
-- [ ] 2.2 Implement the API client (same-origin `/api`, CSRF header, `ApiError`); verify with the test `[web-client/R4-S1]`
-- [ ] 2.3 Implement mapping of problem codes to translated messages; verify with the tests `[web-client/R5-S1]` and `[web-client/R5-S2]`
+- [x] 2.1 Set up i18n with `src/i18n/en.json`, including `errors.generic` and an `errors.<CODE>` message for each code found by searching `backend/src/main`; verify the search result matches the keys
+- [x] 2.2 Implement the API client (same-origin `/api`, CSRF header, `ApiError`); verify with the test `[web-client/R4-S1]`
+- [x] 2.3 Implement mapping of problem codes to translated messages; verify with the tests `[web-client/R5-S1]` and `[web-client/R5-S2]`
 
 ## 3. Pages
 
