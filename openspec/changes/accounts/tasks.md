@@ -41,7 +41,7 @@
 - [x] 3.18 Failing tests for R6-S8, R9-S9; owner approves before 3.19
 - [x] 3.19 Password change replaces the session (D4), reactivation of an active teacher issues no link (D8); full suite green
 - [x] 3.20 Failing tests for R1-S6, R1-S7, R1-S8, R2-S7, R2-S8, R4-S9, R9-S10, R9-S11; owner approves before 3.21
-- [x] 3.21 Literal admin variables and validation order (D10), login order for no-password accounts, over-long passwords are wrong (D3), flushed filter errors (D7), `@BcryptPassword` and `@TimeZoneId` (D3); cleanup: one session start, fewer user reads, the filter reads only `active` and `session_version`; full suite green
+- [x] 3.21 Literal admin variables and validation order (D10), login order for no-password accounts, over-long passwords are wrong (D3), flushed filter errors (D7), `@BcryptPassword` and `@TimeZoneId` (D3); cleanup: one session start, fewer user reads; full suite green
 
 ## 4. Local run
 

@@ -42,8 +42,8 @@ package) mixes controllers, DTOs and domain and grows badly in pass 2.
 ### D3. Persistence — Spring Data JDBC
 Simple aggregates, explicit SQL in Flyway, no lazy-loading surprises.
 Alternative: JPA/Hibernate — more magic than this project needs.
-User changes use targeted `UPDATE`s (`@Modifying @Query` setting only the changed
-columns), never `save()` of a whole loaded row: two concurrent changes then cannot undo
+User changes use targeted `UPDATE`s (`@Query` setting only the changed columns), never
+`save()` of a whole loaded row: two concurrent changes then cannot undo
 each other (e.g. a password change bringing back `active = true`).
 Dependency: `spring-boot-starter-data-jdbc`.
 Shared rules are custom constraints, not helpers called by hand: `@BcryptPassword` (new
@@ -61,7 +61,8 @@ cookie-held token (`XSRF-TOKEN` → `X-XSRF-TOKEN` header), which the future SPA
 The token cookie is set eagerly on every response, also for anonymous requests
 (a logged-out `GET /api/me` returns 401 and sets `XSRF-TOKEN`), and the raw cookie
 value is accepted in the header (SPA-style handler), so a client can log in.
-Login and link use replace the token, and that same response sets the new cookie.
+Login, link use and password change replace the token, and that same response sets the
+new cookie.
 Alternative: JWT — no clean way to revoke sessions, and no benefit on one domain.
 Passwords: Spring Security `DelegatingPasswordEncoder` (bcrypt).
 Session contents (tests create sessions this way, D11): the `SecurityContext` under
@@ -80,8 +81,8 @@ the attribute counts as version 0. Deactivation, reset and password change raise
 version in the same transaction as the change, so revocation cannot half-fail and a
 login finishing at the same moment still loses. A password change updates the row only `where active and session_version = <the
 session's version>`; no row updated means the session was revoked meanwhile, so it gets
-401 and nothing changes. On success the session is replaced: copy the security context, invalidate the old session,
-create a new one, and set the version returned by the update. A stolen copy of the old id
+401 and nothing changes. On success the session is replaced: invalidate the old session, create a new one with a
+fresh security context, and set the version returned by the update. A stolen copy of the old id
 stops working. `changeSessionId()` is not used: a parallel request that loaded the old id
 and saves later writes that id back, logging the user out and reviving the old id. A stale
 save now updates no rows. Bcrypt runs before the transaction starts, so no database connection is held
