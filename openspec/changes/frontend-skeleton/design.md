@@ -64,6 +64,11 @@ All are mainstream and chosen with the owner (see Clarifications).
 | `@playwright/test` | Constitution §2 requires Playwright |
 | `eslint`, `typescript-eslint`, `eslint-plugin-react-hooks` | Linting for TypeScript and React hook rules |
 | `prettier`, `eslint-config-prettier` | Formatting; the config stops ESLint and Prettier from conflicting |
+| `@types/react`, `@types/react-dom` | TypeScript types for React (dev only) |
+| `@testing-library/dom` | Required peer dependency of `@testing-library/react` (dev only) |
+| `@eslint/js` | ESLint's recommended rule set (dev only) |
+
+TypeScript stays on 6.0.x, because `typescript-eslint` does not support 7 yet.
 
 Plain `fetch` is used for HTTP. Alternative considered: axios has built-in XSRF
 handling, but that saves only a few lines and adds a dependency.
