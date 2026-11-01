@@ -36,7 +36,7 @@ function readCookie(name: string): string | undefined {
       continue
     }
     if (part.slice(0, separator).trim() === name) {
-      return decodeURIComponent(part.slice(separator + 1).trim())
+      return part.slice(separator + 1).trim()
     }
   }
   return undefined

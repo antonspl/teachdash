@@ -66,11 +66,23 @@ test('[web-client/R5-S1] Known problem code gives its translated message', async
 })
 
 test('[web-client/R5-S2] Unknown code or non-problem response gives the generic message', async () => {
-  const cases: Array<[string, () => Response | Promise<never>, boolean]> = [
-    ['unknown code', () => problem('NO_SUCH_CODE', 400), true],
-    ['missing code', () => problem(undefined, 400), true],
-    ['non-string code', () => problem(42, 400), true],
-    ['prototype key as code', () => problem('constructor', 400), true],
+  const cases: Array<
+    [string, () => Response | Promise<never>, boolean, string]
+  > = [
+    [
+      'unknown code',
+      () => problem('NO_SUCH_CODE', 400),
+      true,
+      en.errors.generic,
+    ],
+    ['missing code', () => problem(undefined, 400), true, en.errors.generic],
+    ['non-string code', () => problem(42, 400), true, en.errors.generic],
+    [
+      'prototype key as code',
+      () => problem('constructor', 400),
+      true,
+      en.errors.generic,
+    ],
     [
       'problem with charset and different case',
       () =>
@@ -80,6 +92,7 @@ test('[web-client/R5-S2] Unknown code or non-problem response gives the generic 
           'Application/Problem+JSON; charset=UTF-8',
         ),
       true,
+      en.errors.WRONG_PASSWORD,
     ],
     [
       'plain 502 page',
@@ -89,6 +102,7 @@ test('[web-client/R5-S2] Unknown code or non-problem response gives the generic 
           headers: { 'Content-Type': 'text/html' },
         }),
       false,
+      en.errors.generic,
     ],
     [
       'plain JSON with a known code',
@@ -98,6 +112,7 @@ test('[web-client/R5-S2] Unknown code or non-problem response gives the generic 
           headers: { 'Content-Type': 'application/json' },
         }),
       false,
+      en.errors.generic,
     ],
     [
       'malformed problem body',
@@ -107,15 +122,22 @@ test('[web-client/R5-S2] Unknown code or non-problem response gives the generic 
           headers: { 'Content-Type': 'application/problem+json' },
         }),
       true,
+      en.errors.generic,
     ],
     [
       'network failure',
       () => Promise.reject(new TypeError('Failed to fetch')),
       false,
+      en.errors.generic,
     ],
   ]
 
-  for (const [name, makeResponse, expectedIsProblem] of cases) {
+  for (const [
+    name,
+    makeResponse,
+    expectedIsProblem,
+    expectedMessage,
+  ] of cases) {
     // given
     fetchMock.mockImplementationOnce(async () => makeResponse())
 
@@ -123,10 +145,53 @@ test('[web-client/R5-S2] Unknown code or non-problem response gives the generic 
     const error = await failureOf(apiRequest('me'))
 
     // then
-    const expectedMessage = name.startsWith('problem with charset')
-      ? en.errors.WRONG_PASSWORD
-      : en.errors.generic
     expect(error.message, name).toBe(expectedMessage)
     expect(error.isProblem, name).toBe(expectedIsProblem)
   }
+})
+
+test('CSRF cookie with a similar name is ignored', async () => {
+  document.cookie = 'NOT_XSRF-TOKEN=x; path=/'
+  fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
+
+  await apiRequest('auth/login', { method: 'POST' })
+
+  expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('X-XSRF-TOKEN')
+  document.cookie =
+    'NOT_XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+})
+
+test('CSRF token containing = is sent whole', async () => {
+  document.cookie = 'XSRF-TOKEN=a=b==; path=/'
+  fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
+
+  await apiRequest('auth/login', { method: 'POST' })
+
+  expect(fetchMock.mock.calls[0][1].headers['X-XSRF-TOKEN']).toBe('a=b==')
+})
+
+test('CSRF token with a stray percent sign is sent as is', async () => {
+  document.cookie = 'XSRF-TOKEN=50%; path=/'
+  fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
+
+  await apiRequest('auth/login', { method: 'POST' })
+
+  expect(fetchMock.mock.calls[0][1].headers['X-XSRF-TOKEN']).toBe('50%')
+})
+
+test('GET request has no CSRF header', async () => {
+  document.cookie = 'XSRF-TOKEN=abc; path=/'
+  fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
+
+  await apiRequest('me')
+
+  expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('X-XSRF-TOKEN')
+})
+
+test('State-changing request without the cookie has no CSRF header', async () => {
+  fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
+
+  await apiRequest('auth/login', { method: 'POST' })
+
+  expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('X-XSRF-TOKEN')
 })
