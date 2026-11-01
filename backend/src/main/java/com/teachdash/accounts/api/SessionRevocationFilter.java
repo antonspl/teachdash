@@ -44,9 +44,14 @@ public class SessionRevocationFilter extends OncePerRequestFilter {
 		chain.doFilter(request, response);
 	}
 
+	/** A session without the attribute counts as version 0. */
+	public static int versionOf(HttpSession session) {
+		return session.getAttribute(VERSION_ATTRIBUTE) instanceof Integer version ? version : 0;
+	}
+
 	private boolean isRevoked(Authentication authentication, HttpSession session) {
 		UUID userId = UUID.fromString(authentication.getName());
-		int sessionVersion = session.getAttribute(VERSION_ATTRIBUTE) instanceof Integer version ? version : 0;
+		int sessionVersion = versionOf(session);
 		return users.findById(userId)
 				.map(user -> isRevoked(user, sessionVersion))
 				.orElse(true);

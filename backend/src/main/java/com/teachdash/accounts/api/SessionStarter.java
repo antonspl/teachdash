@@ -6,6 +6,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.stereotype.Component;
 
@@ -46,5 +47,14 @@ class SessionStarter {
 		strategy.setContext(context);
 		contextRepository.saveContext(context, request, response);
 		csrfStrategy.onAuthentication(authentication, request, response);
+		sendNewCsrfCookie(request);
+	}
+
+	/** The strategy replaces the token lazily; reading it makes this response set the new cookie. */
+	private static void sendNewCsrfCookie(HttpServletRequest request) {
+		CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+		if (token != null) {
+			token.getToken();
+		}
 	}
 }

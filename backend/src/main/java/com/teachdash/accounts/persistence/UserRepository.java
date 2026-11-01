@@ -39,6 +39,17 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 			@Param("id") UUID id,
 			@Param("passwordHash") String passwordHash);
 
+	/** Empty when the account is inactive or its session version moved on, so nothing was changed. */
+	@Query("""
+			update users set password_hash = :passwordHash, session_version = session_version + 1
+			where id = :id and active and session_version = :expectedSessionVersion
+			returning session_version
+			""")
+	Optional<Integer> updatePasswordHashIfSessionCurrent(
+			@Param("id") UUID id,
+			@Param("passwordHash") String passwordHash,
+			@Param("expectedSessionVersion") int expectedSessionVersion);
+
 	@Modifying
 	@Query("update users set active = false, session_version = session_version + 1 where id = :id")
 	void deactivate(@Param("id") UUID id);

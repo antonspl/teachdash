@@ -30,9 +30,16 @@ public class AccountService {
 		this.links = links;
 	}
 
-	/** Changes the password, revokes older sessions and unused links; returns the new session version. */
+	/**
+	 * Changes the password if the caller's session version is still current, revokes older
+	 * sessions and unused links; returns the new session version.
+	 */
 	@Transactional
-	public int changePassword(UUID id, String currentPassword, String newPassword) {
+	public int changePassword(
+			UUID id,
+			String currentPassword,
+			String newPassword,
+			int expectedSessionVersion) {
 		User user = get(id);
 		boolean currentPasswordMatches = user.getPasswordHash() != null
 				&& passwordEncoder.matches(currentPassword, user.getPasswordHash());
@@ -42,16 +49,8 @@ public class AccountService {
 		requireEncodable(newPassword);
 		String newPasswordHash = passwordEncoder.encode(newPassword);
 		links.invalidateLinks(id);
-		return users.updatePasswordHashAndRevokeSessions(id, newPasswordHash);
-	}
-
-	// STUB: ignores the expected session version until task 3.14
-	public int changePassword(
-			UUID id,
-			String currentPassword,
-			String newPassword,
-			int expectedSessionVersion) {
-		return changePassword(id, currentPassword, newPassword);
+		return users.updatePasswordHashIfSessionCurrent(id, newPasswordHash, expectedSessionVersion)
+				.orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
 	}
 
 	/** Checks credentials; the failure reason is an error code (design D7, R2). */

@@ -59,8 +59,8 @@ class SecurityConfig {
 						.requestMatchers("/actuator/health", "/actuator/health/**", "/error").permitAll()
 						.anyRequest().authenticated())
 				.csrf(csrf -> csrf
-						.csrfTokenRepository(csrfRepository)
-						.spa())
+						.spa()
+						.csrfTokenRepository(csrfRepository))
 				.addFilterAfter(new SessionRevocationFilter(users), SecurityContextHolderFilter.class)
 				.requestCache(cache -> cache.requestCache(new NullRequestCache()))
 				.logout(logout -> logout

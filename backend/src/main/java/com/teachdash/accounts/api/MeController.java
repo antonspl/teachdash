@@ -48,7 +48,8 @@ class MeController {
 		int sessionVersion = accounts.changePassword(
 				UUID.fromString(principal.getName()),
 				request.currentPassword(),
-				request.newPassword());
+				request.newPassword(),
+				SessionRevocationFilter.versionOf(session));
 		session.setAttribute(SessionRevocationFilter.VERSION_ATTRIBUTE, sessionVersion);
 		return ResponseEntity.noContent().build();
 	}
