@@ -35,9 +35,9 @@
 - [x] 3.12 Fixes from the reviewer, no approval needed: same lock order for user and token rows (invalidate links before updating the user), bcrypt before the first write, compose project name and one source for the database password
 - [x] 3.13 Failing tests for R4-S7, R6-S6, R9-S6; owner approves before 3.14
 - [ ] 3.14 Guarded password update (D4), login response sets the new CSRF cookie with `SameSite=Lax` (D4), `csrf.spa()` before the custom repository; full suite green
-- [ ] 3.15 Bcrypt runs outside the transaction (D4); shared 72-byte guard is applied in `changePassword`
+- [ ] 3.15 Bcrypt runs outside the transaction (D4)
 - [ ] 3.16 Failing tests for R1-S5, R3-S2, R4-S8, R6-S7, R9-S7, R9-S8; R1-S4 adds the `Validator` constructor argument (owner approves that line with the new tests); owner approves before 3.17
-- [ ] 3.17 Session id change on password change (D4), filter errors with a code (D7), new link on reactivation (D8), logout requires a session, bootstrap uses the `Validator` (D10); full suite green
+- [ ] 3.17 Session id change on password change (D4), filter errors with a code (D7), new link on reactivation (D8), logout requires a session, shared 72-byte guard in `changePassword`, bootstrap uses the `Validator` (D10); full suite green
 
 ## 4. Local run
 
