@@ -215,4 +215,27 @@ class TeacherManagementTest extends ApiTest {
 		response.then().statusCode(200);
 		newClient().login("anna@example.com", "new-password-1").then().statusCode(200);
 	}
+
+	@Test
+	@DisplayName("[accounts/R6-S8] Reactivating an active teacher keeps their link")
+	void reactivatingAnActiveTeacherKeepsTheirLink() {
+		// given a logged-in admin and an active teacher with an unused set-password link
+		TestClient admin = loggedInAdmin();
+		var created = admin.post("/api/admin/teachers",
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+		String link = created.getContentType() != null && created.getContentType().contains("json")
+				? created.path("setPasswordLink") : null;
+		String token = link == null ? "no-link" : tokenFrom(link);
+		UUID teacherId = UUID.fromString(created.path("id"));
+
+		// when the admin reactivates the teacher
+		var reactivated = admin.post("/api/admin/teachers/" + teacherId + "/reactivate");
+		var response = newClient().post(
+				"/api/password-links",
+				Map.of("token", token, "password", "new-password-1"));
+
+		// then the response is 204 and the existing link still sets the password
+		reactivated.then().statusCode(204);
+		response.then().statusCode(200);
+	}
 }
