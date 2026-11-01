@@ -68,11 +68,12 @@ public class TeacherAdminService {
 		users.deactivate(id);
 	}
 
-	/** Returns a new set-password link when the teacher never set a password. */
+	/** Returns a new set-password link when an inactive teacher never set a password. */
 	@Transactional
 	public Optional<String> reactivateTeacher(UUID id) {
 		User teacher = requireTeacher(id);
-		Optional<String> link = teacher.getPasswordHash() == null
+		boolean needsNewLink = !teacher.isActive() && teacher.getPasswordHash() == null;
+		Optional<String> link = needsNewLink
 				? Optional.of(links.issue(id, TokenPurpose.SET_PASSWORD))
 				: Optional.empty();
 		users.reactivate(id);
