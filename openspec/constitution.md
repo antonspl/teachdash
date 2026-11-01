@@ -9,6 +9,9 @@ One change = one branch = one pull request. The PR goes through three review gat
 by a **reviewer** (any team member other than the author; the owner while the team
 has no other reviewers), then the **owner** reviews the whole PR and merges it.
 
+A change has about 10 scenarios at most, so one person can review it. A larger
+feature is split into several changes, each with its own issue, spec and PR.
+
 1. **Explore** (optional) — discuss the idea; no artifacts.
 2. **Clarify** — before writing a proposal, list open questions and ambiguities
    and get the owner's answers. Record the answers in the proposal.
@@ -28,7 +31,9 @@ has no other reviewers), then the **owner** reviews the whole PR and merges it.
    production code until approved.
 7. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
    if a test looks wrong, stop and ask the reviewer.
-8. **Code review** — a reviewer approves the code in the PR.
+8. **Code review** — a reviewer approves the code in the PR. Security problems,
+   data loss and spec violations are fixed in the PR. Every other finding becomes
+   an issue, so rare edge cases do not add more review rounds.
 9. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
 10. **Owner review** — mark the PR ready. The owner reviews spec, tests and code
     together and merges. Only the owner merges into `main`.

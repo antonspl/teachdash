@@ -13,11 +13,13 @@ write production code itself.
   `Explore` or `general-purpose` agent with `model: "sonnet"`.
 - **Implementation** (tests in pass 1, code in pass 2) → `implementer` agent
   (Sonnet). Give it one coherent slice of `tasks.md` at a time, not the whole change.
-- **Review** → `reviewer` agent (Opus, same tier as the main agent). Run it:
-  - after every pass 2 slice before reporting the change as done;
+- **Review** → `reviewer` agent (Sonnet by default). Run it:
+  - after every pass 2 slice;
   - whenever an implementer report raises doubt (unsure items, unexpected files,
-    failing or changed tests, security-sensitive code).
-  Fix confirmed findings via the implementer, then re-review if the fix was non-trivial.
+    failing or changed tests, security-sensitive code);
+  - once per PR with `model: "opus"`, before asking for the code gate. Repeat race
+    tests only if the code touches them.
+  Fix findings as constitution §1 step 8 says, then re-review if the fix was non-trivial.
 
 Agents' reports are not shown to the owner — relay what matters in a few lines.
 
