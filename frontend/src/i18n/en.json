@@ -1,4 +1,17 @@
 {
+  "app": {
+    "name": "teachdash"
+  },
+  "status": {
+    "checking": "Checking the connection to the server...",
+    "reachable": "The server is reachable.",
+    "unreachable": "The server cannot be reached."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "message": "There is nothing at this address.",
+    "home": "Go to the start page"
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "UNAUTHENTICATED": "You are not signed in. Please sign in and try again.",

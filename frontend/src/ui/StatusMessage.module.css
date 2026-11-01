@@ -1,0 +1,21 @@
+.status {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+.neutral {
+  background: var(--color-neutral-background);
+  color: var(--color-neutral-text);
+}
+
+.success {
+  background: var(--color-success-background);
+  color: var(--color-success-text);
+}
+
+.danger {
+  background: var(--color-danger-background);
+  color: var(--color-danger-text);
+}
