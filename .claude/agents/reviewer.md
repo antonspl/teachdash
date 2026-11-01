@@ -1,7 +1,7 @@
 ---
 name: reviewer
-description: Independent reviewer on the strongest model. Reviews a diff or artifact against the specs and constitution when the main agent has a concern. Read-only.
-model: opus
+description: Independent reviewer. Runs on Sonnet; the main agent asks for Opus once per PR, before the code gate. Reviews a diff or artifact against the specs and constitution when the main agent has a concern. Read-only.
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -20,3 +20,6 @@ Check:
 
 Report findings most severe first, each with file:line, the problem and a concrete
 failure scenario. Say plainly if you found nothing. At most 25 lines.
+
+Mark each finding as one to fix in the PR (security problem, data loss, spec
+violation) or one for an issue (everything else).
