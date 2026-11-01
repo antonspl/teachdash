@@ -12,7 +12,9 @@ On startup, if no admin account exists and `ADMIN_EMAIL`, `ADMIN_PASSWORD` and
 `ADMIN_NAME` are set, the system SHALL create an active admin account with these
 values. If an admin already exists, the system MUST NOT create or change any account.
 If no admin exists and a variable breaks the rules the API applies to the same field,
-startup MUST fail with a message naming the variable, without its value.
+startup MUST fail with a message naming the variable, without its value. Values are taken
+literally, with no placeholder or expression handling. A blank value counts as invalid,
+not as missing.
 
 #### Scenario: accounts/R1-S1 First start creates the admin
 - **GIVEN** an empty database and the admin variables are set
@@ -39,11 +41,27 @@ startup MUST fail with a message naming the variable, without its value.
 - **WHEN** the application starts
 - **THEN** startup fails with a message naming `ADMIN_EMAIL`, and no account is created
 
+#### Scenario: accounts/R1-S6 Admin variables are taken literally
+- **GIVEN** no admin account exists and `ADMIN_PASSWORD` is "#{1+1}${x}aaaaaaa"
+- **WHEN** the application starts
+- **THEN** the admin account exists and logs in with exactly that password
+
+#### Scenario: accounts/R1-S7 A blank admin password stops startup
+- **GIVEN** no admin account exists and `ADMIN_PASSWORD` is eight spaces
+- **WHEN** the application starts
+- **THEN** startup fails with a message naming `ADMIN_PASSWORD`, and no account is created
+
+#### Scenario: accounts/R1-S8 An invalid variable stops startup even if another is missing
+- **GIVEN** no admin account exists, `ADMIN_EMAIL` is "a,b@x" and `ADMIN_NAME` is not set
+- **WHEN** the application starts
+- **THEN** startup fails with a message naming `ADMIN_EMAIL`, and no account is created
+
 ### Requirement: R2 Login with email and password
 The system SHALL sign in an active account with a matching email and password and
 start a session. Email matching MUST be case-insensitive. A failed login MUST return
 401 with an error code naming the reason: `UNKNOWN_EMAIL`, `WRONG_PASSWORD`,
-`ACCOUNT_DEACTIVATED` or `PASSWORD_NOT_SET`. A JSON string field containing a NUL character
+`ACCOUNT_DEACTIVATED` or `PASSWORD_NOT_SET`. A deactivated account with no password gets
+`ACCOUNT_DEACTIVATED`. A password over 72 bytes is a wrong password, however it is encoded. A JSON string field containing a NUL character
 MUST be rejected with 400 `VALIDATION_FAILED` on every endpoint.
 
 #### Scenario: accounts/R2-S1 Valid credentials start a session
@@ -73,6 +91,16 @@ MUST be rejected with 400 `VALIDATION_FAILED` on every endpoint.
 #### Scenario: accounts/R2-S6 NUL character in input is rejected
 - **WHEN** someone logs in with an email containing a NUL character
 - **THEN** the response is 400 with code `VALIDATION_FAILED`
+
+#### Scenario: accounts/R2-S7 Deactivated account with no password
+- **GIVEN** a deactivated teacher who never set a password
+- **WHEN** the teacher logs in with any password
+- **THEN** the response is 401 with code `ACCOUNT_DEACTIVATED`
+
+#### Scenario: accounts/R2-S8 An over-long password is a wrong password
+- **GIVEN** an active teacher
+- **WHEN** someone logs in with the teacher's email and a password of 73 ASCII characters
+- **THEN** the response is 401 with code `WRONG_PASSWORD`
 
 ### Requirement: R3 Logout
 The system SHALL end the current session on logout. Logout without a session gets 401.
@@ -131,6 +159,11 @@ and its response SHALL carry the new one.
 - **GIVEN** a request with a session
 - **WHEN** the database fails during the session check
 - **THEN** the response is 500 with code `INTERNAL_ERROR` and no internal details in the body
+
+#### Scenario: accounts/R4-S9 The coded error survives a later failure
+- **GIVEN** a request with a session
+- **WHEN** the database fails during the session check
+- **THEN** the coded error response is already committed when the filter returns, so a later failure saving the session cannot replace it
 
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.
@@ -308,3 +341,13 @@ that races a revocation MUST lose: it changes nothing and the session gets 401.
 - **GIVEN** a logged-in teacher and a parallel request that loaded the session before the password change
 - **WHEN** the teacher changes the password, and the parallel request then saves its copy of the session
 - **THEN** the teacher's client, with the cookie from the response, gets 200 and the old session cookie gets 401
+
+#### Scenario: accounts/R9-S10 An over-long ASCII current password counts as wrong
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher changes the password giving a current password of 73 ASCII characters
+- **THEN** the response is 400 with code `WRONG_PASSWORD` and the old password still works
+
+#### Scenario: accounts/R9-S11 A name of only Unicode spaces is rejected
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher sets the name to a single U+2003 space
+- **THEN** the response is 400 and the name does not change

@@ -46,6 +46,9 @@ User changes use targeted `UPDATE`s (`@Modifying @Query` setting only the change
 columns), never `save()` of a whole loaded row: two concurrent changes then cannot undo
 each other (e.g. a password change bringing back `active = true`).
 Dependency: `spring-boot-starter-data-jdbc`.
+Shared rules are custom constraints, not helpers called by hand: `@BcryptPassword` (new
+passwords: 8 characters to 72 bytes) and `@TimeZoneId`. Login and current passwords are not
+size-validated: over 72 bytes is simply a wrong password, rejected before bcrypt runs.
 Request validation (e.g. password rules, required fields) uses Bean Validation:
 `spring-boot-starter-validation`, the standard Spring way, instead of hand-written checks.
 
@@ -107,7 +110,8 @@ the production `ClockConfig` is added in pass 2.
 
 ### D7. Errors
 RFC 7807 `ProblemDetail` for all errors, including those raised in security filters, with a machine-readable `code` property
-(e.g. `WRONG_PASSWORD`) that the UI maps to a translated message.
+(e.g. `WRONG_PASSWORD`) that the UI maps to a translated message. Errors written from a
+filter are flushed at once, so a later failure while saving the session cannot replace them.
 
 ### D8. API (all under `/api`)
 
@@ -159,6 +163,9 @@ Values are checked by the injected Bean Validation `Validator` against the same
 constraints as the API, with no separate rules. Invalid values stop startup with a message
 naming the variable, never its value; if
 no admin exists and a variable is missing, a warning names the missing variable.
+Values come straight from the property sources, not `@Value` or `Environment.getProperty`,
+which would resolve `${...}` and `#{...}` inside a password. A variable counts as missing
+only when unset or empty; present variables are validated even if another is missing.
 An `ApplicationRunner` reads the properties `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`
 (by these exact names, e.g. `${ADMIN_EMAIL}`, not relaxed-bound `admin.*`) and creates
 the admin only if no admin exists (R1).

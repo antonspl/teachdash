@@ -7,7 +7,7 @@
 - [x] 1.2 Test helpers per design D11: users created directly, `loggedInAs()` via the session store, browser-like `TestClient` cookies, `login()` without extra GETs, zone-aware `MutableClock`; verify the smoke test passes
 - [x] 1.3 Stubs per design D2 layout: request/response records and controllers for every endpoint in D8 returning 501, each marked `STUB`; verify compilation
 - [x] 1.4 Flyway `V1__accounts.sql`, `V2__spring_session.sql` per design D9 (Spring Session schema unchanged; principal name = user id, D4); verify the app starts on an empty database
-- [x] 1.5 One test per scenario in `specs/accounts/spec.md` (50 scenarios), scenario ID in `@DisplayName`, `// given / when / then`; R2-S2 and R1 as in D11; verify they compile
+- [x] 1.5 One test per scenario in `specs/accounts/spec.md` (58 scenarios), scenario ID in `@DisplayName`, `// given / when / then`; R2-S2 and R1 as in D11; verify they compile
 - [x] 1.6 Run `scripts/check-scenario-coverage.sh` and `./gradlew test`; verify every scenario test fails at its THEN step (501 or missing behaviour), none in setup; list any exceptions
 - [x] 1.7 PR description lists pass 1 production code (stubs: temporary; migrations: permanent, review as production code) and the commit range for the tests review
 - [x] 1.8 Fixes from the owner's tests review on PR #17 (design D11): R4-S4 CSRF test, `APP_BASE_URL` in test setup, R1-S2 checks the whole admin row, `loggedInAs` uses the stored email, drop `ExcludeTestClasses`, R1 without a second app per test, RestAssured `CookieFilter`, low-cost bcrypt for test users; verify every scenario test fails at its THEN
@@ -40,6 +40,8 @@
 - [x] 3.17 Session id change on password change (D4), filter errors with a code (D7), new link on reactivation (D8), logout requires a session, shared 72-byte guard in `changePassword`, bootstrap uses the `Validator` (D10), version mismatch keeps the session (D4, owner's decision); full suite green
 - [x] 3.18 Failing tests for R6-S8, R9-S9; owner approves before 3.19
 - [x] 3.19 Password change replaces the session (D4), reactivation of an active teacher issues no link (D8); full suite green
+- [ ] 3.20 Failing tests for R1-S6, R1-S7, R1-S8, R2-S7, R2-S8, R4-S9, R9-S10, R9-S11; owner approves before 3.21
+- [ ] 3.21 Literal admin variables and validation order (D10), login order for no-password accounts, over-long passwords are wrong (D3), flushed filter errors (D7), `@BcryptPassword`, `@TimeZoneId` and a Unicode-aware name rule (D3); cleanup: one session start, fewer user reads, the filter reads only `active` and `session_version`; full suite green
 
 ## 4. Local run
 
