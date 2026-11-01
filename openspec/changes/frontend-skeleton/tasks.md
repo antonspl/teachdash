@@ -36,6 +36,21 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 - [x] 5.3 Extend `scripts/check-scenario-coverage.sh` to accept IDs in frontend test titles, as in `design.md`; verify it reports all scenarios covered, and that it fails when one frontend test title is temporarily changed
 - [x] 5.4 Add test instructions to `README.md`; verify from a clean `docker compose down -v` that `docker compose up --build`, `npm test` and `npm run test:e2e` all pass as written
 
+## 6. Owner review: container
+
+- [ ] 6.1 Rewrite `infra/Caddyfile` as in `design.md` (admin off, `/healthz`, configurable upstream, `/assets/*` rule, security headers, compression, cache headers), list `BACKEND_UPSTREAM` in `.env.example`; verify with the tests `[web-client/R1-S3]`, `[web-client/R8-S1]`, `[web-client/R9-S1]`, `[web-client/R9-S2]` and `[web-client/R10-S1]`, and that port 2019 does not answer inside the container
+- [ ] 6.2 Add the compose hardening and healthchecks from `design.md`, including `curl` in the backend image; verify `docker compose up --build --wait` reports all services healthy, the frontend still serves as a non-root user with a read-only filesystem, and the backend tests still pass
+- [ ] 6.3 Remove the polling from the Playwright global setup, read the base URL from its config, and add `[web-client/R5-S3]`; verify `npm run test:e2e` passes and the stack-down message still appears
+- [ ] 6.4 Update the README for health endpoints and `--wait`; verify the commands work as written
+
+## 7. Owner review: code
+
+- [ ] 7.1 Retry the status check while unreachable; verify with the test `[web-client/R3-S3]`
+- [ ] 7.2 API client: explicit `Accept`, rethrow a deliberate cancel, keep `cause` on other failures; verify with unit tests for both
+- [ ] 7.3 Vite proxy key `^/api/`; verify `/api/me` still proxies and `/api-keys` does not
+- [ ] 7.4 Extend the token check as in `design.md`; verify it fails on a temporary raw `px` in a CSS Module, a raw `rem`, a CSS import in a page and a `className` in a page, and passes with `rem` in an `@media` condition
+- [ ] 7.5 Coverage script: `describe.skip`, missing `frontend/e2e` and the `pipefail` false "MISSING"; verify each with a temporary edit or a scratch copy
+
 ## Workflow follow-up
 
 - Reviewer (Sonnet) reviews each implementation slice; one Opus review before asking for the code gate.

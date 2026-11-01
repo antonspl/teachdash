@@ -84,7 +84,11 @@ A small wrapper around `fetch`, with paths relative to `/api`.
   time and sets `X-XSRF-TOKEN`.
 - A non-2xx response throws an `ApiError` holding the status, the `code` if present, the
   translated message and `isProblem`, which the reachability check uses.
-- A network failure throws `ApiError` with no status, with the generic message.
+- It sends `Accept: application/problem+json, application/json`, so the error format it
+  depends on is explicit.
+- A network failure or timeout throws `ApiError` with no status, with the generic message,
+  and keeps the original error as `cause`. A deliberate cancel by the caller is rethrown
+  as is.
 - A response counts as a problem only when its content type is
   `application/problem+json`. The reachability check needs this, so that a 502 from
   Caddy is not taken for a backend answer.
@@ -117,8 +121,11 @@ the look stays in two places, and pages do not own it:
 - **Shared components:** `src/ui/` holds the visual building blocks, each with its own CSS
   Module. Pages use these and do not define their own appearance. This change adds only
   what its two pages need; screen PRs add the rest (buttons, forms and so on).
-- **Enforced:** `npm run lint` also runs a small script that fails on a raw colour or font
-  value in CSS outside `tokens.css`, or on an inline `style=` attribute.
+- **Enforced:** `npm run lint` also runs a small script that fails on:
+  - a raw colour, font, `px` or `rem` value in CSS outside `tokens.css`, except in `@media`
+    conditions, where `var()` does not work;
+  - an inline `style=` attribute;
+  - a CSS import or a `className` in `src/pages/`.
 
 No new dependency: Vite supports CSS Modules and custom properties work in browsers.
 
@@ -131,7 +138,8 @@ behind `src/ui/`, so pages do not depend on it directly.
 
 The placeholder page calls `GET /api/me` on load and shows "checking", then "reachable"
 or "unreachable". The request times out after 10 seconds and then counts as a network
-failure, so a hung backend shows "unreachable". A 401 problem is the normal anonymous result. This also sets the CSRF
+failure, so a hung backend shows "unreachable". While unreachable, the page tries again
+every 5 seconds and stops once reachable. A 401 problem is the normal anonymous result. This also sets the CSRF
 cookie. Alternatives were rejected with the owner: a new health endpoint needs backend
 work, and proxying actuator would expose it.
 
@@ -141,13 +149,36 @@ work, and proxying actuator would expose it.
   context is the repo root, because it copies both `frontend/` and `infra/Caddyfile`. A
   `frontend/Dockerfile.dockerignore` keeps `backend/`, `node_modules/` and other
   unrelated paths out, without affecting the backend build.
-- The `Caddyfile` listens on `:80`. `handle /api/*` proxies to `backend:8080`. Everything
-  else is a file server with `try_files {path} /index.html`, which gives R1-S2 and also
-  R6-S2, because `/actuator/health` returns the app, not health data.
+- The `Caddyfile` listens on `:80`, with the admin API off, since the config never changes
+  at runtime. Routes:
+  - `/healthz` answers 200 (R10).
+  - `/api/*` proxies to `{$BACKEND_UPSTREAM:backend:8080}`. Compose passes the variable and
+    `.env.example` lists it.
+  - `/assets/*` is a file server with a one-year immutable `Cache-Control` and no fallback, so
+    a missing file is a real 404 (R1-S3). A cached old page then fails visibly.
+  - Everything else is a file server with `try_files {path} /index.html` and
+    `Cache-Control: no-cache`, which gives R1-S2 and also R6-S2, because `/actuator/health`
+    returns the app, not health data.
+  - Responses are compressed with `encode zstd gzip`. Static routes share the security
+    headers in a snippet and drop the `Server` header. `/api` is left to Spring.
+- The Content Security Policy is `default-src 'self'; object-src 'none'; base-uri 'self';
+  form-action 'self'; frame-ancestors 'none'`. A later screen that needs more (for example
+  Excalidraw or video) widens it in its own PR, with its reason.
+- `frontend` in compose runs hardened: `read_only`, tmpfs for `/data` and `/config`,
+  `cap_drop: [ALL]`, `cap_add: [NET_BIND_SERVICE]`, `no-new-privileges`, and
+  `restart: unless-stopped`. If `no-new-privileges` stops the non-root binary from binding
+  port 80, the container listens on an unprivileged port instead, with compose mapping to it.
+- Healthchecks: `frontend` uses `/healthz` with the image's `wget`. `backend` uses
+  `/actuator/health`. The backend image has neither `wget` nor `curl`, so its Dockerfile
+  installs `curl`; this is the only backend change. `frontend` waits for
+  `backend: service_healthy`, and `backend` already waits for `postgres`. So
+  `docker compose up --wait` also waits for the backend, and the Playwright global setup no
+  longer needs to poll.
 - A new `frontend` service goes in `infra/docker-compose.yml`, with no ports. The dev file
   publishes `127.0.0.1:8081:80`. Port 80 is avoided because it often needs extra rights or
   is already in use.
-- `vite.config.ts` proxies `/api` to `http://localhost:8080` on port 5173, which is the
+- `vite.config.ts` proxies `^/api/` (so `/api-keys` is not matched, as in Caddy) to
+  `http://localhost:8080` on port 5173, which is the
   origin `APP_BASE_URL` already uses in `infra/dev.env`.
 - The Node version is pinned in `frontend/.nvmrc` and the Dockerfile, to the current LTS.
 
@@ -166,9 +197,11 @@ work, and proxying actuator would expose it.
   message telling the user to run `docker compose up --build`.
 - `scripts/check-scenario-coverage.sh` accepts an ID if it finds the backend
   `@DisplayName("[id]` form, or a `test(` or `it(` call whose title starts with `[id]` in
-  `frontend/src/**/*.test.ts(x)` or `frontend/e2e/**/*.spec.ts`. Comments and
-  `test.skip(` calls do not count. The title may be on the line after the call, as
-  Prettier can put it there.
+  `frontend/src/**/*.test.ts(x)` or `frontend/e2e/**/*.spec.ts`. Comments, `test.skip(`
+  calls and tests inside a `describe.skip` block do not count. The title may be on the line
+  after the call, as Prettier can put it there. A missing test directory is not an error by
+  itself, and the check must not give a false "MISSING" with a long ID list.
+- Playwright's global setup reads the base URL from its config, so it is set in one place.
 
 ### Commands
 

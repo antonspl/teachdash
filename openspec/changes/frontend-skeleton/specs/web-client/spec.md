@@ -10,7 +10,9 @@ strings, the API client and same-origin serving. Product screens build on it.
 ### Requirement: R1 Application pages
 
 The web client SHALL serve a placeholder page at the root path and SHALL show a
-not-found page for any other path, including when that path is opened directly.
+not-found page for any other path, including when that path is opened directly. A missing
+file under `/assets/` SHALL be a real 404, so a stale page fails visibly instead of
+loading HTML as a script.
 
 #### Scenario: web-client/R1-S1 Root path shows the placeholder page
 - **GIVEN** the local stack is running
@@ -22,6 +24,12 @@ not-found page for any other path, including when that path is opened directly.
 - **WHEN** a user opens `/no-such-page` directly
 - **THEN** the response is the web application, not a server error page
 - **AND** the not-found page is shown
+
+#### Scenario: web-client/R1-S3 Missing asset is a real 404
+- **GIVEN** the local stack is running
+- **WHEN** a client requests `/assets/no-such-file.js`
+- **THEN** the response status is 404
+- **AND** the response is not the web application's HTML
 
 ### Requirement: R2 Translated UI strings
 
@@ -38,7 +46,8 @@ English is the only UI language for now.
 
 The placeholder page SHALL show whether the backend can be reached. A successful
 response or a problem response from the backend means reachable. A network failure or
-any other response means unreachable.
+any other response means unreachable. While unreachable, the page SHALL keep checking, so
+it recovers without a reload.
 
 #### Scenario: web-client/R3-S1 Anonymous user sees that the backend is reachable
 - **GIVEN** the local stack is running and the user is not logged in
@@ -49,6 +58,11 @@ any other response means unreachable.
 - **GIVEN** the status request fails with a network error, or returns a 502 that is not a problem response
 - **WHEN** the placeholder page is rendered
 - **THEN** the page shows the translated "unreachable" status
+
+#### Scenario: web-client/R3-S3 Page recovers when the backend comes back
+- **GIVEN** the placeholder page shows the "unreachable" status
+- **WHEN** a later status request gets a problem response
+- **THEN** the page shows the translated "reachable" status without a reload
 
 ### Requirement: R4 CSRF header
 
@@ -77,6 +91,11 @@ response, SHALL give a generic translated message.
 - **WHEN** the API client handles the response
 - **THEN** the caller gets the generic translated error message
 
+#### Scenario: web-client/R5-S3 Real backend error is recognised as a problem response
+- **GIVEN** the local stack is running and the admin account exists
+- **WHEN** a client sends a login with a wrong password and the headers the API client uses
+- **THEN** the response has content type `application/problem+json` and code `WRONG_PASSWORD`
+
 ### Requirement: R6 Same-origin serving
 
 The web container SHALL proxy `/api/*` to the backend on the same origin as the web
@@ -103,3 +122,43 @@ horizontal scrolling and without the browser shrinking the page to fit.
 - **WHEN** a user opens the placeholder page and the not-found page
 - **THEN** each page has no horizontal scrolling
 - **AND** the page is laid out at the phone's own width, not zoomed out
+
+### Requirement: R8 Security headers
+
+Web application responses SHALL carry a Content Security Policy, `X-Content-Type-Options`
+and `Referrer-Policy` headers, and SHALL NOT allow other sites to frame the application.
+The application SHALL work under that policy.
+
+#### Scenario: web-client/R8-S1 Page is served with security headers and works under them
+- **GIVEN** the local stack is running
+- **WHEN** a user opens `/`
+- **THEN** the response has a Content Security Policy with `default-src 'self'` and `frame-ancestors 'none'`
+- **AND** the response has `X-Content-Type-Options: nosniff` and a `Referrer-Policy` header
+- **AND** the page renders with no Content Security Policy violations
+
+### Requirement: R9 Caching and compression
+
+Hashed assets SHALL be cached for a long time and served compressed. The HTML page SHALL be
+revalidated on every load, so a new deploy reaches users.
+
+#### Scenario: web-client/R9-S1 Hashed asset is long-lived and compressed
+- **GIVEN** the local stack is running
+- **WHEN** a client that accepts compression requests a script file under `/assets/`
+- **THEN** the response has `Cache-Control` with `immutable` and a one-year `max-age`
+- **AND** the response is compressed
+
+#### Scenario: web-client/R9-S2 HTML page is revalidated
+- **GIVEN** the local stack is running
+- **WHEN** a client requests `/`
+- **THEN** the response has `Cache-Control: no-cache`
+
+### Requirement: R10 Container health endpoint
+
+The web container SHALL answer `/healthz` with a 200 without depending on the backend, so
+orchestration can check the container itself.
+
+#### Scenario: web-client/R10-S1 Health endpoint answers without the application
+- **GIVEN** the local stack is running
+- **WHEN** a client requests `/healthz`
+- **THEN** the response status is 200
+- **AND** the response is not the web application's HTML

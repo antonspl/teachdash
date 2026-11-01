@@ -21,6 +21,12 @@
 - **How easy must the look be to change?** Very easy: the owner is not a designer and
   expects to rework the first versions. Design values and shared visual components are
   kept apart from pages.
+- **What must the container and tooling do beyond the first spec?** From the owner's PR
+  review: security headers, Caddy admin off, compose hardening, stricter lint on pages and
+  raw sizes, healthchecks, configurable backend address, compression and caching, a real 404
+  for missing assets, status retry, and fixes to tests and the coverage script. All in this
+  PR. This takes the change to 18 scenarios, above the "about 10" limit, by the owner's
+  choice.
 
 ## Why
 
@@ -45,8 +51,16 @@ once so that screen PRs contain only screens.
 - `scripts/check-scenario-coverage.sh` also looks in frontend tests.
 - `openspec/config.yaml`: task rules get an exception for frontend-only changes.
 - README: how to run and test the frontend.
+- Container: security headers, compression, cache headers, health endpoint, hardened compose
+  settings, configurable backend address.
+- A backend container healthcheck, which also needs a small addition to the backend image.
 
 **Out of scope:**
+
+- Changing the login error codes `UNKNOWN_EMAIL` and `WRONG_PASSWORD`, which let anyone check
+  which emails have accounts: the owner decides this separately.
+- Dependency updates and digest-pinned images (#39); HTTPS, HSTS and access logs (#9);
+  `npm audit` and image scanning (#7).
 
 - Product screens, login and session handling (#32 and later).
 - Native iOS or Android apps, and installable or offline (PWA) features.
@@ -73,7 +87,7 @@ None.
 - **Changed:** `infra/docker-compose.yml` and `infra/docker-compose.dev.yml` (new
   `frontend` service), `scripts/check-scenario-coverage.sh`, `openspec/config.yaml`,
   `README.md`.
-- **Backend:** no code or API changes; it uses existing `GET /api/me`, the
+- **Backend:** no code or API changes, only the image tool for its healthcheck; it uses existing `GET /api/me`, the
   `XSRF-TOKEN` cookie and the problem `code`.
 - **Dependencies:** a new npm dependency set, justified in `design.md`. Node is needed
   for local frontend work.
