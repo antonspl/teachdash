@@ -72,16 +72,16 @@ Revocation: `users.session_version` (D9) is copied into a session attribute when
 session starts. A filter after the security context is loaded reads the user by id on
 every authenticated request (one primary-key lookup); if the account is inactive it invalidates the
 session; if only the versions differ it clears the security context and keeps the session.
-Either way the request gets 401. Keeping the session matters because a password change
-saves the new version shortly before its session is updated: a parallel request in that gap
-must not delete the session that made the change (it gets one brief 401). A session without
+Either way the request gets 401. A session without
 the attribute counts as version 0. Deactivation, reset and password change raise the
 version in the same transaction as the change, so revocation cannot half-fail and a
 login finishing at the same moment still loses. A password change updates the row only `where active and session_version = <the
 session's version>`; no row updated means the session was revoked meanwhile, so it gets
-401 and nothing changes. On success it copies the new version into the current session and
-changes the session id (`request.changeSessionId()`), so a stolen copy of the old id stops
-working. Bcrypt runs before the transaction starts, so no database connection is held
+401 and nothing changes. On success the session is replaced: copy the security context, invalidate the old session,
+create a new one, and set the version returned by the update. A stolen copy of the old id
+stops working. `changeSessionId()` is not used: a parallel request that loaded the old id
+and saves later writes that id back, logging the user out and reviving the old id. A stale
+save now updates no rows. Bcrypt runs before the transaction starts, so no database connection is held
 during hashing or verifying, which could otherwise exhaust the pool. Revoked rows are not deleted one by one: they cannot be used, and Spring Session's expiry
 cleanup removes them.
 Alternative (deleting sessions after commit) can fail after the change is saved, needs a
@@ -132,7 +132,8 @@ JSON shapes:
 - `POST /admin/teachers`: request `{name, email, timeZone}`, response 201
   `{id, setPasswordLink}`.
 - `POST /admin/teachers/{id}/reactivate`: 204, or 200 `{setPasswordLink}` if the teacher
-  has no password (deactivation cancels unused links, so otherwise they are locked out).
+  was inactive and has no password (deactivation cancels unused links, so otherwise they
+  are locked out). An already active teacher keeps their link.
 - `POST /admin/users/{id}/reset-link`: response `{link}`.
 - `POST /password-links`: request `{token, password}`; 200 starts a session; a used,
   expired or replaced link returns 410. The token is never in the path or query.

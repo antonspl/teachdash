@@ -194,6 +194,11 @@ a new set-password link.
 - **WHEN** the admin reactivates the teacher, and the returned link is used to set a password
 - **THEN** reactivation returns 200 with a set-password link that starts with the configured base URL, and the link sets the password
 
+#### Scenario: accounts/R6-S8 Reactivating an active teacher keeps their link
+- **GIVEN** a logged-in admin and an active teacher with an unused set-password link
+- **WHEN** the admin reactivates the teacher
+- **THEN** the response is 204 and the existing link still sets the password
+
 ### Requirement: R7 Single-use password links
 A set-password or reset-password link SHALL let its holder set a new password once.
 A link MUST be rejected after it is used, after 7 days, or after a newer link for the
@@ -298,3 +303,8 @@ that races a revocation MUST lose: it changes nothing and the session gets 401.
 - **GIVEN** a logged-in teacher
 - **WHEN** the teacher changes the password giving a current password of 40 Cyrillic characters (80 bytes)
 - **THEN** the response is 400 with code `WRONG_PASSWORD` and the old password still works
+
+#### Scenario: accounts/R9-S9 A parallel request cannot undo the session replacement
+- **GIVEN** a logged-in teacher and a parallel request that loaded the session before the password change
+- **WHEN** the teacher changes the password, and the parallel request then saves its copy of the session
+- **THEN** the teacher's client, with the cookie from the response, gets 200 and the old session cookie gets 401
