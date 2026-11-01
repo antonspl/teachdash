@@ -136,7 +136,7 @@ work, and proxying actuator would expose it.
 
 ### Serving
 
-- `frontend/Dockerfile` is multi-stage: Node builds, `caddy:2-alpine` serves. Its build
+- `frontend/Dockerfile` is multi-stage: Node builds, a pinned `caddy:2.x-alpine` image serves. Its build
   context is the repo root, because it copies both `frontend/` and `infra/Caddyfile`. A
   `frontend/Dockerfile.dockerignore` keeps `backend/`, `node_modules/` and other
   unrelated paths out, without affecting the backend build.
