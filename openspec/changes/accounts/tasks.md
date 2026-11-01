@@ -7,7 +7,7 @@
 - [x] 1.2 Test helpers per design D11: users created directly, `loggedInAs()` via the session store, browser-like `TestClient` cookies, `login()` without extra GETs, zone-aware `MutableClock`; verify the smoke test passes
 - [x] 1.3 Stubs per design D2 layout: request/response records and controllers for every endpoint in D8 returning 501, each marked `STUB`; verify compilation
 - [x] 1.4 Flyway `V1__accounts.sql`, `V2__spring_session.sql` per design D9 (Spring Session schema unchanged; principal name = user id, D4); verify the app starts on an empty database
-- [x] 1.5 One test per scenario in `specs/accounts/spec.md` (42 scenarios), scenario ID in `@DisplayName`, `// given / when / then`; R2-S2 and R1 as in D11; verify they compile
+- [x] 1.5 One test per scenario in `specs/accounts/spec.md` (48 scenarios), scenario ID in `@DisplayName`, `// given / when / then`; R2-S2 and R1 as in D11; verify they compile
 - [x] 1.6 Run `scripts/check-scenario-coverage.sh` and `./gradlew test`; verify every scenario test fails at its THEN step (501 or missing behaviour), none in setup; list any exceptions
 - [x] 1.7 PR description lists pass 1 production code (stubs: temporary; migrations: permanent, review as production code) and the commit range for the tests review
 - [x] 1.8 Fixes from the owner's tests review on PR #17 (design D11): R4-S4 CSRF test, `APP_BASE_URL` in test setup, R1-S2 checks the whole admin row, `loggedInAs` uses the stored email, drop `ExcludeTestClasses`, R1 without a second app per test, RestAssured `CookieFilter`, low-cost bcrypt for test users; verify every scenario test fails at its THEN
@@ -35,6 +35,9 @@
 - [x] 3.12 Fixes from the reviewer, no approval needed: same lock order for user and token rows (invalidate links before updating the user), bcrypt before the first write, compose project name and one source for the database password
 - [x] 3.13 Failing tests for R4-S7, R6-S6, R9-S6; owner approves before 3.14
 - [ ] 3.14 Guarded password update (D4), login response sets the new CSRF cookie with `SameSite=Lax` (D4), `csrf.spa()` before the custom repository; full suite green
+- [ ] 3.15 Bcrypt runs outside the transaction (D4); shared 72-byte guard is applied in `changePassword`
+- [ ] 3.16 Failing tests for R1-S5, R3-S2, R4-S8, R6-S7, R9-S7, R9-S8; R1-S4 adds the `Validator` constructor argument (owner approves that line with the new tests); owner approves before 3.17
+- [ ] 3.17 Session id change on password change (D4), filter errors with a code (D7), new link on reactivation (D8), logout requires a session, bootstrap uses the `Validator` (D10); full suite green
 
 ## 4. Local run
 

@@ -11,9 +11,8 @@ email and password, and manage passwords through single-use links sent by hand.
 On startup, if no admin account exists and `ADMIN_EMAIL`, `ADMIN_PASSWORD` and
 `ADMIN_NAME` are set, the system SHALL create an active admin account with these
 values. If an admin already exists, the system MUST NOT create or change any account.
-If no admin exists and the variables are invalid (password shorter than 8 characters or
-longer than 72 bytes, name over 200 characters, email over 320 characters or not an
-email), startup MUST fail with a message naming the variable, without its value.
+If no admin exists and a variable breaks the rules the API applies to the same field,
+startup MUST fail with a message naming the variable, without its value.
 
 #### Scenario: accounts/R1-S1 First start creates the admin
 - **GIVEN** an empty database and the admin variables are set
@@ -34,6 +33,11 @@ email), startup MUST fail with a message naming the variable, without its value.
 - **GIVEN** no admin account exists and `ADMIN_PASSWORD` is "abc"
 - **WHEN** the application starts
 - **THEN** startup fails with a message naming `ADMIN_PASSWORD` and not containing "abc", and no account is created
+
+#### Scenario: accounts/R1-S5 An email the API would reject stops startup
+- **GIVEN** no admin account exists and `ADMIN_EMAIL` is "a,b@x"
+- **WHEN** the application starts
+- **THEN** startup fails with a message naming `ADMIN_EMAIL`, and no account is created
 
 ### Requirement: R2 Login with email and password
 The system SHALL sign in an active account with a matching email and password and
@@ -71,12 +75,16 @@ MUST be rejected with 400 `VALIDATION_FAILED` on every endpoint.
 - **THEN** the response is 400 with code `VALIDATION_FAILED`
 
 ### Requirement: R3 Logout
-The system SHALL end the current session on logout.
+The system SHALL end the current session on logout. Logout without a session gets 401.
 
 #### Scenario: accounts/R3-S1 Logout ends the session
 - **GIVEN** a logged-in student
 - **WHEN** the student logs out
 - **THEN** the current-user endpoint returns 401 for that session
+
+#### Scenario: accounts/R3-S2 Logout without a session is rejected
+- **WHEN** a client with a valid CSRF token and no session logs out
+- **THEN** the response is 401 with code `UNAUTHENTICATED`
 
 ### Requirement: R4 Role-based access
 Every endpoint except login, set-password-by-link and the health check
@@ -119,6 +127,11 @@ and its response SHALL carry the new one.
 - **WHEN** the client logs in, and then sends a state-changing request with the token from the login response
 - **THEN** the login response sets a new non-empty `XSRF-TOKEN` cookie with `SameSite=Lax`, different from the old one, and the next request is not rejected for CSRF
 
+#### Scenario: accounts/R4-S8 A failure in the session check returns a coded error
+- **GIVEN** a request with a session
+- **WHEN** the database fails during the session check
+- **THEN** the response is 500 with code `INTERNAL_ERROR` and no internal details in the body
+
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.
 The account has no password yet; the response SHALL contain a single-use set-password
@@ -143,7 +156,8 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 An admin SHALL be able to deactivate and reactivate a teacher account. Deactivation
 MUST end the teacher's sessions: every request re-checks that the account is active.
 The teacher list SHALL show whether each teacher is active. An id that is not a teacher
-MUST get 404 and change nothing.
+MUST get 404 and change nothing. Reactivating a teacher who has no password SHALL return
+a new set-password link.
 
 #### Scenario: accounts/R6-S1 Deactivation ends sessions and blocks login
 - **GIVEN** a logged-in teacher
@@ -174,6 +188,11 @@ MUST get 404 and change nothing.
 - **GIVEN** a logged-in teacher
 - **WHEN** the admin deactivates and then reactivates the teacher
 - **THEN** the teacher's old session gets 401 and a new login returns 200
+
+#### Scenario: accounts/R6-S7 Reactivating a teacher with no password returns a new link
+- **GIVEN** a logged-in admin and a deactivated teacher who never set a password
+- **WHEN** the admin reactivates the teacher, and the returned link is used to set a password
+- **THEN** reactivation returns 200 with a set-password link that starts with the configured base URL, and the link sets the password
 
 ### Requirement: R7 Single-use password links
 A set-password or reset-password link SHALL let its holder set a new password once.
@@ -236,7 +255,8 @@ a session version; a session started under an older version MUST NOT work.
 A logged-in user SHALL be able to change their name and time zone, and change their
 password by giving the current one. The time zone MUST be a valid IANA zone name.
 A successful password change MUST end the account's other sessions and invalidate its
-unused password links; the session that made the change stays valid. A password change
+unused password links; the session that made the change stays valid under a new session
+id, so a copy of the old id stops working. A password change
 that races a revocation MUST lose: it changes nothing and the session gets 401.
 
 #### Scenario: accounts/R9-S1 Update name and time zone
@@ -268,3 +288,13 @@ that races a revocation MUST lose: it changes nothing and the session gets 401.
 - **GIVEN** a teacher whose session version was raised after the session's check, so the change holds an older version
 - **WHEN** the password change runs with that older version
 - **THEN** it is rejected with 401, the old password still works, and the session version does not change
+
+#### Scenario: accounts/R9-S7 Password change replaces the session id
+- **GIVEN** a logged-in teacher and a copy of the same session cookie
+- **WHEN** the teacher changes the password
+- **THEN** the copy gets 401 and the teacher's client, with the cookie from the response, gets 200
+
+#### Scenario: accounts/R9-S8 An over-long current password counts as wrong
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher changes the password giving a current password of 40 Cyrillic characters (80 bytes)
+- **THEN** the response is 400 with code `WRONG_PASSWORD` and the old password still works

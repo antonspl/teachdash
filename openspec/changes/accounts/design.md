@@ -76,8 +76,10 @@ the attribute counts as version 0. Deactivation, reset and password change raise
 version in the same transaction as the change, so revocation cannot half-fail and a
 login finishing at the same moment still loses. A password change updates the row only `where active and session_version = <the
 session's version>`; no row updated means the session was revoked meanwhile, so it gets
-401 and nothing changes. On success it copies the new version into the current session,
-which keeps it valid. Revoked rows are not deleted one by one:
+401 and nothing changes. On success it copies the new version into the current session and
+changes the session id (`request.changeSessionId()`), so a stolen copy of the old id stops
+working. Bcrypt runs before the transaction starts, so no database connection is held
+during hashing or verifying, which could otherwise exhaust the pool. Revoked rows are not deleted one by one:
 the filter removes them on next use and Spring Session's expiry cleanup removes the rest.
 Alternative (deleting sessions after commit) can fail after the change is saved, needs a
 second pooled connection, and misses a login that finishes just after the deletion.
@@ -101,7 +103,7 @@ their own `Clock` (`TestClockConfig`, `@Primary` so it wins over the production 
 the production `ClockConfig` is added in pass 2.
 
 ### D7. Errors
-RFC 7807 `ProblemDetail` for all errors, with a machine-readable `code` property
+RFC 7807 `ProblemDetail` for all errors, including those raised in security filters, with a machine-readable `code` property
 (e.g. `WRONG_PASSWORD`) that the UI maps to a translated message.
 
 ### D8. API (all under `/api`)
@@ -126,6 +128,8 @@ JSON shapes:
 - Teacher list items: the User shape plus `active`.
 - `POST /admin/teachers`: request `{name, email, timeZone}`, response 201
   `{id, setPasswordLink}`.
+- `POST /admin/teachers/{id}/reactivate`: 204, or 200 `{setPasswordLink}` if the teacher
+  has no password (deactivation cancels unused links, so otherwise they are locked out).
 - `POST /admin/users/{id}/reset-link`: response `{link}`.
 - `POST /password-links`: request `{token, password}`; 200 starts a session; a used,
   expired or replaced link returns 410. The token is never in the path or query.
@@ -147,7 +151,9 @@ code at the tests gate. They are not applied anywhere yet, so they may still be
 edited until this change merges.
 
 ### D10. Admin bootstrap
-Invalid values stop startup with a message naming the variable, never its value; if
+Values are checked by the injected Bean Validation `Validator` against the same
+constraints as the API, with no separate rules. Invalid values stop startup with a message
+naming the variable, never its value; if
 no admin exists and a variable is missing, a warning names the missing variable.
 An `ApplicationRunner` reads the properties `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`
 (by these exact names, e.g. `${ADMIN_EMAIL}`, not relaxed-bound `admin.*`) and creates
