@@ -11,6 +11,9 @@ email and password, and manage passwords through single-use links sent by hand.
 On startup, if no admin account exists and `ADMIN_EMAIL`, `ADMIN_PASSWORD` and
 `ADMIN_NAME` are set, the system SHALL create an active admin account with these
 values. If an admin already exists, the system MUST NOT create or change any account.
+If no admin exists and the variables are invalid (password shorter than 8 characters or
+longer than 72 bytes, name over 200 characters, email over 320 characters or not an
+email), startup MUST fail with a message naming the variable, without its value.
 
 #### Scenario: accounts/R1-S1 First start creates the admin
 - **GIVEN** an empty database and the admin variables are set
@@ -27,11 +30,17 @@ values. If an admin already exists, the system MUST NOT create or change any acc
 - **WHEN** the application starts
 - **THEN** no account is created and no account with the `ADMIN_EMAIL` email exists
 
+#### Scenario: accounts/R1-S4 Invalid admin variables stop startup
+- **GIVEN** no admin account exists and `ADMIN_PASSWORD` is "abc"
+- **WHEN** the application starts
+- **THEN** startup fails with a message naming `ADMIN_PASSWORD` and not containing "abc", and no account is created
+
 ### Requirement: R2 Login with email and password
 The system SHALL sign in an active account with a matching email and password and
 start a session. Email matching MUST be case-insensitive. A failed login MUST return
 401 with an error code naming the reason: `UNKNOWN_EMAIL`, `WRONG_PASSWORD`,
-`ACCOUNT_DEACTIVATED` or `PASSWORD_NOT_SET`.
+`ACCOUNT_DEACTIVATED` or `PASSWORD_NOT_SET`. Text input containing a NUL character MUST
+be rejected with 400 `VALIDATION_FAILED` on every endpoint.
 
 #### Scenario: accounts/R2-S1 Valid credentials start a session
 - **GIVEN** an active teacher account
@@ -56,6 +65,10 @@ start a session. Email matching MUST be case-insensitive. A failed login MUST re
 - **GIVEN** a deactivated teacher account
 - **WHEN** the teacher logs in with the correct email and password
 - **THEN** the response is 401 with code `ACCOUNT_DEACTIVATED`
+
+#### Scenario: accounts/R2-S6 NUL character in input is rejected
+- **WHEN** someone logs in with an email containing a NUL character
+- **THEN** the response is 400 with code `VALIDATION_FAILED`
 
 ### Requirement: R3 Logout
 The system SHALL end the current session on logout.
@@ -96,6 +109,10 @@ without a valid CSRF token MUST be rejected with 403.
 - **WHEN** the teacher and the student each call every admin endpoint that changes data: create a teacher, deactivate and reactivate the other teacher, issue a reset link for the admin
 - **THEN** every response is 403, no account is created or changed, and no link is issued
 
+#### Scenario: accounts/R4-S6 Anonymous response sets the CSRF cookie
+- **WHEN** a client with no cookies calls the current-user endpoint
+- **THEN** the response is 401 and sets a non-empty `XSRF-TOKEN` cookie
+
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.
 The account has no password yet; the response SHALL contain a single-use set-password
@@ -118,9 +135,9 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 
 ### Requirement: R6 Admin deactivates and reactivates teachers
 An admin SHALL be able to deactivate and reactivate a teacher account. Deactivation
-MUST end the teacher's active sessions. Only teacher accounts can be deactivated or
-reactivated through these endpoints: an id that is not a teacher (an admin, including
-the caller, a student, or an unknown id) MUST get 404 and change nothing.
+MUST end the teacher's sessions: every request re-checks that the account is active.
+The teacher list SHALL show whether each teacher is active. An id that is not a teacher
+MUST get 404 and change nothing.
 
 #### Scenario: accounts/R6-S1 Deactivation ends sessions and blocks login
 - **GIVEN** a logged-in teacher
@@ -136,6 +153,16 @@ the caller, a student, or an unknown id) MUST get 404 and change nothing.
 - **GIVEN** a logged-in admin and a student account
 - **WHEN** the admin tries to deactivate their own account and the student's account
 - **THEN** both responses are 404, both accounts stay active, and the admin's session still works
+
+#### Scenario: accounts/R6-S4 Every request re-checks that the account is active
+- **GIVEN** a logged-in teacher whose session still exists
+- **WHEN** the account becomes inactive in the database without the session being touched
+- **THEN** the teacher's next request gets 401
+
+#### Scenario: accounts/R6-S5 Teacher list shows who is active
+- **GIVEN** a logged-in admin, an active teacher and a deactivated teacher
+- **WHEN** the admin lists teachers
+- **THEN** each list item has an `active` field with the right value
 
 ### Requirement: R7 Single-use password links
 A set-password or reset-password link SHALL let its holder set a new password once.
@@ -176,7 +203,8 @@ and change nothing.
 
 ### Requirement: R8 Admin issues password reset links
 An admin SHALL be able to issue a reset link for any account. After a reset, the old
-password MUST stop working and the account's other sessions MUST end.
+password MUST stop working and the account's other sessions MUST end. Each account has
+a session version; a session started under an older version MUST NOT work.
 
 #### Scenario: accounts/R8-S1 Admin issues a reset link
 - **GIVEN** a logged-in admin and a teacher account
@@ -188,11 +216,16 @@ password MUST stop working and the account's other sessions MUST end.
 - **WHEN** the link is used to set a new password
 - **THEN** the old password gets 401 on login, the student's earlier session gets 401, and the session started by the link stays valid
 
+#### Scenario: accounts/R8-S3 A session from an older session version is rejected
+- **GIVEN** a logged-in teacher whose session still exists
+- **WHEN** the account's session version is raised in the database without the session being touched
+- **THEN** the teacher's next request gets 401
+
 ### Requirement: R9 Profile
 A logged-in user SHALL be able to change their name and time zone, and change their
 password by giving the current one. The time zone MUST be a valid IANA zone name.
-A successful password change MUST end the account's other sessions; the session that
-made the change stays valid.
+A successful password change MUST end the account's other sessions and invalidate its
+unused password links; the session that made the change stays valid.
 
 #### Scenario: accounts/R9-S1 Update name and time zone
 - **GIVEN** a logged-in student
@@ -213,3 +246,8 @@ made the change stays valid.
 - **GIVEN** a teacher logged in on two devices
 - **WHEN** the teacher changes the password on the first device, giving the correct current password
 - **THEN** the response is 204, the second device's session gets 401, the first device's session still works, and the teacher logs in with the new password
+
+#### Scenario: accounts/R9-S5 Password change invalidates unused links
+- **GIVEN** a logged-in teacher with an unused reset link
+- **WHEN** the teacher changes the password, and the link is then used
+- **THEN** using the link returns 410 and the new password still works

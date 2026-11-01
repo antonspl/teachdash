@@ -42,6 +42,9 @@ package) mixes controllers, DTOs and domain and grows badly in pass 2.
 ### D3. Persistence — Spring Data JDBC
 Simple aggregates, explicit SQL in Flyway, no lazy-loading surprises.
 Alternative: JPA/Hibernate — more magic than this project needs.
+User changes use targeted `UPDATE`s (`@Modifying @Query` setting only the changed
+columns), never `save()` of a whole loaded row: two concurrent changes then cannot undo
+each other (e.g. a password change bringing back `active = true`).
 Dependency: `spring-boot-starter-data-jdbc`.
 Request validation (e.g. password rules, required fields) uses Bean Validation:
 `spring-boot-starter-validation`, the standard Spring way, instead of hand-written checks.
@@ -62,11 +65,19 @@ Session contents (tests create sessions this way, D11): the `SecurityContext` un
 the **user's id (UUID)**, authorities `ROLE_ADMIN` / `ROLE_TEACHER` / `ROLE_STUDENT`;
 no custom principal class. The current user is looked up by id from
 `authentication.getName()`. Spring Session defaults: `SESSION` cookie (base64 id),
-JDK-serialized attributes, principal-name index = user id. Using the id, not the
-email, means a login typed in another letter case still lands on the same index,
-so deactivation and reset (R6, R8) always find every session, and a later email
-change does not orphan sessions. Login therefore looks the user up by
-case-insensitive email and builds the principal from the stored id.
+JDK-serialized attributes. Login looks the user up by case-insensitive email and builds
+the principal from the stored id, so a later email change does not orphan sessions.
+Revocation: `users.session_version` (D9) is copied into a session attribute when a
+session starts. A filter after the security context is loaded reads the user by id on
+every authenticated request (one primary-key lookup); if the account is inactive or the
+versions differ, it invalidates the session and the request gets 401. A session without
+the attribute counts as version 0. Deactivation, reset and password change raise the
+version in the same transaction as the change, so revocation cannot half-fail and a
+login finishing at the same moment still loses. A password change copies the new version
+into the current session, which keeps it valid. Revoked rows are not deleted one by one:
+the filter removes them on next use and Spring Session's expiry cleanup removes the rest.
+Alternative (deleting sessions after commit) can fail after the change is saved, needs a
+second pooled connection, and misses a login that finishes just after the deletion.
 
 ### D5. One-time links
 Token = 32 random bytes, base64url. Only the hash is stored —
@@ -109,6 +120,7 @@ JSON shapes:
   (`ADMIN` / `TEACHER` / `STUDENT`), `timeZone` (IANA id, e.g. `Europe/Moscow`).
 - `POST /auth/login`: `{email, password}`. `PATCH /me`: `{name, timeZone}`.
   `POST /me/password`: `{currentPassword, newPassword}`.
+- Teacher list items: the User shape plus `active`.
 - `POST /admin/teachers`: request `{name, email, timeZone}`, response 201
   `{id, setPasswordLink}`.
 - `POST /admin/users/{id}/reset-link`: response `{link}`.
@@ -118,7 +130,8 @@ JSON shapes:
 
 ### D9. Data model and Flyway migrations
 - `V1__accounts.sql` — `users` (id uuid, email, name, role, password_hash nullable,
-  time_zone, active, created_at; unique index on `lower(email)`),
+  time_zone, active, session_version int not null default 0, created_at; unique index
+  on `lower(email)`),
   `one_time_tokens` (token_hash, user_id, purpose, expires_at, used_at, created_at;
   partial unique index on `user_id` where `used_at is null` — at most one unused
   token per account, D5).
@@ -131,6 +144,8 @@ code at the tests gate. They are not applied anywhere yet, so they may still be
 edited until this change merges.
 
 ### D10. Admin bootstrap
+Invalid values stop startup with a message naming the variable, never its value; if
+no admin exists and a variable is missing, a warning names the missing variable.
 An `ApplicationRunner` reads the properties `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`
 (by these exact names, e.g. `${ADMIN_EMAIL}`, not relaxed-bound `admin.*`) and creates
 the admin only if no admin exists (R1).
@@ -151,8 +166,6 @@ the admin only if no admin exists (R1).
   `XSRF-TOKEN` cookie + header pair (double-submit), so `login()` is one POST with no
   extra GETs. The header always carries the current `XSRF-TOKEN` cookie value, so a
   token the server rotates on login is picked up; `snapshot()` keeps that setting.
-  Known gap: no test checks that the server sets `XSRF-TOKEN` on every
-  response (D4); `cabinets-ui` E2E tests cover it.
 - `MutableClock` (the movable test clock for D6): one shared instant; `withZone(z)`
   returns a clock with that zone over the same instant, so zone bugs are not hidden.
 - R1 tests run the real bootstrap `ApplicationRunner` bean from a cached test
@@ -167,10 +180,12 @@ the admin only if no admin exists (R1).
 - R2-S2 checks "no session is started" directly: no `SESSION` cookie on the client
   and no `spring_session` row.
 - Coverage: `scripts/check-scenario-coverage.sh` (from `workflow`), by hand until CI.
-- Local: `backend/Dockerfile` and `infra/docker-compose.yml` running Postgres and the
-  backend (`docker compose up` from a fresh clone). `.env.example` lists every
-  variable with dev defaults; `.env` is gitignored. CI comes in a separate task and
-  reuses the same test command and coverage script.
+- Local run: `backend/Dockerfile`; `infra/docker-compose.yml` is the production-like base
+  with no defaults (`${ADMIN_PASSWORD:?}` and so on) and no published backend or database
+  port. The root `compose.yaml` adds `infra/docker-compose.dev.yml` and `infra/dev.env`:
+  dev-only credentials and ports bound to `127.0.0.1` (8080, 5432), so `docker compose up`
+  works from a fresh clone and only there. `.env` is gitignored and overrides values.
+  CI comes in a separate task and reuses the same test command and coverage script.
 
 ### D12. Logging
 Spring Boot structured logging (`logging.structured.format.console`) to stdout. No
