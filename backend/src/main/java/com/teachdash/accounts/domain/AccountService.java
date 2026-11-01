@@ -64,7 +64,7 @@ public class AccountService {
 		User user = users.findByEmailIgnoreCase(email.strip())
 				.orElseThrow(() -> unauthorized("UNKNOWN_EMAIL"));
 		if (user.getPasswordHash() == null) {
-			throw unauthorized("PASSWORD_NOT_SET");
+			throw unauthorized(user.isActive() ? "PASSWORD_NOT_SET" : "ACCOUNT_DEACTIVATED");
 		}
 		if (!matches(password, user.getPasswordHash())) {
 			throw unauthorized("WRONG_PASSWORD");

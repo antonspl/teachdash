@@ -22,5 +22,6 @@ public final class ProblemJson {
 		String body = "{\"type\":\"about:blank\",\"title\":\"%s\",\"status\":%d,\"code\":\"%s\"}"
 				.formatted(title, status, code);
 		response.getWriter().write(body);
+		response.flushBuffer();
 	}
 }
