@@ -25,9 +25,9 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 ## 4. Container
 
-- [ ] 4.1 Add `frontend/Dockerfile`, `.dockerignore` and `infra/Caddyfile` as in `design.md`; verify the image builds
+- [x] 4.1 Add `frontend/Dockerfile`, `frontend/Dockerfile.dockerignore` and `infra/Caddyfile` as in `design.md`; verify the image builds
 - [ ] 4.2 Add the `frontend` service to `infra/docker-compose.yml` and publish `127.0.0.1:8081:80` in `infra/docker-compose.dev.yml`; verify `docker compose up --build` serves the placeholder page at `http://localhost:8081` and it shows "reachable"
-- [ ] 4.3 Add "Frontend" run instructions to `README.md`: dev server, container, which port is for what, direct backend URL for health; verify the commands work as written
+- [x] 4.3 Add "Frontend" run instructions to `README.md`: dev server, container, which port is for what, direct backend URL for health; verify the commands work as written
 
 ## 5. E2E and scenario coverage
 

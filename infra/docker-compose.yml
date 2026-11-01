@@ -29,5 +29,12 @@ services:
       postgres:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - backend
+
 volumes:
   pgdata:
