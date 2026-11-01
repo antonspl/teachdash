@@ -70,8 +70,11 @@ JDK-serialized attributes. Login looks the user up by case-insensitive email and
 the principal from the stored id, so a later email change does not orphan sessions.
 Revocation: `users.session_version` (D9) is copied into a session attribute when a
 session starts. A filter after the security context is loaded reads the user by id on
-every authenticated request (one primary-key lookup); if the account is inactive or the
-versions differ, it invalidates the session and the request gets 401. A session without
+every authenticated request (one primary-key lookup); if the account is inactive it invalidates the
+session; if only the versions differ it clears the security context and keeps the session.
+Either way the request gets 401. Keeping the session matters because a password change
+saves the new version shortly before its session is updated: a parallel request in that gap
+must not delete the session that made the change (it gets one brief 401). A session without
 the attribute counts as version 0. Deactivation, reset and password change raise the
 version in the same transaction as the change, so revocation cannot half-fail and a
 login finishing at the same moment still loses. A password change updates the row only `where active and session_version = <the
@@ -79,8 +82,8 @@ session's version>`; no row updated means the session was revoked meanwhile, so 
 401 and nothing changes. On success it copies the new version into the current session and
 changes the session id (`request.changeSessionId()`), so a stolen copy of the old id stops
 working. Bcrypt runs before the transaction starts, so no database connection is held
-during hashing or verifying, which could otherwise exhaust the pool. Revoked rows are not deleted one by one:
-the filter removes them on next use and Spring Session's expiry cleanup removes the rest.
+during hashing or verifying, which could otherwise exhaust the pool. Revoked rows are not deleted one by one: they cannot be used, and Spring Session's expiry
+cleanup removes them.
 Alternative (deleting sessions after commit) can fail after the change is saved, needs a
 second pooled connection, and misses a login that finishes just after the deletion.
 

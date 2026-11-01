@@ -37,7 +37,7 @@
 - [x] 3.14 Guarded password update (D4), login response sets the new CSRF cookie with `SameSite=Lax` (D4), `csrf.spa()` before the custom repository; full suite green
 - [x] 3.15 Bcrypt runs outside the transaction (D4)
 - [x] 3.16 Failing tests for R1-S5, R3-S2, R4-S8, R6-S7, R9-S7, R9-S8; R1-S4 adds the `Validator` constructor argument (owner approves that line with the new tests); owner approves before 3.17
-- [ ] 3.17 Session id change on password change (D4), filter errors with a code (D7), new link on reactivation (D8), logout requires a session, shared 72-byte guard in `changePassword`, bootstrap uses the `Validator` (D10); full suite green
+- [ ] 3.17 Session id change on password change (D4), filter errors with a code (D7), new link on reactivation (D8), logout requires a session, shared 72-byte guard in `changePassword`, bootstrap uses the `Validator` (D10), version mismatch keeps the session (D4, owner's decision); full suite green
 
 ## 4. Local run
 
