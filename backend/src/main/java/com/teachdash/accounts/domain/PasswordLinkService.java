@@ -31,7 +31,6 @@ public class PasswordLinkService {
 
 	private final OneTimeTokenRepository tokens;
 	private final UserRepository users;
-	private final AccountService accounts;
 	private final PasswordEncoder passwordEncoder;
 	private final Clock clock;
 	private final String baseUrl;
@@ -39,13 +38,11 @@ public class PasswordLinkService {
 	PasswordLinkService(
 			OneTimeTokenRepository tokens,
 			UserRepository users,
-			AccountService accounts,
 			PasswordEncoder passwordEncoder,
 			Clock clock,
 			@Value("${APP_BASE_URL}") String baseUrl) {
 		this.tokens = tokens;
 		this.users = users;
-		this.accounts = accounts;
 		this.passwordEncoder = passwordEncoder;
 		this.clock = clock;
 		this.baseUrl = baseUrl.endsWith("/")
@@ -79,7 +76,7 @@ public class PasswordLinkService {
 		tokens.markUnusedAsUsed(userId, clock.instant());
 	}
 
-	/** Sets the password, consumes the link and ends the account's sessions; returns the user. */
+	/** Sets the password, consumes the link and revokes older sessions; returns the updated user. */
 	@Transactional
 	public User use(String token, String password) {
 		AccountService.requireEncodable(password);
@@ -98,9 +95,8 @@ public class PasswordLinkService {
 		if (tokens.markUsed(stored.getId(), now) != 1) {
 			throw invalid();
 		}
-		users.updatePasswordHash(user.getId(), passwordEncoder.encode(password));
-		accounts.endSessions(user.getId());
-		return user;
+		users.updatePasswordHashAndRevokeSessions(user.getId(), passwordEncoder.encode(password));
+		return users.findById(user.getId()).orElseThrow(PasswordLinkService::invalid);
 	}
 
 	private static ApiException invalid() {

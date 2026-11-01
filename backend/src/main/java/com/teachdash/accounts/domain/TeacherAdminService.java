@@ -18,17 +18,14 @@ public class TeacherAdminService {
 
 	private final UserRepository users;
 	private final PasswordLinkService links;
-	private final AccountService accounts;
 	private final Clock clock;
 
 	TeacherAdminService(
 			UserRepository users,
 			PasswordLinkService links,
-			AccountService accounts,
 			Clock clock) {
 		this.users = users;
 		this.links = links;
-		this.accounts = accounts;
 		this.clock = clock;
 	}
 
@@ -59,16 +56,17 @@ public class TeacherAdminService {
 		return new CreatedTeacher(teacher.getId(), links.issue(teacher.getId(), TokenPurpose.SET_PASSWORD));
 	}
 
-	/** Deactivation also ends the teacher's sessions. */
+	/** Deactivation also revokes the teacher's sessions (session version) and unused links. */
 	@Transactional
 	public void setTeacherActive(UUID id, boolean active) {
 		users.findById(id)
 				.filter(user -> user.getRole() == Role.TEACHER)
 				.orElseThrow(TeacherAdminService::notFound);
-		users.updateActive(id, active);
-		if (!active) {
+		if (active) {
+			users.reactivate(id);
+		} else {
+			users.deactivate(id);
 			links.invalidateLinks(id);
-			accounts.endSessions(id);
 		}
 	}
 

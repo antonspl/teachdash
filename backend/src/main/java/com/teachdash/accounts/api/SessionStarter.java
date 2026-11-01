@@ -41,7 +41,8 @@ class SessionStarter {
 		if (previousSession != null) {
 			previousSession.invalidate();
 		}
-		request.getSession(true);
+		request.getSession(true)
+				.setAttribute(SessionRevocationFilter.VERSION_ATTRIBUTE, user.getSessionVersion());
 		strategy.setContext(context);
 		contextRepository.saveContext(context, request, response);
 		csrfStrategy.onAuthentication(authentication, request, response);

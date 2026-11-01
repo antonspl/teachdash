@@ -6,10 +6,8 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
@@ -21,49 +19,20 @@ public class AccountService {
 
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
-	private final JdbcIndexedSessionRepository sessions;
+	private final PasswordLinkService links;
 
 	AccountService(
 			UserRepository users,
 			PasswordEncoder passwordEncoder,
-			JdbcIndexedSessionRepository sessions) {
+			PasswordLinkService links) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
-		this.sessions = sessions;
+		this.links = links;
 	}
 
-	/**
-	 * Deletes every session of the account; inside a transaction, only after it commits.
-	 * The principal name of a session is the user id (design D4).
-	 */
-	public void endSessions(UUID userId) {
-		endSessionsExcept(userId, null);
-	}
-
-	/** Like endSessions, but keeps the session with the given id. */
-	public void endSessionsExcept(UUID userId, String keepSessionId) {
-		Runnable endSessions = () -> sessions.findByPrincipalName(userId.toString())
-				.keySet()
-				.stream()
-				.filter(sessionId -> !sessionId.equals(keepSessionId))
-				.forEach(sessions::deleteById);
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					endSessions.run();
-				}
-			});
-		} else {
-			endSessions.run();
-		}
-	}
-
-	public void changePassword(
-			UUID id,
-			String currentPassword,
-			String newPassword,
-			String currentSessionId) {
+	/** Changes the password, revokes older sessions and unused links; returns the new session version. */
+	@Transactional
+	public int changePassword(UUID id, String currentPassword, String newPassword) {
 		User user = get(id);
 		boolean currentPasswordMatches = user.getPasswordHash() != null
 				&& passwordEncoder.matches(currentPassword, user.getPasswordHash());
@@ -71,8 +40,8 @@ public class AccountService {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
 		}
 		requireEncodable(newPassword);
-		users.updatePasswordHash(id, passwordEncoder.encode(newPassword));
-		endSessionsExcept(id, currentSessionId);
+		links.invalidateLinks(id);
+		return users.updatePasswordHashAndRevokeSessions(id, passwordEncoder.encode(newPassword));
 	}
 
 	/** Checks credentials; the failure reason is an error code (design D7, R2). */

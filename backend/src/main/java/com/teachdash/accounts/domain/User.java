@@ -20,6 +20,7 @@ public class User implements Persistable<UUID> {
 	private final String passwordHash;
 	private final String timeZone;
 	private final boolean active;
+	private final int sessionVersion;
 	private final Instant createdAt;
 
 	@Transient
@@ -34,6 +35,7 @@ public class User implements Persistable<UUID> {
 			String passwordHash,
 			String timeZone,
 			boolean active,
+			int sessionVersion,
 			Instant createdAt) {
 		this.id = id;
 		this.email = email;
@@ -42,6 +44,7 @@ public class User implements Persistable<UUID> {
 		this.passwordHash = passwordHash;
 		this.timeZone = timeZone;
 		this.active = active;
+		this.sessionVersion = sessionVersion;
 		this.createdAt = createdAt;
 	}
 
@@ -52,7 +55,7 @@ public class User implements Persistable<UUID> {
 			String passwordHash,
 			String timeZone,
 			Instant now) {
-		User user = new User(UUID.randomUUID(), email, name, role, passwordHash, timeZone, true, now);
+		User user = new User(UUID.randomUUID(), email, name, role, passwordHash, timeZone, true, 0, now);
 		user.newEntity = true;
 		return user;
 	}
@@ -89,6 +92,10 @@ public class User implements Persistable<UUID> {
 
 	public boolean isActive() {
 		return active;
+	}
+
+	public int getSessionVersion() {
+		return sessionVersion;
 	}
 
 	public Instant getCreatedAt() {

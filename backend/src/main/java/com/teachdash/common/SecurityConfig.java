@@ -13,18 +13,15 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.savedrequest.NullRequestCache;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfException;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
+import com.teachdash.accounts.api.SessionRevocationFilter;
+import com.teachdash.accounts.persistence.UserRepository;
+
 import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration(proxyBeanMethods = false)
@@ -51,7 +48,10 @@ class SecurityConfig {
 	}
 
 	@Bean
-	SecurityFilterChain filterChain(HttpSecurity http, CsrfTokenRepository csrfRepository) throws Exception {
+	SecurityFilterChain filterChain(
+			HttpSecurity http,
+			CsrfTokenRepository csrfRepository,
+			UserRepository users) throws Exception {
 		return http
 				.authorizeHttpRequests(requests -> requests
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -60,8 +60,8 @@ class SecurityConfig {
 						.anyRequest().authenticated())
 				.csrf(csrf -> csrf
 						.csrfTokenRepository(csrfRepository)
-						.csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
-				.addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+						.spa())
+				.addFilterAfter(new SessionRevocationFilter(users), SecurityContextHolderFilter.class)
 				.requestCache(cache -> cache.requestCache(new NullRequestCache()))
 				.logout(logout -> logout
 						.logoutUrl("/api/auth/logout")
@@ -88,21 +88,5 @@ class SecurityConfig {
 		String body = "{\"type\":\"about:blank\",\"title\":\"%s\",\"status\":%d,\"code\":\"%s\"}"
 				.formatted(title, status, code);
 		response.getWriter().write(body);
-	}
-
-	/** Reads the deferred CSRF token so the XSRF-TOKEN cookie is set on every response, anonymous too. */
-	private static final class CsrfCookieFilter extends OncePerRequestFilter {
-
-		@Override
-		protected void doFilterInternal(
-				HttpServletRequest request,
-				HttpServletResponse response,
-				FilterChain chain) throws ServletException, IOException {
-			CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-			if (token != null) {
-				token.getToken();
-			}
-			chain.doFilter(request, response);
-		}
 	}
 }

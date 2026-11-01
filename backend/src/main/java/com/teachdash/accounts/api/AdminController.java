@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.teachdash.accounts.api.dto.CreateTeacherRequest;
 import com.teachdash.accounts.api.dto.CreateTeacherResponse;
 import com.teachdash.accounts.api.dto.LinkResponse;
-import com.teachdash.accounts.api.dto.UserResponse;
+import com.teachdash.accounts.api.dto.TeacherResponse;
 import com.teachdash.accounts.domain.TeacherAdminService;
 
 import jakarta.validation.Valid;
@@ -32,8 +32,8 @@ class AdminController {
 	}
 
 	@GetMapping("/teachers")
-	List<UserResponse> listTeachers() {
-		return teachers.listTeachers().stream().map(UserResponse::of).toList();
+	List<TeacherResponse> listTeachers() {
+		return teachers.listTeachers().stream().map(TeacherResponse::of).toList();
 	}
 
 	@PostMapping("/teachers")

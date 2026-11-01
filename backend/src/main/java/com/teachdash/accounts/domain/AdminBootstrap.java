@@ -1,8 +1,10 @@
 package com.teachdash.accounts.domain;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +20,12 @@ import com.teachdash.accounts.persistence.UserRepository;
 /** Creates the first admin from ADMIN_* variables when no admin exists (R1). */
 @Component
 public class AdminBootstrap implements ApplicationRunner {
+
+	private static final int MAX_EMAIL_LENGTH = 320;
+	private static final int MAX_NAME_LENGTH = 200;
+	private static final int MIN_PASSWORD_LENGTH = 8;
+	private static final int MAX_PASSWORD_BYTES = 72;
+	private static final Pattern EMAIL_SHAPE = Pattern.compile("[^@\\s]+@[^@\\s]+");
 
 	private static final Logger log = LoggerFactory.getLogger(AdminBootstrap.class);
 
@@ -53,6 +61,7 @@ public class AdminBootstrap implements ApplicationRunner {
 			log.warn("No admin exists and these variables are missing, so none was created: {}", missing);
 			return;
 		}
+		requireValidVariables();
 		if (users.findByEmailIgnoreCase(email.strip()).isPresent()) {
 			log.warn("No admin exists but ADMIN_EMAIL belongs to another account; admin not created");
 			return;
@@ -65,6 +74,20 @@ public class AdminBootstrap implements ApplicationRunner {
 				"UTC",
 				clock.instant()));
 		log.info("Admin created");
+	}
+
+	/** Fails startup with a message naming the variable, never its value. */
+	private void requireValidVariables() {
+		if (email.strip().length() > MAX_EMAIL_LENGTH || !EMAIL_SHAPE.matcher(email.strip()).matches()) {
+			throw new IllegalStateException("ADMIN_EMAIL must be an email address of at most 320 characters");
+		}
+		int passwordBytes = password.getBytes(StandardCharsets.UTF_8).length;
+		if (password.length() < MIN_PASSWORD_LENGTH || passwordBytes > MAX_PASSWORD_BYTES) {
+			throw new IllegalStateException("ADMIN_PASSWORD must be at least 8 characters and at most 72 bytes");
+		}
+		if (name.strip().length() > MAX_NAME_LENGTH) {
+			throw new IllegalStateException("ADMIN_NAME must be at most 200 characters");
+		}
 	}
 
 	private List<String> missingVariables() {

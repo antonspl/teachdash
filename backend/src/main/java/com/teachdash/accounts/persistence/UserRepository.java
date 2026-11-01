@@ -29,15 +29,21 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 			@Param("name") String name,
 			@Param("timeZone") String timeZone);
 
-	@Modifying
-	@Query("update users set password_hash = :passwordHash where id = :id")
-	void updatePasswordHash(
+	/** Sets the password and raises the session version, so every older session is rejected. */
+	@Query("""
+			update users set password_hash = :passwordHash, session_version = session_version + 1
+			where id = :id
+			returning session_version
+			""")
+	int updatePasswordHashAndRevokeSessions(
 			@Param("id") UUID id,
 			@Param("passwordHash") String passwordHash);
 
 	@Modifying
-	@Query("update users set active = :active where id = :id")
-	void updateActive(
-			@Param("id") UUID id,
-			@Param("active") boolean active);
+	@Query("update users set active = false, session_version = session_version + 1 where id = :id")
+	void deactivate(@Param("id") UUID id);
+
+	@Modifying
+	@Query("update users set active = true where id = :id")
+	void reactivate(@Param("id") UUID id);
 }

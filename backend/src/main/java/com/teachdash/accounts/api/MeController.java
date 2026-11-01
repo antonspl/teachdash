@@ -45,11 +45,11 @@ class MeController {
 			@Valid @RequestBody ChangePasswordRequest request,
 			Principal principal,
 			HttpSession session) {
-		accounts.changePassword(
+		int sessionVersion = accounts.changePassword(
 				UUID.fromString(principal.getName()),
 				request.currentPassword(),
-				request.newPassword(),
-				session.getId());
+				request.newPassword());
+		session.setAttribute(SessionRevocationFilter.VERSION_ATTRIBUTE, sessionVersion);
 		return ResponseEntity.noContent().build();
 	}
 }

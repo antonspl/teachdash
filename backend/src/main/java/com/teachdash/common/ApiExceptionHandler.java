@@ -41,7 +41,8 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
-		return ResponseEntity.status(status).body(problem(status, "MALFORMED_REQUEST"));
+		String code = containsNul(ex) ? "VALIDATION_FAILED" : "MALFORMED_REQUEST";
+		return ResponseEntity.status(status).body(problem(status, code));
 	}
 
 	@Override
@@ -57,6 +58,15 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			problem.setProperty("code", resolved == null ? "ERROR" : resolved.name());
 		}
 		return response;
+	}
+
+	private static boolean containsNul(Throwable error) {
+		for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+			if (cause instanceof NulRejectingJsonConfig.NulCharacterException) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static boolean hasCode(ProblemDetail problem) {

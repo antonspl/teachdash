@@ -31,7 +31,7 @@
 - [x] 3.8 Password change ends the account's other sessions (R9-S4: failing test first, approved by the owner before the fix)
 - [x] 3.9 Fixes from the owner's code review, no approval needed: targeted user updates (D3), production-like compose base with dev overrides and local Postgres port (D11), warning for missing admin variables (D10), one-field-per-line readability pass
 - [x] 3.10 Failing tests for R1-S4, R2-S6, R4-S6, R6-S4, R6-S5, R8-S3, R9-S5 and the `session_version` column (D9); owner approves before 3.11
-- [ ] 3.11 Per-request session check and version bumps replacing session deletion (D4), links invalidated on password change, admin variables validated, NUL rejected, `active` in the teacher list, `csrf.spa()` if R4-S6 stays green; full suite green
+- [x] 3.11 Per-request session check and version bumps replacing session deletion (D4), links invalidated on password change, admin variables validated, NUL rejected, `active` in the teacher list, `csrf.spa()` if R4-S6 stays green; full suite green
 
 ## 4. Local run
 
