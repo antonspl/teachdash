@@ -45,6 +45,15 @@ public class AccountService {
 		return users.updatePasswordHashAndRevokeSessions(id, newPasswordHash);
 	}
 
+	// STUB: ignores the expected session version until task 3.14
+	public int changePassword(
+			UUID id,
+			String currentPassword,
+			String newPassword,
+			int expectedSessionVersion) {
+		return changePassword(id, currentPassword, newPassword);
+	}
+
 	/** Checks credentials; the failure reason is an error code (design D7, R2). */
 	public User authenticate(String email, String password) {
 		User user = users.findByEmailIgnoreCase(email.strip())

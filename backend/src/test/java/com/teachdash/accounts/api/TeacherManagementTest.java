@@ -169,4 +169,23 @@ class TeacherManagementTest extends ApiTest {
 				.body("find { it.email == 'active@example.com' }.active", equalTo(true))
 				.body("find { it.email == 'inactive@example.com' }.active", equalTo(false));
 	}
+
+	@Test
+	@DisplayName("[accounts/R6-S6] Reactivation does not revive an old session")
+	void reactivationDoesNotReviveAnOldSession() {
+		// given a logged-in teacher
+		UUID teacherId = createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+		TestClient admin = loggedInAdmin();
+
+		// when the admin deactivates and then reactivates the teacher
+		var deactivated = admin.post("/api/admin/teachers/" + teacherId + "/deactivate");
+		var reactivated = admin.post("/api/admin/teachers/" + teacherId + "/reactivate");
+
+		// then the teacher's old session gets 401 and a new login returns 200
+		deactivated.then().statusCode(lessThan(300));
+		reactivated.then().statusCode(lessThan(300));
+		teacher.get("/api/me").then().statusCode(401);
+		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(200);
+	}
 }

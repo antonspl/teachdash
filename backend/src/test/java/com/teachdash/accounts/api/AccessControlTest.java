@@ -2,7 +2,11 @@ package com.teachdash.accounts.api;
 
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.not;
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import com.teachdash.support.ApiTest;
 import com.teachdash.support.TestClient;
 
+import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 
 /** R4 role-based access. */
@@ -124,5 +129,40 @@ class AccessControlTest extends ApiTest {
 		response.then()
 				.statusCode(401)
 				.cookie("XSRF-TOKEN", not(emptyOrNullString()));
+	}
+
+	@Test
+	@DisplayName("[accounts/R4-S7] Login response carries a new CSRF token")
+	void loginResponseCarriesANewCsrfToken() {
+		// given a client with a CSRF cookie and an active account
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		String oldToken = "old-token-value";
+
+		// when the client logs in, and then sends a state-changing request with the token from the login response
+		Response login = given()
+				.port(port)
+				.contentType("application/json")
+				.cookie("XSRF-TOKEN", oldToken)
+				.header("X-XSRF-TOKEN", oldToken)
+				.body(Map.of("email", "teacher@example.com", "password", "teacher-pass-1"))
+				.post("/api/auth/login");
+		Cookie newCsrfCookie = login.getDetailedCookie("XSRF-TOKEN");
+		String newToken = newCsrfCookie == null ? "" : newCsrfCookie.getValue();
+		Response nextRequest = given()
+				.port(port)
+				.contentType("application/json")
+				.cookie("SESSION", login.cookie("SESSION"))
+				.cookie("XSRF-TOKEN", newToken)
+				.header("X-XSRF-TOKEN", newToken)
+				.body(Map.of("name", "Changed Name", "timeZone", "UTC"))
+				.patch("/api/me");
+
+		// then the login response sets a new non-empty XSRF-TOKEN cookie with SameSite=Lax, different from the old one, and the next request is not rejected for CSRF
+		login.then().statusCode(200);
+		assertNotNull(newCsrfCookie);
+		assertFalse(newToken.isEmpty());
+		assertNotEquals(oldToken, newToken);
+		assertEquals("Lax", newCsrfCookie.getSameSite());
+		nextRequest.then().statusCode(200);
 	}
 }
