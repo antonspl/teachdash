@@ -35,6 +35,8 @@ class LastResortErrorFilter extends OncePerRequestFilter {
 			log.error("Request failed outside MVC", e);
 			response.reset();
 			ProblemJson.write(response, 500, "Internal Server Error", "INTERNAL_ERROR");
+			// Unflushed, Tomcat can replace the body with its own error page.
+			response.flushBuffer();
 		}
 	}
 }

@@ -43,7 +43,7 @@
 - [x] 3.20 Failing tests for R1-S6, R1-S7, R1-S8, R2-S7, R2-S8, R4-S9, R9-S10, R9-S11; owner approves before 3.21
 - [x] 3.21 Literal admin variables and validation order (D10), login order for no-password accounts, over-long passwords are wrong (D3), `@BcryptPassword` and `@TimeZoneId` (D3); cleanup: one session start, fewer user reads; full suite green
 - [x] 3.22 Last-resort error filter, remove the flush (D7, R4-S9, R4-S10); full suite green
-- [ ] 3.23 Last-resort filter flushes its response (D7, R4-S11); full suite green
+- [x] 3.23 Last-resort filter flushes its response (D7, R4-S11); full suite green
 
 ## 4. Local run
 
