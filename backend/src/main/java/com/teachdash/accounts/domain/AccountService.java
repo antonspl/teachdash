@@ -40,8 +40,9 @@ public class AccountService {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
 		}
 		requireEncodable(newPassword);
+		String newPasswordHash = passwordEncoder.encode(newPassword);
 		links.invalidateLinks(id);
-		return users.updatePasswordHashAndRevokeSessions(id, passwordEncoder.encode(newPassword));
+		return users.updatePasswordHashAndRevokeSessions(id, newPasswordHash);
 	}
 
 	/** Checks credentials; the failure reason is an error code (design D7, R2). */

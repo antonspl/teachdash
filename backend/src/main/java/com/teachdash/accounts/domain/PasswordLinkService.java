@@ -92,10 +92,11 @@ public class PasswordLinkService {
 		if (usedOrExpired) {
 			throw invalid();
 		}
+		String passwordHash = passwordEncoder.encode(password);
 		if (tokens.markUsed(stored.getId(), now) != 1) {
 			throw invalid();
 		}
-		users.updatePasswordHashAndRevokeSessions(user.getId(), passwordEncoder.encode(password));
+		users.updatePasswordHashAndRevokeSessions(user.getId(), passwordHash);
 		return users.findById(user.getId()).orElseThrow(PasswordLinkService::invalid);
 	}
 

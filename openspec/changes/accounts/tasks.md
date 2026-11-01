@@ -32,7 +32,7 @@
 - [x] 3.9 Fixes from the owner's code review, no approval needed: targeted user updates (D3), production-like compose base with dev overrides and local Postgres port (D11), warning for missing admin variables (D10), one-field-per-line readability pass
 - [x] 3.10 Failing tests for R1-S4, R2-S6, R4-S6, R6-S4, R6-S5, R8-S3, R9-S5 and the `session_version` column (D9); owner approves before 3.11
 - [x] 3.11 Per-request session check and version bumps replacing session deletion (D4), links invalidated on password change, admin variables validated, NUL rejected, `active` in the teacher list, `csrf.spa()` if R4-S6 stays green; full suite green
-- [ ] 3.12 Fixes from the reviewer, no approval needed: same lock order for user and token rows (invalidate links before updating the user), bcrypt before the first write, compose project name and one source for the database password
+- [x] 3.12 Fixes from the reviewer, no approval needed: same lock order for user and token rows (invalidate links before updating the user), bcrypt before the first write, compose project name and one source for the database password
 - [ ] 3.13 Failing tests for R4-S7, R6-S6, R9-S6; owner approves before 3.14
 - [ ] 3.14 Guarded password update (D4), login response sets the new CSRF cookie with `SameSite=Lax` (D4), `csrf.spa()` before the custom repository; full suite green
 

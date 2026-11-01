@@ -56,7 +56,10 @@ public class TeacherAdminService {
 		return new CreatedTeacher(teacher.getId(), links.issue(teacher.getId(), TokenPurpose.SET_PASSWORD));
 	}
 
-	/** Deactivation also revokes the teacher's sessions (session version) and unused links. */
+	/**
+	 * Deactivation also revokes the teacher's sessions (session version) and unused links.
+	 * Rows are always locked in the same order: links first, then the user.
+	 */
 	@Transactional
 	public void setTeacherActive(UUID id, boolean active) {
 		users.findById(id)
@@ -65,8 +68,8 @@ public class TeacherAdminService {
 		if (active) {
 			users.reactivate(id);
 		} else {
-			users.deactivate(id);
 			links.invalidateLinks(id);
+			users.deactivate(id);
 		}
 	}
 

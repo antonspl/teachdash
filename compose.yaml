@@ -1,3 +1,5 @@
+name: teachdash
+
 include:
   - path:
       - infra/docker-compose.yml
