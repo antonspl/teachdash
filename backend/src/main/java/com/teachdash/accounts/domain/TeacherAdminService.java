@@ -72,8 +72,10 @@ public class TeacherAdminService {
 	@Transactional
 	public Optional<String> reactivateTeacher(UUID id) {
 		User teacher = requireTeacher(id);
-		boolean needsNewLink = !teacher.isActive() && teacher.getPasswordHash() == null;
-		Optional<String> link = needsNewLink
+		if (teacher.isActive()) {
+			return Optional.empty();
+		}
+		Optional<String> link = teacher.getPasswordHash() == null
 				? Optional.of(links.issue(id, TokenPurpose.SET_PASSWORD))
 				: Optional.empty();
 		users.reactivate(id);
