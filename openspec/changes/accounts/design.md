@@ -114,8 +114,9 @@ RFC 7807 `ProblemDetail` for all errors, including those raised in security filt
 (e.g. `WRONG_PASSWORD`) that the UI maps to a translated message. Errors written from a
 filter are not flushed: saving the session runs on commit, so a flush can itself fail. A last-resort
 filter before the session filter catches any runtime failure on an uncommitted response, clears it
-and writes `INTERNAL_ERROR`. Once the response is committed nothing can be changed, so the failure
-is rethrown.
+and writes `INTERNAL_ERROR`. That filter flushes its own response, which is outside the session
+wrapper so it cannot trigger a save; unflushed, Tomcat can replace the body with its error page.
+Once the response is committed nothing can be changed, so the failure is rethrown.
 
 ### D8. API (all under `/api`)
 

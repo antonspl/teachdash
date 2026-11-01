@@ -170,6 +170,11 @@ and its response SHALL carry the new one.
 - **WHEN** the database fails while the session is loaded
 - **THEN** the response is 500 with code `INTERNAL_ERROR` and no internal details in the body
 
+#### Scenario: accounts/R4-S11 The coded error replaces a large response
+- **GIVEN** a logged-in admin and a teacher list too large for the response buffer
+- **WHEN** the admin requests the list and saving the session fails
+- **THEN** the response is 500 with code `INTERNAL_ERROR` and no internal details in the body
+
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.
 The account has no password yet; the response SHALL contain a single-use set-password
