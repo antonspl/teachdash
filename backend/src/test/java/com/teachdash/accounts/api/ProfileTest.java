@@ -38,7 +38,9 @@ class ProfileTest extends ApiTest {
 		TestClient student = loggedInAs("student@example.com");
 
 		// when the student sets time zone "Mars/Olympus"
-		var response = student.patch("/api/me", Map.of("name", "Student", "timeZone", "Mars/Olympus"));
+		var response = student.patch(
+				"/api/me",
+				Map.of("name", "Student", "timeZone", "Mars/Olympus"));
 
 		// then the response is 400 and the time zone does not change
 		response.then().statusCode(400);

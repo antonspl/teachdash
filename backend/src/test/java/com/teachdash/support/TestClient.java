@@ -12,7 +12,10 @@ import io.restassured.filter.cookie.CookieFilter;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
-/** Cookies via RestAssured's CookieFilter; starts with its own XSRF-TOKEN (double-submit), so no priming GET. */
+/**
+ * Cookies via RestAssured's CookieFilter. Starts with its own XSRF-TOKEN (double-submit),
+ * so no priming GET is needed.
+ */
 public class TestClient {
 
 	private final int port;
@@ -51,12 +54,19 @@ public class TestClient {
 	}
 
 	public String cookie(String name) {
-		return store().getCookies().stream().filter(c -> c.getName().equals(name)).map(Cookie::getValue)
-				.findFirst().orElse(null);
+		return store().getCookies()
+				.stream()
+				.filter(cookie -> cookie.getName().equals(name))
+				.map(Cookie::getValue)
+				.findFirst()
+				.orElse(null);
 	}
 
 	private RequestSpecification spec() {
-		RequestSpecification spec = RestAssured.given().port(port).contentType("application/json").filter(cookies);
+		RequestSpecification spec = RestAssured.given()
+				.port(port)
+				.contentType("application/json")
+				.filter(cookies);
 		String xsrf = cookie("XSRF-TOKEN");
 		return xsrf == null || !sendCsrfHeader ? spec : spec.header("X-XSRF-TOKEN", xsrf);
 	}

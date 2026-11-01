@@ -40,7 +40,8 @@ public abstract class ApiTest {
 
 	private static final SecureRandom RANDOM = new SecureRandom();
 
-	private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
+	private static final PostgreSQLContainer POSTGRES =
+			new PostgreSQLContainer("postgres:17-alpine");
 
 	static {
 		POSTGRES.start(); // stopped by Testcontainers' Ryuk when the JVM exits
@@ -86,7 +87,8 @@ public abstract class ApiTest {
 				  and table_name <> 'flyway_schema_history'
 				""").query(String.class).list();
 		if (!tables.isEmpty()) {
-			jdbc.sql("truncate table " + String.join(", ", tables) + " restart identity cascade").update();
+			jdbc.sql("truncate table " + String.join(", ", tables) + " restart identity cascade")
+					.update();
 		}
 	}
 
@@ -99,7 +101,12 @@ public abstract class ApiTest {
 	}
 
 	/** Password null means "not set yet". */
-	protected UUID createUser(String role, String name, String email, String password, boolean active) {
+	protected UUID createUser(
+			String role,
+			String name,
+			String email,
+			String password,
+			boolean active) {
 		UUID id = UUID.randomUUID();
 		jdbc.sql("""
 				insert into users (id, email, name, role, password_hash, time_zone, active, created_at)
@@ -136,7 +143,8 @@ public abstract class ApiTest {
 	/** Session is created in the store, not via /auth/login, so tests do not depend on it. */
 	protected TestClient loggedInAs(String email) {
 		var user = jdbc.sql("select id, role from users where lower(email) = lower(:email)")
-				.param("email", email).query((rs, i) -> new String[] { rs.getString("id"), rs.getString("role") })
+				.param("email", email)
+				.query((rs, i) -> new String[] { rs.getString("id"), rs.getString("role") })
 				.single();
 		String principal = user[0];
 		String role = user[1];
@@ -148,7 +156,8 @@ public abstract class ApiTest {
 		session.setAttribute(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, principal);
 		session.setMaxInactiveInterval(Duration.ofMinutes(30));
 		saveSession(session);
-		String cookie = Base64.getEncoder().encodeToString(session.getId().getBytes(StandardCharsets.UTF_8));
+		String cookie = Base64.getEncoder()
+				.encodeToString(session.getId().getBytes(StandardCharsets.UTF_8));
 		return newClient().withCookie("SESSION", cookie);
 	}
 

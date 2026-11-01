@@ -69,7 +69,8 @@ class AccessControlTest extends ApiTest {
 		// when the teacher changes their profile without the CSRF token, and then with it
 		var withoutToken = teacher.snapshot().withoutCsrfHeader().patch("/api/me", change);
 		var afterFirst = jdbc.sql("select name, time_zone from users where email = 'teacher@example.com'")
-				.query().singleRow();
+				.query()
+				.singleRow();
 		var withToken = teacher.patch("/api/me", change);
 
 		// then the first response is 403 and leaves the profile unchanged, and the second is 200
@@ -103,7 +104,9 @@ class AccessControlTest extends ApiTest {
 
 		// then every response is 403, no account is created or changed, and no link is issued
 		responses.forEach(r -> r.then().statusCode(403));
-		assertEquals(usersBefore, jdbc.sql("select * from users order by email").query().listOfRows());
+		assertEquals(usersBefore, jdbc.sql("select * from users order by email")
+				.query()
+				.listOfRows());
 		assertEquals(0, jdbc.sql("select count(*) from one_time_tokens").query(Long.class).single());
 	}
 }

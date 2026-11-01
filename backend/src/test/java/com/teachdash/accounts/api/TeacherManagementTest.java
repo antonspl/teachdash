@@ -52,7 +52,9 @@ class TeacherManagementTest extends ApiTest {
 		String link = created.getContentType() != null && created.getContentType().contains("json")
 				? created.path("setPasswordLink") : null;
 		String token = link == null ? "no-link" : tokenFrom(link);
-		var response = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
+		var response = newClient().post(
+				"/api/password-links",
+				Map.of("token", token, "password", "new-password-1"));
 
 		// then creation is 201, setting the password is 200, and the teacher logs in with "new-password-1"
 		created.then().statusCode(201);
@@ -110,7 +112,9 @@ class TeacherManagementTest extends ApiTest {
 		// then both responses are 404, both accounts stay active, and the admin's session still works
 		ownResponse.then().statusCode(404);
 		studentResponse.then().statusCode(404);
-		assertEquals(2, jdbc.sql("select count(*) from users where active").query(Long.class).single());
+		assertEquals(2, jdbc.sql("select count(*) from users where active")
+				.query(Long.class)
+				.single());
 		admin.get("/api/me").then().statusCode(200);
 	}
 
@@ -118,7 +122,12 @@ class TeacherManagementTest extends ApiTest {
 	@DisplayName("[accounts/R6-S2] Reactivated teacher can log in")
 	void reactivatedTeacherCanLogIn() {
 		// given a deactivated teacher
-		UUID teacherId = createUser("TEACHER", "Teacher", "teacher@example.com", "teacher-pass-1", false);
+		UUID teacherId = createUser(
+				"TEACHER",
+				"Teacher",
+				"teacher@example.com",
+				"teacher-pass-1",
+				false);
 		TestClient admin = loggedInAdmin();
 
 		// when the admin reactivates the teacher

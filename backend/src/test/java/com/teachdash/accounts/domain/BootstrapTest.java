@@ -13,7 +13,9 @@ import org.springframework.test.context.TestPropertySource;
 
 import com.teachdash.support.ApiTest;
 
-/** R1. "The application starts" = running the real bootstrap runner after the tables are emptied. */
+/**
+ * R1. "The application starts" = running the real bootstrap runner after the tables are emptied.
+ */
 @TestPropertySource(properties = { "ADMIN_EMAIL=boss@example.com", "ADMIN_NAME=The Boss",
 		"ADMIN_PASSWORD=different-password" })
 class BootstrapTest extends ApiTest {
@@ -84,6 +86,7 @@ class BootstrapTest extends ApiTest {
 		// then no account is created and no account with the ADMIN_EMAIL email exists
 		assertEquals(1, countUsers());
 		assertEquals(0, jdbc.sql("select count(*) from users where lower(email) = 'boss@example.com'")
-				.query(Long.class).single());
+				.query(Long.class)
+				.single());
 	}
 }

@@ -144,7 +144,9 @@ class PasswordLinkTest extends ApiTest {
 		var response = admin.post("/api/admin/users/" + teacherId + "/reset-link");
 
 		// then the response is 201 with a link that starts with the base URL
-		response.then().statusCode(201).body("link", startsWith(APP_BASE_URL + "/set-password#token="));
+		response.then()
+				.statusCode(201)
+				.body("link", startsWith(APP_BASE_URL + "/set-password#token="));
 	}
 
 	@Test
