@@ -1,7 +1,5 @@
 package com.teachdash.accounts.domain;
 
-import java.nio.charset.StandardCharsets;
-import java.time.ZoneId;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -12,11 +10,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
+import com.teachdash.common.validation.BcryptPasswordValidator;
 
 @Service
 public class AccountService {
-
-	private static final int BCRYPT_MAX_BYTES = 72;
 
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
@@ -36,10 +33,10 @@ public class AccountService {
 
 	/**
 	 * Changes the password if the caller's session version is still current, revokes older
-	 * sessions and unused links; returns the new session version. Bcrypt runs before the
+	 * sessions and unused links; returns the user and the new session version. Bcrypt runs before the
 	 * transaction starts, so no database connection is held while hashing.
 	 */
-	public int changePassword(
+	public PasswordChanged changePassword(
 			UUID id,
 			String currentPassword,
 			String newPassword,
@@ -50,13 +47,13 @@ public class AccountService {
 		if (!currentPasswordMatches) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
 		}
-		requireEncodable(newPassword);
 		String newPasswordHash = passwordEncoder.encode(newPassword);
-		return transaction.execute(status -> {
+		int newSessionVersion = transaction.execute(status -> {
 			links.invalidateLinks(id);
 			return users.updatePasswordHashIfSessionCurrent(id, newPasswordHash, expectedSessionVersion)
 					.orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
 		});
+		return new PasswordChanged(user, newSessionVersion);
 	}
 
 	/** Checks credentials; the failure reason is an error code (design D7, R2). */
@@ -80,32 +77,18 @@ public class AccountService {
 	}
 
 	public User updateProfile(UUID id, String name, String timeZone) {
-		requireValidTimeZone(timeZone);
-		get(id);
-		users.updateProfile(id, name.strip(), timeZone);
-		return get(id);
+		return users.updateProfile(id, name.strip(), timeZone)
+				.orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
 	}
 
-	/** bcrypt rejects passwords over 72 bytes; multi-byte characters can exceed it under a character limit. */
-	static void requireEncodable(String password) {
-		if (tooLongForBcrypt(password)) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED");
-		}
-	}
-
-	/** A password over the bcrypt limit can never be right, so it never reaches the encoder. */
 	private boolean matches(String password, String passwordHash) {
-		return !tooLongForBcrypt(password) && passwordEncoder.matches(password, passwordHash);
+		return !BcryptPasswordValidator.exceedsBcryptLimit(password)
+				&& passwordEncoder.matches(password, passwordHash);
 	}
 
-	static boolean tooLongForBcrypt(String password) {
-		return password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_BYTES;
-	}
-
-	static void requireValidTimeZone(String timeZone) {
-		if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TIME_ZONE");
-		}
+	public record PasswordChanged(
+			User user,
+			int sessionVersion) {
 	}
 
 	private static ApiException unauthorized(String code) {

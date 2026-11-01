@@ -29,6 +29,11 @@ class SessionStarter {
 	}
 
 	void start(User user, HttpServletRequest request, HttpServletResponse response) {
+		start(user, user.getSessionVersion(), request, response);
+	}
+
+	/** Replaces any current session with a new one that holds the given session version. */
+	void start(User user, int sessionVersion, HttpServletRequest request, HttpServletResponse response) {
 		var authorities = AuthorityUtils.createAuthorityList("ROLE_" + user.getRole());
 		var principal = new org.springframework.security.core.userdetails.User(
 				user.getId().toString(),
@@ -43,7 +48,7 @@ class SessionStarter {
 			previousSession.invalidate();
 		}
 		request.getSession(true)
-				.setAttribute(SessionRevocationFilter.VERSION_ATTRIBUTE, user.getSessionVersion());
+				.setAttribute(SessionRevocationFilter.VERSION_ATTRIBUTE, sessionVersion);
 		strategy.setContext(context);
 		contextRepository.saveContext(context, request, response);
 		csrfStrategy.onAuthentication(authentication, request, response);

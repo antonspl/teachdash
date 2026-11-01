@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,7 +17,7 @@ import com.teachdash.accounts.api.dto.UserResponse;
 import com.teachdash.accounts.domain.AccountService;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -26,9 +25,11 @@ import jakarta.validation.Valid;
 class MeController {
 
 	private final AccountService accounts;
+	private final SessionStarter sessionStarter;
 
-	MeController(AccountService accounts) {
+	MeController(AccountService accounts, SessionStarter sessionStarter) {
 		this.accounts = accounts;
+		this.sessionStarter = sessionStarter;
 	}
 
 	@GetMapping
@@ -46,27 +47,14 @@ class MeController {
 	ResponseEntity<Void> changePassword(
 			@Valid @RequestBody ChangePasswordRequest request,
 			Principal principal,
-			HttpServletRequest httpRequest) {
-		int sessionVersion = accounts.changePassword(
+			HttpServletRequest httpRequest,
+			HttpServletResponse httpResponse) {
+		var changed = accounts.changePassword(
 				UUID.fromString(principal.getName()),
 				request.currentPassword(),
 				request.newPassword(),
 				SessionRevocationFilter.versionOf(httpRequest.getSession()));
-		replaceSession(httpRequest, sessionVersion);
+		sessionStarter.start(changed.user(), changed.sessionVersion(), httpRequest, httpResponse);
 		return ResponseEntity.noContent().build();
-	}
-
-	/**
-	 * Swaps the session for a new one with the same login. A parallel request that still holds
-	 * the old session cannot write the old id back, because that session is gone.
-	 */
-	private static void replaceSession(HttpServletRequest request, int sessionVersion) {
-		HttpSession oldSession = request.getSession();
-		Object securityContext = oldSession.getAttribute(
-				HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-		oldSession.invalidate();
-		HttpSession newSession = request.getSession(true);
-		newSession.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
-		newSession.setAttribute(SessionRevocationFilter.VERSION_ATTRIBUTE, sessionVersion);
 	}
 }

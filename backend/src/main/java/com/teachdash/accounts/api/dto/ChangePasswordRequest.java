@@ -1,9 +1,10 @@
 package com.teachdash.accounts.api.dto;
 
+import com.teachdash.common.validation.BcryptPassword;
+
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 public record ChangePasswordRequest(
 		@NotBlank String currentPassword,
-		@NotBlank @Size(min = 8, max = 72) String newPassword) {
+		@NotBlank @BcryptPassword String newPassword) {
 }

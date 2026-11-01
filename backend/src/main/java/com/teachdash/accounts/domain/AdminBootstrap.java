@@ -126,9 +126,6 @@ public class AdminBootstrap implements ApplicationRunner {
 		}
 		if (!password.isEmpty()) {
 			requireValid("ADMIN_PASSWORD", ChangePasswordRequest.class, "newPassword", password);
-			if (AccountService.tooLongForBcrypt(password)) {
-				throw new IllegalStateException("ADMIN_PASSWORD is invalid: at most 72 bytes are allowed");
-			}
 		}
 	}
 

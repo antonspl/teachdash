@@ -87,7 +87,6 @@ public class PasswordLinkService {
 	 * connection is held while hashing; the update itself re-checks the link atomically.
 	 */
 	public User use(String token, String password) {
-		AccountService.requireEncodable(password);
 		OneTimeToken stored = tokens.findById(hash(token))
 				.orElseThrow(PasswordLinkService::invalid);
 		Instant now = clock.instant();
