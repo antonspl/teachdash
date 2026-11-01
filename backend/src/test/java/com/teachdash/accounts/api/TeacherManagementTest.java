@@ -188,4 +188,31 @@ class TeacherManagementTest extends ApiTest {
 		teacher.get("/api/me").then().statusCode(401);
 		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(200);
 	}
+
+	@Test
+	@DisplayName("[accounts/R6-S7] Reactivating a teacher with no password returns a new link")
+	void reactivatingATeacherWithNoPasswordReturnsANewLink() {
+		// given a logged-in admin and a deactivated teacher who never set a password
+		TestClient admin = loggedInAdmin();
+		var created = admin.post("/api/admin/teachers",
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+		UUID teacherId = UUID.fromString(created.path("id"));
+		admin.post("/api/admin/teachers/" + teacherId + "/deactivate");
+
+		// when the admin reactivates the teacher, and the returned link is used to set a password
+		var reactivated = admin.post("/api/admin/teachers/" + teacherId + "/reactivate");
+		String link = reactivated.getContentType() != null && reactivated.getContentType().contains("json")
+				? reactivated.path("setPasswordLink") : null;
+		String token = link == null ? "no-link" : tokenFrom(link);
+		var response = newClient().post(
+				"/api/password-links",
+				Map.of("token", token, "password", "new-password-1"));
+
+		// then reactivation returns 200 with a set-password link that starts with the base URL, and the link sets the password
+		reactivated.then()
+				.statusCode(200)
+				.body("setPasswordLink", startsWith(APP_BASE_URL + "/set-password#token="));
+		response.then().statusCode(200);
+		newClient().login("anna@example.com", "new-password-1").then().statusCode(200);
+	}
 }

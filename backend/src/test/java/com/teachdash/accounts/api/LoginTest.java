@@ -120,4 +120,17 @@ class LoginTest extends ApiTest {
 		// then the response is 400 with code VALIDATION_FAILED
 		login.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
 	}
+
+	@Test
+	@DisplayName("[accounts/R3-S2] Logout without a session is rejected")
+	void logoutWithoutASessionIsRejected() {
+		// given a client with a valid CSRF token and no session
+		TestClient client = newClient();
+
+		// when it logs out
+		var logout = client.logout();
+
+		// then the response is 401 with code UNAUTHENTICATED
+		logout.then().statusCode(401).body("code", equalTo("UNAUTHENTICATED"));
+	}
 }

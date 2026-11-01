@@ -20,6 +20,8 @@ import org.springframework.test.context.TestPropertySource;
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.support.ApiTest;
 
+import jakarta.validation.Validator;
+
 /**
  * R1. "The application starts" = running the real bootstrap runner after the tables are emptied.
  */
@@ -106,6 +108,9 @@ class BootstrapTest extends ApiTest {
 	@Autowired
 	private Clock clock;
 
+	@Autowired
+	private Validator validator;
+
 	@Test
 	@DisplayName("[accounts/R1-S4] Invalid admin variables stop startup")
 	void invalidAdminVariablesStopStartup() {
@@ -114,6 +119,7 @@ class BootstrapTest extends ApiTest {
 				users,
 				passwordEncoder,
 				clock,
+				validator,
 				"boss@example.com",
 				"abc",
 				"The Boss");
@@ -127,6 +133,30 @@ class BootstrapTest extends ApiTest {
 		// then startup fails with a message naming ADMIN_PASSWORD and not containing "abc", and no account is created
 		assertThat(failure.getMessage(), containsString("ADMIN_PASSWORD"));
 		assertFalse(failure.getMessage().contains("abc"));
+		assertEquals(0, countUsers());
+	}
+
+	@Test
+	@DisplayName("[accounts/R1-S5] An email the API would reject stops startup")
+	void anEmailTheApiWouldRejectStopsStartup() {
+		// given no admin account exists and ADMIN_EMAIL is "a,b@x"
+		AdminBootstrap invalidBootstrap = new AdminBootstrap(
+				users,
+				passwordEncoder,
+				clock,
+				validator,
+				"a,b@x",
+				"valid-password-1",
+				"The Boss");
+		assertEquals(0, countUsers());
+
+		// when the application starts
+		RuntimeException failure = assertThrows(
+				RuntimeException.class,
+				() -> invalidBootstrap.run(new DefaultApplicationArguments()));
+
+		// then startup fails with a message naming ADMIN_EMAIL, and no account is created
+		assertThat(failure.getMessage(), containsString("ADMIN_EMAIL"));
 		assertEquals(0, countUsers());
 	}
 }

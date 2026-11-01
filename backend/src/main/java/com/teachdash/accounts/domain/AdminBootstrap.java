@@ -17,6 +17,8 @@ import org.springframework.util.StringUtils;
 
 import com.teachdash.accounts.persistence.UserRepository;
 
+import jakarta.validation.Validator;
+
 /** Creates the first admin from ADMIN_* variables when no admin exists (R1). */
 @Component
 public class AdminBootstrap implements ApplicationRunner {
@@ -40,6 +42,7 @@ public class AdminBootstrap implements ApplicationRunner {
 			UserRepository users,
 			PasswordEncoder passwordEncoder,
 			Clock clock,
+			Validator validator, // STUB: used from task 3.17
 			@Value("${ADMIN_EMAIL:}") String email,
 			@Value("${ADMIN_PASSWORD:}") String password,
 			@Value("${ADMIN_NAME:}") String name) {

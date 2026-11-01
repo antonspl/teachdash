@@ -102,4 +102,38 @@ class ProfileTest extends ApiTest {
 		useLink.then().statusCode(410);
 		newClient().login("teacher@example.com", "brand-new-pass-1").then().statusCode(200);
 	}
+
+	@Test
+	@DisplayName("[accounts/R9-S7] Password change replaces the session id")
+	void passwordChangeReplacesTheSessionId() {
+		// given a logged-in teacher and a copy of the same session cookie
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+		TestClient copy = teacher.snapshot();
+
+		// when the teacher changes the password
+		var change = teacher.post("/api/me/password",
+				Map.of("currentPassword", "teacher-pass-1", "newPassword", "brand-new-pass-1"));
+
+		// then the copy gets 401 and the teacher's client, with the cookie from the response, gets 200
+		change.then().statusCode(204);
+		copy.get("/api/me").then().statusCode(401);
+		teacher.get("/api/me").then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[accounts/R9-S8] An over-long current password counts as wrong")
+	void anOverLongCurrentPasswordCountsAsWrong() {
+		// given a logged-in teacher
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+
+		// when the teacher changes the password giving a current password of 40 Cyrillic characters (80 bytes)
+		var response = teacher.post("/api/me/password",
+				Map.of("currentPassword", "ж".repeat(40), "newPassword", "brand-new-pass-1"));
+
+		// then the response is 400 with code WRONG_PASSWORD and the old password still works
+		response.then().statusCode(400).body("code", equalTo("WRONG_PASSWORD"));
+		newClient().login("teacher@example.com", "teacher-pass-1").then().statusCode(200);
+	}
 }
