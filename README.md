@@ -30,3 +30,15 @@ starts Vite on http://localhost:5173, which proxies `/api` to the backend on 808
 
 Backend health is only at http://localhost:8080/actuator/health: `/actuator/health` on 8081 returns
 the app. Checks: `npm run lint`, `npm run format:check`, `npm test`, `npm run build`.
+
+### Frontend tests
+
+Unit tests (Vitest) need no stack: `cd frontend && npm test`.
+
+E2E tests (Playwright) run against the container on http://localhost:8081, in desktop Chromium
+and in Chrome and Safari phone profiles. Once, install the browsers:
+`cd frontend && npx playwright install chromium webkit`. Then start the stack
+(`docker compose up --build`) and run `npm run test:e2e`. If the stack is down, the run stops
+with a message saying so (it waits up to 30 seconds for the backend to finish starting). The HTML report goes to `frontend/playwright-report/`.
+
+Spec coverage check, from the repo root: `scripts/check-scenario-coverage.sh`.

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Fails if a spec scenario has no test with @DisplayName("[<id>] ...") in backend/src/test.
+# Fails if a spec scenario has no test. A scenario is covered by either:
+#   - @DisplayName("[<id>] ...") in backend/src/test, or
+#   - "[<id>]" in a frontend test title: frontend/src/**/*.test.ts(x) or frontend/e2e/**/*.spec.ts.
 # Scenario IDs come from "#### Scenario: <capability>/R<n>-S<m> ..." headings in
 # openspec/specs/**/spec.md and openspec/changes/*/specs/**/spec.md (archive excluded).
 set -euo pipefail
@@ -20,11 +22,20 @@ if [ -z "$ids" ]; then
   exit 1
 fi
 
+has_backend_test() {
+  grep -r -F -q "@DisplayName(\"[$1]" backend/src/test 2>/dev/null
+}
+
+has_frontend_test() {
+  grep -r -F -q --include='*.test.ts' --include='*.test.tsx' "[$1]" frontend/src 2>/dev/null ||
+    grep -r -F -q --include='*.spec.ts' "[$1]" frontend/e2e 2>/dev/null
+}
+
 missing=0
 total=0
 for id in $ids; do
   total=$((total + 1))
-  if ! grep -r -F -q "@DisplayName(\"[$id]" backend/src/test 2>/dev/null; then
+  if ! has_backend_test "$id" && ! has_frontend_test "$id"; then
     echo "MISSING test for scenario [$id]" >&2
     missing=$((missing + 1))
   fi

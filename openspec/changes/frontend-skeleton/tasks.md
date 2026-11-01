@@ -26,15 +26,15 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 ## 4. Container
 
 - [x] 4.1 Add `frontend/Dockerfile`, `frontend/Dockerfile.dockerignore` and `infra/Caddyfile` as in `design.md`; verify the image builds
-- [ ] 4.2 Add the `frontend` service to `infra/docker-compose.yml` and publish `127.0.0.1:8081:80` in `infra/docker-compose.dev.yml`; verify `docker compose up --build` serves the placeholder page at `http://localhost:8081` and it shows "reachable"
+- [x] 4.2 Add the `frontend` service to `infra/docker-compose.yml` and publish `127.0.0.1:8081:80` in `infra/docker-compose.dev.yml`; verify `docker compose up --build` serves the placeholder page at `http://localhost:8081` and it shows "reachable"
 - [x] 4.3 Add "Frontend" run instructions to `README.md`: dev server, container, which port is for what, direct backend URL for health; verify the commands work as written
 
 ## 5. E2E and scenario coverage
 
-- [ ] 5.1 Add the Playwright config with the desktop and two phone projects from `design.md`, and a global setup that stops with a clear message if the stack is down, plus a `test:e2e` script; verify the message appears with the stack stopped
-- [ ] 5.2 Write `e2e/skeleton.spec.ts` with `[web-client/R1-S1]`, `[web-client/R1-S2]`, `[web-client/R3-S1]`, `[web-client/R6-S1]`, `[web-client/R6-S2]` and `[web-client/R7-S1]`; verify `npm run test:e2e` passes in all projects against the running stack
-- [ ] 5.3 Extend `scripts/check-scenario-coverage.sh` to accept IDs in frontend test titles, as in `design.md`; verify it reports all scenarios covered, and that it fails when one frontend test title is temporarily changed
-- [ ] 5.4 Add test instructions to `README.md`; verify from a clean `docker compose down -v` that `docker compose up --build`, `npm test` and `npm run test:e2e` all pass as written
+- [x] 5.1 Add the Playwright config with the desktop and two phone projects from `design.md`, and a global setup that stops with a clear message if the stack is down, plus a `test:e2e` script; verify the message appears with the stack stopped
+- [x] 5.2 Write `e2e/skeleton.spec.ts` with `[web-client/R1-S1]`, `[web-client/R1-S2]`, `[web-client/R3-S1]`, `[web-client/R6-S1]`, `[web-client/R6-S2]` and `[web-client/R7-S1]`; verify `npm run test:e2e` passes in all projects against the running stack
+- [x] 5.3 Extend `scripts/check-scenario-coverage.sh` to accept IDs in frontend test titles, as in `design.md`; verify it reports all scenarios covered, and that it fails when one frontend test title is temporarily changed
+- [x] 5.4 Add test instructions to `README.md`; verify from a clean `docker compose down -v` that `docker compose up --build`, `npm test` and `npm run test:e2e` all pass as written
 
 ## Workflow follow-up
 
