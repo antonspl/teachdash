@@ -46,7 +46,7 @@ public class AccountService {
 			int expectedSessionVersion) {
 		User user = get(id);
 		boolean currentPasswordMatches = user.getPasswordHash() != null
-				&& passwordEncoder.matches(currentPassword, user.getPasswordHash());
+				&& matches(currentPassword, user.getPasswordHash());
 		if (!currentPasswordMatches) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
 		}
@@ -66,9 +66,7 @@ public class AccountService {
 		if (user.getPasswordHash() == null) {
 			throw unauthorized("PASSWORD_NOT_SET");
 		}
-		boolean passwordMatches = !tooLongForBcrypt(password)
-				&& passwordEncoder.matches(password, user.getPasswordHash());
-		if (!passwordMatches) {
+		if (!matches(password, user.getPasswordHash())) {
 			throw unauthorized("WRONG_PASSWORD");
 		}
 		if (!user.isActive()) {
@@ -95,7 +93,12 @@ public class AccountService {
 		}
 	}
 
-	private static boolean tooLongForBcrypt(String password) {
+	/** A password over the bcrypt limit can never be right, so it never reaches the encoder. */
+	private boolean matches(String password, String passwordHash) {
+		return !tooLongForBcrypt(password) && passwordEncoder.matches(password, passwordHash);
+	}
+
+	static boolean tooLongForBcrypt(String password) {
 		return password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_BYTES;
 	}
 

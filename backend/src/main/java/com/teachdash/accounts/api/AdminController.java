@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.teachdash.accounts.api.dto.CreateTeacherRequest;
 import com.teachdash.accounts.api.dto.CreateTeacherResponse;
 import com.teachdash.accounts.api.dto.LinkResponse;
+import com.teachdash.accounts.api.dto.SetPasswordLinkResponse;
 import com.teachdash.accounts.api.dto.TeacherResponse;
 import com.teachdash.accounts.domain.TeacherAdminService;
 
@@ -46,13 +48,15 @@ class AdminController {
 	@PostMapping("/teachers/{id}/deactivate")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deactivate(@PathVariable UUID id) {
-		teachers.setTeacherActive(id, false);
+		teachers.deactivateTeacher(id);
 	}
 
+	/** 200 with a new set-password link if the teacher never set a password, otherwise 204. */
 	@PostMapping("/teachers/{id}/reactivate")
-	@ResponseStatus(HttpStatus.NO_CONTENT)
-	void reactivate(@PathVariable UUID id) {
-		teachers.setTeacherActive(id, true);
+	ResponseEntity<SetPasswordLinkResponse> reactivate(@PathVariable UUID id) {
+		return teachers.reactivateTeacher(id)
+				.map(link -> ResponseEntity.ok(new SetPasswordLinkResponse(link)))
+				.orElseGet(() -> ResponseEntity.noContent().build());
 	}
 
 	@PostMapping("/users/{id}/reset-link")

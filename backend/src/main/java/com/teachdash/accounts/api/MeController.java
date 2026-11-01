@@ -16,7 +16,7 @@ import com.teachdash.accounts.api.dto.UpdateProfileRequest;
 import com.teachdash.accounts.api.dto.UserResponse;
 import com.teachdash.accounts.domain.AccountService;
 
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -44,13 +44,14 @@ class MeController {
 	ResponseEntity<Void> changePassword(
 			@Valid @RequestBody ChangePasswordRequest request,
 			Principal principal,
-			HttpSession session) {
+			HttpServletRequest httpRequest) {
 		int sessionVersion = accounts.changePassword(
 				UUID.fromString(principal.getName()),
 				request.currentPassword(),
 				request.newPassword(),
-				SessionRevocationFilter.versionOf(session));
-		session.setAttribute(SessionRevocationFilter.VERSION_ATTRIBUTE, sessionVersion);
+				SessionRevocationFilter.versionOf(httpRequest.getSession()));
+		httpRequest.changeSessionId();
+		httpRequest.getSession().setAttribute(SessionRevocationFilter.VERSION_ATTRIBUTE, sessionVersion);
 		return ResponseEntity.noContent().build();
 	}
 }

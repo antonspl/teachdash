@@ -2,6 +2,7 @@ package com.teachdash.accounts.domain;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.dao.DuplicateKeyException;
@@ -57,20 +58,31 @@ public class TeacherAdminService {
 	}
 
 	/**
-	 * Deactivation also revokes the teacher's sessions (session version) and unused links.
+	 * Revokes the teacher's sessions (session version) and unused links, then deactivates.
 	 * Rows are always locked in the same order: links first, then the user.
 	 */
 	@Transactional
-	public void setTeacherActive(UUID id, boolean active) {
-		users.findById(id)
+	public void deactivateTeacher(UUID id) {
+		requireTeacher(id);
+		links.invalidateLinks(id);
+		users.deactivate(id);
+	}
+
+	/** Returns a new set-password link when the teacher never set a password. */
+	@Transactional
+	public Optional<String> reactivateTeacher(UUID id) {
+		User teacher = requireTeacher(id);
+		Optional<String> link = teacher.getPasswordHash() == null
+				? Optional.of(links.issue(id, TokenPurpose.SET_PASSWORD))
+				: Optional.empty();
+		users.reactivate(id);
+		return link;
+	}
+
+	private User requireTeacher(UUID id) {
+		return users.findById(id)
 				.filter(user -> user.getRole() == Role.TEACHER)
 				.orElseThrow(TeacherAdminService::notFound);
-		if (active) {
-			users.reactivate(id);
-		} else {
-			links.invalidateLinks(id);
-			users.deactivate(id);
-		}
 	}
 
 	public String issueResetLink(UUID userId) {

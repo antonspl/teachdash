@@ -1,10 +1,8 @@
 package com.teachdash.accounts.domain;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import com.teachdash.accounts.api.dto.ChangePasswordRequest;
+import com.teachdash.accounts.api.dto.CreateTeacherRequest;
 import com.teachdash.accounts.persistence.UserRepository;
 
 import jakarta.validation.Validator;
@@ -23,17 +23,12 @@ import jakarta.validation.Validator;
 @Component
 public class AdminBootstrap implements ApplicationRunner {
 
-	private static final int MAX_EMAIL_LENGTH = 320;
-	private static final int MAX_NAME_LENGTH = 200;
-	private static final int MIN_PASSWORD_LENGTH = 8;
-	private static final int MAX_PASSWORD_BYTES = 72;
-	private static final Pattern EMAIL_SHAPE = Pattern.compile("[^@\\s]+@[^@\\s]+");
-
 	private static final Logger log = LoggerFactory.getLogger(AdminBootstrap.class);
 
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
 	private final Clock clock;
+	private final Validator validator;
 	private final String email;
 	private final String password;
 	private final String name;
@@ -42,13 +37,14 @@ public class AdminBootstrap implements ApplicationRunner {
 			UserRepository users,
 			PasswordEncoder passwordEncoder,
 			Clock clock,
-			Validator validator, // STUB: used from task 3.17
+			Validator validator,
 			@Value("${ADMIN_EMAIL:}") String email,
 			@Value("${ADMIN_PASSWORD:}") String password,
 			@Value("${ADMIN_NAME:}") String name) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.clock = clock;
+		this.validator = validator;
 		this.email = email;
 		this.password = password;
 		this.name = name;
@@ -79,17 +75,19 @@ public class AdminBootstrap implements ApplicationRunner {
 		log.info("Admin created");
 	}
 
-	/** Fails startup with a message naming the variable, never its value. */
+	/** Fails startup naming the variable, never its value; the rules are the API's own constraints. */
 	private void requireValidVariables() {
-		if (email.strip().length() > MAX_EMAIL_LENGTH || !EMAIL_SHAPE.matcher(email.strip()).matches()) {
-			throw new IllegalStateException("ADMIN_EMAIL must be an email address of at most 320 characters");
+		requireValid("ADMIN_EMAIL", CreateTeacherRequest.class, "email", email.strip());
+		requireValid("ADMIN_NAME", CreateTeacherRequest.class, "name", name.strip());
+		requireValid("ADMIN_PASSWORD", ChangePasswordRequest.class, "newPassword", password);
+		if (AccountService.tooLongForBcrypt(password)) {
+			throw new IllegalStateException("ADMIN_PASSWORD is invalid: at most 72 bytes are allowed");
 		}
-		int passwordBytes = password.getBytes(StandardCharsets.UTF_8).length;
-		if (password.length() < MIN_PASSWORD_LENGTH || passwordBytes > MAX_PASSWORD_BYTES) {
-			throw new IllegalStateException("ADMIN_PASSWORD must be at least 8 characters and at most 72 bytes");
-		}
-		if (name.strip().length() > MAX_NAME_LENGTH) {
-			throw new IllegalStateException("ADMIN_NAME must be at most 200 characters");
+	}
+
+	private <T> void requireValid(String variable, Class<T> constraints, String field, String value) {
+		if (!validator.validateValue(constraints, field, value).isEmpty()) {
+			throw new IllegalStateException(variable + " is invalid: it breaks the same rules as the API field " + field);
 		}
 	}
 

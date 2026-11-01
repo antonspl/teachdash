@@ -12,9 +12,9 @@ import com.teachdash.accounts.domain.User;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
-/** Logout is handled by the security filter chain (POST /api/auth/logout). */
 @RestController
 @RequestMapping("/api/auth")
 class AuthController {
@@ -35,5 +35,11 @@ class AuthController {
 		User user = accounts.authenticate(request.email(), request.password());
 		sessionStarter.start(user, httpRequest, httpResponse);
 		return UserResponse.of(user);
+	}
+
+	/** Needs a session: an anonymous call is rejected by the security rules with 401. */
+	@PostMapping("/logout")
+	void logout(HttpSession session) {
+		session.invalidate();
 	}
 }

@@ -1,19 +1,16 @@
 package com.teachdash.common;
 
-import java.io.IOException;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.savedrequest.NullRequestCache;
-import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
@@ -22,7 +19,6 @@ import org.springframework.security.web.context.SecurityContextHolderFilter;
 import com.teachdash.accounts.api.SessionRevocationFilter;
 import com.teachdash.accounts.persistence.UserRepository;
 
-import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration(proxyBeanMethods = false)
 class SecurityConfig {
@@ -63,30 +59,16 @@ class SecurityConfig {
 						.csrfTokenRepository(csrfRepository))
 				.addFilterAfter(new SessionRevocationFilter(users), SecurityContextHolderFilter.class)
 				.requestCache(cache -> cache.requestCache(new NullRequestCache()))
-				.logout(logout -> logout
-						.logoutUrl("/api/auth/logout")
-						.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler()))
+				.logout(AbstractHttpConfigurer::disable)
 				.exceptionHandling(errors -> errors
 						.authenticationEntryPoint((request, response, exception) ->
-								writeProblem(response, 401, "Unauthorized", "UNAUTHENTICATED"))
+								ProblemJson.write(response, 401, "Unauthorized", "UNAUTHENTICATED"))
 						.accessDeniedHandler((request, response, exception) ->
-								writeProblem(response, 403, "Forbidden", deniedCode(exception))))
+								ProblemJson.write(response, 403, "Forbidden", deniedCode(exception))))
 				.build();
 	}
 
 	private static String deniedCode(Exception exception) {
 		return exception instanceof CsrfException ? "CSRF_INVALID" : "FORBIDDEN";
-	}
-
-	private static void writeProblem(
-			HttpServletResponse response,
-			int status,
-			String title,
-			String code) throws IOException {
-		response.setStatus(status);
-		response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-		String body = "{\"type\":\"about:blank\",\"title\":\"%s\",\"status\":%d,\"code\":\"%s\"}"
-				.formatted(title, status, code);
-		response.getWriter().write(body);
 	}
 }
