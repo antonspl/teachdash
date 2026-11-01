@@ -16,6 +16,8 @@
   --text-large: 1.5rem;
   --text-title: 2rem;
   --line-height: 1.5;
+  --line-height-tight: 1.25;
+  --content-width: 40rem;
 
   --space-1: 0.5rem;
   --space-2: 1rem;

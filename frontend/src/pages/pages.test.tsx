@@ -67,7 +67,6 @@ test('[web-client/R2-S1] Page text comes from the translation resources', async 
   // given
   const instance = await testInstance()
   fetchMock.mockResolvedValue(problemResponse())
-  const realTexts = leaves(en).map(([, text]) => text)
 
   for (const page of [<PlaceholderPage />, <NotFoundPage />]) {
     // when
@@ -83,9 +82,7 @@ test('[web-client/R2-S1] Page text comes from the translation resources', async 
     // then
     const shown = view.container.textContent ?? ''
     expect(shown).toMatch(/TEST<[\w.]+>/)
-    for (const text of realTexts) {
-      expect(shown).not.toContain(text)
-    }
+    expect(shown.replace(/TEST<[\w.]+>/g, '').trim()).toBe('')
     view.unmount()
   }
 })
@@ -121,16 +118,31 @@ test('[web-client/R3-S2] Backend cannot be reached', async () => {
   }
 })
 
-test('Problem response means the backend is reachable', async () => {
-  fetchMock.mockResolvedValue(problemResponse())
+test('Any response with a problem body or a 2xx status means the backend is reachable', async () => {
+  const responses: Array<[string, () => Response]> = [
+    ['problem 401', problemResponse],
+    [
+      '2xx',
+      () =>
+        new Response('{}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    ],
+  ]
 
-  render(
-    <MemoryRouter>
-      <PlaceholderPage />
-    </MemoryRouter>,
-  )
+  for (const [name, respond] of responses) {
+    fetchMock.mockResolvedValueOnce(respond())
 
-  expect(await screen.findByText(en.status.reachable)).toBeTruthy()
+    const view = render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText(en.status.reachable), name).toBeTruthy()
+    view.unmount()
+  }
 })
 
 test('Status is "checking" until the request finishes', async () => {

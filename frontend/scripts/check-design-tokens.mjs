@@ -1,5 +1,6 @@
 // Fails when the look is defined outside src/styles/tokens.css:
 // raw colours or font families in CSS, and inline style attributes in TSX.
+// Declarations that follow a nested CSS block inside the same rule are not checked.
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
