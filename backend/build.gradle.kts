@@ -52,4 +52,8 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 	jvmArgs("-javaagent:${mockitoAgent.asPath}")
+	// Colima: Ryuk cannot mount the host socket path; harmless elsewhere
+	if (System.getenv("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE") == null) {
+		environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/var/run/docker.sock")
+	}
 }

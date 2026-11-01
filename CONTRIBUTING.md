@@ -62,11 +62,12 @@ THEN, per-teacher data scoping, no secrets.
 See README. Backend tests need Docker (Testcontainers).
 
 **Colima instead of Docker Desktop.** Testcontainers fails with "Could not find a
-valid Docker environment". Fix:
+valid Docker environment". Fix: create `~/.testcontainers.properties` with
 
-- `~/.testcontainers.properties`:
-  `docker.host=unix:///Users/<you>/.colima/default/docker.sock`
-- environment variable `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`
-  (IntelliJ: the Gradle and JUnit run configuration templates; terminal: your
-  shell profile). Without it, Ryuk fails with
-  "mkdir …docker.sock: operation not supported".
+```
+docker.host=unix:///Users/<you>/.colima/default/docker.sock
+```
+
+`./gradlew test` sets `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`
+itself (Ryuk needs it), unless you set it yourself. In IntelliJ, run tests through
+Gradle, or set the variable in the JUnit run configuration template.
