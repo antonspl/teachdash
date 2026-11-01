@@ -195,3 +195,50 @@ test('State-changing request without the cookie has no CSRF header', async () =>
 
   expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('X-XSRF-TOKEN')
 })
+
+test('Request asks for problem and JSON responses', async () => {
+  fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
+
+  await apiRequest('me')
+
+  const [, init] = fetchMock.mock.calls[0]
+  expect(init.headers.Accept).toBe('application/problem+json, application/json')
+})
+
+test('A deliberate cancel is rethrown as the original AbortError', async () => {
+  const controller = new AbortController()
+  fetchMock.mockImplementation(
+    (_url: string, init: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () =>
+          reject(init.signal?.reason),
+        )
+      }),
+  )
+
+  const request = apiRequest('me', { signal: controller.signal })
+  controller.abort()
+
+  await expect(request).rejects.toMatchObject({ name: 'AbortError' })
+  await expect(request).rejects.not.toBeInstanceOf(ApiError)
+})
+
+test('A timeout becomes an ApiError that keeps the original error as cause', async () => {
+  const timeout = new DOMException('signal timed out', 'TimeoutError')
+  fetchMock.mockRejectedValue(timeout)
+
+  const error = await failureOf(apiRequest('me'))
+
+  expect(error.message).toBe(en.errors.generic)
+  expect(error.status).toBeUndefined()
+  expect(error.cause).toBe(timeout)
+})
+
+test('A network failure keeps the original error as cause', async () => {
+  const failure = new TypeError('Failed to fetch')
+  fetchMock.mockRejectedValue(failure)
+
+  const error = await failureOf(apiRequest('me'))
+
+  expect(error.cause).toBe(failure)
+})

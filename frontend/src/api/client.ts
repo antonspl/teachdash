@@ -13,8 +13,9 @@ export class ApiError extends Error {
     status?: number
     code?: string
     isProblem?: boolean
+    cause?: unknown
   }) {
-    super(options.message)
+    super(options.message, { cause: options.cause })
     this.name = 'ApiError'
     this.status = options.status
     this.code = options.code
@@ -27,6 +28,15 @@ export function messageForCode(code: string | undefined): string {
     return i18n.t(`errors.${code}`)
   }
   return i18n.t('errors.generic')
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    error.name === 'AbortError'
+  )
 }
 
 function readCookie(name: string): string | undefined {
@@ -78,7 +88,9 @@ export async function apiRequest(
   options: { method?: string; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<Response> {
   const method = (options.method ?? 'GET').toUpperCase()
-  const headers: Record<string, string> = { Accept: 'application/json' }
+  const headers: Record<string, string> = {
+    Accept: 'application/problem+json, application/json',
+  }
 
   if (!SAFE_METHODS.has(method)) {
     const token = readCookie('XSRF-TOKEN')
@@ -99,8 +111,11 @@ export async function apiRequest(
         options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: options.signal,
     })
-  } catch {
-    throw new ApiError({ message: i18n.t('errors.generic') })
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error
+    }
+    throw new ApiError({ message: i18n.t('errors.generic'), cause: error })
   }
 
   if (!response.ok) {

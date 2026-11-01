@@ -45,11 +45,11 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 ## 7. Owner review: code
 
-- [ ] 7.1 Retry the status check while unreachable; verify with the test `[web-client/R3-S3]`
-- [ ] 7.2 API client: explicit `Accept`, rethrow a deliberate cancel, keep `cause` on other failures; verify with unit tests for both
-- [ ] 7.3 Vite proxy key `^/api/`; verify `/api/me` still proxies and `/api-keys` does not
-- [ ] 7.4 Extend the token check as in `design.md`; verify it fails on a temporary raw `px` in a CSS Module, a raw `rem`, a CSS import in a page and a `className` in a page, and passes with `rem` in an `@media` condition
-- [ ] 7.5 Coverage script: `describe.skip`, missing `frontend/e2e` and the `pipefail` false "MISSING"; verify each with a temporary edit or a scratch copy
+- [x] 7.1 Retry the status check while unreachable; verify with the test `[web-client/R3-S3]`
+- [x] 7.2 API client: explicit `Accept`, rethrow a deliberate cancel, keep `cause` on other failures; verify with unit tests for both
+- [x] 7.3 Vite proxy key `^/api/`; verify `/api/me` still proxies and `/api-keys` does not
+- [x] 7.4 Extend the token check as in `design.md`; verify it fails on a temporary raw `px` in a CSS Module, a raw `rem`, a CSS import in a page and a `className` in a page, and passes with `rem` in an `@media` condition
+- [x] 7.5 Coverage script: `describe.skip`, missing `frontend/e2e` and the `pipefail` false "MISSING"; verify each with a temporary edit or a scratch copy
 
 ## Workflow follow-up
 

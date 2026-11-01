@@ -166,7 +166,10 @@ test('A request that never answers counts as unreachable after 10 seconds', asyn
   vi.useFakeTimers()
   vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms: number) => {
     const controller = new AbortController()
-    setTimeout(() => controller.abort(), ms)
+    setTimeout(
+      () => controller.abort(new DOMException('timed out', 'TimeoutError')),
+      ms,
+    )
     return controller.signal
   })
   try {
@@ -174,7 +177,7 @@ test('A request that never answers counts as unreachable after 10 seconds', asyn
       (_url: string, init?: RequestInit) =>
         new Promise((_resolve, reject) => {
           init?.signal?.addEventListener('abort', () =>
-            reject(new DOMException('aborted', 'AbortError')),
+            reject(init.signal?.reason),
           )
         }),
     )
@@ -192,6 +195,87 @@ test('A request that never answers counts as unreachable after 10 seconds', asyn
     expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
   } finally {
     vi.restoreAllMocks()
+    vi.useRealTimers()
+  }
+})
+
+test('[web-client/R3-S3] Page recovers when the backend comes back', async () => {
+  // given
+  vi.useFakeTimers()
+  try {
+    fetchMock
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(problemResponse())
+    render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+    await act(() => vi.advanceTimersByTimeAsync(0))
+    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
+
+    // when
+    await act(() => vi.advanceTimersByTimeAsync(5_000))
+
+    // then
+    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+
+    await act(() => vi.advanceTimersByTimeAsync(30_000))
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('Status stays "unreachable" between retries and requests do not overlap', async () => {
+  vi.useFakeTimers()
+  try {
+    let resolveSlow: (response: Response) => void = () => undefined
+    fetchMock
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockImplementationOnce(
+        () => new Promise<Response>((resolve) => (resolveSlow = resolve)),
+      )
+    render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+    await act(() => vi.advanceTimersByTimeAsync(0))
+
+    await act(() => vi.advanceTimersByTimeAsync(5_000))
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
+
+    await act(() => vi.advanceTimersByTimeAsync(4_000))
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+
+    resolveSlow(problemResponse())
+    await act(() => vi.advanceTimersByTimeAsync(0))
+    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('Retries stop when the page is unmounted', async () => {
+  vi.useFakeTimers()
+  try {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+    const view = render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+    await act(() => vi.advanceTimersByTimeAsync(0))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    view.unmount()
+    await act(() => vi.advanceTimersByTimeAsync(60_000))
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  } finally {
     vi.useRealTimers()
   }
 })

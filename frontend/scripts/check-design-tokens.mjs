@@ -1,5 +1,11 @@
 // Fails when the look is defined outside src/styles/tokens.css:
-// raw colours or font families in CSS, and inline style attributes in TSX.
+// - raw colours, font families and px or rem lengths in CSS (a bare 0 is fine, and
+//   @media conditions are not checked because var() does not work there);
+// - inline style attributes in TSX;
+// - CSS imports and className in src/pages/ (pages use src/ui/ components).
+// Other units (em, %, vw, ...) are not checked: they are relative, so they do not
+// fix a design value. Test files in src/pages/ are exempt from the two page rules,
+// because they do not ship and only render the pages.
 // Declarations that follow a nested CSS block inside the same rule are not checked.
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
@@ -36,6 +42,10 @@ const NAMED = new RegExp(
   `(?<![\\w-])(${NAMED_COLORS.join('|')})(?![\\w-])`,
   'i',
 )
+const RAW_LENGTH = /(?<![\w.-])[+-]?(?:\d+\.?\d*|\.\d+)(?:px|rem)(?![\w-])/i
+const CSS_IMPORT =
+  /\bimport\s*(?:[^'";]*?\bfrom\s*)?\(?\s*['"][^'"]+\.css(?:\?[^'"]*)?['"]/
+const CLASS_NAME = /(?<![\w-])className(?![\w-])/g
 const DECLARATION = /[;{]\s*([\w-]+)\s*:\s*([^;{}]+)/g
 
 function filesUnder(dir) {
@@ -60,6 +70,9 @@ function checkCss(file, problems) {
     if (HEX.test(value) || COLOR_FUNCTION.test(value) || NAMED.test(value)) {
       problems.push(`${at}: raw colour in "${property}"; use a token`)
     }
+    if (RAW_LENGTH.test(value)) {
+      problems.push(`${at}: raw px or rem length in "${property}"; use a token`)
+    }
     if (
       (property === 'font-family' || property === 'font') &&
       !value.trim().startsWith('var(')
@@ -69,11 +82,23 @@ function checkCss(file, problems) {
   }
 }
 
-function checkTsx(file, problems) {
+function checkTsx(file, path, problems) {
   const text = readFileSync(file, 'utf8')
   for (const match of text.matchAll(/(?<![\w-])style\s*=/g)) {
     const at = `${relative(root, file)}:${lineOf(text, match.index)}`
     problems.push(`${at}: inline style attribute; use a CSS Module`)
+  }
+  if (!path.startsWith('src/pages/') || /\.test\.tsx?$/.test(path)) {
+    return
+  }
+  const cssImport = CSS_IMPORT.exec(text)
+  if (cssImport) {
+    const at = `${relative(root, file)}:${lineOf(text, cssImport.index)}`
+    problems.push(`${at}: CSS import in a page; use a src/ui/ component`)
+  }
+  for (const match of text.matchAll(CLASS_NAME)) {
+    const at = `${relative(root, file)}:${lineOf(text, match.index)}`
+    problems.push(`${at}: className in a page; use a src/ui/ component`)
   }
 }
 
@@ -82,8 +107,8 @@ for (const file of filesUnder(srcDir)) {
   const path = relative(root, file).split(sep).join('/')
   if (file.endsWith('.css') && path !== tokensFile.split(sep).join('/')) {
     checkCss(file, problems)
-  } else if (file.endsWith('.tsx')) {
-    checkTsx(file, problems)
+  } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
+    checkTsx(file, path, problems)
   }
 }
 
