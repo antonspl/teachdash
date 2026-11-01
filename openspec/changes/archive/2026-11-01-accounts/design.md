@@ -1,0 +1,227 @@
+# Design: accounts
+
+## Context
+
+Builds on `backend-skeleton` (Spring Boot app, Gradle, Testcontainers test base)
+and `workflow` (coverage script). See proposal.md for scope. The constitution
+fixes the stack (Spring Boot, Postgres + Flyway, one domain with `/api/*` proxied,
+no CORS) and the test approach. This change is backend only.
+
+## Goals / Non-Goals
+
+**Goals:**
+- A backend skeleton that later changes extend without restructuring.
+- Session-based auth that survives backend restarts and deploys.
+
+**Non-Goals:**
+- Frontend (`cabinets-ui`), enrolment (`student-enrolment`).
+- CI, production deployment, production secrets, observability shipping (only JSON
+  logs + Actuator health now).
+- Any outgoing email.
+
+## Decisions
+
+### D1. Versions and build
+Versions and the build come from `backend-skeleton` (Java 25, Spring Boot, Gradle
+Kotlin DSL). This change adds Spring Security, Spring Data JDBC, Spring Session JDBC
+and Bean Validation (reasons in D3, D4).
+
+### D2. Backend layout — feature first, then role (constitution §3 "Code layout")
+```
+com/teachdash/
+  accounts/
+    api/            AdminController, AuthController, MeController, PasswordLinkController
+      dto/          LoginRequest, CreateTeacherRequest, UserResponse, ...
+    domain/         Role (pass 2: User, AccountService, PasswordLinkService)
+    persistence/    (pass 2: UserRepository, OneTimeTokenRepository)
+  common/           ClockConfig, SecurityConfig, error handling (ClockConfig: pass 2)
+```
+Classes used across subpackages are `public`. Alternative (one flat `accounts`
+package) mixes controllers, DTOs and domain and grows badly in pass 2.
+
+### D3. Persistence — Spring Data JDBC
+Simple aggregates, explicit SQL in Flyway, no lazy-loading surprises.
+Alternative: JPA/Hibernate — more magic than this project needs.
+User changes use targeted `UPDATE`s (`@Query` setting only the changed columns), never
+`save()` of a whole loaded row: two concurrent changes then cannot undo
+each other (e.g. a password change bringing back `active = true`).
+Dependency: `spring-boot-starter-data-jdbc`.
+Shared rules are custom constraints, not helpers called by hand: `@BcryptPassword` (new
+passwords: 8 characters to 72 bytes) and `@TimeZoneId`. Login and current passwords are not
+size-validated: over 72 bytes is simply a wrong password, rejected before bcrypt runs.
+Request validation (e.g. password rules, required fields) uses Bean Validation:
+`spring-boot-starter-validation`, the standard Spring way, instead of hand-written checks.
+
+### D4. Authentication — server-side session + cookie
+Spring Security with a JSON login endpoint, `HttpSession` stored in Postgres via
+**Spring Session JDBC** (dependency: `spring-session-jdbc`) so sessions survive
+restarts and can be ended per user (deactivation, password reset).
+Cookie: `HttpOnly`, `SameSite=Lax`, `Secure` in prod. CSRF protection with a
+cookie-held token (`XSRF-TOKEN` → `X-XSRF-TOKEN` header), which the future SPA sends.
+The token cookie is set eagerly on every response, also for anonymous requests
+(a logged-out `GET /api/me` returns 401 and sets `XSRF-TOKEN`), and the raw cookie
+value is accepted in the header (SPA-style handler), so a client can log in.
+Login, link use and password change replace the token, and that same response sets the
+new cookie.
+Alternative: JWT — no clean way to revoke sessions, and no benefit on one domain.
+Passwords: Spring Security `DelegatingPasswordEncoder` (bcrypt).
+Session contents (tests create sessions this way, D11): the `SecurityContext` under
+`SPRING_SECURITY_CONTEXT` holds a standard Spring `User` principal whose name is
+the **user's id (UUID)**, authorities `ROLE_ADMIN` / `ROLE_TEACHER` / `ROLE_STUDENT`;
+no custom principal class. The current user is looked up by id from
+`authentication.getName()`. Spring Session defaults: `SESSION` cookie (base64 id),
+JDK-serialized attributes. Login looks the user up by case-insensitive email and builds
+the principal from the stored id, so a later email change does not orphan sessions.
+Revocation: `users.session_version` (D9) is copied into a session attribute when a
+session starts. A filter after the security context is loaded reads the user by id on
+every authenticated request (one primary-key lookup); if the account is inactive it invalidates the
+session; if only the versions differ it clears the security context and keeps the session.
+Either way the request gets 401. A session without
+the attribute counts as version 0. Deactivation, reset and password change raise the
+version in the same transaction as the change, so revocation cannot half-fail and a
+login finishing at the same moment still loses. A password change updates the row only `where active and session_version = <the
+session's version>`; no row updated means the session was revoked meanwhile, so it gets
+401 and nothing changes. On success the session is replaced: invalidate the old session, create a new one with a
+fresh security context, and set the version returned by the update. A stolen copy of the old id
+stops working. `changeSessionId()` is not used: a parallel request that loaded the old id
+and saves later writes that id back, logging the user out and reviving the old id. A stale
+save now updates no rows. Bcrypt runs before the transaction starts, so no database connection is held
+during hashing or verifying, which could otherwise exhaust the pool. Revoked rows are not deleted one by one: they cannot be used, and Spring Session's expiry
+cleanup removes them.
+Alternative (deleting sessions after commit) can fail after the change is saved, needs a
+second pooled connection, and misses a login that finishes just after the deletion.
+
+### D5. One-time links
+Token = 32 random bytes, base64url. Only the hash is stored —
+`hex(SHA-256(UTF-8 bytes of the base64url string))`, 64 characters — with purpose
+(`SET_PASSWORD`, `RESET_PASSWORD`), account, expiry (7 days), `used_at`. Issuing a
+new token marks older unused tokens of that account as used, in the same transaction;
+a partial unique index (D9) guarantees at most one unused token per account even with
+concurrent requests: a concurrent duplicate fails instead of leaving two valid links. The API
+returns the full URL built from `APP_BASE_URL`: `{base}/set-password#token=…`. The
+token never appears in a URL that reaches a server: it is in the fragment of the page
+link (browsers do not send fragments) and in the JSON body of the API call (D8), so
+proxy access logs (Caddy → Grafana) never contain it. The token service
+is reusable: `student-enrolment` will issue links for students through it.
+
+### D6. Time source
+A `Clock` bean, so tests can move time (R7-S3 expiry) without sleeping. Tests supply
+their own `Clock` (`TestClockConfig`, `@Primary` so it wins over the production bean);
+the production `ClockConfig` is added in pass 2.
+
+### D7. Errors
+RFC 7807 `ProblemDetail` for all errors, including those raised in security filters, with a machine-readable `code` property
+(e.g. `WRONG_PASSWORD`) that the UI maps to a translated message. Errors written from a
+filter are not flushed: saving the session runs on commit, so a flush can itself fail. A last-resort
+filter before the session filter catches any runtime failure on an uncommitted response, clears it
+and writes `INTERNAL_ERROR`. That filter flushes its own response, which is outside the session
+wrapper so it cannot trigger a save; unflushed, Tomcat can replace the body with its error page.
+Once the response is committed nothing can be changed, so the failure is rethrown.
+
+### D8. API (all under `/api`)
+
+| Method | Path | Role | Spec |
+|---|---|---|---|
+| POST | `/auth/login` | — | R2 |
+| POST | `/auth/logout` | any | R3 |
+| GET | `/me` | any | R2, R9 |
+| PATCH | `/me` | any | R9 |
+| POST | `/me/password` | any | R9 |
+| POST | `/password-links` | — | R7 |
+| GET/POST | `/admin/teachers` | admin | R4, R5 |
+| POST | `/admin/teachers/{id}/deactivate`, `/reactivate` | admin | R6 |
+| POST | `/admin/users/{id}/reset-link` | admin | R8 |
+
+JSON shapes:
+- User (`GET/PATCH /me`, teacher list items): `id`, `name`, `email`, `role`
+  (`ADMIN` / `TEACHER` / `STUDENT`), `timeZone` (IANA id, e.g. `Europe/Moscow`).
+- `POST /auth/login`: `{email, password}`. `PATCH /me`: `{name, timeZone}`.
+  `POST /me/password`: `{currentPassword, newPassword}`.
+- Teacher list items: the User shape plus `active`.
+- `POST /admin/teachers`: request `{name, email, timeZone}`, response 201
+  `{id, setPasswordLink}`.
+- `POST /admin/teachers/{id}/reactivate`: 204, or 200 `{setPasswordLink}` if the teacher
+  was inactive and has no password (deactivation cancels unused links, so otherwise they
+  are locked out). An already active teacher keeps their link.
+- `POST /admin/users/{id}/reset-link`: response `{link}`.
+- `POST /password-links`: request `{token, password}`; 200 starts a session; a used,
+  expired or replaced link returns 410. The token is never in the path or query.
+- Errors: `ProblemDetail` with a top-level `code` property (D7).
+
+### D9. Data model and Flyway migrations
+- `V1__accounts.sql` — `users` (id uuid, email, name, role, password_hash nullable,
+  time_zone, active, session_version int not null default 0, created_at; unique index
+  on `lower(email)`),
+  `one_time_tokens` (token_hash, user_id, purpose, expires_at, used_at, created_at;
+  partial unique index on `user_id` where `used_at is null` — at most one unused
+  token per account, D5).
+- `V2__spring_session.sql` — Spring Session JDBC tables, unchanged from its
+  schema. `principal_name` holds the user id (36 characters, D4), so the default
+  `varchar(100)` fits.
+
+Both are written in pass 1 (tests need the schema) and are reviewed as production
+code at the tests gate. They are not applied anywhere yet, so they may still be
+edited until this change merges.
+
+### D10. Admin bootstrap
+Values are checked by the injected Bean Validation `Validator` against the same
+constraints as the API, with no separate rules. Invalid values stop startup with a message
+naming the variable, never its value; if
+no admin exists and a variable is missing, a warning names the missing variable.
+Values come straight from the property sources, not `@Value` or `Environment.getProperty`,
+which would resolve `${...}` and `#{...}` inside a password. A variable counts as missing
+only when unset or empty; present variables are validated even if another is missing.
+An `ApplicationRunner` reads the properties `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`
+(by these exact names, e.g. `${ADMIN_EMAIL}`, not relaxed-bound `admin.*`) and creates
+the admin only if no admin exists (R1).
+
+### D11. Tests and local run
+- `ApiTest` (from `backend-skeleton`: app on a random port, shared Testcontainers
+  Postgres, tables cleaned between tests) gets accounts helpers:
+  - create users of any role directly in the database (students too, since
+    enrolment does not exist yet);
+  - create one-time tokens directly: 32 random bytes, base64url, hashed as in D5
+    with a library function (no hand-written hex);
+  - `loggedInAs(user)` creates the session **directly in the session store**, not
+    through `/auth/login`, so tests that are not about login never depend on an
+    unimplemented endpoint and fail at their THEN step. Only R2 tests call
+    `/auth/login`.
+- `TestClient` uses RestAssured's `CookieFilter` for cookies (no hand-written cookie
+  jar). A new client makes its own
+  `XSRF-TOKEN` cookie + header pair (double-submit), so `login()` is one POST with no
+  extra GETs. The header always carries the current `XSRF-TOKEN` cookie value, so a
+  token the server rotates on login is picked up; `snapshot()` keeps that setting.
+- `MutableClock` (the movable test clock for D6): one shared instant; `withZone(z)`
+  returns a clock with that zone over the same instant, so zone bugs are not hidden.
+- R1 tests run the real bootstrap `ApplicationRunner` bean from a cached test
+  context that has the `ADMIN_*` properties set, calling `run()` after the tables are
+  emptied ("the application starts"). No second Spring app per test.
+- `TestClockConfig` stays `@TestConfiguration`, imported by `ApiTest`: Spring Boot's
+  test scan filter skips it, so the test clock exists only where imported (a plain
+  `@Configuration` there was checked: component scanning picks it up in every test).
+- Test setup sets `APP_BASE_URL`, so pass 2 can make it required.
+- `loggedInAs` uses the user's id as principal name (D4). Users created by helpers get a low-cost bcrypt hash (strength 4) to
+  keep tests fast; the app's encoder still verifies them.
+- R2-S2 checks "no session is started" directly: no `SESSION` cookie on the client
+  and no `spring_session` row.
+- Coverage: `scripts/check-scenario-coverage.sh` (from `workflow`), by hand until CI.
+- Local run: `backend/Dockerfile`; `infra/docker-compose.yml` is the production-like base
+  with no defaults (`${ADMIN_PASSWORD:?}` and so on) and no published backend or database
+  port. The root `compose.yaml` adds `infra/docker-compose.dev.yml` and `infra/dev.env`:
+  dev-only credentials and ports bound to `127.0.0.1` (8080, 5432), so `docker compose up`
+  works from a fresh clone and only there. `.env` is gitignored and overrides values.
+  CI comes in a separate task and reuses the same test command and coverage script.
+
+### D12. Logging
+Spring Boot structured logging (`logging.structured.format.console`) to stdout. No
+passwords, tokens or token hashes in logs. Actuator `health` exposed only.
+
+## Risks / Trade-offs
+
+- [Login errors reveal whether an email is registered (owner's choice for clearer
+  UX); together with no rate limiting this helps targeted password guessing] →
+  add rate limiting before real users join (backlog task).
+- [Without email, a user who loses their password depends on the admin (later also
+  their teacher)] → reset links can be issued at any time.
+- [Backend without UI is hard to try by hand] → `cabinets-ui` follows; until then,
+  tests are the check.

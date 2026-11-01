@@ -16,6 +16,10 @@ Questions asked on 2026-10-28 and the owner's answers.
 | 8 | Login errors: same response for every failure? | No (PR review). Tell the user the reason: unknown email, wrong password, deactivated, password not set. |
 | 9 | CI in this change? | No (PR review). A separate DevOps task; this change only needs to run locally in Docker. |
 | 10 | Secrets? | None for now, local build only. Production secret storage is a separate DevOps task. |
+| 11 | Where do the backend skeleton and the coverage script live? (PR #17 review, 2026-10-31) | In separate PRs merged before this one: `backend-skeleton` (Spring Boot app, Gradle wrapper, Testcontainers test base, smoke test) and `workflow` (constitution, CONTRIBUTING, `scripts/check-scenario-coverage.sh`). |
+| 12 | May pass 1 add production code? (PR #17 review) | Only 501 stubs marked `STUB` and schema migrations. Migrations are reviewed as production code at the tests gate. |
+| 13 | Package layout? (PR #17 review) | Feature first, then role: `accounts/api`, `accounts/api/dto`, `accounts/domain`, `accounts/persistence`; shared code in `common`. |
+| 14 | Session principal: email or user id? (PR #17 tests review) | User id (UUID): no letter-case mismatch, survives email changes, fits Spring Session's default column. |
 
 Defaults chosen by Claude (owner may override during review):
 
@@ -25,14 +29,14 @@ Defaults chosen by Claude (owner may override during review):
 
 ## Why
 
-Every feature of teachdash needs accounts and roles. This first change also sets up
-the backend skeleton and a local Docker setup, so later changes only add features.
+Every feature of teachdash needs accounts and roles. This change also adds a local
+Docker setup, so the backend can be run by hand.
+
+Depends on `backend-skeleton` and `workflow`, which merge into `main` first.
 
 ## What Changes
 
-- Backend skeleton: `backend/` (Spring Boot, Flyway, Testcontainers) and a local
-  `docker compose` setup that runs Postgres and the backend.
-- A local script that checks every spec scenario has a test.
+- A local `docker compose` setup that runs Postgres and the backend.
 - Accounts with roles admin, teacher, student; login and logout with email + password.
 - First admin created from environment variables on startup.
 - Admin creates, deactivates and reactivates teacher accounts.
@@ -63,7 +67,8 @@ None.
 
 ## Impact
 
-- New `backend/`, `infra/` (local compose only), `scripts/`.
+- New `accounts` and `common` packages and Flyway migrations in `backend/`; `infra/`
+  (local compose only).
 - New REST API under `/api`.
 - New tables: users, one-time tokens, HTTP sessions.
 - Environment variables for local runs only, with dev defaults in `.env.example`:

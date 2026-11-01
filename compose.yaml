@@ -1,0 +1,7 @@
+name: teachdash
+
+include:
+  - path:
+      - infra/docker-compose.yml
+      - infra/docker-compose.dev.yml
+    env_file: infra/dev.env

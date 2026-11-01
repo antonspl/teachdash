@@ -1,0 +1,104 @@
+package com.teachdash.accounts.domain;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.PersistenceCreator;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
+import org.springframework.data.relational.core.mapping.Table;
+
+@Table("users")
+public class User implements Persistable<UUID> {
+
+	@Id
+	private final UUID id;
+	private final String email;
+	private final String name;
+	private final Role role;
+	private final String passwordHash;
+	private final String timeZone;
+	private final boolean active;
+	private final int sessionVersion;
+	private final Instant createdAt;
+
+	@Transient
+	private boolean newEntity;
+
+	@PersistenceCreator
+	User(
+			UUID id,
+			String email,
+			String name,
+			Role role,
+			String passwordHash,
+			String timeZone,
+			boolean active,
+			int sessionVersion,
+			Instant createdAt) {
+		this.id = id;
+		this.email = email;
+		this.name = name;
+		this.role = role;
+		this.passwordHash = passwordHash;
+		this.timeZone = timeZone;
+		this.active = active;
+		this.sessionVersion = sessionVersion;
+		this.createdAt = createdAt;
+	}
+
+	public static User create(
+			String email,
+			String name,
+			Role role,
+			String passwordHash,
+			String timeZone,
+			Instant now) {
+		User user = new User(UUID.randomUUID(), email, name, role, passwordHash, timeZone, true, 0, now);
+		user.newEntity = true;
+		return user;
+	}
+
+	@Override
+	public UUID getId() {
+		return id;
+	}
+
+	@Override
+	public boolean isNew() {
+		return newEntity;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public Role getRole() {
+		return role;
+	}
+
+	public String getPasswordHash() {
+		return passwordHash;
+	}
+
+	public String getTimeZone() {
+		return timeZone;
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public int getSessionVersion() {
+		return sessionVersion;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+}
