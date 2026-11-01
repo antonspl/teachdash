@@ -33,11 +33,12 @@ the app. Checks: `npm run lint`, `npm run format:check`, `npm test`, `npm run bu
 
 ### Frontend tests
 
-Unit tests (Vitest) need no stack: `cd frontend && npm test`.
+Unit tests (Vitest) need no stack: `cd frontend && npm ci && npm test`.
 
 E2E tests (Playwright) run against the container on http://localhost:8081, in desktop Chromium
-and in Chrome and Safari phone profiles. Once, install the browsers:
-`cd frontend && npx playwright install chromium webkit`. Then start the stack
+and in Chrome and Safari phone profiles. Once, install the
+browsers (after `npm ci`, so the locked version is used):
+`cd frontend && npx --no-install playwright install chromium webkit`. Then start the stack
 (`docker compose up --build`) and run `npm run test:e2e`. If the stack is down, the run stops
 with a message saying so (it waits up to 30 seconds for the backend to finish starting). The HTML report goes to `frontend/playwright-report/`.
 

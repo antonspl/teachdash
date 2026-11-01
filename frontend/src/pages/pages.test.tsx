@@ -4,8 +4,8 @@ import { I18nextProvider } from 'react-i18next'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import '../i18n'
+import { App } from '../App'
 import en from '../i18n/en.json'
-import { NotFoundPage } from './NotFoundPage'
 import { PlaceholderPage } from './PlaceholderPage'
 
 const fetchMock = vi.fn()
@@ -68,18 +68,21 @@ test('[web-client/R2-S1] Page text comes from the translation resources', async 
   const instance = await testInstance()
   fetchMock.mockResolvedValue(problemResponse())
 
-  for (const page of [<PlaceholderPage />, <NotFoundPage />]) {
+  for (const path of ['/', '/no-such-page']) {
     // when
     const view = render(
       <I18nextProvider i18n={instance}>
-        <MemoryRouter>{page}</MemoryRouter>
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>
       </I18nextProvider>,
     )
-    if (page.type === PlaceholderPage) {
+    if (path === '/') {
       await screen.findByText('TEST<status.reachable>')
     }
 
     // then
+    expect(document.title).toBe('TEST<app.name>')
     const shown = view.container.textContent ?? ''
     expect(shown).toMatch(/TEST<[\w.]+>/)
     expect(shown.replace(/TEST<[\w.]+>/g, '').trim()).toBe('')
