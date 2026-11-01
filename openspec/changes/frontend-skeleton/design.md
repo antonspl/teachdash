@@ -82,8 +82,8 @@ A small wrapper around `fetch`, with paths relative to `/api`.
 
 - On POST, PUT, PATCH and DELETE it reads `XSRF-TOKEN` from `document.cookie` at send
   time and sets `X-XSRF-TOKEN`.
-- A non-2xx response throws an `ApiError` holding the status, the `code` if present and
-  the translated message.
+- A non-2xx response throws an `ApiError` holding the status, the `code` if present, the
+  translated message and `isProblem`, which the reachability check uses.
 - A network failure throws `ApiError` with no status, with the generic message.
 - A response counts as a problem only when its content type is
   `application/problem+json`. The reachability check needs this, so that a 502 from
