@@ -16,7 +16,9 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.teachdash.accounts.persistence.OneTimeTokenRepository;
 import com.teachdash.accounts.persistence.UserRepository;
@@ -33,6 +35,7 @@ public class PasswordLinkService {
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
 	private final Clock clock;
+	private final TransactionTemplate transaction;
 	private final String baseUrl;
 
 	PasswordLinkService(
@@ -40,11 +43,13 @@ public class PasswordLinkService {
 			UserRepository users,
 			PasswordEncoder passwordEncoder,
 			Clock clock,
+			PlatformTransactionManager transactionManager,
 			@Value("${APP_BASE_URL}") String baseUrl) {
 		this.tokens = tokens;
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.clock = clock;
+		this.transaction = new TransactionTemplate(transactionManager);
 		this.baseUrl = baseUrl.endsWith("/")
 				? baseUrl.substring(0, baseUrl.length() - 1)
 				: baseUrl;
@@ -76,8 +81,11 @@ public class PasswordLinkService {
 		tokens.markUnusedAsUsed(userId, clock.instant());
 	}
 
-	/** Sets the password, consumes the link and revokes older sessions; returns the updated user. */
-	@Transactional
+	/**
+	 * Sets the password, consumes the link and revokes older sessions; returns the updated user.
+	 * The link is checked and the password hashed before the transaction starts, so no database
+	 * connection is held while hashing; the update itself re-checks the link atomically.
+	 */
 	public User use(String token, String password) {
 		AccountService.requireEncodable(password);
 		OneTimeToken stored = tokens.findById(hash(token))
@@ -93,11 +101,13 @@ public class PasswordLinkService {
 			throw invalid();
 		}
 		String passwordHash = passwordEncoder.encode(password);
-		if (tokens.markUsed(stored.getId(), now) != 1) {
-			throw invalid();
-		}
-		users.updatePasswordHashAndRevokeSessions(user.getId(), passwordHash);
-		return users.findById(user.getId()).orElseThrow(PasswordLinkService::invalid);
+		return transaction.execute(status -> {
+			if (tokens.markUsed(stored.getId(), now) != 1) {
+				throw invalid();
+			}
+			users.updatePasswordHashAndRevokeSessions(user.getId(), passwordHash);
+			return users.findById(user.getId()).orElseThrow(PasswordLinkService::invalid);
+		});
 	}
 
 	private static ApiException invalid() {

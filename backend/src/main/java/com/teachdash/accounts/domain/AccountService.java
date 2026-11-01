@@ -7,7 +7,8 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
@@ -20,21 +21,24 @@ public class AccountService {
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
 	private final PasswordLinkService links;
+	private final TransactionTemplate transaction;
 
 	AccountService(
 			UserRepository users,
 			PasswordEncoder passwordEncoder,
-			PasswordLinkService links) {
+			PasswordLinkService links,
+			PlatformTransactionManager transactionManager) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.links = links;
+		this.transaction = new TransactionTemplate(transactionManager);
 	}
 
 	/**
 	 * Changes the password if the caller's session version is still current, revokes older
-	 * sessions and unused links; returns the new session version.
+	 * sessions and unused links; returns the new session version. Bcrypt runs before the
+	 * transaction starts, so no database connection is held while hashing.
 	 */
-	@Transactional
 	public int changePassword(
 			UUID id,
 			String currentPassword,
@@ -48,9 +52,11 @@ public class AccountService {
 		}
 		requireEncodable(newPassword);
 		String newPasswordHash = passwordEncoder.encode(newPassword);
-		links.invalidateLinks(id);
-		return users.updatePasswordHashIfSessionCurrent(id, newPasswordHash, expectedSessionVersion)
-				.orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
+		return transaction.execute(status -> {
+			links.invalidateLinks(id);
+			return users.updatePasswordHashIfSessionCurrent(id, newPasswordHash, expectedSessionVersion)
+					.orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
+		});
 	}
 
 	/** Checks credentials; the failure reason is an error code (design D7, R2). */
