@@ -1,0 +1,173 @@
+# Design
+
+## Context
+
+See `proposal.md` for motivation. Current state:
+
+- `compose.yaml` includes `infra/docker-compose.yml` and `infra/docker-compose.dev.yml`
+  with `infra/dev.env`. The base file publishes no ports; the dev file publishes them
+  on loopback only.
+- The backend listens on 8080 and has no context path. It uses
+  `CookieCsrfTokenRepository.withHttpOnlyFalse()` in SPA mode, so the cookie is
+  `XSRF-TOKEN` and the header is `X-XSRF-TOKEN`. No path is exempt from CSRF, including
+  login.
+- Errors are RFC 9457 problems with a string `code` property. Codes are string literals
+  in the backend, with no central list.
+- Anonymous `GET /api/me` returns a 401 problem and sets the CSRF cookie.
+- `.gitignore` already covers `node_modules/` and `dist/`.
+
+## Goals / Non-Goals
+
+**Goals:**
+
+- Screen PRs add only screens, translations and tests, with no setup work.
+- `docker compose up` gives the same serving shape as production: static files and
+  `/api/*` proxied on one origin.
+
+**Non-Goals:**
+
+- UI component library, global state or data-fetching library: added when a screen
+  needs one, with its own reason.
+- Loading the CSRF token before the first POST, or refreshing it after login and
+  logout: `ui-auth` (#32) needs this and adds it. The client reads the cookie at send
+  time, so it will work with that flow.
+
+## Decisions
+
+### Layout
+
+```
+frontend/
+  src/
+    api/      client and problem handling
+    i18n/     setup and en.json
+    pages/    placeholder and not-found
+  e2e/        Playwright tests
+  Dockerfile
+infra/Caddyfile
+```
+
+### Dependencies
+
+All are mainstream and chosen with the owner (see Clarifications).
+
+| Dependency | Reason |
+| --- | --- |
+| `react`, `react-dom` | Required by constitution §3 |
+| `vite`, `@vitejs/plugin-react`, `typescript` | Required by constitution §3; build, dev proxy and types |
+| `react-router` | Client routing. Every later screen needs it and it is the standard choice |
+| `i18next`, `react-i18next` | Constitution §9 requires i18n. The usual React choice, and plurals and interpolation are ready for later screens |
+| `vitest`, `jsdom`, `@testing-library/react` | Constitution §2 requires Vitest. The other two render pages for R2 and R3 without a browser |
+| `@playwright/test` | Constitution §2 requires Playwright |
+| `eslint`, `typescript-eslint`, `eslint-plugin-react-hooks` | Linting for TypeScript and React hook rules |
+| `prettier`, `eslint-config-prettier` | Formatting; the config stops ESLint and Prettier from conflicting |
+
+Plain `fetch` is used for HTTP. Alternative considered: axios has built-in XSRF
+handling, but that saves only a few lines and adds a dependency.
+
+npm is the package manager, with a committed `package-lock.json`. It needs no extra
+tool in Docker or CI.
+
+### API client
+
+A small wrapper around `fetch`, with paths relative to `/api`.
+
+- On POST, PUT, PATCH and DELETE it reads `XSRF-TOKEN` from `document.cookie` at send
+  time and sets `X-XSRF-TOKEN`.
+- A non-2xx response throws an `ApiError` holding the status, the `code` if present and
+  the translated message.
+- A network failure throws `ApiError` with no status, with the generic message.
+- A response counts as a problem only when its content type is
+  `application/problem+json`. The reachability check needs this, so that a 502 from
+  Caddy is not taken for a backend answer.
+
+### Translations
+
+- One namespace, in `src/i18n/en.json`.
+- Problem codes use the key `errors.<CODE>`. A missing key falls back to
+  `errors.generic`.
+- This change adds messages for all codes that exist in the backend at implementation
+  time. The implementer takes the list by searching the backend, since there is no
+  central list. Today it is: `UNAUTHENTICATED`, `FORBIDDEN`, `CSRF_INVALID`,
+  `VALIDATION_FAILED`, `MALFORMED_REQUEST`, `INTERNAL_ERROR`, `EMAIL_TAKEN`, `NOT_FOUND`,
+  `WRONG_PASSWORD`, `LINK_CONFLICT`, `ACCOUNT_DEACTIVATED`, `LINK_INVALID`,
+  `UNKNOWN_EMAIL`, `PASSWORD_NOT_SET`.
+
+### Mobile browsers
+
+- `index.html` has the standard viewport meta tag.
+- Plain CSS in one base stylesheet, mobile-first: the default styles are for a narrow
+  screen, and `min-width` media queries add to them for wider ones. Text and spacing use
+  relative units.
+- No CSS framework or new dependency. A screen PR can propose one if screens need it.
+- Alternative considered: a native app, or a wrapper around the web app. Rejected: the
+  goal is mobile browsers, and a native app would be a separate codebase and release
+  process.
+
+### Reachability check
+
+The placeholder page calls `GET /api/me` on load and shows "checking", then "reachable"
+or "unreachable". A 401 problem is the normal anonymous result. This also sets the CSRF
+cookie. Alternatives were rejected with the owner: a new health endpoint needs backend
+work, and proxying actuator would expose it.
+
+### Serving
+
+- `frontend/Dockerfile` is multi-stage: Node builds, `caddy:2-alpine` serves. Its build
+  context is the repo root, because it copies both `frontend/` and `infra/Caddyfile`. A
+  `.dockerignore` keeps `backend/`, `node_modules/` and other unrelated paths out.
+- The `Caddyfile` listens on `:80`. `handle /api/*` proxies to `backend:8080`. Everything
+  else is a file server with `try_files {path} /index.html`, which gives R1-S2 and also
+  R6-S2, because `/actuator/health` returns the app, not health data.
+- A new `frontend` service goes in `infra/docker-compose.yml`, with no ports. The dev file
+  publishes `127.0.0.1:8081:80`. Port 80 is avoided because it often needs extra rights or
+  is already in use.
+- `vite.config.ts` proxies `/api` to `http://localhost:8080` on port 5173, which is the
+  origin `APP_BASE_URL` already uses in `infra/dev.env`.
+- The Node version is pinned in `frontend/.nvmrc` and the Dockerfile, to the current LTS.
+
+### Tests
+
+- Each scenario has one test, and its title starts with the ID:
+  `test("[web-client/R3-S2] Backend cannot be reached", ...)`.
+- Vitest covers R2, R3-S2, R4 and R5, with `fetch` mocked.
+- Playwright covers R1, R3-S1, R6 and R7 in one file, `e2e/skeleton.spec.ts`, against
+  `http://localhost:8081`. This is the "one E2E" from the issue: one flow file, with one
+  test per scenario as constitution §2 asks.
+- Playwright has three projects: desktop Chromium, and the built-in phone profiles for
+  Chrome (Pixel) and Safari (iPhone, using WebKit). The whole E2E file runs in all three.
+  R7-S1 is skipped on desktop.
+- A Playwright global setup checks that the stack responds. If not, it stops with a
+  message telling the user to run `docker compose up --build`.
+- `scripts/check-scenario-coverage.sh` accepts an ID if it finds the backend
+  `@DisplayName("[id]` form, or `[id]` in `frontend/src/**/*.test.ts(x)` or
+  `frontend/e2e/**/*.spec.ts`.
+
+### Commands
+
+`npm run dev`, `build`, `lint`, `format`, `format:check`, `test`, `test:e2e`.
+
+### Flyway migrations
+
+None.
+
+## Risks / Trade-offs
+
+- [The CSRF header is tested only with a mocked `fetch`, so a wrong name would not fail
+  here] → The name is Spring's default and is written in the spec. `ui-auth` (#32) sends
+  the first real POST, and its E2E covers login end to end.
+- [Phone profiles are emulation, so real-device problems (for example iOS Safari address
+  bar behaviour) are not caught] → Enough for a placeholder page. Check real phones when
+  the first real screens land.
+- [`/actuator/health` returns the app with a 200 through Caddy, which could confuse someone
+  checking health through it] → The README names the direct backend URL for health.
+- [The Vite dev server and the container use different ports] → The README says which one to
+  use for what. Links the backend generates use `APP_BASE_URL` (5173), but no screen follows
+  them until #32.
+- [Backend and frontend error codes can drift, as there is no shared list] → An untranslated
+  code shows the generic message, so the failure is mild. A shared list is not worth it now.
+
+## Open Questions
+
+- Should `APP_BASE_URL` in `infra/dev.env` point to the container (8081) rather than the dev
+  server (5173)? Nothing follows these links until `ui-auth` (#32), which can decide.
