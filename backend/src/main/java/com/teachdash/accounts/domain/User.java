@@ -15,18 +15,25 @@ public class User implements Persistable<UUID> {
 	@Id
 	private final UUID id;
 	private final String email;
-	private String name;
+	private final String name;
 	private final Role role;
-	private String passwordHash;
-	private String timeZone;
-	private boolean active;
+	private final String passwordHash;
+	private final String timeZone;
+	private final boolean active;
 	private final Instant createdAt;
 
 	@Transient
 	private boolean newEntity;
 
 	@PersistenceCreator
-	User(UUID id, String email, String name, Role role, String passwordHash, String timeZone, boolean active,
+	User(
+			UUID id,
+			String email,
+			String name,
+			Role role,
+			String passwordHash,
+			String timeZone,
+			boolean active,
 			Instant createdAt) {
 		this.id = id;
 		this.email = email;
@@ -38,7 +45,12 @@ public class User implements Persistable<UUID> {
 		this.createdAt = createdAt;
 	}
 
-	public static User create(String email, String name, Role role, String passwordHash, String timeZone,
+	public static User create(
+			String email,
+			String name,
+			Role role,
+			String passwordHash,
+			String timeZone,
 			Instant now) {
 		User user = new User(UUID.randomUUID(), email, name, role, passwordHash, timeZone, true, now);
 		user.newEntity = true;
@@ -81,18 +93,5 @@ public class User implements Persistable<UUID> {
 
 	public Instant getCreatedAt() {
 		return createdAt;
-	}
-
-	public void setPasswordHash(String passwordHash) {
-		this.passwordHash = passwordHash;
-	}
-
-	public void setActive(boolean active) {
-		this.active = active;
-	}
-
-	public void updateProfile(String name, String timeZone) {
-		this.name = name;
-		this.timeZone = timeZone;
 	}
 }

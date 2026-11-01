@@ -25,7 +25,12 @@ public class OneTimeToken implements Persistable<String> {
 	private boolean newEntity;
 
 	@PersistenceCreator
-	OneTimeToken(String tokenHash, UUID userId, TokenPurpose purpose, Instant expiresAt, Instant usedAt,
+	OneTimeToken(
+			String tokenHash,
+			UUID userId,
+			TokenPurpose purpose,
+			Instant expiresAt,
+			Instant usedAt,
 			Instant createdAt) {
 		this.tokenHash = tokenHash;
 		this.userId = userId;
@@ -35,7 +40,12 @@ public class OneTimeToken implements Persistable<String> {
 		this.createdAt = createdAt;
 	}
 
-	static OneTimeToken create(String tokenHash, UUID userId, TokenPurpose purpose, Instant now, Instant expiresAt) {
+	static OneTimeToken create(
+			String tokenHash,
+			UUID userId,
+			TokenPurpose purpose,
+			Instant now,
+			Instant expiresAt) {
 		OneTimeToken token = new OneTimeToken(tokenHash, userId, purpose, expiresAt, null, now);
 		token.newEntity = true;
 		return token;

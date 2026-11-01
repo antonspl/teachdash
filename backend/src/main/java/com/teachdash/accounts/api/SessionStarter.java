@@ -19,7 +19,8 @@ import jakarta.servlet.http.HttpSession;
 @Component
 class SessionStarter {
 
-	private final HttpSessionSecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
+	private final HttpSessionSecurityContextRepository contextRepository =
+			new HttpSessionSecurityContextRepository();
 	private final CsrfAuthenticationStrategy csrfStrategy;
 
 	SessionStarter(CsrfTokenRepository csrfTokenRepository) {
@@ -28,15 +29,17 @@ class SessionStarter {
 
 	void start(User user, HttpServletRequest request, HttpServletResponse response) {
 		var authorities = AuthorityUtils.createAuthorityList("ROLE_" + user.getRole());
-		var authentication = UsernamePasswordAuthenticationToken.authenticated(
-				new org.springframework.security.core.userdetails.User(user.getId().toString(), "", authorities), null,
+		var principal = new org.springframework.security.core.userdetails.User(
+				user.getId().toString(),
+				"",
 				authorities);
+		var authentication = UsernamePasswordAuthenticationToken.authenticated(principal, null, authorities);
 		var strategy = SecurityContextHolder.getContextHolderStrategy();
 		SecurityContext context = strategy.createEmptyContext();
 		context.setAuthentication(authentication);
-		HttpSession old = request.getSession(false);
-		if (old != null) {
-			old.invalidate();
+		HttpSession previousSession = request.getSession(false);
+		if (previousSession != null) {
+			previousSession.invalidate();
 		}
 		request.getSession(true);
 		strategy.setContext(context);

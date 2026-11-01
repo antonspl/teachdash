@@ -27,27 +27,40 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	@Override
-	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+	protected ResponseEntity<Object> handleMethodArgumentNotValid(
+			MethodArgumentNotValidException ex,
+			HttpHeaders headers,
+			HttpStatusCode status,
+			WebRequest request) {
 		return ResponseEntity.status(status).body(problem(status, "VALIDATION_FAILED"));
 	}
 
 	@Override
-	protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
-			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+	protected ResponseEntity<Object> handleHttpMessageNotReadable(
+			HttpMessageNotReadableException ex,
+			HttpHeaders headers,
+			HttpStatusCode status,
+			WebRequest request) {
 		return ResponseEntity.status(status).body(problem(status, "MALFORMED_REQUEST"));
 	}
 
 	@Override
-	protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
-			HttpStatusCode status, WebRequest request) {
+	protected ResponseEntity<Object> handleExceptionInternal(
+			Exception ex,
+			Object body,
+			HttpHeaders headers,
+			HttpStatusCode status,
+			WebRequest request) {
 		ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, status, request);
-		if (response != null && response.getBody() instanceof ProblemDetail problem
-				&& (problem.getProperties() == null || !problem.getProperties().containsKey("code"))) {
+		if (response != null && response.getBody() instanceof ProblemDetail problem && !hasCode(problem)) {
 			HttpStatus resolved = HttpStatus.resolve(status.value());
 			problem.setProperty("code", resolved == null ? "ERROR" : resolved.name());
 		}
 		return response;
+	}
+
+	private static boolean hasCode(ProblemDetail problem) {
+		return problem.getProperties() != null && problem.getProperties().containsKey("code");
 	}
 
 	@ExceptionHandler(Exception.class)
@@ -56,7 +69,8 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			throw e; // left to the security filter chain
 		}
 		log.error("Unhandled exception", e);
-		return ResponseEntity.internalServerError().body(problem(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR"));
+		return ResponseEntity.internalServerError()
+				.body(problem(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR"));
 	}
 
 	private static ProblemDetail problem(HttpStatusCode status, String code) {

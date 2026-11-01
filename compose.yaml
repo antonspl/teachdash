@@ -1,2 +1,5 @@
 include:
-  - path: infra/docker-compose.yml
+  - path:
+      - infra/docker-compose.yml
+      - infra/docker-compose.dev.yml
+    env_file: infra/dev.env

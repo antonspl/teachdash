@@ -36,14 +36,21 @@ public class PasswordLinkService {
 	private final Clock clock;
 	private final String baseUrl;
 
-	PasswordLinkService(OneTimeTokenRepository tokens, UserRepository users, AccountService accounts,
-			PasswordEncoder passwordEncoder, Clock clock, @Value("${APP_BASE_URL}") String baseUrl) {
+	PasswordLinkService(
+			OneTimeTokenRepository tokens,
+			UserRepository users,
+			AccountService accounts,
+			PasswordEncoder passwordEncoder,
+			Clock clock,
+			@Value("${APP_BASE_URL}") String baseUrl) {
 		this.tokens = tokens;
 		this.users = users;
 		this.accounts = accounts;
 		this.passwordEncoder = passwordEncoder;
 		this.clock = clock;
-		this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+		this.baseUrl = baseUrl.endsWith("/")
+				? baseUrl.substring(0, baseUrl.length() - 1)
+				: baseUrl;
 	}
 
 	/** Issues a link for the account and invalidates its older unused links. */
@@ -55,7 +62,12 @@ public class PasswordLinkService {
 		Instant now = clock.instant();
 		tokens.markUnusedAsUsed(userId, now);
 		try {
-			tokens.save(OneTimeToken.create(hash(token), userId, purpose, now, now.plus(VALIDITY)));
+			tokens.save(OneTimeToken.create(
+					hash(token),
+					userId,
+					purpose,
+					now,
+					now.plus(VALIDITY)));
 		} catch (DuplicateKeyException e) {
 			throw new ApiException(HttpStatus.CONFLICT, "LINK_CONFLICT");
 		}
@@ -71,20 +83,22 @@ public class PasswordLinkService {
 	@Transactional
 	public User use(String token, String password) {
 		AccountService.requireEncodable(password);
-		OneTimeToken stored = tokens.findById(hash(token)).orElseThrow(PasswordLinkService::invalid);
+		OneTimeToken stored = tokens.findById(hash(token))
+				.orElseThrow(PasswordLinkService::invalid);
 		Instant now = clock.instant();
-		User user = users.findById(stored.getUserId()).orElseThrow(PasswordLinkService::invalid);
+		User user = users.findById(stored.getUserId())
+				.orElseThrow(PasswordLinkService::invalid);
 		if (!user.isActive()) {
 			throw new ApiException(HttpStatus.UNAUTHORIZED, "ACCOUNT_DEACTIVATED");
 		}
-		if (stored.getUsedAt() != null || !stored.getExpiresAt().isAfter(now)) {
+		boolean usedOrExpired = stored.getUsedAt() != null || !stored.getExpiresAt().isAfter(now);
+		if (usedOrExpired) {
 			throw invalid();
 		}
 		if (tokens.markUsed(stored.getId(), now) != 1) {
 			throw invalid();
 		}
-		user.setPasswordHash(passwordEncoder.encode(password));
-		users.save(user);
+		users.updatePasswordHash(user.getId(), passwordEncoder.encode(password));
 		accounts.endSessions(user.getId());
 		return user;
 	}
@@ -95,8 +109,9 @@ public class PasswordLinkService {
 
 	private static String hash(String token) {
 		try {
-			return HexFormat.of().formatHex(
-					MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
+			byte[] digest = MessageDigest.getInstance("SHA-256")
+					.digest(token.getBytes(StandardCharsets.UTF_8));
+			return HexFormat.of().formatHex(digest);
 		} catch (NoSuchAlgorithmException e) {
 			throw new IllegalStateException(e);
 		}

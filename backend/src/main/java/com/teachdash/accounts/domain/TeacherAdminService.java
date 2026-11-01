@@ -21,7 +21,11 @@ public class TeacherAdminService {
 	private final AccountService accounts;
 	private final Clock clock;
 
-	TeacherAdminService(UserRepository users, PasswordLinkService links, AccountService accounts, Clock clock) {
+	TeacherAdminService(
+			UserRepository users,
+			PasswordLinkService links,
+			AccountService accounts,
+			Clock clock) {
 		this.users = users;
 		this.links = links;
 		this.accounts = accounts;
@@ -42,7 +46,13 @@ public class TeacherAdminService {
 		}
 		User teacher;
 		try {
-			teacher = users.save(User.create(normalized, name.strip(), Role.TEACHER, null, timeZone, clock.instant()));
+			teacher = users.save(User.create(
+					normalized,
+					name.strip(),
+					Role.TEACHER,
+					null,
+					timeZone,
+					clock.instant()));
 		} catch (DuplicateKeyException e) {
 			throw emailTaken();
 		}
@@ -52,9 +62,10 @@ public class TeacherAdminService {
 	/** Deactivation also ends the teacher's sessions. */
 	@Transactional
 	public void setTeacherActive(UUID id, boolean active) {
-		User teacher = users.findById(id).filter(u -> u.getRole() == Role.TEACHER).orElseThrow(TeacherAdminService::notFound);
-		teacher.setActive(active);
-		users.save(teacher);
+		users.findById(id)
+				.filter(user -> user.getRole() == Role.TEACHER)
+				.orElseThrow(TeacherAdminService::notFound);
+		users.updateActive(id, active);
 		if (!active) {
 			links.invalidateLinks(id);
 			accounts.endSessions(id);
@@ -66,7 +77,9 @@ public class TeacherAdminService {
 		return links.issue(user.getId(), TokenPurpose.RESET_PASSWORD);
 	}
 
-	public record CreatedTeacher(UUID id, String setPasswordLink) {
+	public record CreatedTeacher(
+			UUID id,
+			String setPasswordLink) {
 	}
 
 	private static ApiException emailTaken() {

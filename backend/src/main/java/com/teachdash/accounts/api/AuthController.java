@@ -28,7 +28,9 @@ class AuthController {
 	}
 
 	@PostMapping("/login")
-	UserResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest,
+	UserResponse login(
+			@Valid @RequestBody LoginRequest request,
+			HttpServletRequest httpRequest,
 			HttpServletResponse httpResponse) {
 		User user = accounts.authenticate(request.email(), request.password());
 		sessionStarter.start(user, httpRequest, httpResponse);

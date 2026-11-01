@@ -36,15 +36,20 @@ class MeController {
 
 	@PatchMapping
 	UserResponse updateProfile(@Valid @RequestBody UpdateProfileRequest request, Principal principal) {
-		return UserResponse.of(accounts.updateProfile(UUID.fromString(principal.getName()), request.name(),
-				request.timeZone()));
+		UUID userId = UUID.fromString(principal.getName());
+		return UserResponse.of(accounts.updateProfile(userId, request.name(), request.timeZone()));
 	}
 
 	@PostMapping("/password")
-	ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request, Principal principal,
+	ResponseEntity<Void> changePassword(
+			@Valid @RequestBody ChangePasswordRequest request,
+			Principal principal,
 			HttpSession session) {
-		accounts.changePassword(UUID.fromString(principal.getName()), request.currentPassword(),
-				request.newPassword(), session.getId());
+		accounts.changePassword(
+				UUID.fromString(principal.getName()),
+				request.currentPassword(),
+				request.newPassword(),
+				session.getId());
 		return ResponseEntity.noContent().build();
 	}
 }

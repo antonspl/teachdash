@@ -27,7 +27,9 @@ class PasswordLinkController {
 	}
 
 	@PostMapping
-	UserResponse usePasswordLink(@Valid @RequestBody SetPasswordRequest request, HttpServletRequest httpRequest,
+	UserResponse usePasswordLink(
+			@Valid @RequestBody SetPasswordRequest request,
+			HttpServletRequest httpRequest,
 			HttpServletResponse httpResponse) {
 		User user = links.use(request.token(), request.password());
 		sessionStarter.start(user, httpRequest, httpResponse);

@@ -17,45 +17,61 @@ import com.teachdash.common.ApiException;
 @Service
 public class AccountService {
 
+	private static final int BCRYPT_MAX_BYTES = 72;
+
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
 	private final JdbcIndexedSessionRepository sessions;
 
-	AccountService(UserRepository users, PasswordEncoder passwordEncoder, JdbcIndexedSessionRepository sessions) {
+	AccountService(
+			UserRepository users,
+			PasswordEncoder passwordEncoder,
+			JdbcIndexedSessionRepository sessions) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.sessions = sessions;
 	}
 
-	/** Deletes every session of the account (after commit when called inside a transaction) (the principal name is the user id, design D4). */
+	/**
+	 * Deletes every session of the account; inside a transaction, only after it commits.
+	 * The principal name of a session is the user id (design D4).
+	 */
 	public void endSessions(UUID userId) {
 		endSessionsExcept(userId, null);
 	}
 
 	/** Like endSessions, but keeps the session with the given id. */
 	public void endSessionsExcept(UUID userId, String keepSessionId) {
-		Runnable end = () -> sessions.findByPrincipalName(userId.toString()).keySet().stream()
-				.filter(id -> !id.equals(keepSessionId)).forEach(sessions::deleteById);
+		Runnable endSessions = () -> sessions.findByPrincipalName(userId.toString())
+				.keySet()
+				.stream()
+				.filter(sessionId -> !sessionId.equals(keepSessionId))
+				.forEach(sessions::deleteById);
 		if (TransactionSynchronizationManager.isSynchronizationActive()) {
 			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 				@Override
 				public void afterCommit() {
-					end.run();
+					endSessions.run();
 				}
 			});
 		} else {
-			end.run();
+			endSessions.run();
 		}
 	}
 
-	public void changePassword(UUID id, String currentPassword, String newPassword, String currentSessionId) {
+	public void changePassword(
+			UUID id,
+			String currentPassword,
+			String newPassword,
+			String currentSessionId) {
 		User user = get(id);
-		if (user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+		boolean currentPasswordMatches = user.getPasswordHash() != null
+				&& passwordEncoder.matches(currentPassword, user.getPasswordHash());
+		if (!currentPasswordMatches) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
 		}
 		requireEncodable(newPassword);
-		user.setPasswordHash(passwordEncoder.encode(newPassword));
-		users.save(user);
+		users.updatePasswordHash(id, passwordEncoder.encode(newPassword));
 		endSessionsExcept(id, currentSessionId);
 	}
 
@@ -66,7 +82,9 @@ public class AccountService {
 		if (user.getPasswordHash() == null) {
 			throw unauthorized("PASSWORD_NOT_SET");
 		}
-		if (tooLongForBcrypt(password) || !passwordEncoder.matches(password, user.getPasswordHash())) {
+		boolean passwordMatches = !tooLongForBcrypt(password)
+				&& passwordEncoder.matches(password, user.getPasswordHash());
+		if (!passwordMatches) {
 			throw unauthorized("WRONG_PASSWORD");
 		}
 		if (!user.isActive()) {
@@ -81,9 +99,9 @@ public class AccountService {
 
 	public User updateProfile(UUID id, String name, String timeZone) {
 		requireValidTimeZone(timeZone);
-		User user = get(id);
-		user.updateProfile(name.strip(), timeZone);
-		return users.save(user);
+		get(id);
+		users.updateProfile(id, name.strip(), timeZone);
+		return get(id);
 	}
 
 	/** bcrypt rejects passwords over 72 bytes; multi-byte characters can exceed it under a character limit. */
@@ -94,7 +112,7 @@ public class AccountService {
 	}
 
 	private static boolean tooLongForBcrypt(String password) {
-		return password.getBytes(StandardCharsets.UTF_8).length > 72;
+		return password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_BYTES;
 	}
 
 	static void requireValidTimeZone(String timeZone) {
