@@ -130,7 +130,8 @@ behind `src/ui/`, so pages do not depend on it directly.
 ### Reachability check
 
 The placeholder page calls `GET /api/me` on load and shows "checking", then "reachable"
-or "unreachable". A 401 problem is the normal anonymous result. This also sets the CSRF
+or "unreachable". The request times out after 10 seconds and then counts as a network
+failure, so a hung backend shows "unreachable". A 401 problem is the normal anonymous result. This also sets the CSRF
 cookie. Alternatives were rejected with the owner: a new health endpoint needs backend
 work, and proxying actuator would expose it.
 
@@ -164,8 +165,10 @@ work, and proxying actuator would expose it.
 - A Playwright global setup checks that the stack responds. If not, it stops with a
   message telling the user to run `docker compose up --build`.
 - `scripts/check-scenario-coverage.sh` accepts an ID if it finds the backend
-  `@DisplayName("[id]` form, or `[id]` in `frontend/src/**/*.test.ts(x)` or
-  `frontend/e2e/**/*.spec.ts`.
+  `@DisplayName("[id]` form, or a `test(` or `it(` call whose title starts with `[id]` in
+  `frontend/src/**/*.test.ts(x)` or `frontend/e2e/**/*.spec.ts`. Comments and
+  `test.skip(` calls do not count. The title may be on the line after the call, as
+  Prettier can put it there.
 
 ### Commands
 

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import i18next from 'i18next'
 import { I18nextProvider } from 'react-i18next'
 import { MemoryRouter } from 'react-router'
@@ -158,4 +158,40 @@ test('Status is "checking" until the request finishes', async () => {
   )
 
   expect(screen.getByRole('status').textContent).toBe(en.status.checking)
+})
+
+test('A request that never answers counts as unreachable after 10 seconds', async () => {
+  // AbortSignal.timeout uses the runtime's own timers, which fake timers do not
+  // control, so it is replaced by a signal driven by the faked setTimeout.
+  vi.useFakeTimers()
+  vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms: number) => {
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), ms)
+    return controller.signal
+  })
+  try {
+    fetchMock.mockImplementation(
+      (_url: string, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('aborted', 'AbortError')),
+          )
+        }),
+    )
+
+    render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+
+    await act(() => vi.advanceTimersByTimeAsync(9_999))
+    expect(screen.getByRole('status').textContent).toBe(en.status.checking)
+
+    await act(() => vi.advanceTimersByTimeAsync(1))
+    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
+  } finally {
+    vi.restoreAllMocks()
+    vi.useRealTimers()
+  }
 })

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { ApiError, apiRequest } from './client'
 
+const REQUEST_TIMEOUT_MS = 10_000
+
 export type Reachability = 'checking' | 'reachable' | 'unreachable'
 
 export function useReachability(): Reachability {
@@ -8,7 +10,7 @@ export function useReachability(): Reachability {
 
   useEffect(() => {
     let active = true
-    apiRequest('me')
+    apiRequest('me', { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
       .then(
         (): Reachability => 'reachable',
         (error: unknown): Reachability =>

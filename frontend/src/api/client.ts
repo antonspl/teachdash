@@ -75,7 +75,7 @@ async function toApiError(response: Response): Promise<ApiError> {
 
 export async function apiRequest(
   path: string,
-  options: { method?: string; body?: unknown } = {},
+  options: { method?: string; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<Response> {
   const method = (options.method ?? 'GET').toUpperCase()
   const headers: Record<string, string> = { Accept: 'application/json' }
@@ -97,6 +97,7 @@ export async function apiRequest(
       headers,
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: options.signal,
     })
   } catch {
     throw new ApiError({ message: i18n.t('errors.generic') })
