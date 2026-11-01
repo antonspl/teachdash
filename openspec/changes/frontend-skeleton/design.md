@@ -163,10 +163,10 @@ work, and proxying actuator would expose it.
     returns the app, not health data.
   - Responses are compressed with `encode zstd gzip`. Static routes share the security
     headers in a snippet and drop the `Server` header. `/api` is left to Spring.
-  - The headers use `defer`, because Caddy otherwise does not apply them to a 404 written by
-    `file_server`. A `handle_errors` block for paths outside `/api/*` re-applies them to
-    static errors with `Cache-Control: no-store`, so a 404 is never cached as immutable.
-    API and proxy errors pass through unchanged.
+  - A `handle_errors` block for paths outside `/api/*` applies the security headers to static
+    errors, with `Cache-Control: no-store`, so a 404 is never cached as immutable. API and
+    proxy errors pass through unchanged. The route headers also use `defer`; no test depends
+    on it, because `handle_errors` already covers the 404 case.
 - The Content Security Policy is `default-src 'self'; object-src 'none'; base-uri 'self';
   form-action 'self'; frame-ancestors 'none'`. A later screen that needs more (for example
   Excalidraw or video) widens it in its own PR, with its reason.
