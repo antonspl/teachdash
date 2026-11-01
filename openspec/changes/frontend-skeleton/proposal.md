@@ -18,6 +18,9 @@
 - **Should the frontend work on phones?** The owner wants it to look good in mobile
   browsers. This is built as a responsive, mobile-first web app, set up here so every
   screen inherits it. A native iOS or Android app is not part of this.
+- **How easy must the look be to change?** Very easy: the owner is not a designer and
+  expects to rework the first versions. Design values and shared visual components are
+  kept apart from pages.
 
 ## Why
 
@@ -34,6 +37,8 @@ once so that screen PRs contain only screens.
   translated message.
 - Vitest, and one Playwright E2E file running against the real backend.
 - Mobile-first base styles, so pages fit phone screens in mobile browsers.
+- Design tokens and shared visual components, so the look can change without editing
+  pages.
 - Linting and formatting.
 - Local run: Vite dev proxy to the backend, and a Caddy container in `docker compose`
   that serves the app and proxies `/api/*`, with no CORS.

@@ -20,7 +20,8 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 - [ ] 3.1 Add the router, the placeholder page and the not-found page, with all text through i18n; verify with the test `[web-client/R2-S1]`
 - [ ] 3.2 Add the reachability status to the placeholder page, using `GET /api/me`; verify with the test `[web-client/R3-S2]`
-- [ ] 3.3 Add the viewport meta tag and the mobile-first base stylesheet from `design.md`; verify later with the test `[web-client/R7-S1]` (task 5.2)
+- [ ] 3.3 Add the viewport meta tag, `src/styles/tokens.css`, the mobile-first `base.css` and the `src/ui/` components the two pages need, with no appearance defined in the pages; verify by changing one colour token and seeing both pages change. `[web-client/R7-S1]` (task 5.2) checks the mobile layout
+- [ ] 3.4 Add the token check script to `npm run lint`; verify it fails on a temporary raw colour in a CSS Module and on a temporary inline `style=`, and passes once they are removed
 
 ## 4. Container
 

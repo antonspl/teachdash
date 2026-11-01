@@ -21,6 +21,7 @@ See `proposal.md` for motivation. Current state:
 **Goals:**
 
 - Screen PRs add only screens, translations and tests, with no setup work.
+- The look of the whole app can be changed without editing pages.
 - `docker compose up` gives the same serving shape as production: static files and
   `/api/*` proxied on one origin.
 
@@ -42,6 +43,8 @@ frontend/
     api/      client and problem handling
     i18n/     setup and en.json
     pages/    placeholder and not-found
+    styles/   tokens.css (design values) and base.css
+    ui/       shared visual components
   e2e/        Playwright tests
   Dockerfile
 infra/Caddyfile
@@ -87,22 +90,37 @@ A small wrapper around `fetch`, with paths relative to `/api`.
 - Problem codes use the key `errors.<CODE>`. A missing key falls back to
   `errors.generic`.
 - This change adds messages for all codes that exist in the backend at implementation
-  time. The implementer takes the list by searching the backend, since there is no
-  central list. Today it is: `UNAUTHENTICATED`, `FORBIDDEN`, `CSRF_INVALID`,
-  `VALIDATION_FAILED`, `MALFORMED_REQUEST`, `INTERNAL_ERROR`, `EMAIL_TAKEN`, `NOT_FOUND`,
-  `WRONG_PASSWORD`, `LINK_CONFLICT`, `ACCOUNT_DEACTIVATED`, `LINK_INVALID`,
-  `UNKNOWN_EMAIL`, `PASSWORD_NOT_SET`.
+  time. The implementer makes the list by searching the backend, since there is no
+  central list.
 
 ### Mobile browsers
 
 - `index.html` has the standard viewport meta tag.
-- Plain CSS in one base stylesheet, mobile-first: the default styles are for a narrow
-  screen, and `min-width` media queries add to them for wider ones. Text and spacing use
-  relative units.
-- No CSS framework or new dependency. A screen PR can propose one if screens need it.
+- Styles are mobile-first: the default styles are for a narrow screen, and `min-width`
+  media queries add to them for wider ones. Text and spacing use relative units.
 - Alternative considered: a native app, or a wrapper around the web app. Rejected: the
   goal is mobile browsers, and a native app would be a separate codebase and release
   process.
+
+### Visual design is easy to change
+
+The first look will be simple and is expected to change, possibly by a designer later. So
+the look stays in two places, and pages do not own it:
+
+- **Tokens:** `src/styles/tokens.css` holds every colour, font, text size, spacing, radius
+  and shadow as a CSS custom property. Changing the look starts here.
+- **Shared components:** `src/ui/` holds the visual building blocks, each with its own CSS
+  Module. Pages use these and do not define their own appearance. This change adds only
+  what its two pages need; screen PRs add the rest (buttons, forms and so on).
+- **Enforced:** `npm run lint` also runs a small script that fails on a raw colour or font
+  value in CSS outside `tokens.css`, or on an inline `style=` attribute.
+
+No new dependency: Vite supports CSS Modules and custom properties work in browsers.
+
+Alternative considered: a ready-made component library (such as Mantine or MUI) would look
+decent with no design work, but this change has no controls to use it on. `ui-auth` (#32)
+adds the first forms and can make that choice. If it takes a library, the library goes
+behind `src/ui/`, so pages do not depend on it directly.
 
 ### Reachability check
 
