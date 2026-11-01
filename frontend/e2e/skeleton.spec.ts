@@ -1,19 +1,13 @@
-import { readFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import en from '../src/i18n/en.json' with { type: 'json' }
 
 const PHONE_WIDTH = 360
 
-function devEnv(name: string): string {
-  const file = readFileSync(
-    new URL('../../infra/dev.env', import.meta.url),
-    'utf8',
-  )
-  const line = file.split('\n').find((l) => l.startsWith(`${name}=`))
-  if (!line) {
-    throw new Error(`${name} is missing in infra/dev.env`)
-  }
-  return line.slice(name.length + 1).trim()
+function expectSecurityHeaders(headers: Record<string, string>) {
+  expect(headers['content-security-policy']).toContain("default-src 'self'")
+  expect(headers['content-security-policy']).toContain("frame-ancestors 'none'")
+  expect(headers['x-content-type-options']).toBe('nosniff')
+  expect(headers['referrer-policy']).toBeTruthy()
 }
 
 async function expectFitsPhoneScreen(
@@ -67,6 +61,8 @@ test('[web-client/R1-S3] Missing asset is a real 404', async ({ request }) => {
   expect(response.status()).toBe(404)
   expect(response.headers()['content-type'] ?? '').not.toContain('text/html')
   expect(body).not.toContain('id="root"')
+  expect(response.headers()['cache-control'] ?? '').not.toContain('immutable')
+  expectSecurityHeaders(response.headers())
 })
 
 test('[web-client/R3-S1] Anonymous user sees that the backend is reachable', async ({
@@ -117,7 +113,7 @@ test('[web-client/R5-S3] Real backend error is recognised as a problem response'
       'X-XSRF-TOKEN': token!,
     },
     data: {
-      email: devEnv('ADMIN_EMAIL'),
+      email: 'admin@example.com',
       password: 'not-the-admin-password',
     },
   })
@@ -152,10 +148,7 @@ test('[web-client/R8-S1] Page is served with security headers and works under th
   await expect(page.getByText(en.status.reachable)).toBeVisible()
 
   const headers = response!.headers()
-  expect(headers['content-security-policy']).toContain("default-src 'self'")
-  expect(headers['content-security-policy']).toContain("frame-ancestors 'none'")
-  expect(headers['x-content-type-options']).toBe('nosniff')
-  expect(headers['referrer-policy']).toBeTruthy()
+  expectSecurityHeaders(headers)
   expect(problems).toEqual([])
 })
 
@@ -174,6 +167,7 @@ test('[web-client/R9-S1] Hashed asset is long-lived and compressed', async ({
   expect(response.headers()['cache-control']).toContain('immutable')
   expect(response.headers()['cache-control']).toContain('max-age=31536000')
   expect(response.headers()['content-encoding']).toBe('gzip')
+  expectSecurityHeaders(response.headers())
 })
 
 test('[web-client/R9-S2] HTML page is revalidated', async ({ request }) => {

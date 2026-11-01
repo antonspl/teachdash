@@ -125,7 +125,9 @@ the look stays in two places, and pages do not own it:
   - a raw colour, font, `px` or `rem` value in CSS outside `tokens.css`, except in `@media`
     conditions, where `var()` does not work;
   - an inline `style=` attribute;
-  - a CSS import or a `className` in `src/pages/`.
+  - a CSS import or a `className` in `src/pages/`, except in test files.
+
+  It scans `.ts` and `.tsx` files. Units other than `px` and `rem` are not checked.
 
 No new dependency: Vite supports CSS Modules and custom properties work in browsers.
 
@@ -161,6 +163,10 @@ work, and proxying actuator would expose it.
     returns the app, not health data.
   - Responses are compressed with `encode zstd gzip`. Static routes share the security
     headers in a snippet and drop the `Server` header. `/api` is left to Spring.
+  - The headers use `defer`, because Caddy otherwise does not apply them to a 404 written by
+    `file_server`. A `handle_errors` block for paths outside `/api/*` re-applies them to
+    static errors with `Cache-Control: no-store`, so a 404 is never cached as immutable.
+    API and proxy errors pass through unchanged.
 - The Content Security Policy is `default-src 'self'; object-src 'none'; base-uri 'self';
   form-action 'self'; frame-ancestors 'none'`. A later screen that needs more (for example
   Excalidraw or video) widens it in its own PR, with its reason.
@@ -186,8 +192,8 @@ work, and proxying actuator would expose it.
 
 - Each scenario has one test, and its title starts with the ID:
   `test("[web-client/R3-S2] Backend cannot be reached", ...)`.
-- Vitest covers R2, R3-S2, R4 and R5, with `fetch` mocked.
-- Playwright covers R1, R3-S1, R6 and R7 in one file, `e2e/skeleton.spec.ts`, against
+- Vitest covers R2, R3-S2, R3-S3, R4, R5-S1 and R5-S2, with `fetch` mocked.
+- Playwright covers R1, R3-S1, R5-S3, R6, R7, R8, R9 and R10 in one file, `e2e/skeleton.spec.ts`, against
   `http://localhost:8081`. This is the "one E2E" from the issue: one flow file, with one
   test per scenario as constitution §2 asks.
 - Playwright has three projects: desktop Chromium, and the built-in phone profiles for
