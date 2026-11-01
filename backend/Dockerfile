@@ -7,6 +7,9 @@ COPY src src
 RUN ./gradlew --no-daemon bootJar -x test
 
 FROM eclipse-temurin:25-jre
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --no-create-home teachdash
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar

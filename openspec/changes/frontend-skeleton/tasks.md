@@ -38,10 +38,10 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 ## 6. Owner review: container
 
-- [ ] 6.1 Rewrite `infra/Caddyfile` as in `design.md` (admin off, `/healthz`, configurable upstream, `/assets/*` rule, security headers, compression, cache headers), list `BACKEND_UPSTREAM` in `.env.example`; verify with the tests `[web-client/R1-S3]`, `[web-client/R8-S1]`, `[web-client/R9-S1]`, `[web-client/R9-S2]` and `[web-client/R10-S1]`, and that port 2019 does not answer inside the container
-- [ ] 6.2 Add the compose hardening and healthchecks from `design.md`, including `curl` in the backend image; verify `docker compose up --build --wait` reports all services healthy, the frontend still serves as a non-root user with a read-only filesystem, and the backend tests still pass
-- [ ] 6.3 Remove the polling from the Playwright global setup, read the base URL from its config, and add `[web-client/R5-S3]`; verify `npm run test:e2e` passes and the stack-down message still appears
-- [ ] 6.4 Update the README for health endpoints and `--wait`; verify the commands work as written
+- [x] 6.1 Rewrite `infra/Caddyfile` as in `design.md` (admin off, `/healthz`, configurable upstream, `/assets/*` rule, security headers, compression, cache headers), list `BACKEND_UPSTREAM` in `.env.example`; verify with the tests `[web-client/R1-S3]`, `[web-client/R8-S1]`, `[web-client/R9-S1]`, `[web-client/R9-S2]` and `[web-client/R10-S1]`, and that port 2019 does not answer inside the container
+- [x] 6.2 Add the compose hardening and healthchecks from `design.md`, including `curl` in the backend image; verify `docker compose up --build --wait` reports all services healthy, the frontend still serves as a non-root user with a read-only filesystem, and the backend tests still pass
+- [x] 6.3 Remove the polling from the Playwright global setup, read the base URL from its config, and add `[web-client/R5-S3]`; verify `npm run test:e2e` passes and the stack-down message still appears
+- [x] 6.4 Update the README for health endpoints and `--wait`; verify the commands work as written
 
 ## 7. Owner review: code
 

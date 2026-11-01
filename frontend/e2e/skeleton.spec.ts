@@ -1,7 +1,20 @@
+import { readFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import en from '../src/i18n/en.json' with { type: 'json' }
 
 const PHONE_WIDTH = 360
+
+function devEnv(name: string): string {
+  const file = readFileSync(
+    new URL('../../infra/dev.env', import.meta.url),
+    'utf8',
+  )
+  const line = file.split('\n').find((l) => l.startsWith(`${name}=`))
+  if (!line) {
+    throw new Error(`${name} is missing in infra/dev.env`)
+  }
+  return line.slice(name.length + 1).trim()
+}
 
 async function expectFitsPhoneScreen(
   page: Page,
@@ -47,6 +60,15 @@ test('[web-client/R1-S2] Unknown path opened directly shows the not-found page',
   await expect(page.getByText(en.notFound.message)).toBeVisible()
 })
 
+test('[web-client/R1-S3] Missing asset is a real 404', async ({ request }) => {
+  const response = await request.get('/assets/no-such-file.js')
+  const body = await response.text()
+
+  expect(response.status()).toBe(404)
+  expect(response.headers()['content-type'] ?? '').not.toContain('text/html')
+  expect(body).not.toContain('id="root"')
+})
+
 test('[web-client/R3-S1] Anonymous user sees that the backend is reachable', async ({
   page,
 }) => {
@@ -78,6 +100,97 @@ test('[web-client/R6-S2] Actuator is not exposed through the web container', asy
 
   expect(body).not.toContain('"status"')
   expect(body).not.toContain('"UP"')
+})
+
+test('[web-client/R5-S3] Real backend error is recognised as a problem response', async ({
+  request,
+}) => {
+  await request.get('/api/me')
+  const token = (await request.storageState()).cookies.find(
+    (cookie) => cookie.name === 'XSRF-TOKEN',
+  )?.value
+  expect(token).toBeTruthy()
+
+  const response = await request.post('/api/auth/login', {
+    headers: {
+      Accept: 'application/problem+json, application/json',
+      'X-XSRF-TOKEN': token!,
+    },
+    data: {
+      email: devEnv('ADMIN_EMAIL'),
+      password: 'not-the-admin-password',
+    },
+  })
+
+  expect(response.headers()['content-type']).toContain(
+    'application/problem+json',
+  )
+  expect((await response.json()).code).toBe('WRONG_PASSWORD')
+})
+
+test('[web-client/R8-S1] Page is served with security headers and works under them', async ({
+  page,
+}) => {
+  const problems: string[] = []
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (event) => {
+      console.error(
+        `CSP violation: ${event.violatedDirective} ${event.blockedURI}`,
+      )
+    })
+  })
+  page.on('console', (message) => {
+    // The anonymous status check gets a 401, which the browser logs as a failed load.
+    const expectedLoad = message.text().startsWith('Failed to load resource')
+    if (message.type() === 'error' && !expectedLoad) {
+      problems.push(message.text())
+    }
+  })
+  page.on('pageerror', (error) => problems.push(error.message))
+
+  const response = await page.goto('/')
+  await expect(page.getByText(en.status.reachable)).toBeVisible()
+
+  const headers = response!.headers()
+  expect(headers['content-security-policy']).toContain("default-src 'self'")
+  expect(headers['content-security-policy']).toContain("frame-ancestors 'none'")
+  expect(headers['x-content-type-options']).toBe('nosniff')
+  expect(headers['referrer-policy']).toBeTruthy()
+  expect(problems).toEqual([])
+})
+
+test('[web-client/R9-S1] Hashed asset is long-lived and compressed', async ({
+  request,
+}) => {
+  const html = await (await request.get('/')).text()
+  const script = html.match(/src="(\/assets\/[^"]+\.js)"/)?.[1]
+  expect(script).toBeTruthy()
+
+  const response = await request.get(script!, {
+    headers: { 'Accept-Encoding': 'gzip' },
+  })
+
+  expect(response.status()).toBe(200)
+  expect(response.headers()['cache-control']).toContain('immutable')
+  expect(response.headers()['cache-control']).toContain('max-age=31536000')
+  expect(response.headers()['content-encoding']).toBe('gzip')
+})
+
+test('[web-client/R9-S2] HTML page is revalidated', async ({ request }) => {
+  const response = await request.get('/')
+
+  expect(response.headers()['cache-control']).toBe('no-cache')
+})
+
+test('[web-client/R10-S1] Health endpoint answers without the application', async ({
+  request,
+}) => {
+  const response = await request.get('/healthz')
+  const body = await response.text()
+
+  expect(response.status()).toBe(200)
+  expect(response.headers()['content-type'] ?? '').not.toContain('text/html')
+  expect(body).not.toContain('id="root"')
 })
 
 test.describe('phone screens', () => {
