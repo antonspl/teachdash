@@ -138,7 +138,8 @@ work, and proxying actuator would expose it.
 
 - `frontend/Dockerfile` is multi-stage: Node builds, `caddy:2-alpine` serves. Its build
   context is the repo root, because it copies both `frontend/` and `infra/Caddyfile`. A
-  `.dockerignore` keeps `backend/`, `node_modules/` and other unrelated paths out.
+  `frontend/Dockerfile.dockerignore` keeps `backend/`, `node_modules/` and other
+  unrelated paths out, without affecting the backend build.
 - The `Caddyfile` listens on `:80`. `handle /api/*` proxies to `backend:8080`. Everything
   else is a file server with `try_files {path} /index.html`, which gives R1-S2 and also
   R6-S2, because `/actuator/health` returns the app, not health data.
