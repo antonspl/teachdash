@@ -59,7 +59,8 @@ None.
 ## Impact
 
 - **Backend:** `AccountService.authenticate` and its tests (`LoginTest`,
-  `TeacherManagementTest`), `backend/local-check.sh`, `backend/local.http`.
+  `TeacherManagementTest`). `backend/local-check.sh` and `backend/local.http` also change,
+  but they are local-only files (excluded in `.git/info/exclude`), so they are not in the PR.
 - **Frontend:** `frontend/src/i18n/en.json` and one new Vitest test. `WRONG_PASSWORD`
   stays in `en.json` for the change-password endpoint.
 - **API:** login error codes change. No migrations and no new dependencies.
