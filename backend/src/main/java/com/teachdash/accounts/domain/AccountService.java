@@ -19,6 +19,7 @@ public class AccountService {
 	private final PasswordEncoder passwordEncoder;
 	private final PasswordLinkService links;
 	private final TransactionTemplate transaction;
+	private final String dummyHash;
 
 	AccountService(
 			UserRepository users,
@@ -29,6 +30,7 @@ public class AccountService {
 		this.passwordEncoder = passwordEncoder;
 		this.links = links;
 		this.transaction = new TransactionTemplate(transactionManager);
+		this.dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
 	}
 
 	/**
@@ -56,15 +58,20 @@ public class AccountService {
 		return new PasswordChanged(user, newSessionVersion);
 	}
 
-	/** Checks credentials; the failure reason is an error code (design D7, R2). */
+	/**
+	 * Checks credentials. Every call runs exactly one password check, against the dummy hash when
+	 * there is no usable real one, so a failed login looks the same whatever the reason. A
+	 * deactivated account is reported only after the password matched.
+	 */
 	public User authenticate(String email, String password) {
-		User user = users.findByEmailIgnoreCase(email.strip())
-				.orElseThrow(() -> unauthorized("UNKNOWN_EMAIL"));
-		if (user.getPasswordHash() == null) {
-			throw unauthorized(user.isActive() ? "PASSWORD_NOT_SET" : "ACCOUNT_DEACTIVATED");
-		}
-		if (!matches(password, user.getPasswordHash())) {
-			throw unauthorized("WRONG_PASSWORD");
+		User user = users.findByEmailIgnoreCase(email.strip()).orElse(null);
+		boolean canCheckRealHash = user != null
+				&& user.getPasswordHash() != null
+				&& !BcryptPasswordValidator.exceedsBcryptLimit(password);
+		String hashToCheck = canCheckRealHash ? user.getPasswordHash() : dummyHash;
+		boolean passwordMatched = passwordEncoder.matches(password, hashToCheck);
+		if (!canCheckRealHash || !passwordMatched) {
+			throw unauthorized("INVALID_CREDENTIALS");
 		}
 		if (!user.isActive()) {
 			throw unauthorized("ACCOUNT_DEACTIVATED");

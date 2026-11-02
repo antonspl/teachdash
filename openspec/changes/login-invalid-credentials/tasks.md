@@ -17,8 +17,8 @@ No stubs and no migrations are needed. Each test fails at its THEN step, because
 
 ## 3. Login behaviour
 
-- [ ] 3.1 Rewrite `AccountService.authenticate` per design D1-D3 and remove the old codes from it; verify all `accounts/R2-*`, `accounts/R5-S1` and `accounts/R10-S1` tests pass
-- [ ] 3.2 Confirm `ACCOUNT_DEACTIVATED` tests for R2-S5, R6-S1 and R7-S6, and `WRONG_PASSWORD` tests for R9, still pass unchanged; verify with the full backend test suite
+- [x] 3.1 Rewrite `AccountService.authenticate` per design D1-D3 and remove the old codes from it; verify all `accounts/R2-*`, `accounts/R5-S1` and `accounts/R10-S1` tests pass
+- [x] 3.2 Confirm `ACCOUNT_DEACTIVATED` tests for R2-S5, R6-S1 and R7-S6, and `WRONG_PASSWORD` tests for R9, still pass unchanged; verify with the full backend test suite
 
 ## 4. Client text and local tools
 
