@@ -23,7 +23,7 @@ No stubs and no migrations are needed. Each test fails at its THEN step, because
 ## 4. Client text and local tools
 
 - [x] 4.1 In `frontend/src/i18n/en.json`, add `INVALID_CREDENTIALS` ("The email or password is incorrect. If you have not set a password yet, use the link you were given.") and remove `UNKNOWN_EMAIL` and `PASSWORD_NOT_SET`; verify `[web-client/R5-S4]` and the full frontend test command pass
-- [ ] 4.2 Update the login expectations in `backend/local-check.sh` (wrong password, unknown email, login before the password is set, old password) and the example in `backend/local.http`; verify `local-check.sh` passes against the local stack
+- [x] 4.2 Update the login expectations in `backend/local-check.sh` (wrong password, unknown email, login before the password is set, old password) and the example in `backend/local.http`; verify `local-check.sh` passes against the local stack
 - [x] 4.3 Run `scripts/check-scenario-coverage.sh` and the full backend and frontend test suites; verify all pass
 
 ## Workflow follow-up
