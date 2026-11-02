@@ -26,7 +26,6 @@
     "LINK_INVALID": "This link is not valid or has expired. Please ask for a new one.",
     "ACCOUNT_DEACTIVATED": "This account is deactivated.",
     "WRONG_PASSWORD": "The password is incorrect.",
-    "UNKNOWN_EMAIL": "No account was found for this email.",
-    "PASSWORD_NOT_SET": "This account has no password yet. Use the link you were given to set one."
+    "INVALID_CREDENTIALS": "The email or password is incorrect. If you have not set a password yet, use the link you were given."
   }
 }
