@@ -25,6 +25,12 @@
 		reverse_proxy {$BACKEND_UPSTREAM:backend:8080}
 	}
 
+	# No such files; an explicit 404 so they do not fall through to index.html.
+	@noFile path /robots.txt /favicon.ico
+	handle @noFile {
+		error 404
+	}
+
 	handle /assets/* {
 		import static
 		header {

@@ -1,4 +1,5 @@
 import i18n from '../i18n'
+import { ACCEPT } from './headers'
 
 const API_PREFIX = '/api'
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
@@ -30,12 +31,17 @@ export function messageForCode(code: string | undefined): string {
   return i18n.t('errors.generic')
 }
 
-function isAbortError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'name' in error &&
-    error.name === 'AbortError'
+// A cancel is deliberate when the caller's signal is aborted for any reason except a timeout.
+function isDeliberateCancel(signal: AbortSignal | undefined): boolean {
+  if (!signal?.aborted) {
+    return false
+  }
+  const reason: unknown = signal.reason
+  return !(
+    typeof reason === 'object' &&
+    reason !== null &&
+    'name' in reason &&
+    reason.name === 'TimeoutError'
   )
 }
 
@@ -70,7 +76,10 @@ function parseProblemCode(text: string): string | undefined {
   return undefined
 }
 
-async function toApiError(response: Response): Promise<ApiError> {
+async function toApiError(
+  response: Response,
+  signal: AbortSignal | undefined,
+): Promise<ApiError> {
   if (!isProblemResponse(response)) {
     return new ApiError({
       message: messageForCode(undefined),
@@ -82,7 +91,7 @@ async function toApiError(response: Response): Promise<ApiError> {
   try {
     text = await response.text()
   } catch (error) {
-    if (isAbortError(error)) {
+    if (isDeliberateCancel(signal)) {
       throw error
     }
     // The body never arrived completely, so this is not a usable problem response.
@@ -108,7 +117,7 @@ export async function apiRequest(
 ): Promise<Response> {
   const method = (options.method ?? 'GET').toUpperCase()
   const headers: Record<string, string> = {
-    Accept: 'application/problem+json, application/json',
+    Accept: ACCEPT,
   }
 
   if (!SAFE_METHODS.has(method)) {
@@ -131,14 +140,14 @@ export async function apiRequest(
       signal: options.signal,
     })
   } catch (error) {
-    if (isAbortError(error)) {
+    if (isDeliberateCancel(options.signal)) {
       throw error
     }
     throw new ApiError({ message: i18n.t('errors.generic'), cause: error })
   }
 
   if (!response.ok) {
-    throw await toApiError(response)
+    throw await toApiError(response, options.signal)
   }
   return response
 }

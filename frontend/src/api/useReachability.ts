@@ -3,13 +3,22 @@ import { ApiError, apiRequest } from './client'
 
 const REQUEST_TIMEOUT_MS = 10_000
 const RETRY_DELAY_MS = 5_000
+const POLL_DELAY_MS = 30_000
 
 export type Reachability = 'checking' | 'reachable' | 'unreachable'
 
-async function isReachable(): Promise<boolean> {
+function isJson(response: Response): boolean {
+  const mediaType = (response.headers.get('Content-Type') ?? '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase()
+  return mediaType === 'application/json' || mediaType.endsWith('+json')
+}
+
+async function isReachable(signal: AbortSignal): Promise<boolean> {
   try {
-    await apiRequest('me', { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
-    return true
+    const response = await apiRequest('me', { signal })
+    return isJson(response)
   } catch (error) {
     return error instanceof ApiError && error.isProblem
   }
@@ -19,25 +28,32 @@ export function useReachability(): Reachability {
   const [status, setStatus] = useState<Reachability>('checking')
 
   useEffect(() => {
-    let active = true
+    let stopped = false
+    let current: AbortController | undefined
     let timer: ReturnType<typeof setTimeout> | undefined
 
+    // AbortSignal.any needs Safari 17.4 and the target is iOS 16.4, so one controller
+    // per request serves both the cancel on unmount and the timeout.
     async function check() {
-      const reachable = await isReachable()
-      if (!active) {
+      const request = new AbortController()
+      current = request
+      const timeout = setTimeout(
+        () => request.abort(new DOMException('', 'TimeoutError')),
+        REQUEST_TIMEOUT_MS,
+      )
+      const reachable = await isReachable(request.signal)
+      clearTimeout(timeout)
+      if (stopped) {
         return
       }
-      if (reachable) {
-        setStatus('reachable')
-      } else {
-        setStatus('unreachable')
-        timer = setTimeout(check, RETRY_DELAY_MS)
-      }
+      setStatus(reachable ? 'reachable' : 'unreachable')
+      timer = setTimeout(check, reachable ? POLL_DELAY_MS : RETRY_DELAY_MS)
     }
 
     void check()
     return () => {
-      active = false
+      stopped = true
+      current?.abort(new Error('unmounted'))
       clearTimeout(timer)
     }
   }, [])

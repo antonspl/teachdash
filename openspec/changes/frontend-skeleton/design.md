@@ -88,7 +88,10 @@ A small wrapper around `fetch`, with paths relative to `/api`.
   depends on is explicit.
 - A network failure or timeout throws `ApiError` with no status, with the generic message,
   and keeps the original error as `cause`. A deliberate cancel by the caller is rethrown
-  as is.
+  as is, whatever its reason: the client checks that the caller's signal is aborted with a
+  reason other than `TimeoutError`, not the error's name.
+- The `Accept` value is a constant in a module with no other imports, so the E2E test uses the
+  same value as the client.
 - A response counts as a problem only when its content type is
   `application/problem+json`. The reachability check needs this, so that a 502 from
   Caddy is not taken for a backend answer. If the connection fails while reading the body,
@@ -127,8 +130,11 @@ the look stays in two places, and pages do not own it:
   what its two pages need; screen PRs add the rest (buttons, forms and so on).
 - **Enforced:** `npm run lint` also runs a small script that fails on:
   - a raw colour, font, `px` or `rem` value in CSS outside `tokens.css`, except in `@media`
-    conditions, where `var()` does not work;
-  - an inline `style=` attribute;
+    conditions, where `var()` does not work. A font value must be exactly one `var(...)`;
+  - a custom property defined in CSS outside `tokens.css`, which would hide raw values;
+  - an inline style: a JSX `style` attribute or a `style` property passed to `createElement`,
+    found through the TypeScript syntax tree rather than a regex, as TypeScript is already a
+    dependency;
   - a CSS import or a `className` in `src/pages/`, except in test files.
 
   It scans `.ts` and `.tsx` files. Units other than `px` and `rem` are not checked.
@@ -144,8 +150,10 @@ behind `src/ui/`, so pages do not depend on it directly.
 
 The placeholder page calls `GET /api/me` on load and shows "checking", then "reachable"
 or "unreachable". The request times out after 10 seconds and then counts as a network
-failure, so a hung backend shows "unreachable". While unreachable, the page tries again
-every 5 seconds and stops once reachable. A 401 problem is the normal anonymous result. This also sets the CSRF
+failure, so a hung backend shows "unreachable". The page tries again every 5 seconds
+while unreachable and every 30 seconds while reachable, one request at a time. Unmounting
+cancels the running request. A 2xx response counts only if its content type is JSON, so a
+captive portal page is not taken for the backend. A 401 problem is the normal anonymous result. This also sets the CSRF
 cookie. Alternatives were rejected with the owner: a new health endpoint needs backend
 work, and proxying actuator would expose it.
 
@@ -162,6 +170,8 @@ work, and proxying actuator would expose it.
     `.env.example` lists it.
   - `/assets/*` is a file server with a one-year immutable `Cache-Control` and no fallback, so
     a missing file is a real 404 (R1-S3). A cached old page then fails visibly.
+  - `/robots.txt` and `/favicon.ico` are explicit 404s (R1-S3). The icon is a small
+    self-hosted file linked from `index.html`; a `data:` icon would break the CSP.
   - Everything else is a file server with `try_files {path} /index.html` and
     `Cache-Control: no-cache`, which gives R1-S2 and also R6-S2, because `/actuator/health`
     returns the app, not health data.
@@ -211,7 +221,10 @@ work, and proxying actuator would expose it.
   message telling the user to run `docker compose up --build`.
 - `scripts/check-scenario-coverage.sh` accepts an ID if it finds the backend
   `@DisplayName("[id]` form, or a string starting with `[id]` in
-  `frontend/src/**/*.test.ts(x)` or `frontend/e2e/**/*.spec.ts`. It is a plain text match,
+  `frontend/src/**/*.test.ts(x)` or `frontend/e2e/**/*.spec.ts`. A list at the top of the
+  script names the frontend capabilities. Their IDs are looked up only in frontend tests, and
+  all others only in backend tests, so a backend scenario cannot pass on a frontend test. A new
+  frontend capability missing from the list shows up as MISSING. It is a plain text match,
   not a parser, so a skipped or commented-out test still counts until CI (#7) replaces this
   with `vitest list --json` and `playwright test --list`. Reviewers watch for skips until
   then. An earlier version parsed the test files in Perl and kept hitting new edge cases.

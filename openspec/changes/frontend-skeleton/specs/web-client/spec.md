@@ -12,7 +12,7 @@ strings, the API client and same-origin serving. Product screens build on it.
 The web client SHALL serve a placeholder page at the root path and SHALL show a
 not-found page for any other path, including when that path is opened directly. A missing
 file under `/assets/` SHALL be a real 404, so a stale page fails visibly instead of
-loading HTML as a script.
+loading HTML as a script. `/robots.txt` and `/favicon.ico` SHALL also be real 404s.
 
 #### Scenario: web-client/R1-S1 Root path shows the placeholder page
 - **GIVEN** the local stack is running
@@ -27,7 +27,7 @@ loading HTML as a script.
 
 #### Scenario: web-client/R1-S3 Missing asset is a real 404
 - **GIVEN** the local stack is running
-- **WHEN** a client requests `/assets/no-such-file.js`
+- **WHEN** a client requests `/assets/no-such-file.js`, `/robots.txt` or `/favicon.ico`
 - **THEN** the response status is 404
 - **AND** the response is not the web application's HTML
 
@@ -44,10 +44,10 @@ English is the only UI language for now.
 
 ### Requirement: R3 Backend reachability status
 
-The placeholder page SHALL show whether the backend can be reached. A successful
-response or a problem response from the backend means reachable. A network failure or
-any other response means unreachable. While unreachable, the page SHALL keep checking, so
-it recovers without a reload.
+The placeholder page SHALL show whether the backend can be reached. A successful JSON
+response or a complete problem response means reachable. A network failure, a dropped
+response or any other response means unreachable. The page SHALL keep checking in both
+states, so it follows the backend going down or coming back without a reload.
 
 #### Scenario: web-client/R3-S1 Anonymous user sees that the backend is reachable
 - **GIVEN** the local stack is running and the user is not logged in
@@ -55,7 +55,7 @@ it recovers without a reload.
 - **THEN** the page shows the translated "reachable" status
 
 #### Scenario: web-client/R3-S2 Backend cannot be reached
-- **GIVEN** the status request fails with a network error, or returns a 502 that is not a problem response
+- **GIVEN** the status request fails with a network error, or returns a 502 that is not a problem response, or returns a 200 with HTML
 - **WHEN** the placeholder page is rendered
 - **THEN** the page shows the translated "unreachable" status
 
@@ -63,6 +63,11 @@ it recovers without a reload.
 - **GIVEN** the placeholder page shows the "unreachable" status
 - **WHEN** a later status request gets a problem response
 - **THEN** the page shows the translated "reachable" status without a reload
+
+#### Scenario: web-client/R3-S4 Page notices when the backend goes away
+- **GIVEN** the placeholder page shows the "reachable" status
+- **WHEN** a later status request fails with a network error
+- **THEN** the page shows the translated "unreachable" status without a reload
 
 ### Requirement: R4 CSRF header
 

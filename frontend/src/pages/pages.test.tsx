@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import i18next from 'i18next'
 import { I18nextProvider } from 'react-i18next'
@@ -101,6 +102,14 @@ test('[web-client/R3-S2] Backend cannot be reached', async () => {
           headers: { 'Content-Type': 'text/html' },
         }),
     ],
+    [
+      'HTML 200 such as a captive portal',
+      async () =>
+        new Response('<html>Sign in</html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        }),
+    ],
   ]
 
   for (const [name, respond] of failures) {
@@ -176,17 +185,7 @@ test('Status is "checking" until the request finishes', async () => {
 })
 
 test('A request that never answers counts as unreachable after 10 seconds', async () => {
-  // AbortSignal.timeout uses the runtime's own timers, which fake timers do not
-  // control, so it is replaced by a signal driven by the faked setTimeout.
   vi.useFakeTimers()
-  vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms: number) => {
-    const controller = new AbortController()
-    setTimeout(
-      () => controller.abort(new DOMException('timed out', 'TimeoutError')),
-      ms,
-    )
-    return controller.signal
-  })
   try {
     fetchMock.mockImplementation(
       (_url: string, init?: RequestInit) =>
@@ -209,7 +208,6 @@ test('A request that never answers counts as unreachable after 10 seconds', asyn
     await act(() => vi.advanceTimersByTimeAsync(1))
     expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
   } finally {
-    vi.restoreAllMocks()
     vi.useRealTimers()
   }
 })
@@ -236,8 +234,119 @@ test('[web-client/R3-S3] Page recovers when the backend comes back', async () =>
     expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
     expect(fetchMock).toHaveBeenCalledTimes(2)
 
-    await act(() => vi.advanceTimersByTimeAsync(30_000))
+    await act(() => vi.advanceTimersByTimeAsync(29_999))
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('[web-client/R3-S4] Page notices when the backend goes away', async () => {
+  // given
+  vi.useFakeTimers()
+  try {
+    fetchMock
+      .mockResolvedValueOnce(problemResponse())
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+    await act(() => vi.advanceTimersByTimeAsync(0))
+    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
+
+    // when
+    await act(() => vi.advanceTimersByTimeAsync(30_000))
+
+    // then
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('Status does not go back to "checking" while a later request is running', async () => {
+  vi.useFakeTimers()
+  try {
+    fetchMock
+      .mockResolvedValueOnce(problemResponse())
+      .mockReturnValueOnce(new Promise(() => undefined))
+    render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+    await act(() => vi.advanceTimersByTimeAsync(30_000))
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('A JSON content type with parameters or a +json suffix is reachable', async () => {
+  for (const contentType of [
+    'Application/JSON; charset=utf-8',
+    'application/vnd.api+json',
+  ]) {
+    fetchMock.mockResolvedValueOnce(
+      new Response('{}', {
+        status: 200,
+        headers: { 'Content-Type': contentType },
+      }),
+    )
+    const view = render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+
+    expect(
+      await screen.findByText(en.status.reachable),
+      contentType,
+    ).toBeTruthy()
+    view.unmount()
+  }
+})
+
+test('Unmounting aborts the running request', async () => {
+  let signal: AbortSignal | undefined | null
+  fetchMock.mockImplementation((_url: string, init?: RequestInit) => {
+    signal = init?.signal
+    return new Promise(() => undefined)
+  })
+  const view = render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+  expect(signal?.aborted).toBe(false)
+
+  view.unmount()
+
+  expect(signal?.aborted).toBe(true)
+})
+
+test('StrictMode leaves one polling loop', async () => {
+  vi.useFakeTimers()
+  try {
+    fetchMock.mockImplementation(async () => problemResponse())
+    render(
+      <StrictMode>
+        <MemoryRouter>
+          <PlaceholderPage />
+        </MemoryRouter>
+      </StrictMode>,
+    )
+    await act(() => vi.advanceTimersByTimeAsync(0))
+    const afterStart = fetchMock.mock.calls.length
+
+    await act(() => vi.advanceTimersByTimeAsync(30_000))
+
+    expect(fetchMock.mock.calls.length - afterStart).toBe(1)
   } finally {
     vi.useRealTimers()
   }

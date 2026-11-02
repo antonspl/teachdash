@@ -72,6 +72,15 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 - [x] 10.1 API client: a failure while reading a problem body sets `isProblem` to false, so the page shows "unreachable"; verify with unit tests on `isProblem` and on the page status
 - [x] 10.2 Correct the coverage script comment: the script stays, as constitution §2 says CI runs it, and only its frontend match is replaced under #7; verify the comment matches the constitution
 
+## 11. Fourth owner review: remaining findings
+
+- [x] 11.1 Status check keeps polling while reachable, needs JSON on a 2xx, and cancels on unmount; verify with `[web-client/R3-S2]` extended for the HTML case, `[web-client/R3-S4]`, and a test that unmount aborts the request
+- [x] 11.2 API client recognises a deliberate cancel by the caller's signal, with any reason, and still treats a timeout as a failure; verify with unit tests on both the fetch and the body-read paths
+- [x] 11.3 Share the `Accept` constant between the client and `[web-client/R5-S3]`; verify changing the constant reaches the test
+- [x] 11.4 Token check: syntax-tree inline style check, exact font `var()`, no custom properties outside `tokens.css`; verify `const style = getComputedStyle(el)` passes, and `createElement('div', { style })`, `font-family: var(--font-body), Arial` and `--my-font: Arial` fail
+- [x] 11.5 Coverage script: frontend capability list; verify on a scratch copy that a backend ID in a frontend test is MISSING, and the real tree reports all covered
+- [x] 11.6 Add the favicon, its link and the `/robots.txt` and `/favicon.ico` 404s; verify with `[web-client/R1-S3]` extended, and `[web-client/R8-S1]` still passing
+
 ## Workflow follow-up
 
 - Reviewer (Sonnet) reviews each implementation slice; one Opus review before asking for the code gate.

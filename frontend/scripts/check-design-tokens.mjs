@@ -1,14 +1,17 @@
 // Fails when the look is defined outside src/styles/tokens.css:
-// - raw colours, font families and px or rem lengths in CSS (a bare 0 is fine, and
-//   @media conditions are not checked because var() does not work there);
-// - inline style attributes in TSX;
-// - CSS imports and className in src/pages/ (pages use src/ui/ components).
+// - in CSS: raw colours, px or rem lengths (a bare 0 is fine, and @media conditions are
+//   not checked because var() does not work there), a font that is not exactly one
+//   var(...), and any custom property definition (it would hide raw values);
+// - in .ts and .tsx, read through the TypeScript syntax tree: an inline style (a JSX
+//   style attribute, or a style property in the props object of createElement);
+// - in src/pages/: CSS imports and className (pages use src/ui/ components).
 // Other units (em, %, vw, ...) are not checked: they are relative, so they do not
 // fix a design value. Test files in src/pages/ are exempt from the two page rules,
 // because they do not ship and only render the pages.
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const srcDir = join(root, 'src')
@@ -42,9 +45,7 @@ const NAMED = new RegExp(
   'i',
 )
 const RAW_LENGTH = /(?<![\w.-])[+-]?(?:\d+\.?\d*|\.\d+)(?:px|rem)(?![\w-])/i
-const CSS_IMPORT =
-  /\bimport\s*(?:[^'";]*?\bfrom\s*)?\(?\s*['"][^'"]+\.css(?:\?[^'"]*)?['"]/
-const CLASS_NAME = /(?<![\w-])className(?![\w-])/g
+const SINGLE_VAR = /^var\((?:[^()]|\([^()]*\))*\)$/
 const DECLARATION = /[;{}]\s*([\w-]+)\s*:\s*([^;{}]+)/dg
 
 function filesUnder(dir) {
@@ -72,33 +73,110 @@ function checkCss(file, problems) {
     if (RAW_LENGTH.test(value)) {
       problems.push(`${at}: raw px or rem length in "${property}"; use a token`)
     }
+    if (property.startsWith('--')) {
+      problems.push(
+        `${at}: custom property "${property}" outside tokens.css; define it there`,
+      )
+    }
     if (
       (property === 'font-family' || property === 'font') &&
-      !value.trim().startsWith('var(')
+      !SINGLE_VAR.test(value.trim())
     ) {
-      problems.push(`${at}: raw font in "${property}"; use a token`)
+      problems.push(
+        `${at}: raw font in "${property}"; use exactly one var(...)`,
+      )
     }
   }
 }
 
-function checkTsx(file, path, problems) {
+function isNamed(name, wanted) {
+  return (
+    name !== undefined &&
+    (ts.isIdentifier(name) || ts.isStringLiteral(name)) &&
+    name.text === wanted
+  )
+}
+
+function isCreateElementCall(node) {
+  if (!ts.isCallExpression(node)) {
+    return false
+  }
+  const callee = node.expression
+  return (
+    (ts.isIdentifier(callee) && callee.text === 'createElement') ||
+    (ts.isPropertyAccessExpression(callee) &&
+      callee.name.text === 'createElement')
+  )
+}
+
+function checkScript(file, path, problems) {
   const text = readFileSync(file, 'utf8')
-  for (const match of text.matchAll(/(?<![\w-])style\s*=/g)) {
-    const at = `${relative(root, file)}:${lineOf(text, match.index)}`
-    problems.push(`${at}: inline style attribute; use a CSS Module`)
+  const source = ts.createSourceFile(
+    file,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  )
+  const isPage = path.startsWith('src/pages/') && !/\.test\.tsx?$/.test(path)
+  const report = (node, message) => {
+    const line = source.getLineAndCharacterOfPosition(node.getStart()).line + 1
+    problems.push(`${relative(root, file)}:${line}: ${message}`)
   }
-  if (!path.startsWith('src/pages/') || /\.test\.tsx?$/.test(path)) {
-    return
+  const reportCssImport = (specifier) => {
+    if (
+      isPage &&
+      specifier &&
+      ts.isStringLiteralLike(specifier) &&
+      /\.css(?:\?.*)?$/.test(specifier.text)
+    ) {
+      report(specifier, 'CSS import in a page; use a src/ui/ component')
+    }
   }
-  const cssImport = CSS_IMPORT.exec(text)
-  if (cssImport) {
-    const at = `${relative(root, file)}:${lineOf(text, cssImport.index)}`
-    problems.push(`${at}: CSS import in a page; use a src/ui/ component`)
+
+  function visit(node) {
+    if (ts.isJsxAttribute(node)) {
+      if (isNamed(node.name, 'style')) {
+        report(node, 'inline style attribute; use a CSS Module')
+      }
+      if (isPage && isNamed(node.name, 'className')) {
+        report(node, 'className in a page; use a src/ui/ component')
+      }
+    }
+    if (ts.isObjectLiteralExpression(node)) {
+      const inCreateElement =
+        isCreateElementCall(node.parent) && node.parent.arguments[1] === node
+      for (const property of node.properties) {
+        if (
+          inCreateElement &&
+          (ts.isPropertyAssignment(property) ||
+            ts.isShorthandPropertyAssignment(property)) &&
+          isNamed(property.name, 'style')
+        ) {
+          report(property, 'inline style property; use a CSS Module')
+        }
+        if (
+          isPage &&
+          (ts.isPropertyAssignment(property) ||
+            ts.isShorthandPropertyAssignment(property)) &&
+          isNamed(property.name, 'className')
+        ) {
+          report(property, 'className in a page; use a src/ui/ component')
+        }
+      }
+    }
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+      reportCssImport(node.moduleSpecifier)
+    }
+    if (
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword
+    ) {
+      reportCssImport(node.arguments[0])
+    }
+    ts.forEachChild(node, visit)
   }
-  for (const match of text.matchAll(CLASS_NAME)) {
-    const at = `${relative(root, file)}:${lineOf(text, match.index)}`
-    problems.push(`${at}: className in a page; use a src/ui/ component`)
-  }
+  visit(source)
 }
 
 const problems = []
@@ -107,7 +185,7 @@ for (const file of filesUnder(srcDir)) {
   if (file.endsWith('.css') && path !== tokensFile.split(sep).join('/')) {
     checkCss(file, problems)
   } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
-    checkTsx(file, path, problems)
+    checkScript(file, path, problems)
   }
 }
 

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { ACCEPT } from '../src/api/headers'
 import en from '../src/i18n/en.json' with { type: 'json' }
 
 const PHONE_WIDTH = 360
@@ -8,6 +9,24 @@ function expectSecurityHeaders(headers: Record<string, string>) {
   expect(headers['content-security-policy']).toContain("frame-ancestors 'none'")
   expect(headers['x-content-type-options']).toBe('nosniff')
   expect(headers['referrer-policy']).toBeTruthy()
+}
+
+async function expectIconLoads(page: Page) {
+  const href = await page.locator('link[rel="icon"]').getAttribute('href')
+  expect(href).toBeTruthy()
+  // The browser may not fetch the tab icon in every mode, so load the same file as an
+  // image: it must pass the page's own CSP.
+  const loaded = await page.evaluate(
+    (url) =>
+      new Promise<boolean>((resolve) => {
+        const image = new Image()
+        image.onload = () => resolve(true)
+        image.onerror = () => resolve(false)
+        image.src = url
+      }),
+    href!,
+  )
+  expect(loaded).toBe(true)
 }
 
 async function expectFitsPhoneScreen(
@@ -55,13 +74,33 @@ test('[web-client/R1-S2] Unknown path opened directly shows the not-found page',
 })
 
 test('[web-client/R1-S3] Missing asset is a real 404', async ({ request }) => {
-  const response = await request.get('/assets/no-such-file.js')
-  const body = await response.text()
+  for (const path of [
+    '/assets/no-such-file.js',
+    '/robots.txt',
+    '/favicon.ico',
+  ]) {
+    const response = await request.get(path)
+    const body = await response.text()
 
-  expect(response.status()).toBe(404)
-  expect(response.headers()['content-type'] ?? '').not.toContain('text/html')
-  expect(body).not.toContain('id="root"')
-  expect(response.headers()['cache-control'] ?? '').not.toContain('immutable')
+    expect(response.status(), path).toBe(404)
+    expect(response.headers()['content-type'] ?? '', path).not.toContain(
+      'text/html',
+    )
+    expect(body, path).not.toContain('id="root"')
+    expect(response.headers()['cache-control'] ?? '', path).not.toContain(
+      'immutable',
+    )
+    expectSecurityHeaders(response.headers())
+  }
+})
+
+test('The icon is served as an image under the security headers', async ({
+  request,
+}) => {
+  const response = await request.get('/favicon.svg')
+
+  expect(response.status()).toBe(200)
+  expect(response.headers()['content-type']).toContain('image/svg+xml')
   expectSecurityHeaders(response.headers())
 })
 
@@ -109,7 +148,7 @@ test('[web-client/R5-S3] Real backend error is recognised as a problem response'
 
   const response = await request.post('/api/auth/login', {
     headers: {
-      Accept: 'application/problem+json, application/json',
+      Accept: ACCEPT,
       'X-XSRF-TOKEN': token!,
     },
     data: {},
@@ -164,6 +203,11 @@ test('[web-client/R8-S1] Page is served with security headers and works under th
 
   const headers = response!.headers()
   expectSecurityHeaders(headers)
+  await expectIconLoads(page)
+
+  await page.goto('/no-such-page')
+  await expect(page.getByText(en.notFound.message)).toBeVisible()
+  await expectIconLoads(page)
   expect(problems).toEqual([])
 })
 

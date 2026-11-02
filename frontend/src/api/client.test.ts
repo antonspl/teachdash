@@ -225,11 +225,15 @@ test('A deliberate cancel is rethrown as the original AbortError', async () => {
 
 test('A cancel during the body read is rethrown as the original AbortError', async () => {
   const cancel = new DOMException('The operation was aborted', 'AbortError')
+  const controller = new AbortController()
+  controller.abort(cancel)
   const response = problem('WRONG_PASSWORD')
   vi.spyOn(response, 'text').mockRejectedValue(cancel)
   fetchMock.mockResolvedValue(response)
 
-  await expect(apiRequest('me')).rejects.toBe(cancel)
+  await expect(apiRequest('me', { signal: controller.signal })).rejects.toBe(
+    cancel,
+  )
 })
 
 test('A failed body read becomes an ApiError that is not a problem and keeps the cause', async () => {
@@ -279,4 +283,79 @@ test('A network failure keeps the original error as cause', async () => {
   const error = await failureOf(apiRequest('me'))
 
   expect(error.cause).toBe(failure)
+})
+
+function pendingUntilAborted() {
+  fetchMock.mockImplementation(
+    (_url: string, init: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () =>
+          reject(init.signal?.reason),
+        )
+      }),
+  )
+}
+
+test('A cancel with a custom reason is rethrown as it is', async () => {
+  const controller = new AbortController()
+  const reason = new Error('route changed')
+  pendingUntilAborted()
+
+  const request = apiRequest('me', { signal: controller.signal })
+  controller.abort(reason)
+
+  await expect(request).rejects.toBe(reason)
+})
+
+test('A timeout on the fetch path becomes an ApiError that is not a problem', async () => {
+  const controller = new AbortController()
+  const reason = new DOMException('', 'TimeoutError')
+  pendingUntilAborted()
+
+  const request = apiRequest('me', { signal: controller.signal })
+  controller.abort(reason)
+
+  const error = await failureOf(request)
+  expect(error.isProblem).toBe(false)
+  expect(error.cause).toBe(reason)
+})
+
+test('A cancel with a custom reason during the body read is rethrown as it is', async () => {
+  const controller = new AbortController()
+  const reason = new Error('route changed')
+  fetchMock.mockImplementation(async () => {
+    controller.abort(reason)
+    const response = problem('WRONG_PASSWORD')
+    vi.spyOn(response, 'text').mockRejectedValue(reason)
+    return response
+  })
+
+  await expect(apiRequest('me', { signal: controller.signal })).rejects.toBe(
+    reason,
+  )
+})
+
+test('A timeout during the body read becomes an ApiError that is not a problem', async () => {
+  const controller = new AbortController()
+  const reason = new DOMException('', 'TimeoutError')
+  fetchMock.mockImplementation(async () => {
+    controller.abort(reason)
+    const response = problem('WRONG_PASSWORD')
+    vi.spyOn(response, 'text').mockRejectedValue(reason)
+    return response
+  })
+
+  const error = await failureOf(apiRequest('me', { signal: controller.signal }))
+
+  expect(error.isProblem).toBe(false)
+  expect(error.cause).toBe(reason)
+})
+
+test('A network failure with a signal that is not aborted becomes an ApiError', async () => {
+  const controller = new AbortController()
+  fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+
+  const error = await failureOf(apiRequest('me', { signal: controller.signal }))
+
+  expect(error.isProblem).toBe(false)
 })
