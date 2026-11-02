@@ -24,8 +24,8 @@
 - **What must the container and tooling do beyond the first spec?** From the owner's PR
   review: security headers, Caddy admin off, compose hardening, stricter lint on pages and
   raw sizes, healthchecks, configurable backend address, compression and caching, a real 404
-  for missing assets, status retry, and fixes to tests and the coverage script. All in this
-  PR. This takes the change to 18 scenarios, above the "about 10" limit, by the owner's
+  for missing assets, and fixes to tests and the coverage script. All in this
+  PR. This takes the change to 19 scenarios, above the "about 10" limit, by the owner's
   choice.
 - **Should the placeholder page poll the backend?** No, by the owner's decision after the
   fifth review. Polling caused most of the later findings, including sessions that never

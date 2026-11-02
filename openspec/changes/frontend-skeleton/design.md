@@ -154,7 +154,7 @@ The placeholder page calls `GET /api/me` on load and shows "checking", then "rea
 or "unreachable". The request times out after 10 seconds and then counts as a network
 failure, so a hung backend shows "unreachable". The page checks once on load and again
 on `visibilitychange` to visible and on `online`, one request at a time, with no timer
-polling. Unmounting cancels the running request. A 2xx response counts only if its content type is JSON, so a
+polling. An event during a running check causes one more check when it ends. Unmounting cancels the running request. A 2xx response counts only if its content type is JSON, so a
 captive portal page is not taken for the backend. A 401 problem is the normal anonymous result.
 
 The 10-second timeout also covers reading the body, so a body that drops or hangs means
@@ -222,7 +222,7 @@ work, and proxying actuator would expose it.
 
 ### Tests
 
-- Each scenario has one test, and its title starts with the ID:
+- Each scenario has at least one test, and each title starts with the ID:
   `test("[web-client/R3-S2] Backend cannot be reached", ...)`.
 - Vitest covers R2, R3-S2, R3-S4, R4, R5-S1 and R5-S2, with `fetch` mocked.
 - Playwright covers R1, R3-S1, R3-S3, R5-S3, R6, R7, R8, R9 and R10 in one file, `e2e/skeleton.spec.ts`, against
@@ -232,7 +232,7 @@ work, and proxying actuator would expose it.
   Chrome (Pixel) and Safari (iPhone, using WebKit). The whole E2E file runs in all three.
   R7-S1 is skipped on desktop.
 - A Playwright global setup checks that the stack responds. If not, it stops with a
-  message telling the user to run `docker compose up --build`.
+  message telling the user to run `docker compose up --build --wait`.
 - `scripts/check-scenario-coverage.sh` accepts an ID if it finds the backend
   `@DisplayName("[id]` form, or a string starting with `[id]` in
   `frontend/src/**/*.test.ts(x)` or `frontend/e2e/**/*.spec.ts`. A list at the top of the

@@ -34,11 +34,13 @@ export function useReachability(): Reachability {
   useEffect(() => {
     let stopped = false
     let current: AbortController | undefined
+    let recheck = false
 
     // AbortSignal.any needs Safari 17.4 and the target is iOS 16.4, so one controller
     // per request serves both the cancel on unmount and the timeout.
     async function check() {
       if (current) {
+        recheck = true
         return
       }
       const request = new AbortController()
@@ -52,6 +54,10 @@ export function useReachability(): Reachability {
       current = undefined
       if (!stopped) {
         setStatus(reachable ? 'reachable' : 'unreachable')
+      }
+      if (recheck && !stopped) {
+        recheck = false
+        void check()
       }
     }
 

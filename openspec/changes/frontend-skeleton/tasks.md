@@ -26,7 +26,7 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 ## 4. Container
 
 - [x] 4.1 Add `frontend/Dockerfile`, `frontend/Dockerfile.dockerignore` and `infra/Caddyfile` as in `design.md`; verify the image builds
-- [x] 4.2 Add the `frontend` service to `infra/docker-compose.yml` and publish `127.0.0.1:8081:80` in `infra/docker-compose.dev.yml`; verify `docker compose up --build` serves the placeholder page at `http://localhost:8081` and it shows "reachable"
+- [x] 4.2 (Port replaced by 8.2.) Add the `frontend` service to `infra/docker-compose.yml` and publish `127.0.0.1:8081:80` in `infra/docker-compose.dev.yml`; verify `docker compose up --build` serves the placeholder page at `http://localhost:8081` and it shows "reachable"
 - [x] 4.3 Add "Frontend" run instructions to `README.md`: dev server, container, which port is for what, direct backend URL for health; verify the commands work as written
 
 ## 5. E2E and scenario coverage
@@ -45,7 +45,7 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 ## 7. Owner review: code
 
-- [x] 7.1 Retry the status check while unreachable; verify with the test `[web-client/R3-S3]`
+- [x] 7.1 (Replaced by 12.4.) Retry the status check while unreachable; verify with the test `[web-client/R3-S3]`
 - [x] 7.2 API client: explicit `Accept`, rethrow a deliberate cancel, keep `cause` on other failures; verify with unit tests for both
 - [x] 7.3 Vite proxy key `^/api/`; verify `/api/me` still proxies and `/api-keys` does not
 - [x] 7.4 Extend the token check as in `design.md`; verify it fails on a temporary raw `px` in a CSS Module, a raw `rem`, a CSS import in a page and a `className` in a page, and passes with `rem` in an `@media` condition
@@ -61,7 +61,7 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 ## 9. Third owner review
 
-- [x] 9.1 Remove the frontend's `depends_on`; verify with Postgres unhealthy that the frontend is created, `/` shows "unreachable" and `/healthz` answers, and that the page recovers once the backend is up
+- [x] 9.1 (The recovery part is replaced by 12.4.) Remove the frontend's `depends_on`; verify with Postgres unhealthy that the frontend is created, `/` shows "unreachable" and `/healthz` answers, and that the page recovers once the backend is up
 - [x] 9.2 `[web-client/R8-S1]` allows only the 401 on `/api/me`; verify a broken CSS file makes it fail
 - [x] 9.3 `[web-client/R5-S3]` uses the empty-body login from the spec; verify it passes with `ADMIN_EMAIL` overridden
 - [x] 9.4 API client: an abort during the body read is rethrown; verify with a unit test
@@ -74,7 +74,7 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 ## 11. Fourth owner review: remaining findings
 
-- [x] 11.1 Status check keeps polling while reachable, needs JSON on a 2xx, and cancels on unmount; verify with `[web-client/R3-S2]` extended for the HTML case, `[web-client/R3-S4]`, and a test that unmount aborts the request
+- [x] 11.1 (Polling replaced by 12.4.) Status check keeps polling while reachable, needs JSON on a 2xx, and cancels on unmount; verify with `[web-client/R3-S2]` extended for the HTML case, `[web-client/R3-S4]`, and a test that unmount aborts the request
 - [x] 11.2 API client recognises a deliberate cancel by the caller's signal, with any reason, and still treats a timeout as a failure; verify with unit tests on both the fetch and the body-read paths
 - [x] 11.3 Share the `Accept` constant between the client and `[web-client/R5-S3]`; verify changing the constant reaches the test
 - [x] 11.4 Token check: syntax-tree inline style check, exact font `var()`, no custom properties outside `tokens.css`; verify `const style = getComputedStyle(el)` passes, and `createElement('div', { style })`, `font-family: var(--font-body), Arial` and `--my-font: Arial` fail
@@ -87,6 +87,7 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 - [x] 12.2 Status check uses `credentials: 'omit'`; verify with `[web-client/R3-S3]` in E2E, in all projects
 - [x] 12.3 API client cancels the body of a non-problem error response; verify with a unit test
 - [x] 12.4 Replace timer polling (tasks 7.1 and 11.1) with a check on load, on `visibilitychange` to visible and on `online`; verify with `[web-client/R3-S4]`, a test for `online`, and a test that no request is sent on a timer
+- [x] 12.5 A `visibilitychange` or `online` event during a running check causes one more check when it ends; verify with `[web-client/R3-S4]` or an untagged test where the first check fails and the second succeeds, plus tests that fail if the request timer is not cleared or a non-JSON 2xx body is not discarded
 
 ## Workflow follow-up
 

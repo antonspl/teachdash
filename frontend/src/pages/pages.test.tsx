@@ -405,6 +405,119 @@ test('A check does not start while another is running', async () => {
   expect(fetchMock).toHaveBeenCalledTimes(1)
 })
 
+function deferredFetch() {
+  let reject: (reason: unknown) => void = () => undefined
+  const promise = new Promise<Response>((_resolve, rej) => {
+    reject = rej
+  })
+  return { promise, reject }
+}
+
+for (const [name, fire] of [
+  ['online', () => window.dispatchEvent(new Event('online'))],
+  [
+    'visibilitychange',
+    () => document.dispatchEvent(new Event('visibilitychange')),
+  ],
+] as const) {
+  test(`A ${name} event during a running check causes one more check when it ends`, async () => {
+    const first = deferredFetch()
+    fetchMock
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValueOnce(problemResponse())
+    render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+
+    await act(async () => fire())
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    await act(async () => first.reject(new TypeError('Failed to fetch')))
+
+    expect(await screen.findByText(en.status.reachable)).toBeTruthy()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+}
+
+test('Several events during one check cause only one more check', async () => {
+  const first = deferredFetch()
+  fetchMock
+    .mockReturnValueOnce(first.promise)
+    .mockResolvedValue(problemResponse())
+  render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+
+  await act(async () => {
+    window.dispatchEvent(new Event('online'))
+    document.dispatchEvent(new Event('visibilitychange'))
+    window.dispatchEvent(new Event('online'))
+  })
+  await act(async () => first.reject(new TypeError('Failed to fetch')))
+
+  expect(await screen.findByText(en.status.reachable)).toBeTruthy()
+  await act(() => new Promise((resolve) => setTimeout(resolve, 20)))
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+})
+
+test('A visibilitychange to hidden during a running check causes no more check', async () => {
+  const first = deferredFetch()
+  fetchMock.mockReturnValueOnce(first.promise)
+  render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+
+  await act(async () => stubHidden(true))
+  await act(async () => first.reject(new TypeError('Failed to fetch')))
+
+  expect(await screen.findByText(en.status.unreachable)).toBeTruthy()
+  await act(() => new Promise((resolve) => setTimeout(resolve, 20)))
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+})
+
+test('The request timer is cleared when the check ends', async () => {
+  vi.useFakeTimers()
+  try {
+    fetchMock.mockResolvedValue(problemResponse())
+    render(
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
+    )
+
+    await act(() => vi.advanceTimersByTimeAsync(0))
+
+    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
+    expect(vi.getTimerCount()).toBe(0)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('A 2xx response that is not JSON has its body discarded', async () => {
+  const cancel = vi.fn()
+  const body = new ReadableStream({ cancel })
+  fetchMock.mockResolvedValue(
+    new Response(body, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' },
+    }),
+  )
+  render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByText(en.status.unreachable)).toBeTruthy()
+  expect(cancel).toHaveBeenCalledTimes(1)
+})
+
 test('A tab that opens hidden is checked once', async () => {
   Object.defineProperty(document, 'hidden', {
     configurable: true,
