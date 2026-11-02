@@ -1,0 +1,60 @@
+{
+	admin off
+}
+
+(static) {
+	root * /srv
+	header {
+		defer
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Content-Security-Policy "default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	}
+}
+
+:8081 {
+	encode zstd gzip
+	header -Server
+
+	handle /healthz {
+		respond 200
+	}
+
+	handle /api/* {
+		reverse_proxy {$BACKEND_UPSTREAM:backend:8080}
+	}
+
+	# No such files; an explicit 404 so they do not fall through to index.html.
+	@noFile path /robots.txt /favicon.ico
+	handle @noFile {
+		error 404
+	}
+
+	handle /assets/* {
+		import static
+		header {
+			defer
+			Cache-Control "public, max-age=31536000, immutable"
+		}
+		file_server
+	}
+
+	handle {
+		import static
+		header Cache-Control no-cache
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Static errors (a missing asset) are written outside the routes above, so they
+	# need the security headers again. /api errors stay as the proxy or Spring made them.
+	handle_errors {
+		@static not path /api/*
+		handle @static {
+			import static
+			header Cache-Control no-store
+			respond "{err.status_code} {err.status_text}" {err.status_code}
+		}
+	}
+}
