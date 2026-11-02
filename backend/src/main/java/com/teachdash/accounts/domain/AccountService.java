@@ -19,6 +19,7 @@ public class AccountService {
 	private final PasswordEncoder passwordEncoder;
 	private final PasswordLinkService links;
 	private final TransactionTemplate transaction;
+	private final String dummyHash;
 
 	AccountService(
 			UserRepository users,
@@ -29,6 +30,7 @@ public class AccountService {
 		this.passwordEncoder = passwordEncoder;
 		this.links = links;
 		this.transaction = new TransactionTemplate(transactionManager);
+		this.dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
 	}
 
 	/**
@@ -56,15 +58,17 @@ public class AccountService {
 		return new PasswordChanged(user, newSessionVersion);
 	}
 
-	/** Checks credentials; the failure reason is an error code (design D7, R2). */
+	/** Always runs one password check, so response time does not reveal an account. */
 	public User authenticate(String email, String password) {
-		User user = users.findByEmailIgnoreCase(email.strip())
-				.orElseThrow(() -> unauthorized("UNKNOWN_EMAIL"));
-		if (user.getPasswordHash() == null) {
-			throw unauthorized(user.isActive() ? "PASSWORD_NOT_SET" : "ACCOUNT_DEACTIVATED");
-		}
-		if (!matches(password, user.getPasswordHash())) {
-			throw unauthorized("WRONG_PASSWORD");
+		User user = users.findByEmailIgnoreCase(email.strip()).orElse(null);
+		boolean canCheckRealHash = user != null
+				&& user.getPasswordHash() != null
+				&& !BcryptPasswordValidator.exceedsBcryptLimit(password);
+		String hashToCheck = canCheckRealHash ? user.getPasswordHash() : dummyHash;
+		boolean passwordMatched = passwordEncoder.matches(password, hashToCheck);
+		// The dummy check's result must never count as a match.
+		if (!canCheckRealHash || !passwordMatched) {
+			throw unauthorized("INVALID_CREDENTIALS");
 		}
 		if (!user.isActive()) {
 			throw unauthorized("ACCOUNT_DEACTIVATED");

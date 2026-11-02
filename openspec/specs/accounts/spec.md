@@ -59,8 +59,9 @@ not as missing.
 ### Requirement: R2 Login with email and password
 The system SHALL sign in an active account with a matching email and password and
 start a session. Email matching MUST be case-insensitive. A failed login MUST return
-401 with an error code naming the reason: `UNKNOWN_EMAIL`, `WRONG_PASSWORD`,
-`ACCOUNT_DEACTIVATED` or `PASSWORD_NOT_SET`. A deactivated account with no password gets
+401 with code `INVALID_CREDENTIALS`, whether the email has no account, the password is
+wrong, or the account has no password, and whether or not the account is active. The only
+exception is a deactivated account given its correct password, which gets
 `ACCOUNT_DEACTIVATED`. A password over 72 bytes is a wrong password, however it is encoded. A JSON string field containing a NUL character
 MUST be rejected with 400 `VALIDATION_FAILED` on every endpoint.
 
@@ -72,11 +73,11 @@ MUST be rejected with 400 `VALIDATION_FAILED` on every endpoint.
 #### Scenario: accounts/R2-S2 Wrong password is rejected
 - **GIVEN** an active teacher account
 - **WHEN** someone logs in with the teacher's email and a wrong password
-- **THEN** the response is 401 with code `WRONG_PASSWORD` and no session is started
+- **THEN** the response is 401 with code `INVALID_CREDENTIALS` and no session is started
 
 #### Scenario: accounts/R2-S3 Unknown email is reported
 - **WHEN** someone logs in with an email that has no account
-- **THEN** the response is 401 with code `UNKNOWN_EMAIL`
+- **THEN** the response is 401 with code `INVALID_CREDENTIALS`
 
 #### Scenario: accounts/R2-S4 Email is case-insensitive
 - **GIVEN** an account with email "anna@example.com"
@@ -94,13 +95,23 @@ MUST be rejected with 400 `VALIDATION_FAILED` on every endpoint.
 
 #### Scenario: accounts/R2-S7 Deactivated account with no password
 - **GIVEN** a deactivated teacher who never set a password
-- **WHEN** the teacher logs in with any password
-- **THEN** the response is 401 with code `ACCOUNT_DEACTIVATED`
+- **WHEN** someone logs in with the teacher's email and any password
+- **THEN** the response is 401 with code `INVALID_CREDENTIALS`
 
 #### Scenario: accounts/R2-S8 An over-long password is a wrong password
 - **GIVEN** an active teacher
 - **WHEN** someone logs in with the teacher's email and a password of 73 ASCII characters
-- **THEN** the response is 401 with code `WRONG_PASSWORD`
+- **THEN** the response is 401 with code `INVALID_CREDENTIALS`
+
+#### Scenario: accounts/R2-S9 Active account with no password
+- **GIVEN** an active teacher who has not set a password
+- **WHEN** someone logs in with the teacher's email and any password
+- **THEN** the response is 401 with code `INVALID_CREDENTIALS`
+
+#### Scenario: accounts/R2-S10 Deactivated account with a wrong password
+- **GIVEN** a deactivated teacher account with a password
+- **WHEN** someone logs in with the teacher's email and a wrong password
+- **THEN** the response is 401 with code `INVALID_CREDENTIALS`
 
 ### Requirement: R3 Logout
 The system SHALL end the current session on logout. Logout without a session gets 401.
@@ -183,7 +194,7 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 #### Scenario: accounts/R5-S1 Admin creates a teacher
 - **GIVEN** a logged-in admin
 - **WHEN** the admin creates a teacher with a new email
-- **THEN** the response is 201 with the teacher's id and a set-password link that starts with the configured base URL (`APP_BASE_URL`) and carries the token in the URL fragment, and a login before the password is set gets 401 with code `PASSWORD_NOT_SET`
+- **THEN** the response is 201 with the teacher's id and a set-password link that starts with the configured base URL (`APP_BASE_URL`) and carries the token in the URL fragment, and a login before the password is set gets 401 with code `INVALID_CREDENTIALS`
 
 #### Scenario: accounts/R5-S2 Duplicate email is rejected
 - **GIVEN** an account with email "anna@example.com"
@@ -361,3 +372,13 @@ that races a revocation MUST lose: it changes nothing and the session gets 401.
 - **GIVEN** a logged-in teacher
 - **WHEN** the teacher sets the name to a single U+2003 space
 - **THEN** the response is 400 and the name does not change
+
+### Requirement: R10 Login timing does not reveal accounts
+Response time MUST NOT reveal whether an email has an account or whether the account has
+a password. Every login request that passes validation SHALL run exactly one password hash
+check, at the cost used for new passwords, even when there is no stored hash to check.
+
+#### Scenario: accounts/R10-S1 A login with no real hash to check still runs one hash check
+- **GIVEN** an active teacher with a password, an active teacher with no password and a deactivated teacher with no password
+- **WHEN** someone logs in with an email that has no account, with each no-password teacher's email and any password, and with the first teacher's email and a password of 73 ASCII characters
+- **THEN** each login runs exactly one password hash check, at the cost used for new passwords

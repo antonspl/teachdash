@@ -18,7 +18,10 @@ public class BcryptPasswordValidator implements ConstraintValidator<BcryptPasswo
 				&& !exceedsBcryptLimit(password);
 	}
 
-	/** A password over the limit can never be right, so it never reaches the encoder. */
+	/**
+	 * A password over the limit can never be right: bcrypt would read only its first 72 bytes,
+	 * so it must not be matched against a real hash.
+	 */
 	public static boolean exceedsBcryptLimit(String password) {
 		return password.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES;
 	}
