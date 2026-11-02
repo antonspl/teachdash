@@ -76,11 +76,21 @@ function parseProblemCode(text: string): string | undefined {
   return undefined
 }
 
+// Not awaited: a slow body must not delay the error, and a cancel failure must not replace it.
+export function discardBody(response: Response): void {
+  try {
+    response.body?.cancel().catch(() => undefined)
+  } catch {
+    // Nothing to release.
+  }
+}
+
 async function toApiError(
   response: Response,
   signal: AbortSignal | undefined,
 ): Promise<ApiError> {
   if (!isProblemResponse(response)) {
+    discardBody(response)
     return new ApiError({
       message: messageForCode(undefined),
       status: response.status,
@@ -113,7 +123,12 @@ async function toApiError(
 
 export async function apiRequest(
   path: string,
-  options: { method?: string; body?: unknown; signal?: AbortSignal } = {},
+  options: {
+    method?: string
+    body?: unknown
+    signal?: AbortSignal
+    credentials?: RequestCredentials
+  } = {},
 ): Promise<Response> {
   const method = (options.method ?? 'GET').toUpperCase()
   const headers: Record<string, string> = {
@@ -138,6 +153,7 @@ export async function apiRequest(
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: options.signal,
+      credentials: options.credentials,
     })
   } catch (error) {
     if (isDeliberateCancel(options.signal)) {

@@ -36,6 +36,10 @@ Health endpoints: the backend at http://localhost:8080/actuator/health (on 8081 
 the app), the web container at http://localhost:8081/healthz. The `/api/*` target defaults to
 `backend:8080`; set `BACKEND_UPSTREAM` in a root `.env` to change it. Checks: `npm run lint`, `npm run format:check`, `npm test`, `npm run build`.
 
+The placeholder page checks the backend once on load, when the tab becomes visible and when the
+browser comes back online; it does not poll. A page opened before the backend is up shows
+"unreachable" until you reload it or switch back to the tab.
+
 ### Frontend tests
 
 Unit tests (Vitest) need no stack: `cd frontend && npm ci && npm test`.

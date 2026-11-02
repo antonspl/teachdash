@@ -27,6 +27,10 @@
   for missing assets, status retry, and fixes to tests and the coverage script. All in this
   PR. This takes the change to 18 scenarios, above the "about 10" limit, by the owner's
   choice.
+- **Should the placeholder page poll the backend?** No, by the owner's decision after the
+  fifth review. Polling caused most of the later findings, including sessions that never
+  expired. The page checks on load, when the tab is shown and when the browser comes back
+  online. Real session handling belongs to #32.
 
 ## Why
 

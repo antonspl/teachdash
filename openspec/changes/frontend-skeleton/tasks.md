@@ -81,6 +81,13 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 - [x] 11.5 Coverage script: frontend capability list; verify on a scratch copy that a backend ID in a frontend test is MISSING, and the real tree reports all covered
 - [x] 11.6 Add the favicon, its link and the `/robots.txt` and `/favicon.ico` 404s; verify with `[web-client/R1-S3]` extended, and `[web-client/R8-S1]` still passing
 
+## 12. Fifth owner review
+
+- [x] 12.1 Status check reads the 2xx body inside the timeout; verify with `[web-client/R3-S2]` extended for a dropped body and a hung body
+- [x] 12.2 Status check uses `credentials: 'omit'`; verify with `[web-client/R3-S3]` in E2E, in all projects
+- [x] 12.3 API client cancels the body of a non-problem error response; verify with a unit test
+- [x] 12.4 Replace timer polling (tasks 7.1 and 11.1) with a check on load, on `visibilitychange` to visible and on `online`; verify with `[web-client/R3-S4]`, a test for `online`, and a test that no request is sent on a timer
+
 ## Workflow follow-up
 
 - Reviewer (Sonnet) reviews each implementation slice; one Opus review before asking for the code gate.

@@ -45,9 +45,10 @@ English is the only UI language for now.
 ### Requirement: R3 Backend reachability status
 
 The placeholder page SHALL show whether the backend can be reached. A successful JSON
-response or a complete problem response means reachable. A network failure, a dropped
-response or any other response means unreachable. The page SHALL keep checking in both
-states, so it follows the backend going down or coming back without a reload.
+response or a complete problem response means reachable. A network failure, a dropped or
+hung response or any other response means unreachable. The page SHALL check once on load and
+again when the tab becomes visible or the browser comes back online, and SHALL NOT poll on a
+timer. The checks SHALL NOT send the session cookie, so they never extend a session.
 
 #### Scenario: web-client/R3-S1 Anonymous user sees that the backend is reachable
 - **GIVEN** the local stack is running and the user is not logged in
@@ -55,19 +56,20 @@ states, so it follows the backend going down or coming back without a reload.
 - **THEN** the page shows the translated "reachable" status
 
 #### Scenario: web-client/R3-S2 Backend cannot be reached
-- **GIVEN** the status request fails with a network error, or returns a 502 that is not a problem response, or returns a 200 with HTML
+- **GIVEN** the status request fails with a network error, or returns a 502 that is not a problem response, or returns a 200 with HTML, or returns a 200 with JSON whose body drops or hangs
 - **WHEN** the placeholder page is rendered
 - **THEN** the page shows the translated "unreachable" status
 
-#### Scenario: web-client/R3-S3 Page recovers when the backend comes back
-- **GIVEN** the placeholder page shows the "unreachable" status
-- **WHEN** a later status request gets a problem response
-- **THEN** the page shows the translated "reachable" status without a reload
+#### Scenario: web-client/R3-S3 Status check does not send the session cookie
+- **GIVEN** the local stack is running and the browser holds a `SESSION` cookie
+- **WHEN** the placeholder page sends a status request
+- **THEN** the request has no `Cookie` header with that session
 
-#### Scenario: web-client/R3-S4 Page notices when the backend goes away
-- **GIVEN** the placeholder page shows the "reachable" status
-- **WHEN** a later status request fails with a network error
-- **THEN** the page shows the translated "unreachable" status without a reload
+#### Scenario: web-client/R3-S4 Page checks again when the tab is shown, and not on a timer
+- **GIVEN** the placeholder page shows the "unreachable" status and the tab is hidden
+- **WHEN** a long time passes, and then the tab becomes visible and the backend now answers
+- **THEN** no status request is sent before the tab is visible
+- **AND** the page then shows the translated "reachable" status without a reload
 
 ### Requirement: R4 CSRF header
 

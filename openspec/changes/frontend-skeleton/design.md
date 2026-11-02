@@ -86,6 +86,8 @@ A small wrapper around `fetch`, with paths relative to `/api`.
   translated message and `isProblem`, which the reachability check uses.
 - It sends `Accept: application/problem+json, application/json`, so the error format it
   depends on is explicit.
+- A non-problem error response has its body cancelled, so a slow body cannot hold a
+  connection and block later requests.
 - A network failure or timeout throws `ApiError` with no status, with the generic message,
   and keeps the original error as `cause`. A deliberate cancel by the caller is rethrown
   as is, whatever its reason: the client checks that the caller's signal is aborted with a
@@ -150,11 +152,23 @@ behind `src/ui/`, so pages do not depend on it directly.
 
 The placeholder page calls `GET /api/me` on load and shows "checking", then "reachable"
 or "unreachable". The request times out after 10 seconds and then counts as a network
-failure, so a hung backend shows "unreachable". The page tries again every 5 seconds
-while unreachable and every 30 seconds while reachable, one request at a time. Unmounting
-cancels the running request. A 2xx response counts only if its content type is JSON, so a
-captive portal page is not taken for the backend. A 401 problem is the normal anonymous result. This also sets the CSRF
-cookie. Alternatives were rejected with the owner: a new health endpoint needs backend
+failure, so a hung backend shows "unreachable". The page checks once on load and again
+on `visibilitychange` to visible and on `online`, one request at a time, with no timer
+polling. Unmounting cancels the running request. A 2xx response counts only if its content type is JSON, so a
+captive portal page is not taken for the backend. A 401 problem is the normal anonymous result.
+
+The 10-second timeout also covers reading the body, so a body that drops or hangs means
+"unreachable". Checks use `credentials: 'omit'`, because a session cookie on a check would
+refresh its last-access time and add a users lookup. As a result the browser ignores the
+response's cookies, and this page does not set the CSRF cookie; `ui-auth` (#32) must load it
+itself.
+
+Timer polling was tried and removed. It kept sessions alive, and it produced most of the review
+findings on this change, for a page that real screens will replace. The trade-off: while the tab
+stays visible, the page does not notice the backend going down or coming back until a reload,
+and a page opened before the backend is up stays "unreachable" until then.
+
+Alternatives were rejected with the owner: a new health endpoint needs backend
 work, and proxying actuator would expose it.
 
 ### Serving
@@ -210,8 +224,8 @@ work, and proxying actuator would expose it.
 
 - Each scenario has one test, and its title starts with the ID:
   `test("[web-client/R3-S2] Backend cannot be reached", ...)`.
-- Vitest covers R2, R3-S2, R3-S3, R4, R5-S1 and R5-S2, with `fetch` mocked.
-- Playwright covers R1, R3-S1, R5-S3, R6, R7, R8, R9 and R10 in one file, `e2e/skeleton.spec.ts`, against
+- Vitest covers R2, R3-S2, R3-S4, R4, R5-S1 and R5-S2, with `fetch` mocked.
+- Playwright covers R1, R3-S1, R3-S3, R5-S3, R6, R7, R8, R9 and R10 in one file, `e2e/skeleton.spec.ts`, against
   `http://localhost:8081`. This is the "one E2E" from the issue: one flow file, with one
   test per scenario as constitution §2 asks.
 - Playwright has three projects: desktop Chromium, and the built-in phone profiles for

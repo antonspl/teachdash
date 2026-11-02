@@ -359,3 +359,51 @@ test('A network failure with a signal that is not aborted becomes an ApiError', 
 
   expect(error.isProblem).toBe(false)
 })
+
+test('A non-problem error response has its body cancelled', async () => {
+  const response = new Response('<html>Bad Gateway</html>', {
+    status: 502,
+    headers: { 'Content-Type': 'text/html' },
+  })
+  const cancel = vi.spyOn(response.body!, 'cancel')
+  fetchMock.mockResolvedValue(response)
+
+  const error = await failureOf(apiRequest('me'))
+
+  expect(cancel).toHaveBeenCalledTimes(1)
+  expect(error.status).toBe(502)
+  expect(error.isProblem).toBe(false)
+})
+
+test('A body cancel that fails or hangs does not replace or delay the error', async () => {
+  const cancels: Array<() => Promise<void>> = [
+    () => Promise.reject(new TypeError('cancel failed')),
+    () => new Promise<void>(() => undefined),
+    () => {
+      throw new TypeError('cancel threw')
+    },
+  ]
+  for (const cancelBody of cancels) {
+    const response = new Response('<html>Bad Gateway</html>', {
+      status: 502,
+      headers: { 'Content-Type': 'text/html' },
+    })
+    vi.spyOn(response.body!, 'cancel').mockImplementation(cancelBody)
+    fetchMock.mockResolvedValueOnce(response)
+
+    const error = await failureOf(apiRequest('me'))
+
+    expect(error.status).toBe(502)
+    expect(error.isProblem).toBe(false)
+  }
+})
+
+test('Credentials are passed to fetch only when the caller sets them', async () => {
+  fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
+
+  await apiRequest('me', { credentials: 'omit' })
+  await apiRequest('me')
+
+  expect(fetchMock.mock.calls[0][1].credentials).toBe('omit')
+  expect(fetchMock.mock.calls[1][1].credentials).toBeUndefined()
+})

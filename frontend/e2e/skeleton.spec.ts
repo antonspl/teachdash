@@ -112,6 +112,33 @@ test('[web-client/R3-S1] Anonymous user sees that the backend is reachable', asy
   await expect(page.getByText(en.status.reachable)).toBeVisible()
 })
 
+test('[web-client/R3-S3] Status check does not send the session cookie', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const session = 'session-cookie-probe'
+  await context.addCookies([{ name: 'SESSION', value: session, url: baseURL! }])
+  const meRequest = page.waitForRequest(
+    (request) => new URL(request.url()).pathname === '/api/me',
+  )
+
+  await page.goto('/')
+  const headers = await (await meRequest).allHeaders()
+  await expect(page.getByText(en.status.reachable)).toBeVisible()
+
+  expect(headers['cookie'] ?? '').not.toContain(session)
+
+  // Control: a same-origin fetch with credentials from this page does carry the cookie,
+  // so the check above can fail.
+  const controlRequest = page.waitForRequest(
+    (request) => new URL(request.url()).pathname === '/api/me',
+  )
+  await page.evaluate(() => fetch('/api/me', { credentials: 'include' }))
+  const controlHeaders = await (await controlRequest).allHeaders()
+  expect(controlHeaders['cookie'] ?? '').toContain(session)
+})
+
 test('[web-client/R6-S1] API request reaches the backend on the same origin', async ({
   request,
 }) => {

@@ -110,6 +110,17 @@ test('[web-client/R3-S2] Backend cannot be reached', async () => {
           headers: { 'Content-Type': 'text/html; charset=utf-8' },
         }),
     ],
+    [
+      'JSON 200 whose body drops',
+      async () => {
+        const response = new Response('{}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+        vi.spyOn(response, 'text').mockRejectedValue(new TypeError('dropped'))
+        return response
+      },
+    ],
   ]
 
   for (const [name, respond] of failures) {
@@ -212,81 +223,6 @@ test('A request that never answers counts as unreachable after 10 seconds', asyn
   }
 })
 
-test('[web-client/R3-S3] Page recovers when the backend comes back', async () => {
-  // given
-  vi.useFakeTimers()
-  try {
-    fetchMock
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockResolvedValueOnce(problemResponse())
-    render(
-      <MemoryRouter>
-        <PlaceholderPage />
-      </MemoryRouter>,
-    )
-    await act(() => vi.advanceTimersByTimeAsync(0))
-    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
-
-    // when
-    await act(() => vi.advanceTimersByTimeAsync(5_000))
-
-    // then
-    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-
-    await act(() => vi.advanceTimersByTimeAsync(29_999))
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-  } finally {
-    vi.useRealTimers()
-  }
-})
-
-test('[web-client/R3-S4] Page notices when the backend goes away', async () => {
-  // given
-  vi.useFakeTimers()
-  try {
-    fetchMock
-      .mockResolvedValueOnce(problemResponse())
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-    render(
-      <MemoryRouter>
-        <PlaceholderPage />
-      </MemoryRouter>,
-    )
-    await act(() => vi.advanceTimersByTimeAsync(0))
-    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
-
-    // when
-    await act(() => vi.advanceTimersByTimeAsync(30_000))
-
-    // then
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
-  } finally {
-    vi.useRealTimers()
-  }
-})
-
-test('Status does not go back to "checking" while a later request is running', async () => {
-  vi.useFakeTimers()
-  try {
-    fetchMock
-      .mockResolvedValueOnce(problemResponse())
-      .mockReturnValueOnce(new Promise(() => undefined))
-    render(
-      <MemoryRouter>
-        <PlaceholderPage />
-      </MemoryRouter>,
-    )
-    await act(() => vi.advanceTimersByTimeAsync(30_000))
-
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
-  } finally {
-    vi.useRealTimers()
-  }
-})
-
 test('A JSON content type with parameters or a +json suffix is reachable', async () => {
   for (const contentType of [
     'Application/JSON; charset=utf-8',
@@ -330,76 +266,218 @@ test('Unmounting aborts the running request', async () => {
   expect(signal?.aborted).toBe(true)
 })
 
-test('StrictMode leaves one polling loop', async () => {
+test('[web-client/R3-S2] A JSON 200 whose body hangs is unreachable after 10 seconds', async () => {
   vi.useFakeTimers()
   try {
-    fetchMock.mockImplementation(async () => problemResponse())
+    fetchMock.mockImplementation(async (_url: string, init?: RequestInit) => {
+      const response = new Response('{}', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+      vi.spyOn(response, 'text').mockImplementation(
+        () =>
+          new Promise<string>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () =>
+              reject(init.signal?.reason),
+            )
+          }),
+      )
+      return response
+    })
     render(
-      <StrictMode>
-        <MemoryRouter>
-          <PlaceholderPage />
-        </MemoryRouter>
-      </StrictMode>,
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>,
     )
-    await act(() => vi.advanceTimersByTimeAsync(0))
-    const afterStart = fetchMock.mock.calls.length
 
-    await act(() => vi.advanceTimersByTimeAsync(30_000))
+    await act(() => vi.advanceTimersByTimeAsync(9_999))
+    expect(screen.getByRole('status').textContent).toBe(en.status.checking)
 
-    expect(fetchMock.mock.calls.length - afterStart).toBe(1)
+    await act(() => vi.advanceTimersByTimeAsync(1))
+    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
   } finally {
     vi.useRealTimers()
   }
 })
 
-test('Status stays "unreachable" between retries and requests do not overlap', async () => {
+test('The status check does not send cookies', async () => {
+  fetchMock.mockResolvedValue(problemResponse())
+  render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+
+  await screen.findByText(en.status.reachable)
+
+  expect(fetchMock.mock.calls[0][1].credentials).toBe('omit')
+})
+
+function stubHidden(hidden: boolean) {
+  Object.defineProperty(document, 'hidden', {
+    configurable: true,
+    get: () => hidden,
+  })
+  document.dispatchEvent(new Event('visibilitychange'))
+}
+
+afterEach(() => {
+  Reflect.deleteProperty(document, 'hidden')
+})
+
+test('[web-client/R3-S4] Page checks again when the tab is shown, and not on a timer', async () => {
+  // given
   vi.useFakeTimers()
   try {
-    let resolveSlow: (response: Response) => void = () => undefined
     fetchMock
       .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockImplementationOnce(
-        () => new Promise<Response>((resolve) => (resolveSlow = resolve)),
-      )
+      .mockResolvedValueOnce(problemResponse())
     render(
       <MemoryRouter>
         <PlaceholderPage />
       </MemoryRouter>,
     )
     await act(() => vi.advanceTimersByTimeAsync(0))
-
-    await act(() => vi.advanceTimersByTimeAsync(5_000))
-    expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
+    stubHidden(true)
 
-    await act(() => vi.advanceTimersByTimeAsync(4_000))
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-
-    resolveSlow(problemResponse())
+    // when
+    await act(() => vi.advanceTimersByTimeAsync(10 * 60_000))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    await act(async () => stubHidden(false))
     await act(() => vi.advanceTimersByTimeAsync(0))
+
+    // then
+    expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
   } finally {
     vi.useRealTimers()
   }
 })
 
-test('Retries stop when the page is unmounted', async () => {
+test('Becoming hidden does not start a check', async () => {
+  fetchMock.mockResolvedValue(problemResponse())
+  render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+  await screen.findByText(en.status.reachable)
+
+  await act(async () => stubHidden(true))
+
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+})
+
+test('The browser coming online starts a check, without showing "checking"', async () => {
+  fetchMock
+    .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    .mockResolvedValueOnce(problemResponse())
+  render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+  await screen.findByText(en.status.unreachable)
+
+  await act(async () => {
+    window.dispatchEvent(new Event('online'))
+  })
+
+  expect(screen.getByRole('status').textContent).not.toBe(en.status.checking)
+  expect(await screen.findByText(en.status.reachable)).toBeTruthy()
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+})
+
+test('A check does not start while another is running', async () => {
+  fetchMock.mockReturnValue(new Promise(() => undefined))
+  render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+
+  await act(async () => {
+    window.dispatchEvent(new Event('online'))
+    document.dispatchEvent(new Event('visibilitychange'))
+  })
+
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+})
+
+test('A tab that opens hidden is checked once', async () => {
+  Object.defineProperty(document, 'hidden', {
+    configurable: true,
+    get: () => true,
+  })
+  fetchMock.mockResolvedValue(problemResponse())
+  render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByText(en.status.reachable)).toBeTruthy()
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+})
+
+test('Nothing is sent on a timer', async () => {
   vi.useFakeTimers()
   try {
-    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
-    const view = render(
+    fetchMock.mockImplementation(async () => problemResponse())
+    render(
       <MemoryRouter>
         <PlaceholderPage />
       </MemoryRouter>,
     )
     await act(() => vi.advanceTimersByTimeAsync(0))
-    expect(fetchMock).toHaveBeenCalledTimes(1)
 
-    view.unmount()
-    await act(() => vi.advanceTimersByTimeAsync(60_000))
+    await act(() => vi.advanceTimersByTimeAsync(10 * 60_000))
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
   } finally {
     vi.useRealTimers()
   }
 })
+
+test('StrictMode leaves one active setup', async () => {
+  fetchMock.mockImplementation(async () => problemResponse())
+  render(
+    <StrictMode>
+      <MemoryRouter>
+        <PlaceholderPage />
+      </MemoryRouter>
+    </StrictMode>,
+  )
+  await screen.findByText(en.status.reachable)
+  const afterStart = fetchMock.mock.calls.length
+
+  await act(async () => {
+    window.dispatchEvent(new Event('online'))
+  })
+
+  await waitForCalls(afterStart + 1)
+  expect(fetchMock.mock.calls.length - afterStart).toBe(1)
+})
+
+test('Unmounting removes the listeners', async () => {
+  fetchMock.mockImplementation(async () => problemResponse())
+  const view = render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+  await screen.findByText(en.status.reachable)
+  view.unmount()
+
+  window.dispatchEvent(new Event('online'))
+  document.dispatchEvent(new Event('visibilitychange'))
+
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+})
+
+async function waitForCalls(count: number) {
+  await vi.waitFor(() =>
+    expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(count),
+  )
+}
