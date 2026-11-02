@@ -70,6 +70,7 @@ public class AccountService {
 				&& !BcryptPasswordValidator.exceedsBcryptLimit(password);
 		String hashToCheck = canCheckRealHash ? user.getPasswordHash() : dummyHash;
 		boolean passwordMatched = passwordEncoder.matches(password, hashToCheck);
+		// The dummy check's result must never count as a match.
 		if (!canCheckRealHash || !passwordMatched) {
 			throw unauthorized("INVALID_CREDENTIALS");
 		}
