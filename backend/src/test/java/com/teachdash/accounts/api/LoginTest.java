@@ -47,8 +47,8 @@ class LoginTest extends ApiTest {
 		// when someone logs in with the teacher's email and a wrong password
 		var login = client.login("teacher@example.com", "not-the-password");
 
-		// then the response is 401 with code WRONG_PASSWORD and no session is started
-		login.then().statusCode(401).body("code", equalTo("WRONG_PASSWORD"));
+		// then the response is 401 with code INVALID_CREDENTIALS and no session is started
+		login.then().statusCode(401).body("code", equalTo("INVALID_CREDENTIALS"));
 		assertNull(client.cookie("SESSION"));
 		assertEquals(0, jdbc.sql("select count(*) from spring_session").query(Long.class).single());
 		client.get("/api/me").then().statusCode(401);
@@ -62,8 +62,8 @@ class LoginTest extends ApiTest {
 		// when someone logs in with an email that has no account
 		var login = newClient().login("nobody@example.com", "whatever-123");
 
-		// then the response is 401 with code UNKNOWN_EMAIL
-		login.then().statusCode(401).body("code", equalTo("UNKNOWN_EMAIL"));
+		// then the response is 401 with code INVALID_CREDENTIALS
+		login.then().statusCode(401).body("code", equalTo("INVALID_CREDENTIALS"));
 	}
 
 	@Test
@@ -148,8 +148,8 @@ class LoginTest extends ApiTest {
 		// when the teacher logs in with any password
 		var login = newClient().login("anna@example.com", "any-password-1");
 
-		// then the response is 401 with code ACCOUNT_DEACTIVATED
-		login.then().statusCode(401).body("code", equalTo("ACCOUNT_DEACTIVATED"));
+		// then the response is 401 with code INVALID_CREDENTIALS
+		login.then().statusCode(401).body("code", equalTo("INVALID_CREDENTIALS"));
 	}
 
 	@Test
@@ -161,7 +161,33 @@ class LoginTest extends ApiTest {
 		// when someone logs in with the teacher's email and a password of 73 ASCII characters
 		var login = newClient().login("teacher@example.com", "a".repeat(73));
 
-		// then the response is 401 with code WRONG_PASSWORD
-		login.then().statusCode(401).body("code", equalTo("WRONG_PASSWORD"));
+		// then the response is 401 with code INVALID_CREDENTIALS
+		login.then().statusCode(401).body("code", equalTo("INVALID_CREDENTIALS"));
+	}
+
+	@Test
+	@DisplayName("[accounts/R2-S9] Active account with no password")
+	void activeAccountWithNoPassword() {
+		// given an active teacher who has not set a password
+		createTeacher("teacher@example.com", null);
+
+		// when someone logs in with the teacher's email and any password
+		var login = newClient().login("teacher@example.com", "any-password-1");
+
+		// then the response is 401 with code INVALID_CREDENTIALS
+		login.then().statusCode(401).body("code", equalTo("INVALID_CREDENTIALS"));
+	}
+
+	@Test
+	@DisplayName("[accounts/R2-S10] Deactivated account with a wrong password")
+	void deactivatedAccountWithAWrongPassword() {
+		// given a deactivated teacher account with a password
+		createUser("TEACHER", "Teacher", "teacher@example.com", "teacher-pass-1", false);
+
+		// when someone logs in with the teacher's email and a wrong password
+		var login = newClient().login("teacher@example.com", "not-the-password");
+
+		// then the response is 401 with code INVALID_CREDENTIALS
+		login.then().statusCode(401).body("code", equalTo("INVALID_CREDENTIALS"));
 	}
 }

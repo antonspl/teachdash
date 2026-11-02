@@ -35,9 +35,9 @@ class TeacherManagementTest extends ApiTest {
 		// and the id is the id of the stored account
 		assertEquals(jdbc.sql("select id from users where lower(email) = 'anna@example.com'")
 				.query(UUID.class).single().toString(), response.path("id"));
-		// and a login before the password is set gets 401 with code PASSWORD_NOT_SET
+		// and a login before the password is set gets 401 with code INVALID_CREDENTIALS
 		newClient().login("anna@example.com", "any-password-1").then()
-				.statusCode(401).body("code", equalTo("PASSWORD_NOT_SET"));
+				.statusCode(401).body("code", equalTo("INVALID_CREDENTIALS"));
 	}
 
 	@Test
