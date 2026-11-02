@@ -58,11 +58,7 @@ public class AccountService {
 		return new PasswordChanged(user, newSessionVersion);
 	}
 
-	/**
-	 * Checks credentials. Every call runs exactly one password check, against the dummy hash when
-	 * there is no usable real one, so a failed login looks the same whatever the reason. A
-	 * deactivated account is reported only after the password matched.
-	 */
+	/** Always runs one password check, so response time does not reveal an account. */
 	public User authenticate(String email, String password) {
 		User user = users.findByEmailIgnoreCase(email.strip()).orElse(null);
 		boolean canCheckRealHash = user != null

@@ -13,7 +13,7 @@ No stubs and no migrations are needed. Each test fails at its THEN step, because
 
 ## 2. Test review
 
-- [ ] 2.1 Reviewer approves tests in the PR
+- [x] 2.1 Reviewer approves tests in the PR
 
 ## 3. Login behaviour
 
