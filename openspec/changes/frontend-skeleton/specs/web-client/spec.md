@@ -92,9 +92,9 @@ response, SHALL give a generic translated message.
 - **THEN** the caller gets the generic translated error message
 
 #### Scenario: web-client/R5-S3 Real backend error is recognised as a problem response
-- **GIVEN** the local stack is running and the admin account exists
-- **WHEN** a client sends a login with a wrong password and the headers the API client uses
-- **THEN** the response has content type `application/problem+json` and code `WRONG_PASSWORD`
+- **GIVEN** the local stack is running
+- **WHEN** a client sends a login with an empty body and the headers the API client uses
+- **THEN** the response has content type `application/problem+json` and code `VALIDATION_FAILED`
 
 ### Requirement: R6 Same-origin serving
 

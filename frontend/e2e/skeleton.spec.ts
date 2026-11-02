@@ -112,16 +112,13 @@ test('[web-client/R5-S3] Real backend error is recognised as a problem response'
       Accept: 'application/problem+json, application/json',
       'X-XSRF-TOKEN': token!,
     },
-    data: {
-      email: 'admin@example.com',
-      password: 'not-the-admin-password',
-    },
+    data: {},
   })
 
   expect(response.headers()['content-type']).toContain(
     'application/problem+json',
   )
-  expect((await response.json()).code).toBe('WRONG_PASSWORD')
+  expect((await response.json()).code).toBe('VALIDATION_FAILED')
 })
 
 test('[web-client/R8-S1] Page is served with security headers and works under them', async ({
@@ -135,12 +132,30 @@ test('[web-client/R8-S1] Page is served with security headers and works under th
       )
     })
   })
+  // The anonymous status check gets a 401 on /api/me; any other failed load is a problem.
+  const isAnonymousMeCheck = (url: string, status?: number) =>
+    new URL(url).pathname === '/api/me' &&
+    (status === undefined || status === 401)
   page.on('console', (message) => {
-    // The anonymous status check gets a 401, which the browser logs as a failed load.
-    const expectedLoad = message.text().startsWith('Failed to load resource')
-    if (message.type() === 'error' && !expectedLoad) {
-      problems.push(message.text())
+    if (message.type() !== 'error') {
+      return
     }
+    const loadedFrom = message.location().url
+    if (loadedFrom && isAnonymousMeCheck(loadedFrom)) {
+      return
+    }
+    problems.push(message.text())
+  })
+  page.on('response', (response) => {
+    if (
+      response.status() >= 400 &&
+      !isAnonymousMeCheck(response.url(), response.status())
+    ) {
+      problems.push(`${response.status()} ${response.url()}`)
+    }
+  })
+  page.on('requestfailed', (request) => {
+    problems.push(`request failed: ${request.url()}`)
   })
   page.on('pageerror', (error) => problems.push(error.message))
 

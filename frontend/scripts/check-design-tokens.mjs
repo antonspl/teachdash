@@ -6,7 +6,6 @@
 // Other units (em, %, vw, ...) are not checked: they are relative, so they do not
 // fix a design value. Test files in src/pages/ are exempt from the two page rules,
 // because they do not ship and only render the pages.
-// Declarations that follow a nested CSS block inside the same rule are not checked.
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -46,7 +45,7 @@ const RAW_LENGTH = /(?<![\w.-])[+-]?(?:\d+\.?\d*|\.\d+)(?:px|rem)(?![\w-])/i
 const CSS_IMPORT =
   /\bimport\s*(?:[^'";]*?\bfrom\s*)?\(?\s*['"][^'"]+\.css(?:\?[^'"]*)?['"]/
 const CLASS_NAME = /(?<![\w-])className(?![\w-])/g
-const DECLARATION = /[;{]\s*([\w-]+)\s*:\s*([^;{}]+)/g
+const DECLARATION = /[;{}]\s*([\w-]+)\s*:\s*([^;{}]+)/dg
 
 function filesUnder(dir) {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
@@ -66,7 +65,7 @@ function checkCss(file, problems) {
   for (const match of text.matchAll(DECLARATION)) {
     const property = match[1].toLowerCase()
     const value = match[2]
-    const at = `${relative(root, file)}:${lineOf(text, match.index + 1)}`
+    const at = `${relative(root, file)}:${lineOf(text, match.indices[1][0])}`
     if (HEX.test(value) || COLOR_FUNCTION.test(value) || NAMED.test(value)) {
       problems.push(`${at}: raw colour in "${property}"; use a token`)
     }

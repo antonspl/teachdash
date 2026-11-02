@@ -223,6 +223,28 @@ test('A deliberate cancel is rethrown as the original AbortError', async () => {
   await expect(request).rejects.not.toBeInstanceOf(ApiError)
 })
 
+test('A cancel during the body read is rethrown as the original AbortError', async () => {
+  const cancel = new DOMException('The operation was aborted', 'AbortError')
+  const response = problem('WRONG_PASSWORD')
+  vi.spyOn(response, 'json').mockRejectedValue(cancel)
+  fetchMock.mockResolvedValue(response)
+
+  await expect(apiRequest('me')).rejects.toBe(cancel)
+})
+
+test('A timeout during the body read still becomes an ApiError', async () => {
+  const response = problem('WRONG_PASSWORD')
+  vi.spyOn(response, 'json').mockRejectedValue(
+    new DOMException('signal timed out', 'TimeoutError'),
+  )
+  fetchMock.mockResolvedValue(response)
+
+  const error = await failureOf(apiRequest('me'))
+
+  expect(error.status).toBe(401)
+  expect(error.code).toBeUndefined()
+})
+
 test('A timeout becomes an ApiError that keeps the original error as cause', async () => {
   const timeout = new DOMException('signal timed out', 'TimeoutError')
   fetchMock.mockRejectedValue(timeout)

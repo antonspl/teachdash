@@ -66,7 +66,10 @@ async function readProblemCode(
     if (typeof body === 'object' && body !== null && 'code' in body) {
       return typeof body.code === 'string' ? body.code : undefined
     }
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error
+    }
     // An unreadable body is handled like a problem without a code.
   }
   return undefined

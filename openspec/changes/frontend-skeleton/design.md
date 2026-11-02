@@ -99,8 +99,10 @@ A small wrapper around `fetch`, with paths relative to `/api`.
 - Problem codes use the key `errors.<CODE>`. A missing key falls back to
   `errors.generic`.
 - This change adds messages for all codes that exist in the backend at implementation
-  time. The implementer makes the list by searching the backend, since there is no
-  central list.
+  time and that the backend names itself. The implementer makes the list by searching the
+  backend, since there is no central list. Framework errors use HTTP status names as codes,
+  such as `METHOD_NOT_ALLOWED`. That list is open-ended and means nothing to a user, so they
+  get the generic message.
 
 ### Mobile browsers
 
@@ -177,9 +179,10 @@ work, and proxying actuator would expose it.
   GID, because the tmpfs mounts name them, so an image bump cannot make them unwritable.
 - Healthchecks: `frontend` uses `/healthz` with the image's `wget`. `backend` uses
   `/actuator/health`. The backend image has neither `wget` nor `curl`, so its Dockerfile
-  installs `curl`; this is the only backend change. `frontend` waits only for
-  `backend: service_started`, so a failed migration or slow backend leaves the page up, showing
-  "unreachable", and `/healthz` answering. `docker compose up --wait` still waits for every
+  installs `curl`; this is the only backend change. `frontend` has no
+  `depends_on`, because Caddy finds the backend per request. So a failed migration, a slow
+  backend or an unhealthy Postgres leaves the page up, showing "unreachable", and `/healthz`
+  answering. `docker compose up --wait` still waits for every
   healthcheck, including the backend's, so the E2E step uses it. The Playwright global setup
   checks both the web container and `/api/me`, without polling, so a stopped backend gives the
   same clear message as a stopped stack.

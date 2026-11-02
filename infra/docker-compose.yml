@@ -41,9 +41,6 @@ services:
       dockerfile: frontend/Dockerfile
     environment:
       BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-backend:8080}
-    depends_on:
-      backend:
-        condition: service_started
     read_only: true
     tmpfs:
       - /data:uid=100,gid=101

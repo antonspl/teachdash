@@ -12,7 +12,7 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 
 ## 2. i18n and API client
 
-- [x] 2.1 Set up i18n with `src/i18n/en.json`, including `errors.generic` and an `errors.<CODE>` message for each code found by searching `backend/src/main`; verify the search result matches the keys
+- [x] 2.1 Set up i18n with `src/i18n/en.json`, including `errors.generic` and an `errors.<CODE>` message for each code the backend names in `backend/src/main` (framework status-name codes such as `METHOD_NOT_ALLOWED` get the generic message); verify the search result matches the keys
 - [x] 2.2 Implement the API client (same-origin `/api`, CSRF header, `ApiError`); verify with the test `[web-client/R4-S1]`
 - [x] 2.3 Implement mapping of problem codes to translated messages; verify with the tests `[web-client/R5-S1]` and `[web-client/R5-S2]`
 
@@ -58,6 +58,14 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 - [x] 8.3 Pin the `app` user's UID and GID in `frontend/Dockerfile`, matching the tmpfs mounts; verify no permission errors in the frontend logs
 - [x] 8.4 Playwright global setup also checks `/api/me`; verify a stopped backend gives the clear message, and that the full suite passes on a healthy stack
 - [x] 8.5 Replace the Perl parser in `scripts/check-scenario-coverage.sh` with the plain text match from `design.md`; verify on a scratch copy that a missing ID is reported, that a changed title is reported, that the three reported parser bugs no longer break it, and that the real tree reports all covered
+
+## 9. Third owner review
+
+- [x] 9.1 Remove the frontend's `depends_on`; verify with Postgres unhealthy that the frontend is created, `/` shows "unreachable" and `/healthz` answers, and that the page recovers once the backend is up
+- [x] 9.2 `[web-client/R8-S1]` allows only the 401 on `/api/me`; verify a broken CSS file makes it fail
+- [x] 9.3 `[web-client/R5-S3]` uses the empty-body login from the spec; verify it passes with `ADMIN_EMAIL` overridden
+- [x] 9.4 API client: an abort during the body read is rethrown; verify with a unit test
+- [x] 9.5 Token check: close the declaration gap after a nested block and fix the reported line number; verify on a temporary violation of each
 
 ## Workflow follow-up
 
