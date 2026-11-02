@@ -58,31 +58,47 @@ function isProblemResponse(response: Response): boolean {
   return mediaType === 'application/problem+json'
 }
 
-async function readProblemCode(
-  response: Response,
-): Promise<string | undefined> {
+function parseProblemCode(text: string): string | undefined {
   try {
-    const body: unknown = await response.json()
+    const body: unknown = JSON.parse(text)
     if (typeof body === 'object' && body !== null && 'code' in body) {
       return typeof body.code === 'string' ? body.code : undefined
     }
-  } catch (error) {
-    if (isAbortError(error)) {
-      throw error
-    }
-    // An unreadable body is handled like a problem without a code.
+  } catch {
+    // A complete body that is not valid JSON is a problem without a code.
   }
   return undefined
 }
 
 async function toApiError(response: Response): Promise<ApiError> {
-  const isProblem = isProblemResponse(response)
-  const code = isProblem ? await readProblemCode(response) : undefined
+  if (!isProblemResponse(response)) {
+    return new ApiError({
+      message: messageForCode(undefined),
+      status: response.status,
+      isProblem: false,
+    })
+  }
+  let text: string
+  try {
+    text = await response.text()
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error
+    }
+    // The body never arrived completely, so this is not a usable problem response.
+    return new ApiError({
+      message: messageForCode(undefined),
+      status: response.status,
+      isProblem: false,
+      cause: error,
+    })
+  }
+  const code = parseProblemCode(text)
   return new ApiError({
     message: messageForCode(code),
     status: response.status,
     code,
-    isProblem,
+    isProblem: true,
   })
 }
 

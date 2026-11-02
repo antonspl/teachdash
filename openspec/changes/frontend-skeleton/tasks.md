@@ -67,6 +67,11 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 - [x] 9.4 API client: an abort during the body read is rethrown; verify with a unit test
 - [x] 9.5 Token check: close the declaration gap after a nested block and fix the reported line number; verify on a temporary violation of each
 
+## 10. Fourth owner review
+
+- [x] 10.1 API client: a failure while reading a problem body sets `isProblem` to false, so the page shows "unreachable"; verify with unit tests on `isProblem` and on the page status
+- [x] 10.2 Correct the coverage script comment: the script stays, as constitution §2 says CI runs it, and only its frontend match is replaced under #7; verify the comment matches the constitution
+
 ## Workflow follow-up
 
 - Reviewer (Sonnet) reviews each implementation slice; one Opus review before asking for the code gate.

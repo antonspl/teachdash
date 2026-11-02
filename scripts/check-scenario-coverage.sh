@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Fails if a spec scenario has no test. A plain text match, nothing is parsed: skipped or
-# commented-out tests still count. CI (#7) replaces this script. A scenario is covered by:
+# commented-out tests still count. CI runs this script (constitution §2); under #7 only the
+# frontend text match is planned to be replaced by `vitest list --json` and
+# `playwright test --list`. A scenario is covered by:
 #   - @DisplayName("[<id>] in backend/src/test, or
 #   - a string starting with [<id>] (quote ', " or ` right before it) in
 #     frontend/src/**/*.test.ts(x) or frontend/e2e/**/*.spec.ts.

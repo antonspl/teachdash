@@ -226,23 +226,39 @@ test('A deliberate cancel is rethrown as the original AbortError', async () => {
 test('A cancel during the body read is rethrown as the original AbortError', async () => {
   const cancel = new DOMException('The operation was aborted', 'AbortError')
   const response = problem('WRONG_PASSWORD')
-  vi.spyOn(response, 'json').mockRejectedValue(cancel)
+  vi.spyOn(response, 'text').mockRejectedValue(cancel)
   fetchMock.mockResolvedValue(response)
 
   await expect(apiRequest('me')).rejects.toBe(cancel)
 })
 
-test('A timeout during the body read still becomes an ApiError', async () => {
+test('A failed body read becomes an ApiError that is not a problem and keeps the cause', async () => {
+  const timeout = new DOMException('signal timed out', 'TimeoutError')
   const response = problem('WRONG_PASSWORD')
-  vi.spyOn(response, 'json').mockRejectedValue(
-    new DOMException('signal timed out', 'TimeoutError'),
-  )
+  vi.spyOn(response, 'text').mockRejectedValue(timeout)
   fetchMock.mockResolvedValue(response)
 
   const error = await failureOf(apiRequest('me'))
 
   expect(error.status).toBe(401)
   expect(error.code).toBeUndefined()
+  expect(error.isProblem).toBe(false)
+  expect(error.cause).toBe(timeout)
+})
+
+test('A complete body that is not valid JSON stays a problem with the generic message', async () => {
+  fetchMock.mockResolvedValue(
+    new Response('not json', {
+      status: 401,
+      headers: { 'Content-Type': 'application/problem+json' },
+    }),
+  )
+
+  const error = await failureOf(apiRequest('me'))
+
+  expect(error.isProblem).toBe(true)
+  expect(error.code).toBeUndefined()
+  expect(error.message).toBe(en.errors.generic)
 })
 
 test('A timeout becomes an ApiError that keeps the original error as cause', async () => {

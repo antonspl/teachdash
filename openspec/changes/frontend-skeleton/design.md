@@ -91,7 +91,9 @@ A small wrapper around `fetch`, with paths relative to `/api`.
   as is.
 - A response counts as a problem only when its content type is
   `application/problem+json`. The reachability check needs this, so that a 502 from
-  Caddy is not taken for a backend answer.
+  Caddy is not taken for a backend answer. If the connection fails while reading the body,
+  it does not count as a problem response, because the backend has not really answered. A
+  complete body that is not valid JSON still counts.
 
 ### Translations
 

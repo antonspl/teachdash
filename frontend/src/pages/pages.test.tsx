@@ -121,6 +121,21 @@ test('[web-client/R3-S2] Backend cannot be reached', async () => {
   }
 })
 
+test('A problem response whose body read fails counts as unreachable', async () => {
+  const response = problemResponse()
+  vi.spyOn(response, 'text').mockRejectedValue(new TypeError('network error'))
+  fetchMock.mockResolvedValueOnce(response)
+
+  render(
+    <MemoryRouter>
+      <PlaceholderPage />
+    </MemoryRouter>,
+  )
+
+  const status = await screen.findByText(en.status.unreachable)
+  expect(status.getAttribute('role')).toBe('status')
+})
+
 test('Any response with a problem body or a 2xx status means the backend is reachable', async () => {
   const responses: Array<[string, () => Response]> = [
     ['problem 401', problemResponse],
