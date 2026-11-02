@@ -43,20 +43,18 @@ services:
       BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-backend:8080}
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     read_only: true
     tmpfs:
       - /data:uid=100,gid=101
       - /config:uid=100,gid=101
     cap_drop:
       - ALL
-    cap_add:
-      - NET_BIND_SERVICE
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8081/healthz"]
       interval: 10s
       timeout: 3s
       retries: 3

@@ -13,7 +13,7 @@
 	}
 }
 
-:80 {
+:8081 {
 	encode zstd gzip
 	header -Server
 

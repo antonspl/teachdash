@@ -13,7 +13,9 @@ Needs Docker.
 docker compose up --build --wait
 ```
 
-`--wait` returns once Postgres, the backend and the web container are healthy.
+`--wait` returns once Postgres, the backend and the web container are healthy (it fails if one
+never becomes healthy). The web container starts without waiting for the backend, so with the
+backend down it still serves the page, which shows "The server cannot be reached."
 
 The backend listens on http://localhost:8080 (`/actuator/health`) and Postgres on
 `localhost:5432`, both bound to the loopback interface. The dev credentials, including the
@@ -42,7 +44,7 @@ E2E tests (Playwright) run against the container on http://localhost:8081, in de
 and in Chrome and Safari phone profiles. Once, install the
 browsers (after `npm ci`, so the locked version is used):
 `cd frontend && npx --no-install playwright install chromium webkit`. Then start the stack
-(`docker compose up --build --wait`) and run `npm run test:e2e`. If the stack is down, the run stops
-with a message saying so. The HTML report goes to `frontend/playwright-report/`.
+(`docker compose up --build --wait`) and run `npm run test:e2e`. Run `docker compose up -d --wait` first if the stack was
+stopped. If the web container or the backend is down, the run stops with a message saying which. The HTML report goes to `frontend/playwright-report/`.
 
 Spec coverage check, from the repo root: `scripts/check-scenario-coverage.sh`.

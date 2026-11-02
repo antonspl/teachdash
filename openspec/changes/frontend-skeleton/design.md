@@ -151,7 +151,7 @@ work, and proxying actuator would expose it.
   context is the repo root, because it copies both `frontend/` and `infra/Caddyfile`. A
   `frontend/Dockerfile.dockerignore` keeps `backend/`, `node_modules/` and other
   unrelated paths out, without affecting the backend build.
-- The `Caddyfile` listens on `:80`, with the admin API off, since the config never changes
+- The `Caddyfile` listens on `:8081`, an unprivileged port, with the admin API off, since the config never changes
   at runtime. Routes:
   - `/healthz` answers 200 (R10).
   - `/api/*` proxies to `{$BACKEND_UPSTREAM:backend:8080}`. Compose passes the variable and
@@ -171,18 +171,20 @@ work, and proxying actuator would expose it.
   form-action 'self'; frame-ancestors 'none'`. A later screen that needs more (for example
   Excalidraw or video) widens it in its own PR, with its reason.
 - `frontend` in compose runs hardened: `read_only`, tmpfs for `/data` and `/config`,
-  `cap_drop: [ALL]`, `cap_add: [NET_BIND_SERVICE]`, `no-new-privileges`, and
-  `restart: unless-stopped`. If `no-new-privileges` stops the non-root binary from binding
-  port 80, the container listens on an unprivileged port instead, with compose mapping to it.
+  `cap_drop: [ALL]`, `no-new-privileges`, and `restart: unless-stopped`. It needs no added
+  capability, because it does not bind a low port. The Dockerfile pins the `app` user's UID and
+  GID, because the tmpfs mounts name them, so an image bump cannot make them unwritable.
 - Healthchecks: `frontend` uses `/healthz` with the image's `wget`. `backend` uses
   `/actuator/health`. The backend image has neither `wget` nor `curl`, so its Dockerfile
-  installs `curl`; this is the only backend change. `frontend` waits for
-  `backend: service_healthy`, and `backend` already waits for `postgres`. So
-  `docker compose up --wait` also waits for the backend, and the Playwright global setup no
-  longer needs to poll.
+  installs `curl`; this is the only backend change. `frontend` waits only for
+  `backend: service_started`, so a failed migration or slow backend leaves the page up, showing
+  "unreachable", and `/healthz` answering. `docker compose up --wait` still waits for every
+  healthcheck, including the backend's, so the E2E step uses it. The Playwright global setup
+  checks both the web container and `/api/me`, without polling, so a stopped backend gives the
+  same clear message as a stopped stack.
 - A new `frontend` service goes in `infra/docker-compose.yml`, with no ports. The dev file
-  publishes `127.0.0.1:8081:80`. Port 80 is avoided because it often needs extra rights or
-  is already in use.
+  publishes `127.0.0.1:8081:8081`. Port 80 is avoided on the host because it often needs extra
+  rights or is already in use, and in the container because it needs a capability.
 - `vite.config.ts` proxies `^/api/` (so `/api-keys` is not matched, as in Caddy) to
   `http://localhost:8080` on port 5173, which is the
   origin `APP_BASE_URL` already uses in `infra/dev.env`.

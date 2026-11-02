@@ -51,6 +51,13 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 - [x] 7.4 Extend the token check as in `design.md`; verify it fails on a temporary raw `px` in a CSS Module, a raw `rem`, a CSS import in a page and a `className` in a page, and passes with `rem` in an `@media` condition
 - [x] 7.5 Coverage script: `describe.skip`, missing `frontend/e2e` and the `pipefail` false "MISSING"; verify each with a temporary edit or a scratch copy
 
+## 8. Second owner review
+
+- [x] 8.1 `frontend` depends on `backend: service_started`; verify that with the backend stopped or never healthy, `/` loads and shows "unreachable" and `/healthz` answers 200, and that `docker compose up --wait` still waits for the backend
+- [x] 8.2 Caddy listens on `:8081`, compose maps `127.0.0.1:8081:8081`, healthcheck follows, `cap_add` removed; verify the server really runs and binds with `cap_drop: [ALL]` and `no-new-privileges`
+- [x] 8.3 Pin the `app` user's UID and GID in `frontend/Dockerfile`, matching the tmpfs mounts; verify no permission errors in the frontend logs
+- [x] 8.4 Playwright global setup also checks `/api/me`; verify a stopped backend gives the clear message, and that the full suite passes on a healthy stack
+
 ## Workflow follow-up
 
 - Reviewer (Sonnet) reviews each implementation slice; one Opus review before asking for the code gate.
