@@ -172,7 +172,8 @@ work, and proxying actuator would expose it.
   Excalidraw or video) widens it in its own PR, with its reason.
 - `frontend` in compose runs hardened: `read_only`, tmpfs for `/data` and `/config`,
   `cap_drop: [ALL]`, `no-new-privileges`, and `restart: unless-stopped`. It needs no added
-  capability, because it does not bind a low port. The Dockerfile pins the `app` user's UID and
+  capability, because it does not bind a low port. The Dockerfile removes the file capability
+  from the Caddy binary, because with it the binary fails to start under these settings. It pins the `app` user's UID and
   GID, because the tmpfs mounts name them, so an image bump cannot make them unwritable.
 - Healthchecks: `frontend` uses `/healthz` with the image's `wget`. `backend` uses
   `/actuator/health`. The backend image has neither `wget` nor `curl`, so its Dockerfile
@@ -204,11 +205,11 @@ work, and proxying actuator would expose it.
 - A Playwright global setup checks that the stack responds. If not, it stops with a
   message telling the user to run `docker compose up --build`.
 - `scripts/check-scenario-coverage.sh` accepts an ID if it finds the backend
-  `@DisplayName("[id]` form, or a `test(` or `it(` call whose title starts with `[id]` in
-  `frontend/src/**/*.test.ts(x)` or `frontend/e2e/**/*.spec.ts`. Comments, `test.skip(`
-  calls and tests inside a `describe.skip` block do not count. The title may be on the line
-  after the call, as Prettier can put it there. A missing test directory is not an error by
-  itself, and the check must not give a false "MISSING" with a long ID list.
+  `@DisplayName("[id]` form, or a string starting with `[id]` in
+  `frontend/src/**/*.test.ts(x)` or `frontend/e2e/**/*.spec.ts`. It is a plain text match,
+  not a parser, so a skipped or commented-out test still counts until CI (#7) replaces this
+  with `vitest list --json` and `playwright test --list`. Reviewers watch for skips until
+  then. An earlier version parsed the test files in Perl and kept hitting new edge cases.
 - Playwright's global setup reads the base URL from its config, so it is set in one place.
 
 ### Commands

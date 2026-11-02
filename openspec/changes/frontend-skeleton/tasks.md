@@ -57,6 +57,7 @@ Each group lands its own tests, with the scenario ID at the start of the test ti
 - [x] 8.2 Caddy listens on `:8081`, compose maps `127.0.0.1:8081:8081`, healthcheck follows, `cap_add` removed; verify the server really runs and binds with `cap_drop: [ALL]` and `no-new-privileges`
 - [x] 8.3 Pin the `app` user's UID and GID in `frontend/Dockerfile`, matching the tmpfs mounts; verify no permission errors in the frontend logs
 - [x] 8.4 Playwright global setup also checks `/api/me`; verify a stopped backend gives the clear message, and that the full suite passes on a healthy stack
+- [x] 8.5 Replace the Perl parser in `scripts/check-scenario-coverage.sh` with the plain text match from `design.md`; verify on a scratch copy that a missing ID is reported, that a changed title is reported, that the three reported parser bugs no longer break it, and that the real tree reports all covered
 
 ## Workflow follow-up
 
