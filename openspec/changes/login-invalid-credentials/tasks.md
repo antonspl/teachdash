@@ -9,7 +9,7 @@ No stubs and no migrations are needed. Each test fails at its THEN step, because
 - [x] 1.3 In `TeacherManagementTest`, change R5-S1 to expect `INVALID_CREDENTIALS` on login before the password is set; verify it fails at THEN
 - [x] 1.4 Add R10-S1 with a spy on the `PasswordEncoder` bean (design D4), covering unknown email, active and deactivated accounts with no password, and a 73-character password on an account with a password; verify it fails at THEN
 - [x] 1.5 Add the Vitest test `[web-client/R5-S4]`, asserting the `INVALID_CREDENTIALS` message mentions both the incorrect credentials and the link; verify it fails at THEN
-- [ ] 1.6 Run `scripts/check-scenario-coverage.sh` and verify it reports no missing scenario, then push and post the commit range of this pass in the PR
+- [x] 1.6 Run `scripts/check-scenario-coverage.sh` and verify it reports no missing scenario, then push and post the commit range of this pass in the PR
 
 ## 2. Test review
 
