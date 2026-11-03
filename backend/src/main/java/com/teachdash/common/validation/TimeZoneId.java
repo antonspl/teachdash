@@ -11,9 +11,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
+import jakarta.validation.constraints.NotBlank;
 
 /** An IANA time zone id known to the JVM, e.g. Europe/Moscow. */
 @Documented
+@NotBlank
 @Constraint(validatedBy = TimeZoneIdValidator.class)
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)
