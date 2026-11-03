@@ -42,6 +42,7 @@ Answers to the owner's code review on 2026-11-03.
 | 12 | A malformed id returns 400, but R2 and R3 require 404. Which is right? | The spec: 404. |
 | 13 | Emails with invisible characters pass validation. Should they? | No. It breaks R1-S6 and creates look-alike accounts, so it is fixed here. |
 | 14 | Should the other findings stay in #47? | No. Fix everything from #47 in this PR and close the issue. |
+| 15 | Should the Purpose mention the link? | Not until #29 builds it. |
 
 ## Why
 

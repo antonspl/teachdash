@@ -3,8 +3,7 @@
 ## Purpose
 
 Links students to teachers: a teacher registers new students and sees only their own,
-and admins see all assignments. A student can study with several teachers, and
-an existing student assigns themselves through a link from the teacher.
+and admins see all assignments.
 
 ## ADDED Requirements
 
