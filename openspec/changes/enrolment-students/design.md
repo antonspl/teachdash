@@ -79,13 +79,24 @@ and a check would need a trigger, which is not worth it here.
 ### D8. One validation rule per field
 Each field's rule is defined once in `common.validation` as a composed constraint:
 `@PersonName` (not blank, at most 200) and `@EmailAddress` (not blank, valid, at most
-320). `@TimeZoneId` also includes not blank. `CreateTeacherRequest`,
+320, no Unicode separator or control or format characters). `@TimeZoneId` also includes not blank. `CreateTeacherRequest`,
 `UpdateProfileRequest` and the new request use them, so they cannot drift apart. Errors
-stay 400 `VALIDATION_FAILED`, and existing tests guard the refactor. Alternative:
+stay 400 `VALIDATION_FAILED`. Existing tests guard the refactor only in part; #47 adds
+the missing length and blank cases. Alternative:
 copying the annotations. Rejected: nothing would keep the copies equal.
 
 `LoginRequest` keeps its own email rule: it checks credentials and does not store an
 email. A malformed email there must stay an invalid login, not a validation error.
+
+The invisible-character rule uses `\p{Z}` and `\p{C}` rather than ASCII only, so an
+internationalized address stays valid. It is shared, so it also applies to admin teacher
+creation and `ADMIN_EMAIL`. Addresses with these characters could not be typed at login
+anyway.
+
+### D9. Malformed id
+The enrolment controllers map a path id that is not a UUID to 404 `NOT_FOUND` with a local
+`@ExceptionHandler`. Alternative: a global handler. Rejected: accounts endpoints have
+their own behaviour here, and this change does not alter them.
 
 No new dependencies.
 

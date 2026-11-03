@@ -33,6 +33,13 @@ Answers to the owner's test review comments on 2026-11-03.
 |---|----------|--------|
 | 11 | Where do admin endpoints go? | In their own controller under an admin package. An admin can also list a student's teachers. |
 
+Answers to the owner's code review on 2026-11-03.
+
+| # | Question | Answer |
+|---|----------|--------|
+| 12 | A malformed id returns 400, but R2 and R3 require 404. Which is right? | The spec: 404. |
+| 13 | Emails with invisible characters pass validation. Should they? | No. It breaks R1-S6 and creates look-alike accounts, so it is fixed here. Other review findings go to #47, as constitution section 1 step 8 says. |
+
 ## Why
 
 Teachers need students on the platform before courses, homework or schedule make

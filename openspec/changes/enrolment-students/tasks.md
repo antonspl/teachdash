@@ -7,10 +7,12 @@
 - [x] 1.3 Add an `ApiTest` helper that links a teacher and a student directly in the database; verify it compiles and existing tests still pass
 - [x] 1.4 Write one test per scenario in `specs/student-enrolment/spec.md` (15 scenarios) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify `scripts/check-scenario-coverage.sh` passes
 - [x] 1.5 Run `./gradlew test`; verify every new test fails at its THEN step and all other tests pass
+- [ ] 1.6 Write tests for the scenarios added in the code review (R1-S7, R2-S6, R3-S5); verify the coverage script passes and each fails at its THEN step with all other tests green
 
 ## 2. Test review
 
 - [x] 2.1 Reviewer approves tests in the PR. HARD STOP: no production code before approval
+- [ ] 2.2 Reviewer approves the tests from 1.6 in the PR. HARD STOP: no fix before approval
 
 ## 3. Implementation
 
@@ -20,10 +22,12 @@
 - [x] 3.4 Implement the teacher's list and details with per-teacher scoping (design D6); verify all R1 and R2 tests pass
 - [x] 3.5 Implement the admin's lists of a teacher's students and a student's teachers; verify all R3 tests pass and no `STUB` comment is left
 - [x] 3.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and approved tests are unchanged
+- [ ] 3.7 Reject invisible characters in `@EmailAddress` (design D8) and return 404 for malformed ids (design D9); verify R1-S7, R2-S6 and R3-S5 pass, the full suite is green, and approved tests are unchanged
 
 ## 4. Review
 
 - [x] 4.1 Reviewer agent reviews the diff against the spec and constitution (focus: per-teacher scoping, existing accounts unchanged on 409, shared field rules); confirmed findings are fixed and the suite is green
+- [ ] 4.2 Reviewer agent reviews the fix from 3.7; confirmed findings are fixed and the suite is green
 
 ## Workflow follow-up
 

@@ -44,10 +44,15 @@ Any email that already has an account MUST return 409 and change nothing.
 - **WHEN** the teacher registers a student with a blank name, then with an invalid email, then with an unknown time zone
 - **THEN** each response is 400 with code `VALIDATION_FAILED`, and no account is created
 
+#### Scenario: student-enrolment/R1-S7 Email with invisible characters is rejected
+- **GIVEN** a logged-in teacher and a student account with email "nina@example.com"
+- **WHEN** the teacher registers a student with email "nina\u00A0@example.com", then with email "\u2003@example.com"
+- **THEN** each response is 400 with code `VALIDATION_FAILED`, and no account is created
+
 ### Requirement: R2 Teacher sees only own students
 A teacher's student list SHALL contain exactly the students assigned to that teacher,
 ordered by name, each with id, name, email and time zone. Any teacher request about an
-id that is not a student assigned to them MUST return 404. Teacher endpoints SHALL be
+id that is not a student assigned to them, including a malformed id, MUST return 404. Teacher endpoints SHALL be
 allowed only for teachers.
 
 #### Scenario: student-enrolment/R2-S1 List shows only own students
@@ -75,10 +80,15 @@ allowed only for teachers.
 - **WHEN** the admin calls the teacher endpoint that lists students
 - **THEN** the response is 403
 
+#### Scenario: student-enrolment/R2-S6 Malformed id is not found
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher requests the details of the id "not-a-uuid"
+- **THEN** the response is 404 with code `NOT_FOUND`
+
 ### Requirement: R3 Admin sees assignments
 An admin SHALL be able to list the students assigned to any teacher and the teachers of
 any student, ordered by name, each with id, name, email and time zone. An id that is not
-a teacher or a student, respectively, MUST return 404.
+a teacher or a student, respectively, including a malformed id, MUST return 404.
 
 #### Scenario: student-enrolment/R3-S1 Admin lists a teacher's students
 - **GIVEN** teacher A with students S1 and S2, and teacher B with student S3
@@ -98,4 +108,9 @@ a teacher or a student, respectively, MUST return 404.
 #### Scenario: student-enrolment/R3-S4 Id that is not a student is not found
 - **GIVEN** a logged-in admin and a teacher account
 - **WHEN** the admin lists the teachers of the teacher's id, and then of an id with no account
+- **THEN** both responses are 404 with code `NOT_FOUND`
+
+#### Scenario: student-enrolment/R3-S5 Malformed id is not found
+- **GIVEN** a logged-in admin
+- **WHEN** the admin lists the students of the id "not-a-uuid", and then the teachers of the id "not-a-uuid"
 - **THEN** both responses are 404 with code `NOT_FOUND`
