@@ -2,13 +2,24 @@ package com.teachdash.enrolment.persistence;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import com.teachdash.enrolment.domain.Person;
+
 @Repository
 public class TeacherStudentRepository {
+
+	private static final RowMapper<Person> PERSON = (rs, rowNum) -> new Person(
+			rs.getObject("id", UUID.class),
+			rs.getString("name"),
+			rs.getString("email"),
+			rs.getString("time_zone"));
 
 	private final JdbcClient jdbc;
 
@@ -38,5 +49,44 @@ public class TeacherStudentRepository {
 				.param("studentId", studentId)
 				.param("createdAt", Timestamp.from(createdAt))
 				.update();
+	}
+
+	public List<Person> findStudents(UUID teacherId) {
+		return jdbc.sql("""
+				select u.id, u.name, u.email, u.time_zone
+				from teacher_students ts
+				join users u on u.id = ts.student_id
+				where ts.teacher_id = :teacherId
+				order by u.name, u.id
+				""")
+				.param("teacherId", teacherId)
+				.query(PERSON)
+				.list();
+	}
+
+	public Optional<Person> findStudent(UUID teacherId, UUID studentId) {
+		return jdbc.sql("""
+				select u.id, u.name, u.email, u.time_zone
+				from teacher_students ts
+				join users u on u.id = ts.student_id
+				where ts.teacher_id = :teacherId and ts.student_id = :studentId
+				""")
+				.param("teacherId", teacherId)
+				.param("studentId", studentId)
+				.query(PERSON)
+				.optional();
+	}
+
+	public List<Person> findTeachers(UUID studentId) {
+		return jdbc.sql("""
+				select u.id, u.name, u.email, u.time_zone
+				from teacher_students ts
+				join users u on u.id = ts.teacher_id
+				where ts.student_id = :studentId
+				order by u.name, u.id
+				""")
+				.param("studentId", studentId)
+				.query(PERSON)
+				.list();
 	}
 }

@@ -1,6 +1,7 @@
 package com.teachdash.enrolment.api;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
 import com.teachdash.enrolment.api.dto.RegisterStudentResponse;
+import com.teachdash.enrolment.api.dto.PersonResponse;
+import com.teachdash.enrolment.domain.EnrolmentQueryService;
 import com.teachdash.enrolment.domain.StudentRegistrationService;
 
 import jakarta.validation.Valid;
@@ -21,9 +24,11 @@ import jakarta.validation.Valid;
 class TeacherStudentController {
 
 	private final StudentRegistrationService registration;
+	private final EnrolmentQueryService queries;
 
-	TeacherStudentController(StudentRegistrationService registration) {
+	TeacherStudentController(StudentRegistrationService registration, EnrolmentQueryService queries) {
 		this.registration = registration;
+		this.queries = queries;
 	}
 
 	@PostMapping("/api/teacher/students")
@@ -39,15 +44,15 @@ class TeacherStudentController {
 		return new RegisterStudentResponse(registered.id(), registered.setPasswordLink());
 	}
 
-	// STUB
 	@GetMapping("/api/teacher/students")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void listStudents() {
+	List<PersonResponse> listStudents(Principal principal) {
+		return queries.studentsOfTeacher(UUID.fromString(principal.getName())).stream()
+				.map(PersonResponse::from)
+				.toList();
 	}
 
-	// STUB
 	@GetMapping("/api/teacher/students/{id}")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void studentDetails(@PathVariable UUID id) {
+	PersonResponse studentDetails(@PathVariable UUID id, Principal principal) {
+		return PersonResponse.from(queries.studentOfTeacher(UUID.fromString(principal.getName()), id));
 	}
 }
