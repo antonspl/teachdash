@@ -42,16 +42,15 @@ public class StudentRegistrationService {
 	 */
 	@Transactional
 	public RegisteredStudent register(UUID teacherId, String name, String email, String timeZone) {
-		String normalized = email.strip();
-		Optional<User> existing = users.findByEmailIgnoreCase(normalized);
+		Optional<User> existing = users.findByEmailIgnoreCase(email);
 		if (existing.isPresent()) {
 			throw conflictFor(teacherId, existing.get());
 		}
 		User student;
 		try {
 			student = users.save(User.create(
-					normalized,
-					name.strip(),
+					email,
+					name,
 					Role.STUDENT,
 					null,
 					timeZone,

@@ -11,14 +11,18 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
+import jakarta.validation.ReportAsSingleViolation;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Documented
 @NotBlank
 @Email
 @Size(max = 320)
+@Pattern(regexp = "[^\\p{Z}\\p{C}]*")
+@ReportAsSingleViolation
 @Constraint(validatedBy = {})
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)

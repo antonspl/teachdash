@@ -60,7 +60,7 @@ public class AccountService {
 
 	/** Always runs one password check, so response time does not reveal an account. */
 	public User authenticate(String email, String password) {
-		User user = users.findByEmailIgnoreCase(email.strip()).orElse(null);
+		User user = users.findByEmailIgnoreCase(email).orElse(null);
 		boolean canCheckRealHash = user != null
 				&& user.getPasswordHash() != null
 				&& !BcryptPasswordValidator.exceedsBcryptLimit(password);
@@ -81,7 +81,7 @@ public class AccountService {
 	}
 
 	public User updateProfile(UUID id, String name, String timeZone) {
-		return users.updateProfile(id, name.strip(), timeZone)
+		return users.updateProfile(id, name, timeZone)
 				.orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
 	}
 

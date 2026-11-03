@@ -23,8 +23,8 @@
 - [x] 3.4 Implement the teacher's list and details with per-teacher scoping (design D6); verify all R1 and R2 tests pass
 - [x] 3.5 Implement the admin's lists of a teacher's students and a student's teachers; verify all R3 tests pass and no `STUB` comment is left
 - [x] 3.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and approved tests are unchanged
-- [ ] 3.7 Reject invisible characters in `@EmailAddress` (design D8) and return 404 for malformed ids (design D9); verify R1-S7, R2-S6 and R3-S5 pass, the full suite is green, and approved tests are unchanged
-- [ ] 3.8 Add the name rule, `@ReportAsSingleViolation` and whitespace removal (design D8, D10); verify R1-S8, R1-S9 and accounts R11 pass
+- [x] 3.7 Reject invisible characters in `@EmailAddress` (design D8) and return 404 for malformed ids (design D9); verify R1-S7, R2-S6 and R3-S5 pass, the full suite is green, and approved tests are unchanged
+- [x] 3.8 Add the name rule, `@ReportAsSingleViolation` and whitespace removal (design D8, D10); verify R1-S8, R1-S9 and accounts R11 pass
 - [ ] 3.9 Add the active flag, merge the records and add the shared creation method and role check (design D11, D12, D13); verify R3-S7 passes and the JSON of existing endpoints is unchanged
 - [ ] 3.10 Fix the style items in #47 (dense line in `TeacherStudentController`, Javadoc in `StudentRegistrationService`); verify the full suite is green and approved tests are unchanged
 

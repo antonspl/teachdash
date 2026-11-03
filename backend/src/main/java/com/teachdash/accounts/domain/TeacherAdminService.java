@@ -37,15 +37,14 @@ public class TeacherAdminService {
 	/** Creates a teacher without a password; returns the id and the set-password link. */
 	@Transactional
 	public CreatedTeacher createTeacher(String name, String email, String timeZone) {
-		String normalized = email.strip();
-		if (users.findByEmailIgnoreCase(normalized).isPresent()) {
+		if (users.findByEmailIgnoreCase(email).isPresent()) {
 			throw emailTaken();
 		}
 		User teacher;
 		try {
 			teacher = users.save(User.create(
-					normalized,
-					name.strip(),
+					email,
+					name,
 					Role.TEACHER,
 					null,
 					timeZone,
