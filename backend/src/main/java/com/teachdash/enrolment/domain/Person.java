@@ -6,5 +6,6 @@ public record Person(
 		UUID id,
 		String name,
 		String email,
-		String timeZone) {
+		String timeZone,
+		boolean active) {
 }

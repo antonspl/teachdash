@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.teachdash.accounts.domain.CreatedAccount;
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
-import com.teachdash.enrolment.api.dto.RegisterStudentResponse;
-import com.teachdash.enrolment.api.dto.PersonResponse;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
+import com.teachdash.enrolment.domain.Person;
 import com.teachdash.enrolment.domain.StudentRegistrationService;
 
 import jakarta.validation.Valid;
@@ -33,26 +33,22 @@ class TeacherStudentController {
 
 	@PostMapping("/api/teacher/students")
 	@ResponseStatus(HttpStatus.CREATED)
-	RegisterStudentResponse registerStudent(
+	CreatedAccount registerStudent(
 			@Valid @RequestBody RegisterStudentRequest request,
 			Principal principal) {
-		var registered = registration.register(
-				UUID.fromString(principal.getName()),
-				request.name(),
-				request.email(),
-				request.timeZone());
-		return new RegisterStudentResponse(registered.id(), registered.setPasswordLink());
+		UUID teacherId = UUID.fromString(principal.getName());
+		return registration.register(teacherId, request.name(), request.email(), request.timeZone());
 	}
 
 	@GetMapping("/api/teacher/students")
-	List<PersonResponse> listStudents(Principal principal) {
-		return queries.studentsOfTeacher(UUID.fromString(principal.getName())).stream()
-				.map(PersonResponse::from)
-				.toList();
+	List<Person> listStudents(Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return queries.studentsOfTeacher(teacherId);
 	}
 
 	@GetMapping("/api/teacher/students/{id}")
-	PersonResponse studentDetails(@PathVariable UUID id, Principal principal) {
-		return PersonResponse.from(queries.studentOfTeacher(UUID.fromString(principal.getName()), id));
+	Person studentDetails(@PathVariable UUID id, Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return queries.studentOfTeacher(teacherId, id);
 	}
 }

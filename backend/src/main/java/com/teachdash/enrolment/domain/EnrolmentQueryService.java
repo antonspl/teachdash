@@ -42,10 +42,7 @@ public class EnrolmentQueryService {
 	}
 
 	private void requireRole(UUID id, Role role) {
-		boolean matches = users.findById(id)
-				.map(user -> user.getRole() == role)
-				.orElse(false);
-		if (!matches) {
+		if (!users.existsByIdAndRole(id, role)) {
 			throw notFound();
 		}
 	}

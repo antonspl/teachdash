@@ -19,7 +19,8 @@ public class TeacherStudentRepository {
 			rs.getObject("id", UUID.class),
 			rs.getString("name"),
 			rs.getString("email"),
-			rs.getString("time_zone"));
+			rs.getString("time_zone"),
+			rs.getBoolean("active"));
 
 	private final JdbcClient jdbc;
 
@@ -53,7 +54,7 @@ public class TeacherStudentRepository {
 
 	public List<Person> findStudents(UUID teacherId) {
 		return jdbc.sql("""
-				select u.id, u.name, u.email, u.time_zone
+				select u.id, u.name, u.email, u.time_zone, u.active
 				from teacher_students ts
 				join users u on u.id = ts.student_id
 				where ts.teacher_id = :teacherId
@@ -66,7 +67,7 @@ public class TeacherStudentRepository {
 
 	public Optional<Person> findStudent(UUID teacherId, UUID studentId) {
 		return jdbc.sql("""
-				select u.id, u.name, u.email, u.time_zone
+				select u.id, u.name, u.email, u.time_zone, u.active
 				from teacher_students ts
 				join users u on u.id = ts.student_id
 				where ts.teacher_id = :teacherId and ts.student_id = :studentId
@@ -79,7 +80,7 @@ public class TeacherStudentRepository {
 
 	public List<Person> findTeachers(UUID studentId) {
 		return jdbc.sql("""
-				select u.id, u.name, u.email, u.time_zone
+				select u.id, u.name, u.email, u.time_zone, u.active
 				from teacher_students ts
 				join users u on u.id = ts.teacher_id
 				where ts.student_id = :studentId

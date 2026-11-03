@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.teachdash.enrolment.api.dto.PersonResponse;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
+import com.teachdash.enrolment.domain.Person;
 
 @RestController
 class AdminEnrolmentController {
@@ -20,16 +20,12 @@ class AdminEnrolmentController {
 	}
 
 	@GetMapping("/api/admin/teachers/{id}/students")
-	List<PersonResponse> teacherStudents(@PathVariable UUID id) {
-		return queries.studentsOfTeacherForAdmin(id).stream()
-				.map(PersonResponse::from)
-				.toList();
+	List<Person> teacherStudents(@PathVariable UUID id) {
+		return queries.studentsOfTeacherForAdmin(id);
 	}
 
 	@GetMapping("/api/admin/students/{id}/teachers")
-	List<PersonResponse> studentTeachers(@PathVariable UUID id) {
-		return queries.teachersOfStudent(id).stream()
-				.map(PersonResponse::from)
-				.toList();
+	List<Person> studentTeachers(@PathVariable UUID id) {
+		return queries.teachersOfStudent(id);
 	}
 }
