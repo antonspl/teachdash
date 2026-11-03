@@ -23,7 +23,7 @@
 
 ## 4. Review
 
-- [ ] 4.1 Reviewer agent reviews the diff against the spec and constitution (focus: per-teacher scoping, identical 409 responses, shared field rules); confirmed findings are fixed and the suite is green
+- [ ] 4.1 Reviewer agent reviews the diff against the spec and constitution (focus: per-teacher scoping, existing account unchanged on linking, shared field rules); confirmed findings are fixed and the suite is green
 
 ## Workflow follow-up
 

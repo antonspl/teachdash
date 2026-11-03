@@ -12,7 +12,7 @@ proposal.md for motivation.
 **Goals:** the smallest base that #28, #29 and #30 can extend: the link table, the
 package and the teacher role rule.
 
-**Non-Goals:** linking existing accounts, which comes with join links in #29.
+**Non-Goals:** changing an existing student's account when linking it.
 
 ## Decisions
 
@@ -39,16 +39,25 @@ allowing admin on teacher endpoints. Rejected: every teacher query would need a 
 branch, and a mistake there would show one teacher another teacher's students. Teacher
 queries stay scoped to the current teacher with no exception.
 
-### D4. One response for every existing email
-All existing emails give 409 `EMAIL_TAKEN`, including a student already linked to the
-same teacher. A separate "already linked" code is unnecessary and would add one more
-way to learn about an account.
+### D4. Outcomes of adding a student
+
+| Email belongs to | Status | Code |
+|---|---|---|
+| no account | 201 with id and link | |
+| a student not linked to this teacher | 200 with id | |
+| a student linked to this teacher | 409 | `ALREADY_ENROLLED` |
+| a teacher or admin | 409 | `EMAIL_TAKEN` |
+
+Linking does not issue a link: a new one would cancel the unused link another teacher
+already sent, because an account has one unused link at a time. Name and time zone in
+the request apply only to a new account, because they belong to the student.
 
 ### D5. Adding is one transaction
 Creating the user, the link row and the password token happens in one transaction, so a
-failure leaves no account without a teacher. Two parallel requests for one new email
-are resolved by the unique index: the loser gets 409 `EMAIL_TAKEN`, as in
-`TeacherAdminService`.
+failure leaves no account without a teacher. Parallel requests are resolved by unique
+keys. For one new email, the loser gets 409 `EMAIL_TAKEN`, as in `TeacherAdminService`,
+and a retry links the student. For one existing student and one teacher, the loser gets
+409 `ALREADY_ENROLLED`.
 
 ### D6. Per-teacher scoping
 List and details queries join `teacher_students` on the current teacher's id, which
@@ -79,10 +88,14 @@ No new dependencies.
 
 ## Risks / Trade-offs
 
-- [A logged-in teacher can learn that an email is registered from the 409] → Accepted
-  with a few trusted teachers. The role and details stay hidden, and admin teacher
-  creation behaves the same. Login rate limiting (#12) does not cover this endpoint.
-- [Until #29 lands, a student with an account cannot be enrolled at all] → Accepted.
-  The API is not in production yet, and #29 is next in the split.
+- [A teacher can link any student whose email they know, without consent, and then sees
+  the student's name, email and time zone] → Accepted with a few trusted teachers, by
+  the owner's decision. Teachers manage the list. #28 lets a teacher undo a wrong link.
+- [A logged-in teacher can learn whether an email is registered and whether it is a
+  student from the response] → Accepted for the same reason. Admin teacher creation
+  also shows that an email is taken.
+- [A student added by a second teacher has no password and the first teacher's link is
+  lost] → The second teacher gets no link. Reset links (#30) cover this; until then the
+  admin can issue one.
 - [A new student's link is lost or expires after 7 days and the teacher cannot issue
   another until #30] → Accepted. Until then the admin can issue a reset link.

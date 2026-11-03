@@ -14,17 +14,19 @@ Answers to the owner's spec review comments on 2026-11-03.
 
 | # | Question | Answer |
 |---|----------|--------|
-| 4 | Should a teacher link an existing student by email, so a student can have several teachers? | Only if no upcoming issue covers it. #29 does: a logged-in student joins another teacher through the join link. So this change keeps the 409. |
+| 4 | Should a teacher link an existing student by email, so a student can have several teachers? | Yes. This replaces answer 1. Teachers manage their student list and can add a new or an existing student. Students only log in, see their teachers' materials, join lessons and do exercises. They do not choose or search for teachers. |
 | 5 | Should admins use teacher endpoints? | No. Teacher endpoints stay teacher-only, and old R7 moves here from #28 as an admin endpoint. Admin does not add students. |
-| 6 | How many requirements fit in one change? | About 6, with no limit on scenarios. The constitution rule changes in its own PR (#43). |
+| 6 | How many requirements fit in one change? | At most 6, and fewer is better, with no limit on scenarios. The constitution rule changes in its own PR (#43). |
 | 7 | Requirement numbers? | No gaps: R1, R2, R3 here. Later changes continue from the next free number. |
-| 8 | Field validation? | One rule per field across the backend, and ideally the frontend. The frontend part moves to #44. |
+| 8 | Should the rest of #28 join this change? | No, it stays separate. |
+| 9 | May login keep its looser email check? | Yes. |
+| 10 | Field validation? | One rule per field across the backend, and ideally the frontend. The frontend part moves to #44. |
 
 Assumptions (owner may override during review):
 
 - The capability stays `student-enrolment`.
-- Issues #28, #29 and #30 stay separate. This change has 3 requirements, so #28 could still
-  join it under the new limit if the owner wants that.
+- A student already linked to the same teacher gets its own 409 code, `ALREADY_ENROLLED`,
+  so the UI can tell the teacher what happened.
 
 ## Why
 
@@ -33,9 +35,11 @@ sense. This is part 1 of the split of #5 (issue #27).
 
 ## What Changes
 
-- A teacher adds a student by name, email and time zone. A new account is created and
+- A teacher adds a student by name, email and time zone. A new email creates an account
   linked to the teacher, and the response contains a single-use set-password link.
-- Any email that already has an account is rejected with one identical 409.
+- The email of an existing student links that account to the teacher, so a student can
+  have several teachers. The account does not change and no link is returned.
+- The email of a teacher or admin, or of a student already on the list, gets 409.
 - A teacher lists their own students and reads the details of one of them. Any other
   id returns 404.
 - Teacher endpoints are allowed only for teachers.
@@ -44,8 +48,6 @@ sense. This is part 1 of the split of #5 (issue #27).
 
 ## Out of Scope
 
-- Linking an existing student by email. A student joins another teacher through a join
-  link (#29). Until #29 lands, a student who already has an account cannot be enrolled.
 - Admin adding students.
 - The same validation rules in the frontend (#44).
 - Join links (#29); removing a student and student's teachers (#28);
@@ -73,5 +75,4 @@ None.
   change in behaviour.
 - New `/api/teacher/**` role rule in `SecurityConfig`.
 - New table `teacher_students`.
-- #29 becomes the only way to enrol an existing student. #35 should tell the teacher
-  to send a join link when adding a student returns 409.
+- #29 needs another look: a teacher can now add an existing student directly.

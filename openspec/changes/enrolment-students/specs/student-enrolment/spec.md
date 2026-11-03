@@ -2,28 +2,28 @@
 
 ## Purpose
 
-Links students to teachers: teachers add new students and see only their own, and
-admins see any teacher's students. A student studies with more than one teacher by
-joining through a join link.
+Links students to teachers: teachers manage their own student list by adding new or
+existing students, a student can study with several teachers, and admins see any
+teacher's students.
 
 ## ADDED Requirements
 
-### Requirement: R1 Teacher adds a new student
-A teacher SHALL be able to add a student by name, email and time zone. If no account
-has that email, a student account without a password is created and linked to the
-teacher, and the response SHALL contain a single-use set-password link. If any account
-has that email, compared case-insensitively, the response MUST be 409 with code
-`EMAIL_TAKEN`, identical for every kind of account, and nothing changes.
+### Requirement: R1 Teacher adds a new or existing student
+A teacher SHALL be able to add a student by name, email and time zone. Emails are
+compared case-insensitively. A new email creates a student account without a password,
+linked to the teacher, with a single-use set-password link in the response. A student's
+email links that account to the teacher, unchanged and without a link. The email of a
+teacher or admin, or of a student already linked to this teacher, MUST return 409.
 
 #### Scenario: student-enrolment/R1-S1 New email creates and links a student
 - **GIVEN** a logged-in teacher
 - **WHEN** the teacher adds a student with a new email and the returned set-password link is used to set the password "new-password-1"
 - **THEN** the response to adding is 201 with the student's id and a set-password link that starts with the configured base URL (`APP_BASE_URL`) and carries the token in the URL fragment, the student appears in the teacher's student list, and the student logs in with "new-password-1" and has the role student
 
-#### Scenario: student-enrolment/R1-S2 Email of another teacher's student is rejected
+#### Scenario: student-enrolment/R1-S2 Existing student is linked without a new account
 - **GIVEN** a student without a password, linked to teacher B, with an unused set-password link
-- **WHEN** teacher A adds a student with that email
-- **THEN** the response is 409 with code `EMAIL_TAKEN` and no link, the student is not linked to teacher A, the student's name and time zone are unchanged, and the unused link still sets the password
+- **WHEN** teacher A adds a student with that email and a different name and time zone
+- **THEN** the response is 200 with the student's id and no link, the student is in the lists of both A and B, the student's name and time zone are unchanged, no account is created, and the unused link still sets the password
 
 #### Scenario: student-enrolment/R1-S3 Email of a teacher or admin is rejected
 - **GIVEN** a teacher account with email "t@example.com" and an admin account with email "a@example.com"
@@ -33,12 +33,12 @@ has that email, compared case-insensitively, the response MUST be 409 with code
 #### Scenario: student-enrolment/R1-S4 Already linked student is rejected
 - **GIVEN** a student linked to teacher A
 - **WHEN** teacher A adds a student with that email again
-- **THEN** the response is 409 with code `EMAIL_TAKEN` and there is still exactly one link between them
+- **THEN** the response is 409 with code `ALREADY_ENROLLED` and there is still exactly one link between them
 
 #### Scenario: student-enrolment/R1-S5 Email case is ignored
 - **GIVEN** a student account with email "student@example.com"
 - **WHEN** a teacher adds a student with email "STUDENT@example.com"
-- **THEN** the response is 409 with code `EMAIL_TAKEN` and no account is created
+- **THEN** the response is 200, that account is linked to the teacher, and no account is created
 
 #### Scenario: student-enrolment/R1-S6 Invalid input is rejected
 - **GIVEN** a logged-in teacher
