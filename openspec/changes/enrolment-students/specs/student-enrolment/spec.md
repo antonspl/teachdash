@@ -2,8 +2,9 @@
 
 ## Purpose
 
-Links students to teachers: teachers add students and see only their own, and a
-student can study with several teachers.
+Links students to teachers: teachers add new students and see only their own, and
+admins see any teacher's students. A student studies with more than one teacher by
+joining through a join link.
 
 ## ADDED Requirements
 
@@ -44,33 +45,47 @@ has that email, compared case-insensitively, the response MUST be 409 with code
 - **WHEN** the teacher adds a student with a blank name, then with an invalid email, then with an unknown time zone
 - **THEN** each response is 400 with code `VALIDATION_FAILED`, and no account is created
 
-### Requirement: R4 Teacher sees only own students
+### Requirement: R2 Teacher sees only own students
 A teacher's student list SHALL contain exactly the students linked to that teacher,
 ordered by name, each with id, name, email and time zone. Any teacher request about an
 id that is not a student linked to them MUST return 404. Teacher endpoints SHALL be
 allowed only for teachers.
 
-#### Scenario: student-enrolment/R4-S1 List shows only own students
+#### Scenario: student-enrolment/R2-S1 List shows only own students
 - **GIVEN** teacher A with students S1 and S2, and teacher B with student S3
 - **WHEN** teacher A lists students
 - **THEN** the list contains S1 and S2 only, ordered by name
 
-#### Scenario: student-enrolment/R4-S2 Another teacher's student is not found
+#### Scenario: student-enrolment/R2-S2 Another teacher's student is not found
 - **GIVEN** a student linked only to teacher B
 - **WHEN** teacher A requests that student's details, and then the details of an id with no account
 - **THEN** both responses are 404 with code `NOT_FOUND`
 
-#### Scenario: student-enrolment/R4-S3 Student cannot call teacher endpoints
+#### Scenario: student-enrolment/R2-S3 Student cannot call teacher endpoints
 - **GIVEN** a logged-in student
 - **WHEN** the student calls the teacher endpoint that lists students
 - **THEN** the response is 403
 
-#### Scenario: student-enrolment/R4-S4 Teacher reads own student's details
+#### Scenario: student-enrolment/R2-S4 Teacher reads own student's details
 - **GIVEN** a student linked to teacher A
 - **WHEN** teacher A requests that student's details
 - **THEN** the response is 200 with the student's id, name, email and time zone
 
-#### Scenario: student-enrolment/R4-S5 Admin cannot call teacher endpoints
+#### Scenario: student-enrolment/R2-S5 Admin cannot call teacher endpoints
 - **GIVEN** a logged-in admin
 - **WHEN** the admin calls the teacher endpoint that lists students
 - **THEN** the response is 403
+
+### Requirement: R3 Admin sees any teacher's students
+An admin SHALL be able to list the students linked to any teacher, ordered by name,
+each with id, name, email and time zone. An id that is not a teacher MUST return 404.
+
+#### Scenario: student-enrolment/R3-S1 Admin lists a teacher's students
+- **GIVEN** teacher A with students S1 and S2, and teacher B with student S3
+- **WHEN** the admin lists teacher A's students
+- **THEN** the response is 200 and the list contains S1 and S2 only, ordered by name
+
+#### Scenario: student-enrolment/R3-S2 Id that is not a teacher is not found
+- **GIVEN** a logged-in admin and a student account
+- **WHEN** the admin lists the students of the student's id, and then of an id with no account
+- **THEN** both responses are 404 with code `NOT_FOUND`

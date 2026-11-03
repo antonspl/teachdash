@@ -5,7 +5,7 @@
 Builds on `accounts`: users with one role, single-use password links, role rules in
 `SecurityConfig`, 409 `EMAIL_TAKEN` and a case-insensitive unique index on email. The
 teacher creation flow in `TeacherAdminService` is the model for adding a student. See
-proposal.md for motivation; the student rule differs only in role and in the new link.
+proposal.md for motivation.
 
 ## Goals / Non-Goals
 
@@ -26,15 +26,18 @@ classes it needs become `public` if they are not already.
 | Method | Path | Success | Spec |
 |---|---|---|---|
 | POST | `/api/teacher/students` | 201 `{id, setPasswordLink}` | R1 |
-| GET | `/api/teacher/students` | 200 list of `{id, name, email, timeZone}` | R4 |
-| GET | `/api/teacher/students/{id}` | 200 `{id, name, email, timeZone}` | R4 |
-
-The request reuses the validation of `CreateTeacherRequest`: name not blank, at most
-200; email valid, at most 320; time zone a valid id.
+| GET | `/api/teacher/students` | 200 list of `{id, name, email, timeZone}` | R2 |
+| GET | `/api/teacher/students/{id}` | 200 `{id, name, email, timeZone}` | R2 |
+| GET | `/api/admin/teachers/{id}/students` | 200 list of `{id, name, email, timeZone}` | R3 |
 
 ### D3. Role rule
 `/api/teacher/**` gets `hasRole("TEACHER")` in `SecurityConfig`, like `/api/admin/**`.
 Alternative: method annotations. Rejected: the project keeps role rules in one place.
+
+Admin reads through its own endpoint, not through `/api/teacher/**`. Alternative:
+allowing admin on teacher endpoints. Rejected: every teacher query would need a role
+branch, and a mistake there would show one teacher another teacher's students. Teacher
+queries stay scoped to the current teacher with no exception.
 
 ### D4. One response for every existing email
 All existing emails give 409 `EMAIL_TAKEN`, including a student already linked to the
@@ -60,6 +63,17 @@ teacher cannot probe other teachers' students.
 
 The schema does not check that the roles are right. Only the service writes this table,
 and a check would need a trigger, which is not worth it here.
+
+### D8. One validation rule per field
+Each field's rule is defined once in `common.validation` as a composed constraint:
+`@PersonName` (not blank, at most 200) and `@EmailAddress` (not blank, valid, at most
+320). `@TimeZoneId` also includes not blank. `CreateTeacherRequest`,
+`UpdateProfileRequest` and the new request use them, so they cannot drift apart. Errors
+stay 400 `VALIDATION_FAILED`, and existing tests guard the refactor. Alternative:
+copying the annotations. Rejected: nothing would keep the copies equal.
+
+`LoginRequest` keeps its own email rule: it checks credentials and does not store an
+email. A malformed email there must stay an invalid login, not a validation error.
 
 No new dependencies.
 
