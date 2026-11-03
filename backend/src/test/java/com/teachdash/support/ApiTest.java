@@ -135,6 +135,17 @@ public abstract class ApiTest {
 		return createUser("STUDENT", "Student", email, password, true);
 	}
 
+	protected void assignStudent(UUID teacherId, UUID studentId) {
+		jdbc.sql("""
+				insert into teacher_students (teacher_id, student_id, created_at)
+				values (:teacher, :student, :now)
+				""")
+				.param("teacher", teacherId)
+				.param("student", studentId)
+				.param("now", Timestamp.from(Instant.now(clock)))
+				.update();
+	}
+
 	protected TestClient loggedInAdmin() {
 		createAdmin("admin@example.com", "admin-password-1");
 		return loggedInAs("admin@example.com");
