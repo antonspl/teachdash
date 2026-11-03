@@ -3,7 +3,7 @@
 ## Purpose
 
 Links students to teachers: a teacher registers new students and sees only their own,
-and admins see any teacher's students. A student can study with several teachers, and
+and admins see all assignments. A student can study with several teachers, and
 an existing student assigns themselves through a link from the teacher.
 
 ## ADDED Requirements
@@ -75,9 +75,10 @@ allowed only for teachers.
 - **WHEN** the admin calls the teacher endpoint that lists students
 - **THEN** the response is 403
 
-### Requirement: R3 Admin sees any teacher's students
-An admin SHALL be able to list the students assigned to any teacher, ordered by name,
-each with id, name, email and time zone. An id that is not a teacher MUST return 404.
+### Requirement: R3 Admin sees assignments
+An admin SHALL be able to list the students assigned to any teacher and the teachers of
+any student, ordered by name, each with id, name, email and time zone. An id that is not
+a teacher or a student, respectively, MUST return 404.
 
 #### Scenario: student-enrolment/R3-S1 Admin lists a teacher's students
 - **GIVEN** teacher A with students S1 and S2, and teacher B with student S3
@@ -87,4 +88,14 @@ each with id, name, email and time zone. An id that is not a teacher MUST return
 #### Scenario: student-enrolment/R3-S2 Id that is not a teacher is not found
 - **GIVEN** a logged-in admin and a student account
 - **WHEN** the admin lists the students of the student's id, and then of an id with no account
+- **THEN** both responses are 404 with code `NOT_FOUND`
+
+#### Scenario: student-enrolment/R3-S3 Admin lists a student's teachers
+- **GIVEN** a student assigned to teachers A and B, and teacher C without that student
+- **WHEN** the admin lists the student's teachers
+- **THEN** the response is 200 and the list contains A and B only, ordered by name, each with id, name, email and time zone
+
+#### Scenario: student-enrolment/R3-S4 Id that is not a student is not found
+- **GIVEN** a logged-in admin and a teacher account
+- **WHEN** the admin lists the teachers of the teacher's id, and then of an id with no account
 - **THEN** both responses are 404 with code `NOT_FOUND`

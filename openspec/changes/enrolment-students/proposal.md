@@ -27,6 +27,12 @@ Assumptions (owner may override during review):
 - The capability stays `student-enrolment`.
 - Each 409 case has its own code, so the UI can tell the teacher what to do next.
 
+Answers to the owner's test review comments on 2026-11-03.
+
+| # | Question | Answer |
+|---|----------|--------|
+| 11 | Where do admin endpoints go? | In their own controller under an admin package. An admin can also list a student's teachers. |
+
 ## Why
 
 Teachers need students on the platform before courses, homework or schedule make
@@ -41,7 +47,7 @@ sense. This is part 1 of the split of #5 (issue #27).
 - A teacher lists their own students and reads the details of one of them. Any other
   id returns 404.
 - Teacher endpoints are allowed only for teachers.
-- An admin lists any teacher's students.
+- An admin lists any teacher's students and any student's teachers.
 - The name, email and time zone rules become one shared definition in the backend.
 
 ## Out of Scope
@@ -68,7 +74,7 @@ None.
 ## Impact
 
 - New package `com.teachdash.enrolment`, endpoints under `/api/teacher/students`, and
-  `GET /api/admin/teachers/{id}/students`.
+  `GET /api/admin/teachers/{id}/students` and `GET /api/admin/students/{id}/teachers`.
 - `CreateTeacherRequest` and `UpdateProfileRequest` move to shared field rules, with no
   change in behaviour.
 - New `/api/teacher/**` role rule in `SecurityConfig`.

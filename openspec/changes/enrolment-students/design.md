@@ -17,7 +17,10 @@ package and the teacher role rule.
 ## Decisions
 
 ### D1. Package
-`com.teachdash.enrolment` with `api`, `api.dto`, `domain` and `persistence`. It calls
+`com.teachdash.enrolment` with `api`, `api.admin`, `api.dto`, `domain` and `persistence`.
+`TeacherStudentController` in `api` holds the teacher endpoints, and
+`AdminEnrolmentController` in `api.admin` holds the admin endpoints, so the feature stays
+one package as the constitution requires. It calls
 the accounts `UserRepository` and `PasswordLinkService` and duplicates neither. Accounts
 classes it needs become `public` if they are not already.
 
@@ -29,6 +32,7 @@ classes it needs become `public` if they are not already.
 | GET | `/api/teacher/students` | 200 list of `{id, name, email, timeZone}` | R2 |
 | GET | `/api/teacher/students/{id}` | 200 `{id, name, email, timeZone}` | R2 |
 | GET | `/api/admin/teachers/{id}/students` | 200 list of `{id, name, email, timeZone}` | R3 |
+| GET | `/api/admin/students/{id}/teachers` | 200 list of `{id, name, email, timeZone}` | R3 |
 
 ### D3. Role rule
 `/api/teacher/**` gets `hasRole("TEACHER")` in `SecurityConfig`, like `/api/admin/**`.
@@ -65,7 +69,8 @@ teacher cannot probe other teachers' students.
 ### D7. Flyway migration
 - `V3__teacher_students.sql`: `teacher_students` (`teacher_id`, `student_id`,
   `created_at`; primary key on both; both are foreign keys to `users`; index on
-  `student_id`, which #28 needs for a student's teachers). No cascade: accounts are
+  `student_id` for a student's teachers). Lookups by `teacher_id` use the primary key,
+  whose first column it is, so a second index would only slow writes. No cascade: accounts are
   never deleted.
 
 The schema does not check that the roles are right. Only the service writes this table,
