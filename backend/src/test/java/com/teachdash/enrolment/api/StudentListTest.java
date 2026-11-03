@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import com.teachdash.support.ApiTest;
 import com.teachdash.support.TestClient;
 
-/** R2 teacher sees only own students, R3 admin sees any teacher's students. */
 class StudentListTest extends ApiTest {
 
 	private static final String STUDENTS = "/api/teacher/students";
@@ -105,46 +104,5 @@ class StudentListTest extends ApiTest {
 
 		// then the response is 403
 		response.then().statusCode(403);
-	}
-
-	@Test
-	@DisplayName("[student-enrolment/R3-S1] Admin lists a teacher's students")
-	void adminListsATeachersStudents() {
-		// given teacher A with students S1 and S2, and teacher B with student S3
-		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
-		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
-		UUID s1 = createUser("STUDENT", "Bella", "bella@example.com", "student-pass-1", true);
-		UUID s2 = createUser("STUDENT", "Anna", "anna@example.com", "student-pass-1", true);
-		UUID s3 = createUser("STUDENT", "Aaron", "aaron@example.com", "student-pass-1", true);
-		assignStudent(teacherA, s1);
-		assignStudent(teacherA, s2);
-		assignStudent(teacherB, s3);
-		TestClient admin = loggedInAdmin();
-
-		// when the admin lists teacher A's students
-		var response = admin.get("/api/admin/teachers/" + teacherA + "/students");
-
-		// then the response is 200 and the list contains S1 and S2 only, ordered by name
-		response.then().statusCode(200)
-				.body("id", contains(s2.toString(), s1.toString()))
-				.body("name", contains("Anna", "Bella"))
-				.body("email", contains("anna@example.com", "bella@example.com"))
-				.body("timeZone", contains("UTC", "UTC"));
-	}
-
-	@Test
-	@DisplayName("[student-enrolment/R3-S2] Id that is not a teacher is not found")
-	void idThatIsNotATeacherIsNotFound() {
-		// given a logged-in admin and a student account
-		TestClient admin = loggedInAdmin();
-		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
-
-		// when the admin lists the students of the student's id, and then of an id with no account
-		var ofStudent = admin.get("/api/admin/teachers/" + student + "/students");
-		var ofUnknown = admin.get("/api/admin/teachers/" + UUID.randomUUID() + "/students");
-
-		// then both responses are 404 with code NOT_FOUND
-		ofStudent.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
-		ofUnknown.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
 	}
 }

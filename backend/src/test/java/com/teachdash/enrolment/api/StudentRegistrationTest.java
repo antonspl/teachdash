@@ -18,7 +18,6 @@ import com.teachdash.support.TestClient;
 
 import io.restassured.response.Response;
 
-/** R1 teacher registers a new student. */
 class StudentRegistrationTest extends ApiTest {
 
 	private static final String STUDENTS = "/api/teacher/students";

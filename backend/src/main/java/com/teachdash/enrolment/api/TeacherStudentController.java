@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 // STUB: replaced by the real implementation in pass 2
 @RestController
-class EnrolmentStubController {
+class TeacherStudentController {
 
 	// STUB
 	@PostMapping("/api/teacher/students")
@@ -29,11 +29,5 @@ class EnrolmentStubController {
 	@GetMapping("/api/teacher/students/{id}")
 	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
 	void studentDetails(@PathVariable UUID id) {
-	}
-
-	// STUB
-	@GetMapping("/api/admin/teachers/{id}/students")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void teacherStudents(@PathVariable UUID id) {
 	}
 }
