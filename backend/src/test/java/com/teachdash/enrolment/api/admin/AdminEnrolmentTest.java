@@ -92,4 +92,19 @@ class AdminEnrolmentTest extends ApiTest {
 		ofTeacher.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
 		ofUnknown.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
 	}
+
+	@Test
+	@DisplayName("[student-enrolment/R3-S5] Malformed id is not found")
+	void malformedIdIsNotFound() {
+		// given a logged-in admin
+		TestClient admin = loggedInAdmin();
+
+		// when the admin lists the students of the id "not-a-uuid", and then the teachers of the id "not-a-uuid"
+		var students = admin.get("/api/admin/teachers/not-a-uuid/students");
+		var teachers = admin.get("/api/admin/students/not-a-uuid/teachers");
+
+		// then both responses are 404 with code NOT_FOUND
+		students.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
+		teachers.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
+	}
 }

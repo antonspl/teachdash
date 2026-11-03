@@ -7,7 +7,7 @@
 - [x] 1.3 Add an `ApiTest` helper that links a teacher and a student directly in the database; verify it compiles and existing tests still pass
 - [x] 1.4 Write one test per scenario in `specs/student-enrolment/spec.md` (15 scenarios) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify `scripts/check-scenario-coverage.sh` passes
 - [x] 1.5 Run `./gradlew test`; verify every new test fails at its THEN step and all other tests pass
-- [ ] 1.6 Write tests for the scenarios added in the code review (R1-S7, R2-S6, R3-S5); verify the coverage script passes and each fails at its THEN step with all other tests green
+- [x] 1.6 Write tests for the scenarios added in the code review (R1-S7, R2-S6, R3-S5); verify the coverage script passes and each fails at its THEN step with all other tests green
 
 ## 2. Test review
 

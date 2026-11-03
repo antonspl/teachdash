@@ -181,6 +181,28 @@ class StudentRegistrationTest extends ApiTest {
 		assertEquals(usersBefore, jdbc.sql("select count(*) from users").query(Long.class).single());
 	}
 
+	@Test
+	@DisplayName("[student-enrolment/R1-S7] Email with invisible characters is rejected")
+	void emailWithInvisibleCharactersIsRejected() {
+		// given a logged-in teacher and a student account with email "nina@example.com"
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		createUser("STUDENT", "Nina", "nina@example.com", null, true);
+		TestClient teacher = loggedInAs("teacher@example.com");
+		long usersBefore = jdbc.sql("select count(*) from users").query(Long.class).single();
+
+		// when the teacher registers a student with email "nina\u00A0@example.com", then with email "\u2003@example.com"
+		var noBreakSpace = teacher.post(STUDENTS,
+				Map.of("name", "Nina", "email", "nina\u00A0@example.com", "timeZone", "UTC"));
+		var emSpace = teacher.post(STUDENTS,
+				Map.of("name", "Nina", "email", "\u2003@example.com", "timeZone", "UTC"));
+
+		// then each response is 400 with code VALIDATION_FAILED
+		noBreakSpace.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+		emSpace.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+		// and no account is created
+		assertEquals(usersBefore, jdbc.sql("select count(*) from users").query(Long.class).single());
+	}
+
 	/** A stub answer has no link; "no-link" keeps the setup from failing before THEN. */
 	private static String tokenFromResponse(Response response) {
 		String link = response.getContentType() != null && response.getContentType().contains("json")

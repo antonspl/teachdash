@@ -105,4 +105,18 @@ class StudentListTest extends ApiTest {
 		// then the response is 403
 		response.then().statusCode(403);
 	}
+
+	@Test
+	@DisplayName("[student-enrolment/R2-S6] Malformed id is not found")
+	void malformedIdIsNotFound() {
+		// given a logged-in teacher
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+
+		// when the teacher requests the details of the id "not-a-uuid"
+		var response = teacher.get(STUDENTS + "/not-a-uuid");
+
+		// then the response is 404 with code NOT_FOUND
+		response.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
+	}
 }
