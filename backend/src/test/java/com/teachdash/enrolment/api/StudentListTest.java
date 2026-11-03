@@ -2,7 +2,9 @@ package com.teachdash.enrolment.api;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -118,5 +120,48 @@ class StudentListTest extends ApiTest {
 
 		// then the response is 404 with code NOT_FOUND
 		response.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R2-S7] Students and admins cannot register or read details")
+	void studentsAndAdminsCannotRegisterOrReadDetails() {
+		// given a logged-in student and a logged-in admin
+		UUID teacherId = createTeacher("teacher@example.com", "teacher-pass-1");
+		UUID other = createUser("STUDENT", "Other", "other@example.com", "student-pass-1", true);
+		assignStudent(teacherId, other);
+		createStudent("student@example.com", "student-pass-1");
+		TestClient student = loggedInAs("student@example.com");
+		TestClient admin = loggedInAdmin();
+		long usersBefore = jdbc.sql("select count(*) from users").query(Long.class).single();
+		Map<String, String> body = Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC");
+
+		// when each registers a student and requests a student's details
+		var studentRegisters = student.post(STUDENTS, body);
+		var studentReads = student.get(STUDENTS + "/" + other);
+		var adminRegisters = admin.post(STUDENTS, body);
+		var adminReads = admin.get(STUDENTS + "/" + other);
+
+		// then all responses are 403
+		studentRegisters.then().statusCode(403);
+		studentReads.then().statusCode(403);
+		adminRegisters.then().statusCode(403);
+		adminReads.then().statusCode(403);
+		// and no account is created
+		assertEquals(usersBefore, jdbc.sql("select count(*) from users").query(Long.class).single());
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R2-S8] Teacher endpoints require a session")
+	void teacherEndpointsRequireASession() {
+		// given no session
+		TestClient anonymous = newClient();
+
+		// when a client calls the teacher endpoints that list students and read details
+		var list = anonymous.get(STUDENTS);
+		var details = anonymous.get(STUDENTS + "/" + UUID.randomUUID());
+
+		// then both responses are 401 with code UNAUTHENTICATED
+		list.then().statusCode(401).body("code", equalTo("UNAUTHENTICATED"));
+		details.then().statusCode(401).body("code", equalTo("UNAUTHENTICATED"));
 	}
 }

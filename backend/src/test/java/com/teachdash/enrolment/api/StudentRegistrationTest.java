@@ -7,16 +7,21 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.teachdash.support.ApiTest;
 import com.teachdash.support.TestClient;
-
-import io.restassured.response.Response;
 
 class StudentRegistrationTest extends ApiTest {
 
@@ -34,7 +39,7 @@ class StudentRegistrationTest extends ApiTest {
 				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "Europe/Berlin"));
 		var passwordSet = newClient().post(
 				"/api/password-links",
-				Map.of("token", tokenFromResponse(response), "password", "new-password-1"));
+				Map.of("token", tokenFrom(response.path("setPasswordLink")), "password", "new-password-1"));
 
 		// then the response is 201 with the student's id and a link with the base URL and a fragment token
 		response.then().statusCode(201)
@@ -203,10 +208,148 @@ class StudentRegistrationTest extends ApiTest {
 		assertEquals(usersBefore, jdbc.sql("select count(*) from users").query(Long.class).single());
 	}
 
-	/** A stub answer has no link; "no-link" keeps the setup from failing before THEN. */
-	private static String tokenFromResponse(Response response) {
-		String link = response.getContentType() != null && response.getContentType().contains("json")
-				? response.path("setPasswordLink") : null;
-		return link == null ? "no-link" : tokenFrom(link);
+	@Test
+	@DisplayName("[student-enrolment/R1-S8] Field limits apply")
+	void fieldLimitsApply() {
+		// given a logged-in teacher
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+		long usersBefore = jdbc.sql("select count(*) from users").query(Long.class).single();
+
+		// when the teacher registers a student with each of these invalid values
+		var longName = teacher.post(STUDENTS,
+				Map.of("name", "a".repeat(201), "email", "student@example.com", "timeZone", "UTC"));
+		var longEmail = teacher.post(STUDENTS,
+				Map.of("name", "Student", "email", "a".repeat(309) + "@example.com", "timeZone", "UTC"));
+		var blankEmail = teacher.post(STUDENTS,
+				Map.of("name", "Student", "email", " ", "timeZone", "UTC"));
+		var blankTimeZone = teacher.post(STUDENTS,
+				Map.of("name", "Student", "email", "student@example.com", "timeZone", " "));
+		var noTimeZone = teacher.post(STUDENTS,
+				Map.of("name", "Student", "email", "student@example.com"));
+		var invisibleName = teacher.post(STUDENTS,
+				Map.of("name", "\u00A0", "email", "student@example.com", "timeZone", "UTC"));
+
+		// then each response is 400 with code VALIDATION_FAILED
+		longName.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+		longEmail.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+		blankEmail.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+		blankTimeZone.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+		noTimeZone.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+		invisibleName.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+		// and no account is created
+		assertEquals(usersBefore, jdbc.sql("select count(*) from users").query(Long.class).single());
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R1-S9] Surrounding whitespace is ignored")
+	void surroundingWhitespaceIsIgnored() {
+		// given a logged-in teacher and a student account with email "nina@example.com"
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		createUser("STUDENT", "Nina", "nina@example.com", null, true);
+		TestClient teacher = loggedInAs("teacher@example.com");
+		String name = "a".repeat(199);
+
+		// when the teacher registers a student with a 199-character name followed by two spaces and email " anna@example.com ", then with email " nina@example.com "
+		var padded = teacher.post(STUDENTS,
+				Map.of("name", name + "  ", "email", " anna@example.com ", "timeZone", "UTC"));
+		var existing = teacher.post(STUDENTS,
+				Map.of("name", "Nina", "email", " nina@example.com ", "timeZone", "UTC"));
+
+		// then the first response is 201 and the account stores the name and email without the whitespace
+		padded.then().statusCode(201);
+		var stored = jdbc.sql("select name, email from users where id = :id")
+				.param("id", UUID.fromString(padded.path("id")))
+				.query((rs, i) -> rs.getString("name") + "|" + rs.getString("email"))
+				.single();
+		assertEquals(name + "|anna@example.com", stored);
+		// and the second response is 409 with code STUDENT_EXISTS
+		existing.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R1-S10] Submitted values are stored")
+	void submittedValuesAreStored() {
+		// given a logged-in teacher
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+
+		// when the teacher registers a student with name "\u0410\u043d\u043d\u0430", email "anna@example.com" and time zone "Europe/Moscow"
+		var created = teacher.post(STUDENTS,
+				Map.of("name", "\u0410\u043d\u043d\u0430", "email", "anna@example.com", "timeZone", "Europe/Moscow"));
+
+		// then the student's details return that name, email and time zone
+		created.then().statusCode(201);
+		teacher.get(STUDENTS + "/" + created.path("id")).then().statusCode(200)
+				.body("name", equalTo("\u0410\u043d\u043d\u0430"))
+				.body("email", equalTo("anna@example.com"))
+				.body("timeZone", equalTo("Europe/Moscow"));
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R1-S11] Request without a CSRF token is rejected")
+	void requestWithoutACsrfTokenIsRejected() {
+		// given a logged-in teacher
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com").withoutCsrfHeader();
+		long usersBefore = jdbc.sql("select count(*) from users").query(Long.class).single();
+
+		// when the teacher registers a student without a CSRF token
+		var response = teacher.post(STUDENTS,
+				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+
+		// then the response is 403 with code CSRF_INVALID
+		response.then().statusCode(403).body("code", equalTo("CSRF_INVALID"));
+		// and no account is created
+		assertEquals(usersBefore, jdbc.sql("select count(*) from users").query(Long.class).single());
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R1-S13] Parallel requests create one account")
+	void parallelRequestsCreateOneAccount() throws Exception {
+		// given two logged-in teachers
+		createTeacher("a@example.com", "teacher-pass-1");
+		createTeacher("b@example.com", "teacher-pass-1");
+		int requests = 8;
+		List<TestClient> clients = new ArrayList<>();
+		for (int i = 0; i < requests; i++) {
+			clients.add(loggedInAs(i % 2 == 0 ? "a@example.com" : "b@example.com"));
+		}
+		CountDownLatch ready = new CountDownLatch(requests);
+		CountDownLatch start = new CountDownLatch(1);
+		ExecutorService executor = Executors.newFixedThreadPool(requests);
+
+		// when both send several parallel requests to register the same new email
+		List<Future<Integer>> statuses = new ArrayList<>();
+		try {
+			for (TestClient client : clients) {
+				Callable<Integer> call = () -> {
+					ready.countDown();
+					start.await();
+					return client.post(STUDENTS,
+							Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"))
+							.statusCode();
+				};
+				statuses.add(executor.submit(call));
+			}
+			ready.await();
+			start.countDown();
+			List<Integer> codes = new ArrayList<>();
+			for (Future<Integer> status : statuses) {
+				codes.add(status.get());
+			}
+
+			// then exactly one response is 201 and all others are 409
+			assertEquals(1, codes.stream().filter(code -> code == 201).count(), codes.toString());
+			assertEquals(requests - 1, codes.stream().filter(code -> code == 409).count(), codes.toString());
+		} finally {
+			executor.shutdownNow();
+		}
+		// and there is exactly one account, one assignment and one unused link
+		assertEquals(1, jdbc.sql("select count(*) from users where email = 'nina@example.com'")
+				.query(Long.class).single());
+		assertEquals(1, jdbc.sql("select count(*) from teacher_students").query(Long.class).single());
+		assertEquals(1, jdbc.sql("select count(*) from one_time_tokens where used_at is null")
+				.query(Long.class).single());
 	}
 }
