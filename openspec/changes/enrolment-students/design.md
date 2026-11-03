@@ -29,10 +29,10 @@ classes it needs become `public` if they are not already.
 | Method | Path | Success | Spec |
 |---|---|---|---|
 | POST | `/api/teacher/students` | 201 `{id, setPasswordLink}` | R1 |
-| GET | `/api/teacher/students` | 200 list of `{id, name, email, timeZone}` | R2 |
-| GET | `/api/teacher/students/{id}` | 200 `{id, name, email, timeZone}` | R2 |
-| GET | `/api/admin/teachers/{id}/students` | 200 list of `{id, name, email, timeZone}` | R3 |
-| GET | `/api/admin/students/{id}/teachers` | 200 list of `{id, name, email, timeZone}` | R3 |
+| GET | `/api/teacher/students` | 200 list of `{id, name, email, timeZone, active}` | R2 |
+| GET | `/api/teacher/students/{id}` | 200 `{id, name, email, timeZone, active}` | R2 |
+| GET | `/api/admin/teachers/{id}/students` | 200 list of `{id, name, email, timeZone, active}` | R3 |
+| GET | `/api/admin/students/{id}/teachers` | 200 list of `{id, name, email, timeZone, active}` | R3 |
 
 ### D3. Role rule
 `/api/teacher/**` gets `hasRole("TEACHER")` in `SecurityConfig`, like `/api/admin/**`.
@@ -78,11 +78,12 @@ and a check would need a trigger, which is not worth it here.
 
 ### D8. One validation rule per field
 Each field's rule is defined once in `common.validation` as a composed constraint:
-`@PersonName` (not blank, at most 200) and `@EmailAddress` (not blank, valid, at most
+`@PersonName` (not blank, at most 200, at least one character outside `\p{Z}` and
+`\p{C}`) and `@EmailAddress` (not blank, valid, at most
 320, no Unicode separator or control or format characters). `@TimeZoneId` also includes not blank. `CreateTeacherRequest`,
 `UpdateProfileRequest` and the new request use them, so they cannot drift apart. Errors
-stay 400 `VALIDATION_FAILED`. Existing tests guard the refactor only in part; #47 adds
-the missing length and blank cases. Alternative:
+stay 400 `VALIDATION_FAILED`. `@ReportAsSingleViolation` makes each constraint's message
+the one reported. Scenarios R1-S8 and accounts R11-S1 and R11-S2 guard the refactor. Alternative:
 copying the annotations. Rejected: nothing would keep the copies equal.
 
 `LoginRequest` keeps its own email rule: it checks credentials and does not store an
@@ -97,6 +98,31 @@ anyway.
 The enrolment controllers map a path id that is not a UUID to 404 `NOT_FOUND` with a local
 `@ExceptionHandler`. Alternative: a global handler. Rejected: accounts endpoints have
 their own behaviour here, and this change does not alter them.
+
+### D10. Whitespace is removed before validation
+Compact constructors of `RegisterStudentRequest`, `CreateTeacherRequest`,
+`UpdateProfileRequest` and `LoginRequest` strip name and email, keeping null as null. The
+`strip()` calls leave the services, so the value checked is the value stored.
+`AdminBootstrap` keeps its own strip because it reads environment variables, not requests.
+
+### D11. One account creation method
+A public accounts method, `createPasswordlessUser(role, name, email, timeZone)`, inserts the
+user, maps a lost race to 409 `EMAIL_TAKEN` and issues the set-password link.
+`TeacherAdminService` and `StudentRegistrationService` both call it and join its
+transaction. Each still does its own check for an existing email, because their 409 codes
+differ.
+
+### D12. Records
+`Person` (with `active`) and one `CreatedAccount(id, setPasswordLink)` replace `PersonResponse`,
+`RegisteredStudent`, `RegisterStudentResponse`, `CreatedTeacher` and `CreateTeacherResponse`.
+Both live in the domain and controllers return them directly, so no record copies another
+field by field. The JSON of existing endpoints does not change. This is a small exception
+to the constitution's `api/dto` layout, and the owner reviews it here.
+
+### D13. Role check without loading the user
+`UserRepository.existsByIdAndRole` answers the admin 404 checks and teacher deactivation, so
+these paths no longer load `password_hash`. `reactivate` still loads the teacher, because
+it needs the fields.
 
 No new dependencies.
 

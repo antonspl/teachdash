@@ -26,6 +26,8 @@ Assumptions (owner may override during review):
 
 - The capability stays `student-enrolment`.
 - Each 409 case has its own code, so the UI can tell the teacher what to do next.
+- The active flag is on every person in the lists, for teachers too, because one response
+  shape is simpler. Today a student is always active.
 
 Answers to the owner's test review comments on 2026-11-03.
 
@@ -38,7 +40,8 @@ Answers to the owner's code review on 2026-11-03.
 | # | Question | Answer |
 |---|----------|--------|
 | 12 | A malformed id returns 400, but R2 and R3 require 404. Which is right? | The spec: 404. |
-| 13 | Emails with invisible characters pass validation. Should they? | No. It breaks R1-S6 and creates look-alike accounts, so it is fixed here. Other review findings go to #47, as constitution section 1 step 8 says. |
+| 13 | Emails with invisible characters pass validation. Should they? | No. It breaks R1-S6 and creates look-alike accounts, so it is fixed here. |
+| 14 | Should the other findings stay in #47? | No. Fix everything from #47 in this PR and close the issue. |
 
 ## Why
 
@@ -55,7 +58,10 @@ sense. This is part 1 of the split of #5 (issue #27).
   id returns 404.
 - Teacher endpoints are allowed only for teachers.
 - An admin lists any teacher's students and any student's teachers.
-- The name, email and time zone rules become one shared definition in the backend.
+- The name, email and time zone rules become one shared definition in the backend, and
+  whitespace around a name or email is removed before they are checked.
+- Admin lists show whether a person is active.
+- Account creation moves to one accounts method, and redundant records are removed.
 
 ## Out of Scope
 
@@ -76,7 +82,7 @@ sense. This is part 1 of the split of #5 (issue #27).
 
 ### Modified Capabilities
 
-None.
+- `accounts`: one rule for name, email and time zone, including whitespace handling.
 
 ## Impact
 

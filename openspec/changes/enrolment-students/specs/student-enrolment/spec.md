@@ -49,9 +49,39 @@ Any email that already has an account MUST return 409 and change nothing.
 - **WHEN** the teacher registers a student with email "nina\u00A0@example.com", then with email "\u2003@example.com"
 - **THEN** each response is 400 with code `VALIDATION_FAILED`, and no account is created
 
+#### Scenario: student-enrolment/R1-S8 Field limits apply
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher registers a student with a name of 201 characters, an email of 321 characters, a blank email, a blank time zone, no time zone, and a name of only "\u00A0"
+- **THEN** each response is 400 with code `VALIDATION_FAILED`, and no account is created
+
+#### Scenario: student-enrolment/R1-S9 Surrounding whitespace is ignored
+- **GIVEN** a logged-in teacher and a student account with email "nina@example.com"
+- **WHEN** the teacher registers a student with a 199-character name followed by two spaces and email " anna@example.com ", then with email " nina@example.com "
+- **THEN** the first response is 201 and the account stores the name and email without the whitespace, and the second response is 409 with code `STUDENT_EXISTS`
+
+#### Scenario: student-enrolment/R1-S10 Submitted values are stored
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher registers a student with name "Анна", email "anna@example.com" and time zone "Europe/Moscow"
+- **THEN** the student's details return that name, email and time zone
+
+#### Scenario: student-enrolment/R1-S11 Request without a CSRF token is rejected
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher registers a student without a CSRF token
+- **THEN** the response is 403 with code `CSRF_INVALID`, and no account is created
+
+#### Scenario: student-enrolment/R1-S12 Failed registration leaves nothing behind
+- **GIVEN** a logged-in teacher and a failure while the set-password link is issued
+- **WHEN** the teacher registers a student with a new email
+- **THEN** the response is 500, and neither an account nor an assignment is created
+
+#### Scenario: student-enrolment/R1-S13 Parallel requests create one account
+- **GIVEN** two logged-in teachers
+- **WHEN** both send several parallel requests to register the same new email
+- **THEN** exactly one response is 201, all others are 409, and there is exactly one account, one assignment and one unused link
+
 ### Requirement: R2 Teacher sees only own students
 A teacher's student list SHALL contain exactly the students assigned to that teacher,
-ordered by name, each with id, name, email and time zone. Any teacher request about an
+ordered by name, each with id, name, email, time zone and active flag. Any teacher request about an
 id that is not a student assigned to them, including a malformed id, MUST return 404. Teacher endpoints SHALL be
 allowed only for teachers.
 
@@ -85,9 +115,19 @@ allowed only for teachers.
 - **WHEN** the teacher requests the details of the id "not-a-uuid"
 - **THEN** the response is 404 with code `NOT_FOUND`
 
+#### Scenario: student-enrolment/R2-S7 Students and admins cannot register or read details
+- **GIVEN** a logged-in student and a logged-in admin
+- **WHEN** each registers a student and requests a student's details
+- **THEN** all responses are 403, and no account is created
+
+#### Scenario: student-enrolment/R2-S8 Teacher endpoints require a session
+- **GIVEN** no session
+- **WHEN** a client calls the teacher endpoints that list students and read details
+- **THEN** both responses are 401 with code `UNAUTHENTICATED`
+
 ### Requirement: R3 Admin sees assignments
 An admin SHALL be able to list the students assigned to any teacher and the teachers of
-any student, ordered by name, each with id, name, email and time zone. An id that is not
+any student, ordered by name, each with id, name, email, time zone and active flag. An id that is not
 a teacher or a student, respectively, including a malformed id, MUST return 404.
 
 #### Scenario: student-enrolment/R3-S1 Admin lists a teacher's students
@@ -114,3 +154,13 @@ a teacher or a student, respectively, including a malformed id, MUST return 404.
 - **GIVEN** a logged-in admin
 - **WHEN** the admin lists the students of the id "not-a-uuid", and then the teachers of the id "not-a-uuid"
 - **THEN** both responses are 404 with code `NOT_FOUND`
+
+#### Scenario: student-enrolment/R3-S6 Teachers and students cannot call admin endpoints
+- **GIVEN** teacher A, teacher B with a student, and a logged-in student
+- **WHEN** teacher A and the student list teacher B's students and the student's teachers through the admin endpoints
+- **THEN** all responses are 403
+
+#### Scenario: student-enrolment/R3-S7 Deactivated teacher is shown as inactive
+- **GIVEN** a student assigned to an active teacher and a deactivated teacher
+- **WHEN** the admin lists the student's teachers
+- **THEN** both teachers are listed, the active one with active true and the deactivated one with active false
