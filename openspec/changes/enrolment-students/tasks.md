@@ -16,14 +16,14 @@
 
 - [ ] 3.1 Add the `/api/teacher/**` role rule to `SecurityConfig`; verify R2-S3 and R2-S5 pass
 - [ ] 3.2 Add the shared field rules (design D8) and use them in `CreateTeacherRequest` and `UpdateProfileRequest`; verify all accounts tests still pass unchanged
-- [ ] 3.3 Replace the stub with adding a student (design D1, D2, D4, D5); verify all R1 tests except the list check in R1-S1 pass
+- [ ] 3.3 Replace the stub with registering a student (design D1, D2, D4, D5); verify all R1 tests except the list check in R1-S1 pass
 - [ ] 3.4 Implement the teacher's list and details with per-teacher scoping (design D6); verify all R1 and R2 tests pass
 - [ ] 3.5 Implement the admin's list of a teacher's students; verify all R3 tests pass and no `STUB` comment is left
 - [ ] 3.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and approved tests are unchanged
 
 ## 4. Review
 
-- [ ] 4.1 Reviewer agent reviews the diff against the spec and constitution (focus: per-teacher scoping, existing account unchanged on linking, shared field rules); confirmed findings are fixed and the suite is green
+- [ ] 4.1 Reviewer agent reviews the diff against the spec and constitution (focus: per-teacher scoping, existing accounts unchanged on 409, shared field rules); confirmed findings are fixed and the suite is green
 
 ## Workflow follow-up
 

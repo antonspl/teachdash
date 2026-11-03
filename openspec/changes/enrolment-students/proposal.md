@@ -14,7 +14,7 @@ Answers to the owner's spec review comments on 2026-11-03.
 
 | # | Question | Answer |
 |---|----------|--------|
-| 4 | Should a teacher link an existing student by email, so a student can have several teachers? | Yes. This replaces answer 1. Teachers manage their student list and can add a new or an existing student. Students only log in, see their teachers' materials, join lessons and do exercises. They do not choose or search for teachers. |
+| 4 | How is a student assigned to a teacher? | Two ways, replacing answers 1 and 2. (a) A teacher registers a new student, who is assigned at once. (b) A student assigns themselves through one general link per teacher. A new visitor registers through it and is assigned at once. A teacher who adds an existing student gets that link. There is no teacher search. Way (b) stays in #29; until then, an existing student gets 409 `STUDENT_EXISTS`. |
 | 5 | Should admins use teacher endpoints? | No. Teacher endpoints stay teacher-only, and old R7 moves here from #28 as an admin endpoint. Admin does not add students. |
 | 6 | How many requirements fit in one change? | At most 6, and fewer is better, with no limit on scenarios. The constitution rule changes in its own PR (#43). |
 | 7 | Requirement numbers? | No gaps: R1, R2, R3 here. Later changes continue from the next free number. |
@@ -25,8 +25,7 @@ Answers to the owner's spec review comments on 2026-11-03.
 Assumptions (owner may override during review):
 
 - The capability stays `student-enrolment`.
-- A student already linked to the same teacher gets its own 409 code, `ALREADY_ENROLLED`,
-  so the UI can tell the teacher what happened.
+- Each 409 case has its own code, so the UI can tell the teacher what to do next.
 
 ## Why
 
@@ -35,11 +34,10 @@ sense. This is part 1 of the split of #5 (issue #27).
 
 ## What Changes
 
-- A teacher adds a student by name, email and time zone. A new email creates an account
-  linked to the teacher, and the response contains a single-use set-password link.
-- The email of an existing student links that account to the teacher, so a student can
-  have several teachers. The account does not change and no link is returned.
-- The email of a teacher or admin, or of a student already on the list, gets 409.
+- A teacher registers a student by name, email and time zone. A new email creates an
+  account assigned to the teacher, and the response contains a single-use set-password
+  link.
+- Any email that already has an account gets 409, with a code that says why.
 - A teacher lists their own students and reads the details of one of them. Any other
   id returns 404.
 - Teacher endpoints are allowed only for teachers.
@@ -50,7 +48,7 @@ sense. This is part 1 of the split of #5 (issue #27).
 
 - Admin adding students.
 - The same validation rules in the frontend (#44).
-- Join links (#29); removing a student and student's teachers (#28);
+- The general join link, including returning it when a student already exists (#29); removing a student and student's teachers (#28);
   reset links, including a new link when a set-password link is lost or expired (#30).
 - UI (#35).
 - Paging the student list. A teacher has few students, and the admin's teacher list is
@@ -75,4 +73,4 @@ None.
   change in behaviour.
 - New `/api/teacher/**` role rule in `SecurityConfig`.
 - New table `teacher_students`.
-- #29 needs another look: a teacher can now add an existing student directly.
+- #29 adds the join link to the `STUDENT_EXISTS` response.
