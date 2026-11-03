@@ -13,7 +13,7 @@
 ## 2. Test review
 
 - [x] 2.1 Reviewer approves tests in the PR. HARD STOP: no production code before approval
-- [ ] 2.2 Reviewer approves the spec changes and the tests from 1.6 and 1.7 in the PR. HARD STOP: no fix before approval
+- [x] 2.2 Reviewer approves the spec changes and the tests from 1.6 and 1.7 in the PR. HARD STOP: no fix before approval
 
 ## 3. Implementation
 
