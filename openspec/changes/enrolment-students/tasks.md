@@ -2,11 +2,11 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add `V3__teacher_students.sql` (design D7); verify migrations apply in the test container
-- [ ] 1.2 Add a stub controller for the four endpoints in design D2, each returning 501 and marked `STUB`, with no new role rule yet so tests reach the stub; verify compilation
-- [ ] 1.3 Add an `ApiTest` helper that links a teacher and a student directly in the database; verify it compiles and existing tests still pass
-- [ ] 1.4 Write one test per scenario in `specs/student-enrolment/spec.md` (13 scenarios) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify `scripts/check-scenario-coverage.sh` passes
-- [ ] 1.5 Run `./gradlew test`; verify every new test fails at its THEN step and all other tests pass
+- [x] 1.1 Add `V3__teacher_students.sql` (design D7); verify migrations apply in the test container
+- [x] 1.2 Add a stub controller for the four endpoints in design D2, each returning 501 and marked `STUB`, with no new role rule yet so tests reach the stub; verify compilation
+- [x] 1.3 Add an `ApiTest` helper that links a teacher and a student directly in the database; verify it compiles and existing tests still pass
+- [x] 1.4 Write one test per scenario in `specs/student-enrolment/spec.md` (13 scenarios) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify `scripts/check-scenario-coverage.sh` passes
+- [x] 1.5 Run `./gradlew test`; verify every new test fails at its THEN step and all other tests pass
 
 ## 2. Test review
 
