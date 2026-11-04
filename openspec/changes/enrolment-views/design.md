@@ -25,7 +25,7 @@ Builds on `enrolment-students`: table `teacher_students`, `TeacherStudentReposit
 The student comes from the session, so the second path has no id and one student cannot
 ask for another's teachers.
 
-### D2. Removal is one scoped delete
+### D2. Removal is one scoped delete, then a check for a last removal
 
 `delete from teacher_students where teacher_id = :teacher and student_id = :student`, and
 0 rows means 404 `NOT_FOUND`. This keeps the teacher scope in the query (constitution
@@ -35,11 +35,16 @@ needs no read first. Of two parallel removals, one gets 204 and the other 404.
 Alternative: load with `findStudent`, then delete. It adds a query and a race, and gains
 nothing.
 
+If the delete removed a row and the student has no assignment left, the same transaction
+calls `PasswordLinkService.invalidateLinks`. The transaction makes the two writes one
+action, so the removal cannot succeed with the link still live. Removal keeps its own
+`StudentRemovalService`, because it now coordinates enrolment and accounts.
+
 ### D3. Student list has its own query and record
 
 A new `TeacherStudentRepository` query joins `users`, filters on `u.active`, and uses the
 same order as `findTeachers` (`u.name collate "und-x-icu", u.id`). It returns a new record
-`TeacherName(UUID id, String name)` in `enrolment.domain`.
+`TeacherName(UUID id, String name)` in `enrolment.api.dto` (constitution section 3).
 
 Reusing `findTeachers` and `UserSummary` would need filtering in Java and a mapping, and
 a later field added to `UserSummary` could reach students by accident. With its own
@@ -91,13 +96,18 @@ THEN step.
   with a password can still log in and can return through the join link from #29.
 - [A mistyped email stays taken after removal] → The admin finds the account (D7), and can
   issue a link for it. Nothing frees the email. Accepted in clarification 3.
-- [A student without a password who lost their link cannot use #29 or #30] → Joining needs
+- [A student without a password whose link was lost or invalidated cannot use #29 or #30]
+  → Joining needs
   a login, and #30 covers only a teacher's own students. The admin recovers them through
   D7 and the reset link (R6-S2).
-- [The teacher who removed a student still holds an unused set-password link for up to 7
-  days] → They could set the password and log in as that student. Little effect today,
-  because the account has no teacher and little data. #29 must revisit this, because a
-  student could join another teacher while the old link is live.
+- [A student removed by mistake before setting a password loses the link] → An admin finds
+  them (D7) and issues a reset link (R6-S2).
+- [Two parallel removals of a student's last two teachers could each see the other's row
+  and skip invalidation] → Not reachable today: a student without a password has one
+  teacher unless set up by hand, and a student with a password has no live set-password
+  link. #29 and #30 must recheck this when they add more ways to get links or teachers.
+- [A teacher-issued reset link from #30 stays live when that teacher is removed but another
+  remains] → #30 must handle this, since a link does not record who issued it.
 - [A student keeps their session after removal] → They still reach only their own data.
   Changes that add teacher-owned data must check the assignment on every request, as
   constitution section 8 already requires.

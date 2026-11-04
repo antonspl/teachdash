@@ -17,6 +17,13 @@ Questions after the final review on 2026-11-04, and the owner's answers.
 | 4 | Answer 3 was given on the wrong information that an admin can issue a new link after a last removal. An admin cannot find such a student: the reset link needs an id, and nothing lists students or searches by email. What should happen? | Keep answer 3, and add an admin lookup by email to this change. |
 | 5 | No test has a teacher with two students, so a delete that removes all of a teacher's students would pass. Add a scenario? | Yes, R4-S11, in this change. |
 
+Answers to the review of the code on 2026-11-04.
+
+| # | Question | Answer |
+|---|----------|--------|
+| 6 | After a last removal, the teacher still holds the unused set-password link and could log in as the student and lock them out. Keep answer 3? | No, this replaces that part of answer 3. A last removal invalidates the student's unused links. The account stays, and an admin recovers the student (R6). |
+| 7 | Which other review findings are fixed in this change? | The confusing method name, the weak R4-S3 assertion, duplicate mapping, repeated test setup, the repeated not-found error, and `TeacherName` moves to `api/dto`. The rule about gates added mid-change goes to its own issue. |
+
 Assumptions (owner may override during review):
 
 - Removing a student returns 204 and has no body.
@@ -34,7 +41,8 @@ needs to see who teaches them. This is part 2 of the split of #5 (issue #28).
 
 ## What Changes
 
-- A teacher removes a student from their list. Only that assignment is deleted.
+- A teacher removes a student from their list. That assignment is deleted, and a last
+  removal also invalidates the student's unused password links.
 - A student lists their own active teachers, with id and name, in name order.
 - The student endpoint is allowed only for students, through a new role rule for
   `/api/student/**`.

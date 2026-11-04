@@ -3,9 +3,10 @@
 ## ADDED Requirements
 
 ### Requirement: R4 Teacher removes a student
-A teacher SHALL be able to remove a student assigned to them. Removal deletes only that
-assignment: the student's account, unused set-password link and assignments to other
-teachers stay. An id that is not a student assigned to the teacher MUST return 404, as in R2.
+A teacher SHALL be able to remove a student assigned to them. Removal deletes that
+assignment: the student's account and assignments to other teachers stay. Removing a
+student's last teacher MUST also invalidate the student's unused password links. An id that
+is not a student assigned to the teacher MUST return 404, as in R2.
 
 #### Scenario: student-enrolment/R4-S1 Removed student disappears from the lists
 - **GIVEN** a student with a password, assigned to teacher A
@@ -17,10 +18,10 @@ teachers stay. An id that is not a student assigned to the teacher MUST return 4
 - **WHEN** teacher A removes the student
 - **THEN** the response is 204, the student is still in teacher B's list, and teacher B is still in the student's list of teachers
 
-#### Scenario: student-enrolment/R4-S3 Last removal keeps the account and the unused link
-- **GIVEN** a student without a password, assigned only to teacher A, with an unused set-password link
-- **WHEN** teacher A removes the student and the link is then used to set the password "new-password-1"
-- **THEN** the removal response is 204, the student logs in with "new-password-1", and the student's list of teachers is empty
+#### Scenario: student-enrolment/R4-S3 Last removal keeps the account and invalidates the unused link
+- **GIVEN** a student without a password, assigned only to teacher A, with an unused set-password link, and a logged-in admin
+- **WHEN** teacher A removes the student, the link is then used to set the password "new-password-1", and the admin looks up the student's email
+- **THEN** the removal response is 204, the link response is 410 with code `LINK_INVALID`, logging in with "new-password-1" returns 401, and the lookup response is 200
 
 #### Scenario: student-enrolment/R4-S4 Another teacher's student is not found
 - **GIVEN** a student assigned only to teacher B
@@ -61,6 +62,11 @@ teachers stay. An id that is not a student assigned to the teacher MUST return 4
 - **GIVEN** teacher A with students S1 and S2
 - **WHEN** teacher A removes S1
 - **THEN** the response is 204, and teacher A's list contains S2 only
+
+#### Scenario: student-enrolment/R4-S12 Removal with another teacher left keeps the unused link
+- **GIVEN** a student without a password, assigned to teachers A and B, with an unused set-password link
+- **WHEN** teacher A removes the student and the link is then used to set the password "new-password-1"
+- **THEN** the removal and link responses are successful, the student logs in with "new-password-1", and teacher B is in the student's list of teachers
 
 ### Requirement: R5 Student sees their teachers
 A student SHALL be able to list the active teachers assigned to them, in name order as in
