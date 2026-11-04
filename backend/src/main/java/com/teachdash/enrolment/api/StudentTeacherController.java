@@ -1,19 +1,27 @@
 package com.teachdash.enrolment.api;
 
+import java.security.Principal;
 import java.util.List;
+import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.teachdash.enrolment.domain.EnrolmentQueryService;
+import com.teachdash.enrolment.domain.TeacherName;
 
 @RestController
 class StudentTeacherController {
 
-	// STUB: pass 2 replaces this with the student's list of active teachers
+	private final EnrolmentQueryService queries;
+
+	StudentTeacherController(EnrolmentQueryService queries) {
+		this.queries = queries;
+	}
+
 	@GetMapping("/api/student/teachers")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	List<Object> listTeachers() {
-		return List.of();
+	List<TeacherName> listTeachers(Principal principal) {
+		UUID studentId = UUID.fromString(principal.getName());
+		return queries.teachersForStudent(studentId);
 	}
 }

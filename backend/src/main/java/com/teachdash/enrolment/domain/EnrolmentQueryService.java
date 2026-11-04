@@ -41,6 +41,10 @@ public class EnrolmentQueryService {
 		return assignments.findTeachers(studentId);
 	}
 
+	public List<TeacherName> teachersForStudent(UUID studentId) {
+		return assignments.findActiveTeacherNames(studentId);
+	}
+
 	private void requireRole(UUID id, Role role) {
 		if (!users.existsByIdAndRole(id, role)) {
 			throw notFound();
