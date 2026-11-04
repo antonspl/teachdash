@@ -57,7 +57,7 @@ Add `.requestMatchers("/api/student/**").hasRole("STUDENT")` to `SecurityConfig`
 
 The removal goes in `TeacherStudentController`. The student list goes in a new
 `StudentTeacherController` in `enrolment.api`, so the malformed id advice and package
-layout stay as they are. The service layer gets `EnrolmentQueryService.teachersForStudent`
+layout stay as they are. The service layer gets `EnrolmentQueryService.activeTeacherNamesForStudent`
 and a new `removeStudent` method, `@Transactional`, on a service that writes assignments.
 
 ### D5. Dependencies and migrations
@@ -77,8 +77,9 @@ at its THEN step.
 
 `POST /api/admin/students/lookup` with body `{email}`, in `AdminEnrolmentController`. The
 request record uses `@EmailAddress` and `Normalize.strip`, as `RegisterStudentRequest`
-does, so the field has one rule. The service uses `findByEmailIgnoreCase`, returns 404
-`NOT_FOUND` unless the account's role is student, and returns `UserSummary`.
+does, so the field has one rule. A `TeacherStudentRepository` query matches
+`lower(email)` and role student and returns `UserSummary`, without `password_hash`. No match
+returns 404 `NOT_FOUND`.
 
 It is POST and not `GET ?email=` because a query string reaches Caddy access logs and
 OpenTelemetry traces, and constitution section 5 forbids logging full personal data. The
@@ -103,9 +104,9 @@ THEN step.
 - [A student removed by mistake before setting a password loses the link] → An admin finds
   them (D7) and issues a reset link (R6-S2).
 - [Two parallel removals of a student's last two teachers could each see the other's row
-  and skip invalidation] → Not reachable today: a student without a password has one
-  teacher unless set up by hand, and a student with a password has no live set-password
-  link. #29 and #30 must recheck this when they add more ways to get links or teachers.
+  and skip invalidation] → Not reachable today: the only way to get an assignment is registering a new account, so
+  no student has two teachers through the API. #29 must recheck this when it adds a second
+  way, including admin reset links, which a student with a password can hold.
 - [A teacher-issued reset link from #30 stays live when that teacher is removed but another
   remains] → #30 must handle this, since a link does not record who issued it.
 - [A student keeps their session after removal] → They still reach only their own data.

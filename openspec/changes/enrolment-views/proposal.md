@@ -76,5 +76,5 @@ None.
 - New endpoints `DELETE /api/teacher/students/{id}`, `GET /api/student/teachers` and
   `POST /api/admin/students/lookup`.
 - New `/api/student/**` role rule in `SecurityConfig`.
-- `TeacherStudentRepository` gets two new queries. No schema change.
+- `TeacherStudentRepository` gets four new queries. No schema change.
 - #35 and #36 use these endpoints.
