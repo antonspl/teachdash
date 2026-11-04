@@ -10,7 +10,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-import com.teachdash.enrolment.domain.TeacherName;
+import com.teachdash.enrolment.api.dto.TeacherName;
 import com.teachdash.enrolment.domain.UserSummary;
 
 @Repository
@@ -108,6 +108,17 @@ public class TeacherStudentRepository {
 				.param("studentId", studentId)
 				.query(USER_SUMMARY)
 				.list();
+	}
+
+	public Optional<UserSummary> findStudentByEmail(String email) {
+		return jdbc.sql("""
+				select u.id, u.name, u.email, u.time_zone, u.active
+				from users u
+				where u.role = 'STUDENT' and lower(u.email) = lower(:email)
+				""")
+				.param("email", email)
+				.query(USER_SUMMARY)
+				.optional();
 	}
 
 	public List<TeacherName> findActiveTeacherNames(UUID studentId) {

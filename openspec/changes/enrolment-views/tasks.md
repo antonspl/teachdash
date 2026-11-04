@@ -24,8 +24,8 @@
 - [x] 3.4 Implement the admin lookup (design D7); verify all R6 tests pass and no `STUB` comment is left
 - [x] 3.5 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and approved tests are unchanged
 - [x] 3.6 Invalidate unused links on a last removal, in one transaction (design D2); verify R4-S3 and R4-S12 pass
-- [ ] 3.7 Rename `teachersForStudent` to `activeTeacherNamesForStudent`; move `TeacherName` to `api/dto`; replace the inline `UserSummary` mapping and the `password_hash` load with a query using the existing row mapper; add a shared not-found factory for the enrolment services; verify all enrolment tests pass unchanged
-- [ ] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and tests approved in 2.3 are unchanged
+- [x] 3.7 Rename `teachersForStudent` to `activeTeacherNamesForStudent`; move `TeacherName` to `api/dto`; replace the inline `UserSummary` mapping and the `password_hash` load with a query using the existing row mapper; add a shared not-found factory for the enrolment services; verify all enrolment tests pass unchanged
+- [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and tests approved in 2.3 are unchanged
 
 ## Workflow follow-up
 

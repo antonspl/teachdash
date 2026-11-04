@@ -2,7 +2,6 @@ package com.teachdash.enrolment.domain;
 
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +24,7 @@ public class StudentRemovalService {
 	@Transactional
 	public void removeStudent(UUID teacherId, UUID studentId) {
 		if (!assignments.delete(teacherId, studentId)) {
-			throw new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND");
+			throw ApiException.notFound();
 		}
 		if (!assignments.existsForStudent(studentId)) {
 			links.invalidateLinks(studentId);

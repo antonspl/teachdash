@@ -1,4 +1,4 @@
-package com.teachdash.enrolment.domain;
+package com.teachdash.enrolment.api.dto;
 
 import java.util.UUID;
 
