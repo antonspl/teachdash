@@ -57,6 +57,11 @@ teachers stay. An id that is not a student assigned to the teacher MUST return 4
 - **WHEN** teacher A removes the student without a CSRF token
 - **THEN** the response is 403 with code `CSRF_INVALID`, and the student is still in teacher A's list
 
+#### Scenario: student-enrolment/R4-S11 Teacher's other students stay
+- **GIVEN** teacher A with students S1 and S2
+- **WHEN** teacher A removes S1
+- **THEN** the response is 204, and teacher A's list contains S2 only
+
 ### Requirement: R5 Student sees their teachers
 A student SHALL be able to list the active teachers assigned to them, in name order as in
 R2, each with id and name only. The student endpoint SHALL be allowed only for students.
@@ -95,3 +100,48 @@ R2, each with id and name only. The student endpoint SHALL be allowed only for s
 - **GIVEN** no session
 - **WHEN** a client calls the student endpoint that lists teachers
 - **THEN** the response is 401 with code `UNAUTHENTICATED`
+
+### Requirement: R6 Admin finds a student by email
+An admin SHALL be able to find a student account by email, using the same email rule as
+R1, and get the student's id, name, email, time zone and active flag. An email with no
+student account MUST return 404.
+
+#### Scenario: student-enrolment/R6-S1 Admin finds a student
+- **GIVEN** a logged-in admin and a student account with email "student@example.com"
+- **WHEN** the admin looks up "student@example.com"
+- **THEN** the response is 200 with the student's id, name, email, time zone and active flag
+
+#### Scenario: student-enrolment/R6-S2 Removed student without a password can be recovered
+- **GIVEN** a logged-in admin and a student without a password, with no teachers and an expired set-password link
+- **WHEN** the admin looks up the student's email, issues a reset link for the returned id, and the link is used to set the password "new-password-1"
+- **THEN** the lookup response is 200, and the student logs in with "new-password-1"
+
+#### Scenario: student-enrolment/R6-S3 Email case and surrounding whitespace are ignored
+- **GIVEN** a logged-in admin and a student account with email "student@example.com"
+- **WHEN** the admin looks up " STUDENT@example.com "
+- **THEN** the response is 200 with that student's id
+
+#### Scenario: student-enrolment/R6-S4 Email without a student account is not found
+- **GIVEN** a logged-in admin and a teacher account
+- **WHEN** the admin looks up an email with no account, the teacher's email, and the admin's own email
+- **THEN** each response is 404 with code `NOT_FOUND`
+
+#### Scenario: student-enrolment/R6-S5 Invalid email is rejected
+- **GIVEN** a logged-in admin
+- **WHEN** the admin looks up a blank email, then a malformed email, then sends no email
+- **THEN** each response is 400 with code `VALIDATION_FAILED`
+
+#### Scenario: student-enrolment/R6-S6 Teachers and students cannot look up
+- **GIVEN** a student account, a logged-in teacher and a logged-in student
+- **WHEN** the teacher and the student each look up that student's email
+- **THEN** both responses are 403
+
+#### Scenario: student-enrolment/R6-S7 Lookup requires a session
+- **GIVEN** a client with a valid CSRF token and no session
+- **WHEN** the client looks up an email
+- **THEN** the response is 401 with code `UNAUTHENTICATED`
+
+#### Scenario: student-enrolment/R6-S8 Request without a CSRF token is rejected
+- **GIVEN** a logged-in admin
+- **WHEN** the admin looks up an email without a CSRF token
+- **THEN** the response is 403 with code `CSRF_INVALID`
