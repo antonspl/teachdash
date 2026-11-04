@@ -19,8 +19,8 @@
 - [x] 3.1 Implement removing a student (design D2, D4); verify all R4 tests except the student-list checks in R4-S1, R4-S2 and R4-S3 pass
 - [x] 3.2 Add the `/api/student/**` role rule and implement the student's list (design D3, D4); verify all R4 and R5 tests pass and no `STUB` comment is left
 - [x] 3.3 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and approved tests are unchanged
-- [ ] 3.4 Implement the admin lookup (design D7); verify all R6 tests pass and no `STUB` comment is left
-- [ ] 3.5 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and approved tests are unchanged
+- [x] 3.4 Implement the admin lookup (design D7); verify all R6 tests pass and no `STUB` comment is left
+- [x] 3.5 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and approved tests are unchanged
 
 ## Workflow follow-up
 

@@ -45,6 +45,18 @@ public class EnrolmentQueryService {
 		return assignments.findActiveTeacherNames(studentId);
 	}
 
+	public UserSummary studentByEmail(String email) {
+		return users.findByEmailIgnoreCase(email)
+				.filter(user -> user.getRole() == Role.STUDENT)
+				.map(user -> new UserSummary(
+						user.getId(),
+						user.getName(),
+						user.getEmail(),
+						user.getTimeZone(),
+						user.isActive()))
+				.orElseThrow(EnrolmentQueryService::notFound);
+	}
+
 	private void requireRole(UUID id, Role role) {
 		if (!users.existsByIdAndRole(id, role)) {
 			throw notFound();
