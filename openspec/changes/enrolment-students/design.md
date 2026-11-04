@@ -113,7 +113,7 @@ transaction. Each still does its own check for an existing email, because their 
 differ.
 
 ### D12. Records
-`Person` (with `active`) and one `CreatedAccount(id, setPasswordLink)` replace `PersonResponse`,
+`UserSummary` (with `active`) and one `CreatedAccount(id, setPasswordLink)` replace `PersonResponse`,
 `RegisteredStudent`, `RegisterStudentResponse`, `CreatedTeacher` and `CreateTeacherResponse`.
 Both live in the domain and controllers return them directly, so no record copies another
 field by field. The JSON of existing endpoints does not change. This is a small exception
