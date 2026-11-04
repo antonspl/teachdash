@@ -28,7 +28,7 @@ class AdminStudentLookupTest extends ApiTest {
 	void adminFindsAStudent() {
 		// given a logged-in admin and a student account with email "student@example.com"
 		TestClient admin = loggedInAdmin();
-		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
+		UUID student = createStudent("student@example.com", "student-pass-1");
 
 		// when the admin looks up "student@example.com"
 		var response = admin.post(LOOKUP, email("student@example.com"));
@@ -72,7 +72,7 @@ class AdminStudentLookupTest extends ApiTest {
 	void emailCaseAndSurroundingWhitespaceAreIgnored() {
 		// given a logged-in admin and a student account with email "student@example.com"
 		TestClient admin = loggedInAdmin();
-		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
+		UUID student = createStudent("student@example.com", "student-pass-1");
 
 		// when the admin looks up " STUDENT@example.com "
 		var response = admin.post(LOOKUP, email(" STUDENT@example.com "));
@@ -121,7 +121,7 @@ class AdminStudentLookupTest extends ApiTest {
 	void teachersAndStudentsCannotLookUp() {
 		// given a student account, a logged-in teacher and a logged-in student
 		createTeacher("teacher@example.com", "teacher-pass-1");
-		createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
+		createStudent("student@example.com", "student-pass-1");
 		TestClient teacher = loggedInAs("teacher@example.com");
 		TestClient student = loggedInAs("student@example.com");
 

@@ -1,7 +1,6 @@
 package com.teachdash.enrolment.api;
 
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -69,25 +68,51 @@ class StudentRemovalTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R4-S3] Last removal keeps the account and the unused link")
-	void lastRemovalKeepsTheAccountAndTheUnusedLink() {
-		// given a student without a password, assigned only to teacher A, with an unused set-password link
+	@DisplayName("[student-enrolment/R4-S3] Last removal keeps the account and invalidates the unused link")
+	void lastRemovalKeepsTheAccountAndInvalidatesTheUnusedLink() {
+		// given a student without a password, assigned only to teacher A, with an unused set-password link, and a logged-in admin
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
 		assignStudent(teacherA, student);
 		String token = createToken(student, "SET_PASSWORD", false);
 		TestClient teacher = loggedInAs("a@example.com");
-		TestClient holder = newClient();
+		TestClient admin = loggedInAdmin();
+
+		// when teacher A removes the student, the link is then used to set the password "new-password-1", and the admin looks up the student's email
+		var removal = teacher.delete(STUDENTS + "/" + student);
+		var link = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
+		var login = newClient().login("student@example.com", "new-password-1");
+		var lookup = admin.post("/api/admin/students/lookup", Map.of("email", "student@example.com"));
+
+		// then the removal response is 204, the link response is 410 with code LINK_INVALID, logging in with "new-password-1" returns 401, and the lookup response is 200
+		removal.then().statusCode(204);
+		link.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		login.then().statusCode(401);
+		lookup.then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R4-S12] Removal with another teacher left keeps the unused link")
+	void removalWithAnotherTeacherLeftKeepsTheUnusedLink() {
+		// given a student without a password, assigned to teachers A and B, with an unused set-password link
+		UUID teacherA = teacher("Teacher A", "a@example.com");
+		UUID teacherB = teacher("Teacher B", "b@example.com");
+		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
+		assignStudent(teacherA, student);
+		assignStudent(teacherB, student);
+		String token = createToken(student, "SET_PASSWORD", false);
+		TestClient a = loggedInAs("a@example.com");
 
 		// when teacher A removes the student and the link is then used to set the password "new-password-1"
-		var removal = teacher.delete(STUDENTS + "/" + student);
-		holder.post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
+		var removal = a.delete(STUDENTS + "/" + student);
+		var link = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
 
-		// then the removal response is 204, the student logs in with "new-password-1", and their list of teachers is empty
+		// then the removal and link responses are successful, the student logs in with "new-password-1", and teacher B is in the student's list of teachers
 		removal.then().statusCode(204);
-		TestClient loggedIn = newClient();
-		loggedIn.login("student@example.com", "new-password-1").then().statusCode(200);
-		loggedIn.get(TEACHERS).then().statusCode(200).body("$", empty());
+		link.then().statusCode(200);
+		TestClient studentClient = newClient();
+		studentClient.login("student@example.com", "new-password-1").then().statusCode(200);
+		studentClient.get(TEACHERS).then().statusCode(200).body("id", contains(teacherB.toString()));
 	}
 
 	@Test
