@@ -219,4 +219,23 @@ class StudentRemovalTest extends ApiTest {
 		response.then().statusCode(403).body("code", equalTo("CSRF_INVALID"));
 		teacher.get(STUDENTS).then().statusCode(200).body("id", hasItem(student.toString()));
 	}
+
+	@Test
+	@DisplayName("[student-enrolment/R4-S11] Teacher's other students stay")
+	void teachersOtherStudentsStay() {
+		// given teacher A with students S1 and S2
+		UUID teacherA = teacher("Teacher A", "a@example.com");
+		UUID s1 = createStudent("s1@example.com", "student-pass-1");
+		UUID s2 = createStudent("s2@example.com", "student-pass-1");
+		assignStudent(teacherA, s1);
+		assignStudent(teacherA, s2);
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A removes S1
+		var response = teacher.delete(STUDENTS + "/" + s1);
+
+		// then the response is 204, and teacher A's list contains S2 only
+		response.then().statusCode(204);
+		teacher.get(STUDENTS).then().statusCode(200).body("id", contains(s2.toString()));
+	}
 }
