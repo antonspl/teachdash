@@ -169,3 +169,14 @@ shared test helpers live in `com.teachdash.support`.
   including Cyrillic text; specs include scenarios for `en` and `ru`.
 - The UI language is separate from the target language. UI is English for now and
   every UI string goes through i18n.
+
+## 10. Access from Russia and the EU
+
+- The platform MUST be usable on fixed-line internet from both Russia and the EU.
+  Mobile internet in Russia is not required.
+- The browser reaches the app and its files only through the app's own domain. Direct
+  links to third-party storage or CDNs are not used, because they can be throttled or
+  blocked in Russia.
+- Any other external service the browser must reach, such as video, is checked for
+  access from both places before it is chosen.
+- A hosting provider is tested from inside Russia before it is chosen.
