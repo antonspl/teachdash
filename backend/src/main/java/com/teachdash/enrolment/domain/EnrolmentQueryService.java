@@ -3,7 +3,6 @@ package com.teachdash.enrolment.domain;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.teachdash.accounts.domain.Role;
@@ -28,7 +27,7 @@ public class EnrolmentQueryService {
 
 	public UserSummary studentOfTeacher(UUID teacherId, UUID studentId) {
 		return assignments.findStudent(teacherId, studentId)
-				.orElseThrow(EnrolmentQueryService::notFound);
+				.orElseThrow(ApiException::notFound);
 	}
 
 	public List<UserSummary> studentsOfTeacherForAdmin(UUID teacherId) {
@@ -41,13 +40,18 @@ public class EnrolmentQueryService {
 		return assignments.findTeachers(studentId);
 	}
 
-	private void requireRole(UUID id, Role role) {
-		if (!users.existsByIdAndRole(id, role)) {
-			throw notFound();
-		}
+	public List<TeacherName> activeTeacherNamesForStudent(UUID studentId) {
+		return assignments.findActiveTeacherNames(studentId);
 	}
 
-	private static ApiException notFound() {
-		return new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND");
+	public UserSummary studentByEmail(String email) {
+		return assignments.findStudentByEmail(email)
+				.orElseThrow(ApiException::notFound);
+	}
+
+	private void requireRole(UUID id, Role role) {
+		if (!users.existsByIdAndRole(id, role)) {
+			throw ApiException.notFound();
+		}
 	}
 }

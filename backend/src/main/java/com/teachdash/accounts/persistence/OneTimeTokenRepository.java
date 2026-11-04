@@ -18,6 +18,15 @@ public interface OneTimeTokenRepository extends CrudRepository<OneTimeToken, Str
 			@Param("userId") UUID userId,
 			@Param("now") Instant now);
 
+	@Modifying
+	@Query("""
+			update one_time_tokens set used_at = :now
+			where user_id = :userId and purpose = :purpose and used_at is null""")
+	int markUnusedAsUsed(
+			@Param("userId") UUID userId,
+			@Param("purpose") String purpose,
+			@Param("now") Instant now);
+
 	/** Returns 1 only for the caller that wins the unused, unexpired token. */
 	@Modifying
 	@Query("""

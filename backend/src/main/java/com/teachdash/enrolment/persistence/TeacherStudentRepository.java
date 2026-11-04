@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import com.teachdash.enrolment.domain.TeacherName;
 import com.teachdash.enrolment.domain.UserSummary;
 
 @Repository
@@ -52,6 +53,24 @@ public class TeacherStudentRepository {
 				.update();
 	}
 
+	public boolean delete(UUID teacherId, UUID studentId) {
+		int rows = jdbc.sql("""
+				delete from teacher_students
+				where teacher_id = :teacherId and student_id = :studentId
+				""")
+				.param("teacherId", teacherId)
+				.param("studentId", studentId)
+				.update();
+		return rows > 0;
+	}
+
+	public boolean existsForStudent(UUID studentId) {
+		return jdbc.sql("select exists (select 1 from teacher_students where student_id = :studentId)")
+				.param("studentId", studentId)
+				.query(Boolean.class)
+				.single();
+	}
+
 	public List<UserSummary> findStudents(UUID teacherId) {
 		return jdbc.sql("""
 				select u.id, u.name, u.email, u.time_zone, u.active
@@ -88,6 +107,32 @@ public class TeacherStudentRepository {
 				""")
 				.param("studentId", studentId)
 				.query(USER_SUMMARY)
+				.list();
+	}
+
+	public Optional<UserSummary> findStudentByEmail(String email) {
+		return jdbc.sql("""
+				select u.id, u.name, u.email, u.time_zone, u.active
+				from users u
+				where u.role = 'STUDENT' and lower(u.email) = lower(:email)
+				""")
+				.param("email", email)
+				.query(USER_SUMMARY)
+				.optional();
+	}
+
+	public List<TeacherName> findActiveTeacherNames(UUID studentId) {
+		return jdbc.sql("""
+				select u.id, u.name
+				from teacher_students ts
+				join users u on u.id = ts.teacher_id
+				where ts.student_id = :studentId and u.active
+				order by u.name collate "und-x-icu", u.id
+				""")
+				.param("studentId", studentId)
+				.query((rs, rowNum) -> new TeacherName(
+						rs.getObject("id", UUID.class),
+						rs.getString("name")))
 				.list();
 	}
 }
