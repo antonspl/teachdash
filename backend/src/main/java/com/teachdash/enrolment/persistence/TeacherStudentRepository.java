@@ -64,6 +64,13 @@ public class TeacherStudentRepository {
 		return rows > 0;
 	}
 
+	public boolean existsForStudent(UUID studentId) {
+		return jdbc.sql("select exists (select 1 from teacher_students where student_id = :studentId)")
+				.param("studentId", studentId)
+				.query(Boolean.class)
+				.single();
+	}
+
 	public List<UserSummary> findStudents(UUID teacherId) {
 		return jdbc.sql("""
 				select u.id, u.name, u.email, u.time_zone, u.active
