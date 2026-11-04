@@ -22,6 +22,8 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 
 	boolean existsByRole(Role role);
 
+	boolean existsByIdAndRole(UUID id, Role role);
+
 	@Query("update users set name = :name, time_zone = :timeZone where id = :id returning *")
 	Optional<User> updateProfile(
 			@Param("id") UUID id,

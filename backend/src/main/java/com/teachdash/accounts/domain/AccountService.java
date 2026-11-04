@@ -1,11 +1,14 @@
 package com.teachdash.accounts.domain;
 
+import java.time.Clock;
 import java.util.UUID;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.teachdash.accounts.persistence.UserRepository;
@@ -18,6 +21,7 @@ public class AccountService {
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
 	private final PasswordLinkService links;
+	private final Clock clock;
 	private final TransactionTemplate transaction;
 	private final String dummyHash;
 
@@ -25,12 +29,35 @@ public class AccountService {
 			UserRepository users,
 			PasswordEncoder passwordEncoder,
 			PasswordLinkService links,
+			Clock clock,
 			PlatformTransactionManager transactionManager) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.links = links;
+		this.clock = clock;
 		this.transaction = new TransactionTemplate(transactionManager);
 		this.dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
+	}
+
+	/**
+	 * Creates an account without a password and issues its set-password link; joins the caller's
+	 * transaction. Callers check for an existing email first, so a duplicate here is a lost race.
+	 */
+	@Transactional
+	public CreatedAccount createPasswordlessUser(Role role, String name, String email, String timeZone) {
+		User user;
+		try {
+			user = users.save(User.create(
+					email,
+					name,
+					role,
+					null,
+					timeZone,
+					clock.instant()));
+		} catch (DuplicateKeyException e) {
+			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+		}
+		return new CreatedAccount(user.getId(), links.issue(user.getId(), TokenPurpose.SET_PASSWORD));
 	}
 
 	/**
@@ -60,7 +87,7 @@ public class AccountService {
 
 	/** Always runs one password check, so response time does not reveal an account. */
 	public User authenticate(String email, String password) {
-		User user = users.findByEmailIgnoreCase(email.strip()).orElse(null);
+		User user = users.findByEmailIgnoreCase(email).orElse(null);
 		boolean canCheckRealHash = user != null
 				&& user.getPasswordHash() != null
 				&& !BcryptPasswordValidator.exceedsBcryptLimit(password);
@@ -81,7 +108,7 @@ public class AccountService {
 	}
 
 	public User updateProfile(UUID id, String name, String timeZone) {
-		return users.updateProfile(id, name.strip(), timeZone)
+		return users.updateProfile(id, name, timeZone)
 				.orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
 	}
 

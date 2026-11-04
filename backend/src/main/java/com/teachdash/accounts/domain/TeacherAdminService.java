@@ -1,11 +1,9 @@
 package com.teachdash.accounts.domain;
 
-import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,16 +16,16 @@ import com.teachdash.common.ApiException;
 public class TeacherAdminService {
 
 	private final UserRepository users;
+	private final AccountService accounts;
 	private final PasswordLinkService links;
-	private final Clock clock;
 
 	TeacherAdminService(
 			UserRepository users,
-			PasswordLinkService links,
-			Clock clock) {
+			AccountService accounts,
+			PasswordLinkService links) {
 		this.users = users;
+		this.accounts = accounts;
 		this.links = links;
-		this.clock = clock;
 	}
 
 	public List<User> listTeachers() {
@@ -36,24 +34,11 @@ public class TeacherAdminService {
 
 	/** Creates a teacher without a password; returns the id and the set-password link. */
 	@Transactional
-	public CreatedTeacher createTeacher(String name, String email, String timeZone) {
-		String normalized = email.strip();
-		if (users.findByEmailIgnoreCase(normalized).isPresent()) {
+	public CreatedAccount createTeacher(String name, String email, String timeZone) {
+		if (users.findByEmailIgnoreCase(email).isPresent()) {
 			throw emailTaken();
 		}
-		User teacher;
-		try {
-			teacher = users.save(User.create(
-					normalized,
-					name.strip(),
-					Role.TEACHER,
-					null,
-					timeZone,
-					clock.instant()));
-		} catch (DuplicateKeyException e) {
-			throw emailTaken();
-		}
-		return new CreatedTeacher(teacher.getId(), links.issue(teacher.getId(), TokenPurpose.SET_PASSWORD));
+		return accounts.createPasswordlessUser(Role.TEACHER, name, email, timeZone);
 	}
 
 	/**
@@ -62,7 +47,9 @@ public class TeacherAdminService {
 	 */
 	@Transactional
 	public void deactivateTeacher(UUID id) {
-		requireTeacher(id);
+		if (!users.existsByIdAndRole(id, Role.TEACHER)) {
+			throw notFound();
+		}
 		links.invalidateLinks(id);
 		users.deactivate(id);
 	}
@@ -90,11 +77,6 @@ public class TeacherAdminService {
 	public String issueResetLink(UUID userId) {
 		User user = users.findById(userId).orElseThrow(TeacherAdminService::notFound);
 		return links.issue(user.getId(), TokenPurpose.RESET_PASSWORD);
-	}
-
-	public record CreatedTeacher(
-			UUID id,
-			String setPasswordLink) {
 	}
 
 	private static ApiException emailTaken() {

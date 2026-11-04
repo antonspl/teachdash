@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.teachdash.accounts.api.dto.CreateTeacherRequest;
-import com.teachdash.accounts.api.dto.CreateTeacherResponse;
 import com.teachdash.accounts.api.dto.LinkResponse;
 import com.teachdash.accounts.api.dto.SetPasswordLinkResponse;
 import com.teachdash.accounts.api.dto.TeacherResponse;
+import com.teachdash.accounts.domain.CreatedAccount;
 import com.teachdash.accounts.domain.TeacherAdminService;
 
 import jakarta.validation.Valid;
@@ -40,9 +40,8 @@ class AdminController {
 
 	@PostMapping("/teachers")
 	@ResponseStatus(HttpStatus.CREATED)
-	CreateTeacherResponse createTeacher(@Valid @RequestBody CreateTeacherRequest request) {
-		var created = teachers.createTeacher(request.name(), request.email(), request.timeZone());
-		return new CreateTeacherResponse(created.id(), created.setPasswordLink());
+	CreatedAccount createTeacher(@Valid @RequestBody CreateTeacherRequest request) {
+		return teachers.createTeacher(request.name(), request.email(), request.timeZone());
 	}
 
 	@PostMapping("/teachers/{id}/deactivate")
