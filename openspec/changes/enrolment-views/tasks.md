@@ -28,7 +28,7 @@
 - [x] 3.6 Invalidate unused links on a last removal, in one transaction (design D2); verify R4-S3 and R4-S12 pass
 - [x] 3.7 Rename `teachersForStudent` to `activeTeacherNamesForStudent`; move `TeacherName` to `api/dto`; replace the inline `UserSummary` mapping and the `password_hash` load with a query using the existing row mapper; add a shared not-found factory for the enrolment services; verify all enrolment tests pass unchanged
 - [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and tests approved in 2.3 are unchanged
-- [ ] 3.9 Limit invalidation on a last removal to SET_PASSWORD links (design D2); verify R4-S3, R4-S12 and R4-S13 pass
+- [x] 3.9 Limit invalidation on a last removal to SET_PASSWORD links (design D2); verify R4-S3, R4-S12 and R4-S13 pass
 - [ ] 3.10 Move `TeacherName` back to `enrolment.domain` (design D3); verify all enrolment tests pass unchanged
 - [ ] 3.11 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and tests approved in 2.4 are unchanged
 

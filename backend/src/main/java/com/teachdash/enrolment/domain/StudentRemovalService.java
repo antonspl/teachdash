@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.teachdash.accounts.domain.PasswordLinkService;
+import com.teachdash.accounts.domain.TokenPurpose;
 import com.teachdash.common.ApiException;
 import com.teachdash.enrolment.persistence.TeacherStudentRepository;
 
@@ -27,7 +28,7 @@ public class StudentRemovalService {
 			throw ApiException.notFound();
 		}
 		if (!assignments.existsForStudent(studentId)) {
-			links.invalidateLinks(studentId);
+			links.invalidateLinks(studentId, TokenPurpose.SET_PASSWORD);
 		}
 	}
 }

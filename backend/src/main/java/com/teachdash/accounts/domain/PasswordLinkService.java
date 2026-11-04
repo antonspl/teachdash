@@ -81,6 +81,11 @@ public class PasswordLinkService {
 		tokens.markUnusedAsUsed(userId, clock.instant());
 	}
 
+	/** Makes the account's unused links of one purpose unusable. */
+	public void invalidateLinks(UUID userId, TokenPurpose purpose) {
+		tokens.markUnusedAsUsed(userId, purpose.name(), clock.instant());
+	}
+
 	/**
 	 * Sets the password, consumes the link and revokes older sessions; returns the updated user.
 	 * The link is checked and the password hashed before the transaction starts, so no database
