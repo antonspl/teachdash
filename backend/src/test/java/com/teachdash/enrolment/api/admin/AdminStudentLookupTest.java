@@ -2,9 +2,6 @@ package com.teachdash.enrolment.api.admin;
 
 import static org.hamcrest.Matchers.equalTo;
 
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -45,22 +42,23 @@ class AdminStudentLookupTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R6-S2] Removed student without a password can be recovered")
 	void removedStudentWithoutAPasswordCanBeRecovered() {
-		// given a logged-in admin and a student without a password, with no teachers and an expired set-password link
-		TestClient admin = loggedInAdmin();
+		// given a logged-in admin and a student without a password, assigned only to teacher A, with an unused set-password link
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
+		assignStudent(teacherA, student);
 		createToken(student, "SET_PASSWORD", false);
-		jdbc.sql("update one_time_tokens set expires_at = :past")
-				.param("past", Timestamp.from(Instant.now(clock).minus(Duration.ofDays(1))))
-				.update();
+		TestClient teacher = loggedInAs("a@example.com");
+		TestClient admin = loggedInAdmin();
 
-		// when the admin looks up the student's email, issues a reset link for the returned id, and the link is used to set the password "new-password-1"
+		// when teacher A removes the student, the admin looks up the student's email, issues a reset link for the returned id, and the link is used to set the password "new-password-1"
+		var removal = teacher.delete("/api/teacher/students/" + student);
 		var lookup = admin.post(LOOKUP, email("student@example.com"));
-		lookup.then().statusCode(200);
 		var issued = admin.post("/api/admin/users/" + lookup.path("id") + "/reset-link");
 		String token = tokenFrom(issued.path("link"));
 		var used = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
 
-		// then the lookup response is 200, and the student logs in with "new-password-1"
+		// then the removal response is 204, the lookup response is 200, and the student logs in with "new-password-1"
+		removal.then().statusCode(204);
 		lookup.then().statusCode(200);
 		issued.then().statusCode(201);
 		used.then().statusCode(200);

@@ -118,11 +118,12 @@ class StudentRemovalTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R4-S4] Another teacher's student is not found")
 	void anotherTeachersStudentIsNotFound() {
-		// given a student assigned only to teacher B
+		// given a student without a password, assigned only to teacher B, with an unused set-password link
 		teacher("Teacher A", "a@example.com");
 		UUID teacherB = teacher("Teacher B", "b@example.com");
-		UUID student = createStudent("student@example.com", "student-pass-1");
+		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
 		assignStudent(teacherB, student);
+		String token = createToken(student, "SET_PASSWORD", false);
 		TestClient a = loggedInAs("a@example.com");
 		TestClient b = loggedInAs("b@example.com");
 
@@ -130,10 +131,32 @@ class StudentRemovalTest extends ApiTest {
 		var foreign = a.delete(STUDENTS + "/" + student);
 		var unknown = a.delete(STUDENTS + "/" + UUID.randomUUID());
 
-		// then both responses are 404 with code NOT_FOUND, and the student is still in teacher B's list
+		// then both responses are 404 with code NOT_FOUND, the student is still in teacher B's list, and the link still sets the password
 		foreign.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
 		unknown.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
 		b.get(STUDENTS).then().statusCode(200).body("id", hasItem(student.toString()));
+		newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"))
+				.then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R4-S13] Last removal keeps an admin's reset link")
+	void lastRemovalKeepsAnAdminsResetLink() {
+		// given a student with a password, assigned only to teacher A, with an unused reset link issued by an admin
+		UUID teacherA = teacher("Teacher A", "a@example.com");
+		UUID student = createStudent("student@example.com", "student-pass-1");
+		assignStudent(teacherA, student);
+		String token = createToken(student, "RESET_PASSWORD", false);
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A removes the student and the link is then used to set the password "new-password-1"
+		var removal = teacher.delete(STUDENTS + "/" + student);
+		var link = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
+
+		// then the removal response is 204, the link response is 200, and the student logs in with "new-password-1"
+		removal.then().statusCode(204);
+		link.then().statusCode(200);
+		newClient().login("student@example.com", "new-password-1").then().statusCode(200);
 	}
 
 	@Test
