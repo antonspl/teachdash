@@ -58,7 +58,7 @@ public class TeacherStudentRepository {
 				from teacher_students ts
 				join users u on u.id = ts.student_id
 				where ts.teacher_id = :teacherId
-				order by u.name, u.id
+				order by u.name collate "und-x-icu", u.id
 				""")
 				.param("teacherId", teacherId)
 				.query(USER_SUMMARY)
@@ -84,7 +84,7 @@ public class TeacherStudentRepository {
 				from teacher_students ts
 				join users u on u.id = ts.teacher_id
 				where ts.student_id = :studentId
-				order by u.name, u.id
+				order by u.name collate "und-x-icu", u.id
 				""")
 				.param("studentId", studentId)
 				.query(USER_SUMMARY)

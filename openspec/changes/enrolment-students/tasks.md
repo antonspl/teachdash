@@ -29,7 +29,7 @@
 - [x] 3.8 Add the name rule, `@ReportAsSingleViolation` and whitespace removal (design D8, D10); verify R1-S8, R1-S9 and accounts R11 pass
 - [x] 3.9 Add the active flag, merge the records and add the shared creation method and role check (design D11, D12, D13); verify R3-S7 passes and the JSON of existing endpoints is unchanged
 - [x] 3.10 Fix the style items in #47 (dense line in `TeacherStudentController`, Javadoc in `StudentRegistrationService`); verify the full suite is green and approved tests are unchanged
-- [ ] 3.11 Fix name order (design D14) and the name rules (design D8, D10); verify R2-S9, R3-S8, R11-S4 and R11-S5 pass, the full suite is green, and approved tests are unchanged
+- [x] 3.11 Fix name order (design D14) and the name rules (design D8, D10); verify R2-S9, R3-S8, R11-S4 and R11-S5 pass, the full suite is green, and approved tests are unchanged
 
 ## 4. Review
 

@@ -11,7 +11,7 @@ public record RegisterStudentRequest(
 		@TimeZoneId String timeZone) {
 
 	public RegisterStudentRequest {
-		name = Normalize.strip(name);
+		name = Normalize.name(name);
 		email = Normalize.strip(email);
 	}
 }

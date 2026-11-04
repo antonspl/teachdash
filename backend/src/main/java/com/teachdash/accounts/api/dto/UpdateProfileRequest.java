@@ -9,6 +9,6 @@ public record UpdateProfileRequest(
 		@TimeZoneId String timeZone) {
 
 	public UpdateProfileRequest {
-		name = Normalize.strip(name);
+		name = Normalize.name(name);
 	}
 }

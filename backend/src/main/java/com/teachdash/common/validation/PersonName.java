@@ -19,7 +19,9 @@ import jakarta.validation.constraints.Size;
 @Documented
 @NotBlank
 @Size(max = 200)
-@Pattern(regexp = ".*[^\\p{Z}\\p{C}].*", flags = Pattern.Flag.DOTALL)
+@Pattern(
+		regexp = "(?!.*[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}])(?=.*[\\p{L}\\p{Nd}&&[^\\u3164\\uFFA0\\u115F\\u1160]]).*",
+		flags = Pattern.Flag.DOTALL)
 @ReportAsSingleViolation
 @Constraint(validatedBy = {})
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })

@@ -11,7 +11,7 @@ public record CreateTeacherRequest(
 		@TimeZoneId String timeZone) {
 
 	public CreateTeacherRequest {
-		name = Normalize.strip(name);
+		name = Normalize.name(name);
 		email = Normalize.strip(email);
 	}
 }
