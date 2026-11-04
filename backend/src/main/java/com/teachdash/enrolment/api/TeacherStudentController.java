@@ -18,6 +18,7 @@ import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
 import com.teachdash.enrolment.domain.UserSummary;
 import com.teachdash.enrolment.domain.StudentRegistrationService;
+import com.teachdash.enrolment.domain.StudentRemovalService;
 
 import jakarta.validation.Valid;
 
@@ -26,10 +27,15 @@ class TeacherStudentController {
 
 	private final StudentRegistrationService registration;
 	private final EnrolmentQueryService queries;
+	private final StudentRemovalService removal;
 
-	TeacherStudentController(StudentRegistrationService registration, EnrolmentQueryService queries) {
+	TeacherStudentController(
+			StudentRegistrationService registration,
+			EnrolmentQueryService queries,
+			StudentRemovalService removal) {
 		this.registration = registration;
 		this.queries = queries;
+		this.removal = removal;
 	}
 
 	@PostMapping("/api/teacher/students")
@@ -53,9 +59,10 @@ class TeacherStudentController {
 		return queries.studentOfTeacher(teacherId, id);
 	}
 
-	// STUB: pass 2 replaces this with a scoped delete
 	@DeleteMapping("/api/teacher/students/{id}")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void removeStudent(@PathVariable String id) {
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void removeStudent(@PathVariable UUID id, Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		removal.removeStudent(teacherId, id);
 	}
 }

@@ -52,6 +52,17 @@ public class TeacherStudentRepository {
 				.update();
 	}
 
+	public boolean delete(UUID teacherId, UUID studentId) {
+		int rows = jdbc.sql("""
+				delete from teacher_students
+				where teacher_id = :teacherId and student_id = :studentId
+				""")
+				.param("teacherId", teacherId)
+				.param("studentId", studentId)
+				.update();
+		return rows > 0;
+	}
+
 	public List<UserSummary> findStudents(UUID teacherId) {
 		return jdbc.sql("""
 				select u.id, u.name, u.email, u.time_zone, u.active
