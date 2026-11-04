@@ -14,13 +14,21 @@ it. The number of scenarios is not limited. A larger feature is split into sever
 with its own issue, spec and PR.
 
 1. **Explore** (optional) — discuss the idea; no artifacts.
-2. **Clarify** — before writing a proposal, list open questions and ambiguities
-   and get the owner's answers. Record the answers in the proposal.
-3. **Propose** — proposal, spec deltas, design, tasks. Every requirement has at
+2. **Clarify** — before writing a proposal, restate the task in plain words, list
+   open questions and ambiguities, and propose research angles. Get the owner's
+   answers and agreement on the angles, or agreement that a small task needs none.
+   Record the answers in the proposal.
+3. **Research** — one researcher agent per agreed angle. If the findings raise new
+   decisions, ask the owner before proposing.
+4. **Propose** — proposal, spec deltas, design, tasks. Every requirement has at
    least one Given/When/Then scenario. No code. Push the branch, open a draft PR.
-4. **Spec review gate** — STOP. A reviewer approves the spec in the PR. No tests
+5. **Spec critique** — the spec-critic agent attacks the draft, on every change.
+   Fix what has a clear answer, ask the owner about real trade-offs, and turn
+   findings outside the change into issues. Run it again if a fix was non-trivial.
+   Its report is not an approval; the gate request summarises what it found.
+6. **Spec review gate** — STOP. A reviewer approves the spec in the PR. No tests
    until approved.
-5. **Red** — write backend tests for every scenario; they MUST compile and fail
+7. **Red** — write backend tests for every scenario; they MUST compile and fail
    for the right reason: each test fails at its THEN step because the behaviour is
    missing — not in setup, not because classes are missing. Test setup MUST NOT
    depend on endpoints that are not implemented yet (create data and sessions
@@ -28,15 +36,15 @@ with its own issue, spec and PR.
    - **stubs** that return 501, each marked with a `STUB` comment; pass 2 rewrites them;
    - **schema migrations** — permanent production code; the reviewer reviews them
      as production code at the test review gate.
-6. **Test review gate** — STOP. A reviewer approves the tests in the PR. No
+8. **Test review gate** — STOP. A reviewer approves the tests in the PR. No
    production code until approved.
-7. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
+9. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
    if a test looks wrong, stop and ask the reviewer.
-8. **Code review** — a reviewer approves the code in the PR. Security problems,
+10. **Code review** — a reviewer approves the code in the PR. Security problems,
    data loss and spec violations are fixed in the PR. Every other finding becomes
    an issue, so rare edge cases do not add more review rounds.
-9. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
-10. **Owner review** — mark the PR ready. The owner reviews spec, tests and code
+11. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
+12. **Owner review** — mark the PR ready. The owner reviews spec, tests and code
     together and merges. Only the owner merges into `main`.
 
 A gate is approved by a PR comment naming it (e.g. "tests approved") plus the
