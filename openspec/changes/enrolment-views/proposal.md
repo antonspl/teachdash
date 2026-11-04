@@ -24,8 +24,8 @@ Assumptions (owner may override during review):
 - A removed student keeps their session. Nothing they can reach today depends on the
   assignment, except their own list of teachers.
 - Removal has no undo. Registering the student's email again returns 409 `STUDENT_EXISTS`,
-  as for any existing student. The student can return through the join link once #29
-  builds it.
+  as for any existing student. A student with a password can return through the join link
+  once #29 builds it. A student without one is recovered by an admin (R6).
 
 ## Why
 

@@ -64,8 +64,8 @@ and the `student_id` index these queries use, and `users` has the unique index o
 ### D6. Test support
 
 `TestClient` has no `delete` method, so tests add one, with the CSRF header handled like
-`post`. Data and sessions come from the `ApiTest` helpers. Stub for pass 1: both endpoints
-return 501, and the role rule from D4 waits for pass 2, so R5-S6 reaches the stub and fails
+`post`. Data and sessions come from the `ApiTest` helpers. Stub for pass 1: the removal and
+student-list endpoints return 501, and the role rule from D4 waits for pass 2, so R5-S6 reaches the stub and fails
 at its THEN step.
 
 ### D7. Admin lookup uses POST
