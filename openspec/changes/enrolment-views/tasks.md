@@ -30,7 +30,7 @@
 - [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and tests approved in 2.3 are unchanged
 - [x] 3.9 Limit invalidation on a last removal to SET_PASSWORD links (design D2); verify R4-S3, R4-S12 and R4-S13 pass
 - [x] 3.10 Move `TeacherName` back to `enrolment.domain` (design D3); verify all enrolment tests pass unchanged
-- [ ] 3.11 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and tests approved in 2.4 are unchanged
+- [x] 3.11 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and tests approved in 2.4 are unchanged
 
 ## Workflow follow-up
 
