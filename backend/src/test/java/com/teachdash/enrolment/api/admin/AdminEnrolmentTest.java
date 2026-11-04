@@ -153,4 +153,40 @@ class AdminEnrolmentTest extends ApiTest {
 				.body("find { it.id == '" + active + "' }.active", equalTo(true))
 				.body("find { it.id == '" + inactive + "' }.active", equalTo(false));
 	}
+
+	@Test
+	@DisplayName("[student-enrolment/R3-S8] Admin lists use the same name order")
+	void adminListsUseTheSameNameOrder() {
+		// given a teacher with students "Boris", "anna", "Ёлка", "Анна" and "яна", and a student with teachers "Яков", "борис" and "Anna"
+		UUID teacher = createTeacher("a@example.com", "teacher-pass-1");
+		UUID boris = createUser("STUDENT", "Boris", "boris@example.com", "student-pass-1", true);
+		UUID anna = createUser("STUDENT", "anna", "anna@example.com", "student-pass-1", true);
+		UUID elka = createUser("STUDENT", "Ёлка", "elka@example.com", "student-pass-1", true);
+		UUID annaCyrillic = createUser("STUDENT", "Анна", "anna-ru@example.com", "student-pass-1", true);
+		UUID yana = createUser("STUDENT", "яна", "yana@example.com", "student-pass-1", true);
+		assignStudent(teacher, boris);
+		assignStudent(teacher, anna);
+		assignStudent(teacher, elka);
+		assignStudent(teacher, annaCyrillic);
+		assignStudent(teacher, yana);
+		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
+		UUID yakov = createUser("TEACHER", "Яков", "yakov@example.com", "teacher-pass-1", true);
+		UUID borisTeacher = createUser("TEACHER", "борис", "boris-t@example.com", "teacher-pass-1", true);
+		UUID annaTeacher = createUser("TEACHER", "Anna", "anna-t@example.com", "teacher-pass-1", true);
+		assignStudent(yakov, student);
+		assignStudent(borisTeacher, student);
+		assignStudent(annaTeacher, student);
+		TestClient admin = loggedInAdmin();
+
+		// when the admin lists the teacher's students and the student's teachers
+		var students = admin.get("/api/admin/teachers/" + teacher + "/students");
+		var teachers = admin.get("/api/admin/students/" + student + "/teachers");
+
+		// then the students are in the order "anna", "Boris", "Анна", "Ёлка", "яна"
+		students.then().statusCode(200)
+				.body("name", contains("anna", "Boris", "Анна", "Ёлка", "яна"));
+		// and the teachers in the order "Anna", "борис", "Яков"
+		teachers.then().statusCode(200)
+				.body("name", contains("Anna", "борис", "Яков"));
+	}
 }

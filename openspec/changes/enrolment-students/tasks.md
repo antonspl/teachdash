@@ -9,7 +9,7 @@
 - [x] 1.5 Run `./gradlew test`; verify every new test fails at its THEN step and all other tests pass
 - [x] 1.6 Write tests for the scenarios added in the code review (R1-S7, R2-S6, R3-S5); verify the coverage script passes and each fails at its THEN step with all other tests green
 - [x] 1.7 Write tests for the scenarios added from #47 (R1-S8 to R1-S13, R2-S7, R2-S8, R3-S6, R3-S7, accounts R11-S1 to R11-S3) and remove the stale stub comment from `StudentRegistrationTest`; verify the coverage script passes and report which tests fail at THEN and which already pass, because they guard existing behaviour
-- [ ] 1.8 Write tests for the scenarios from the second code review (R2-S9, R3-S8, accounts R11-S4, R11-S5); verify the coverage script passes and each fails at its THEN step
+- [x] 1.8 Write tests for the scenarios from the second code review (R2-S9, R3-S8, accounts R11-S4, R11-S5); verify the coverage script passes and each fails at its THEN step
 
 ## 2. Test review
 

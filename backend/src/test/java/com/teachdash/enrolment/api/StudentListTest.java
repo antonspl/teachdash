@@ -164,4 +164,29 @@ class StudentListTest extends ApiTest {
 		list.then().statusCode(401).body("code", equalTo("UNAUTHENTICATED"));
 		details.then().statusCode(401).body("code", equalTo("UNAUTHENTICATED"));
 	}
+
+	@Test
+	@DisplayName("[student-enrolment/R2-S9] Name order ignores case and follows the alphabet")
+	void nameOrderIgnoresCaseAndFollowsTheAlphabet() {
+		// given a teacher with students "Boris", "anna", "Ёлка", "Анна" and "яна"
+		UUID teacher = createTeacher("a@example.com", "teacher-pass-1");
+		UUID boris = createUser("STUDENT", "Boris", "boris@example.com", "student-pass-1", true);
+		UUID anna = createUser("STUDENT", "anna", "anna@example.com", "student-pass-1", true);
+		UUID elka = createUser("STUDENT", "Ёлка", "elka@example.com", "student-pass-1", true);
+		UUID annaCyrillic = createUser("STUDENT", "Анна", "anna-ru@example.com", "student-pass-1", true);
+		UUID yana = createUser("STUDENT", "яна", "yana@example.com", "student-pass-1", true);
+		assignStudent(teacher, boris);
+		assignStudent(teacher, anna);
+		assignStudent(teacher, elka);
+		assignStudent(teacher, annaCyrillic);
+		assignStudent(teacher, yana);
+		TestClient client = loggedInAs("a@example.com");
+
+		// when the teacher lists students
+		var response = client.get(STUDENTS);
+
+		// then the order is "anna", "Boris", "Анна", "Ёлка", "яна"
+		response.then().statusCode(200)
+				.body("name", contains("anna", "Boris", "Анна", "Ёлка", "яна"));
+	}
 }

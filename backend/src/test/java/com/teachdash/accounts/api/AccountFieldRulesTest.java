@@ -3,6 +3,8 @@ package com.teachdash.accounts.api;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -104,5 +106,62 @@ class AccountFieldRulesTest extends ApiTest {
 				.param("id", teacherId)
 				.query(String.class)
 				.single());
+	}
+
+	@Test
+	@DisplayName("[accounts/R11-S4] Invisible characters around a name are removed")
+	void invisibleCharactersAroundANameAreRemoved() {
+		// given a logged-in admin
+		TestClient admin = loggedInAdmin();
+
+		// when the admin creates a teacher with the name "\u00A0Анна\u200B\u202F"
+		var response = admin.post(TEACHERS,
+				Map.of("name", "\u00A0Анна\u200B\u202F", "email", "anna@example.com", "timeZone", "UTC"));
+
+		// then the response is 201 and the stored name is "Анна"
+		response.then().statusCode(201);
+		String stored = jdbc.sql("select name from users where email = 'anna@example.com'")
+				.query(String.class)
+				.single();
+		assertEquals("Анна", stored);
+	}
+
+	@Test
+	@DisplayName("[accounts/R11-S5] Names that only look filled or hide characters are rejected")
+	void namesThatOnlyLookFilledOrHideCharactersAreRejected() {
+		// given a logged-in admin
+		TestClient admin = loggedInAdmin();
+		long usersBefore = jdbc.sql("select count(*) from users").query(Long.class).single();
+		List<String> names = List.of("\u3164", "\u2800", "\u034F", "Anna\u202Exyz", "A\nB");
+
+		// when the admin creates a teacher with each of the names
+		Map<String, Integer> statuses = new LinkedHashMap<>();
+		Map<String, String> codes = new LinkedHashMap<>();
+		for (int i = 0; i < names.size(); i++) {
+			var response = admin.post(TEACHERS,
+					Map.of("name", names.get(i), "email", "name" + i + "@example.com", "timeZone", "UTC"));
+			statuses.put(escape(names.get(i)), response.statusCode());
+			codes.put(escape(names.get(i)), response.path("code"));
+		}
+
+		// then each response is 400 with code VALIDATION_FAILED
+		for (String name : statuses.keySet()) {
+			assertEquals(400, statuses.get(name), "status for name " + name);
+			assertEquals("VALIDATION_FAILED", codes.get(name), "code for name " + name);
+		}
+		// and no account is created
+		assertEquals(usersBefore, jdbc.sql("select count(*) from users").query(Long.class).single());
+	}
+
+	private static String escape(String value) {
+		StringBuilder result = new StringBuilder();
+		for (char c : value.toCharArray()) {
+			if (c < 0x20 || c > 0x7E) {
+				result.append(String.format("\\u%04X", (int) c));
+			} else {
+				result.append(c);
+			}
+		}
+		return result.toString();
 	}
 }
