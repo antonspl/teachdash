@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import com.teachdash.accounts.domain.Role;
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
-import com.teachdash.enrolment.api.dto.TeacherName;
 import com.teachdash.enrolment.persistence.TeacherStudentRepository;
 
 @Service

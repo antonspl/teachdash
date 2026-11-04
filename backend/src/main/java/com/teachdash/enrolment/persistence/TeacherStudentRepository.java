@@ -10,7 +10,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-import com.teachdash.enrolment.api.dto.TeacherName;
+import com.teachdash.enrolment.domain.TeacherName;
 import com.teachdash.enrolment.domain.UserSummary;
 
 @Repository

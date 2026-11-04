@@ -7,8 +7,8 @@ import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.teachdash.enrolment.api.dto.TeacherName;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
+import com.teachdash.enrolment.domain.TeacherName;
 
 @RestController
 class StudentTeacherController {
