@@ -36,7 +36,8 @@ Alternative: load with `findStudent`, then delete. It adds a query and a race, a
 nothing.
 
 If the delete removed a row and the student has no assignment left, the same transaction
-calls `PasswordLinkService.invalidateLinks`. The transaction makes the two writes one
+invalidates the student's unused SET_PASSWORD link only. A reset link comes from an admin,
+not the teacher, so it stays. The transaction makes the two writes one
 action, so the removal cannot succeed with the link still live. Removal keeps its own
 `StudentRemovalService`, because it now coordinates enrolment and accounts.
 
@@ -44,7 +45,9 @@ action, so the removal cannot succeed with the link still live. Removal keeps it
 
 A new `TeacherStudentRepository` query joins `users`, filters on `u.active`, and uses the
 same order as `findTeachers` (`u.name collate "und-x-icu", u.id`). It returns a new record
-`TeacherName(UUID id, String name)` in `enrolment.api.dto` (constitution section 3).
+`TeacherName(UUID id, String name)` in `enrolment.domain`, next to `UserSummary`, so
+persistence does not depend on the web layer. #51 updates the layout rule in constitution
+section 3.
 
 Reusing `findTeachers` and `UserSummary` would need filtering in Java and a mapping, and
 a later field added to `UserSummary` could reach students by accident. With its own
@@ -58,7 +61,7 @@ Add `.requestMatchers("/api/student/**").hasRole("STUDENT")` to `SecurityConfig`
 The removal goes in `TeacherStudentController`. The student list goes in a new
 `StudentTeacherController` in `enrolment.api`, so the malformed id advice and package
 layout stay as they are. The service layer gets `EnrolmentQueryService.activeTeacherNamesForStudent`
-and a new `removeStudent` method, `@Transactional`, on a service that writes assignments.
+and `StudentRemovalService.removeStudent`, which is `@Transactional`.
 
 ### D5. Dependencies and migrations
 
@@ -103,12 +106,14 @@ THEN step.
   D7 and the reset link (R6-S2).
 - [A student removed by mistake before setting a password loses the link] → An admin finds
   them (D7) and issues a reset link (R6-S2).
-- [Two parallel removals of a student's last two teachers could each see the other's row
-  and skip invalidation] → Not reachable today: the only way to get an assignment is registering a new account, so
-  no student has two teachers through the API. #29 must recheck this when it adds a second
-  way, including admin reset links, which a student with a password can hold.
-- [A teacher-issued reset link from #30 stays live when that teacher is removed but another
-  remains] → #30 must handle this, since a link does not record who issued it.
+- [With two teachers, a removed teacher's link can stay live: another teacher remains
+  (R4-S12), the other teacher is deactivated, or two parallel removals each see the other's
+  row] → Not reachable today: the only way to get an assignment is registering a new
+  account, so no student has two teachers through the API. Required in #29, which makes it
+  reachable: record who issued each link, and invalidate that teacher's links on any
+  removal. R4-S12 changes then.
+- [A teacher-issued reset link from #30 must also die on removal] → The same #29 work covers
+  it, and this change's SET_PASSWORD limit must be revisited then.
 - [A student keeps their session after removal] → They still reach only their own data.
   Changes that add teacher-owned data must check the assignment on every request, as
   constitution section 8 already requires.

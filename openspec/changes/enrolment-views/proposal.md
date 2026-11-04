@@ -24,6 +24,15 @@ Answers to the review of the code on 2026-11-04.
 | 6 | After a last removal, the teacher still holds the unused set-password link and could log in as the student and lock them out. Keep answer 3? | No, this replaces that part of answer 3. A last removal invalidates the student's unused links. The account stays, and an admin recovers the student (R6). |
 | 7 | Which other review findings are fixed in this change? | The confusing method name, the weak R4-S3 assertion, duplicate mapping, repeated test setup, the repeated not-found error, and `TeacherName` moves to `api/dto`. The rule about gates added mid-change goes to its own issue. |
 
+Answers to the second review of the code on 2026-11-04.
+
+| # | Question | Answer |
+|---|----------|--------|
+| 8 | A last removal also kills an admin's reset link, which the teacher never held. What should happen? | This narrows answer 6. A last removal invalidates only the set-password link. |
+| 9 | A removed teacher's link can stay valid when another teacher remains, which is reachable only after #29. When is it fixed? | As a required part of #29: record who issued each link, and invalidate that teacher's links on any removal. R4-S12 changes then. |
+| 10 | Where does `TeacherName` live? | This replaces that part of answer 7. Back in `domain`, next to `UserSummary`. The layout rule changes in its own PR (#51). |
+| 11 | Close the gaps in R4-S4 and R6-S2? | Yes, in this change. |
+
 Assumptions (owner may override during review):
 
 - Removing a student returns 204 and has no body.
@@ -42,7 +51,7 @@ needs to see who teaches them. This is part 2 of the split of #5 (issue #28).
 ## What Changes
 
 - A teacher removes a student from their list. That assignment is deleted, and a last
-  removal also invalidates the student's unused password links.
+  removal also invalidates the student's unused set-password link.
 - A student lists their own active teachers, with id and name, in name order.
 - The student endpoint is allowed only for students, through a new role rule for
   `/api/student/**`.
