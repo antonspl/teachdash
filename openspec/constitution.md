@@ -9,8 +9,9 @@ One change = one branch = one pull request. The PR goes through three review gat
 by a **reviewer** (any team member other than the author; the owner while the team
 has no other reviewers), then the **owner** reviews the whole PR and merges it.
 
-A change has about 10 scenarios at most, so one person can review it. A larger
-feature is split into several changes, each with its own issue, spec and PR.
+A change has at most 6 requirements, and fewer is better, so one person can review
+it. The number of scenarios is not limited. A larger feature is split into several changes, each
+with its own issue, spec and PR.
 
 1. **Explore** (optional) — discuss the idea; no artifacts.
 2. **Clarify** — before writing a proposal, list open questions and ambiguities
