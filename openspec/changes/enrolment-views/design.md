@@ -99,7 +99,7 @@ THEN step.
 - [A removal made by mistake cannot be undone until #29] → The account stays. A student
   with a password can still log in and can return through the join link from #29.
 - [A mistyped email stays taken after removal] → The admin finds the account (D7), and can
-  issue a link for it. Nothing frees the email. Accepted in clarification 3.
+  issue a link for it. Nothing frees the email. This follows from keeping the account (clarification 3).
 - [A student without a password whose link was lost or invalidated cannot use #29 or #30]
   → Joining needs
   a login, and #30 covers only a teacher's own students. The admin recovers them through
