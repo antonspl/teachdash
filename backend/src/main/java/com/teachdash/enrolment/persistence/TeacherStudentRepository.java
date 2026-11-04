@@ -10,12 +10,12 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-import com.teachdash.enrolment.domain.Person;
+import com.teachdash.enrolment.domain.UserSummary;
 
 @Repository
 public class TeacherStudentRepository {
 
-	private static final RowMapper<Person> PERSON = (rs, rowNum) -> new Person(
+	private static final RowMapper<UserSummary> USER_SUMMARY = (rs, rowNum) -> new UserSummary(
 			rs.getObject("id", UUID.class),
 			rs.getString("name"),
 			rs.getString("email"),
@@ -52,7 +52,7 @@ public class TeacherStudentRepository {
 				.update();
 	}
 
-	public List<Person> findStudents(UUID teacherId) {
+	public List<UserSummary> findStudents(UUID teacherId) {
 		return jdbc.sql("""
 				select u.id, u.name, u.email, u.time_zone, u.active
 				from teacher_students ts
@@ -61,11 +61,11 @@ public class TeacherStudentRepository {
 				order by u.name, u.id
 				""")
 				.param("teacherId", teacherId)
-				.query(PERSON)
+				.query(USER_SUMMARY)
 				.list();
 	}
 
-	public Optional<Person> findStudent(UUID teacherId, UUID studentId) {
+	public Optional<UserSummary> findStudent(UUID teacherId, UUID studentId) {
 		return jdbc.sql("""
 				select u.id, u.name, u.email, u.time_zone, u.active
 				from teacher_students ts
@@ -74,11 +74,11 @@ public class TeacherStudentRepository {
 				""")
 				.param("teacherId", teacherId)
 				.param("studentId", studentId)
-				.query(PERSON)
+				.query(USER_SUMMARY)
 				.optional();
 	}
 
-	public List<Person> findTeachers(UUID studentId) {
+	public List<UserSummary> findTeachers(UUID studentId) {
 		return jdbc.sql("""
 				select u.id, u.name, u.email, u.time_zone, u.active
 				from teacher_students ts
@@ -87,7 +87,7 @@ public class TeacherStudentRepository {
 				order by u.name, u.id
 				""")
 				.param("studentId", studentId)
-				.query(PERSON)
+				.query(USER_SUMMARY)
 				.list();
 	}
 }

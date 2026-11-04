@@ -2,7 +2,7 @@ package com.teachdash.enrolment.domain;
 
 import java.util.UUID;
 
-public record Person(
+public record UserSummary(
 		UUID id,
 		String name,
 		String email,

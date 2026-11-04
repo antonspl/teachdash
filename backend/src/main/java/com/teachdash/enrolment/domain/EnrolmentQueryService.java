@@ -22,21 +22,21 @@ public class EnrolmentQueryService {
 		this.assignments = assignments;
 	}
 
-	public List<Person> studentsOfTeacher(UUID teacherId) {
+	public List<UserSummary> studentsOfTeacher(UUID teacherId) {
 		return assignments.findStudents(teacherId);
 	}
 
-	public Person studentOfTeacher(UUID teacherId, UUID studentId) {
+	public UserSummary studentOfTeacher(UUID teacherId, UUID studentId) {
 		return assignments.findStudent(teacherId, studentId)
 				.orElseThrow(EnrolmentQueryService::notFound);
 	}
 
-	public List<Person> studentsOfTeacherForAdmin(UUID teacherId) {
+	public List<UserSummary> studentsOfTeacherForAdmin(UUID teacherId) {
 		requireRole(teacherId, Role.TEACHER);
 		return assignments.findStudents(teacherId);
 	}
 
-	public List<Person> teachersOfStudent(UUID studentId) {
+	public List<UserSummary> teachersOfStudent(UUID studentId) {
 		requireRole(studentId, Role.STUDENT);
 		return assignments.findTeachers(studentId);
 	}

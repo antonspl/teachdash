@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.teachdash.accounts.domain.CreatedAccount;
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
-import com.teachdash.enrolment.domain.Person;
+import com.teachdash.enrolment.domain.UserSummary;
 import com.teachdash.enrolment.domain.StudentRegistrationService;
 
 import jakarta.validation.Valid;
@@ -41,13 +41,13 @@ class TeacherStudentController {
 	}
 
 	@GetMapping("/api/teacher/students")
-	List<Person> listStudents(Principal principal) {
+	List<UserSummary> listStudents(Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		return queries.studentsOfTeacher(teacherId);
 	}
 
 	@GetMapping("/api/teacher/students/{id}")
-	Person studentDetails(@PathVariable UUID id, Principal principal) {
+	UserSummary studentDetails(@PathVariable UUID id, Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		return queries.studentOfTeacher(teacherId, id);
 	}
