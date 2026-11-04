@@ -35,7 +35,7 @@
 
 - [x] 4.1 Reviewer agent reviews the diff against the spec and constitution (focus: per-teacher scoping, existing accounts unchanged on 409, shared field rules); confirmed findings are fixed and the suite is green
 - [x] 4.2 Reviewer agent reviews the fixes from 3.7 to 3.10; confirmed findings are fixed and the suite is green
-- [ ] 4.3 Reviewer agent reviews the fix from 3.11; confirmed findings are fixed and the suite is green
+- [x] 4.3 Reviewer agent reviews the fix from 3.11; confirmed findings are fixed and the suite is green
 
 ## Workflow follow-up
 
