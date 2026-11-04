@@ -2,10 +2,10 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add `delete` to `TestClient` (design D6); verify it compiles and existing tests still pass
-- [ ] 1.2 Add stubs for both endpoints in design D1, each returning 501 and marked `STUB`, with no new role rule yet; verify compilation
-- [ ] 1.3 Write one test per scenario in `specs/student-enrolment/spec.md` (17 scenarios) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify `scripts/check-scenario-coverage.sh` passes
-- [ ] 1.4 Run `./gradlew test`; verify every new test fails at its THEN step and all other tests pass. R4-S8, R4-S9, R4-S10 and R5-S7 guard rules that already exist and may pass already: report them to the reviewer
+- [x] 1.1 Add `delete` to `TestClient` (design D6); verify it compiles and existing tests still pass
+- [x] 1.2 Add stubs for both endpoints in design D1, each returning 501 and marked `STUB`, with no new role rule yet; verify compilation
+- [x] 1.3 Write one test per scenario in `specs/student-enrolment/spec.md` (17 scenarios) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify `scripts/check-scenario-coverage.sh` passes
+- [x] 1.4 Run `./gradlew test`; verify every new test fails at its THEN step and all other tests pass. R4-S8, R4-S9, R4-S10 and R5-S7 guard rules that already exist and may pass already: report them to the reviewer
 
 ## 2. Test review
 

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -50,5 +51,11 @@ class TeacherStudentController {
 	UserSummary studentDetails(@PathVariable UUID id, Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		return queries.studentOfTeacher(teacherId, id);
+	}
+
+	// STUB: pass 2 replaces this with a scoped delete
+	@DeleteMapping("/api/teacher/students/{id}")
+	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
+	void removeStudent(@PathVariable String id) {
 	}
 }

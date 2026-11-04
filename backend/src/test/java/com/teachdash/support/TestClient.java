@@ -87,6 +87,10 @@ public class TestClient {
 		return spec().body(body).patch(path);
 	}
 
+	public Response delete(String path) {
+		return spec().delete(path);
+	}
+
 	public Response login(String email, String password) {
 		return post("/api/auth/login", Map.of("email", email, "password", password));
 	}
