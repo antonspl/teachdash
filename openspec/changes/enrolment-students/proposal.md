@@ -44,6 +44,9 @@ Answers to the owner's code review on 2026-11-03.
 | 14 | Should the other findings stay in #47? | No. Fix everything from #47 in this PR and close the issue. |
 | 15 | Should the Purpose mention the link? | Not until #29 builds it. |
 
+Second code review on 2026-11-04. Spec violations are fixed here: name order (R2, R3) and
+name characters (R11). Other findings go to #48, as constitution section 1 step 8 says.
+
 ## Why
 
 Teachers need students on the platform before courses, homework or schedule make

@@ -80,7 +80,7 @@ Any email that already has an account MUST return 409 and change nothing.
 
 ### Requirement: R2 Teacher sees only own students
 A teacher's student list SHALL contain exactly the students assigned to that teacher,
-ordered by name, each with id, name, email, time zone and active flag. Any teacher request about an
+in name order, each with id, name, email, time zone and active flag. Name order ignores case and follows each alphabet. Any teacher request about an
 id that is not a student assigned to them, including a malformed id, MUST return 404. Teacher endpoints SHALL be
 allowed only for teachers.
 
@@ -124,9 +124,14 @@ allowed only for teachers.
 - **WHEN** a client calls the teacher endpoints that list students and read details
 - **THEN** both responses are 401 with code `UNAUTHENTICATED`
 
+#### Scenario: student-enrolment/R2-S9 Name order ignores case and follows the alphabet
+- **GIVEN** a teacher with students "Boris", "anna", "Ёлка", "Анна" and "яна"
+- **WHEN** the teacher lists students
+- **THEN** the order is "anna", "Boris", "Анна", "Ёлка", "яна"
+
 ### Requirement: R3 Admin sees assignments
 An admin SHALL be able to list the students assigned to any teacher and the teachers of
-any student, ordered by name, each with id, name, email, time zone and active flag. An id that is not
+any student, in name order as in R2, each with id, name, email, time zone and active flag. An id that is not
 a teacher or a student, respectively, including a malformed id, MUST return 404.
 
 #### Scenario: student-enrolment/R3-S1 Admin lists a teacher's students
@@ -163,3 +168,8 @@ a teacher or a student, respectively, including a malformed id, MUST return 404.
 - **GIVEN** a student assigned to an active teacher and a deactivated teacher
 - **WHEN** the admin lists the student's teachers
 - **THEN** both teachers are listed, the active one with active true and the deactivated one with active false
+
+#### Scenario: student-enrolment/R3-S8 Admin lists use the same name order
+- **GIVEN** a teacher with students "Boris", "anna", "Ёлка", "Анна" and "яна", and a student with teachers "Яков", "борис" and "Anna"
+- **WHEN** the admin lists the teacher's students and the student's teachers
+- **THEN** the students are in the order "anna", "Boris", "Анна", "Ёлка", "яна", and the teachers in the order "Anna", "борис", "Яков"

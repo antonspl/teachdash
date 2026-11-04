@@ -21,7 +21,7 @@ package and the teacher role rule.
 `TeacherStudentController` in `api` holds the teacher endpoints, and
 `AdminEnrolmentController` in `api.admin` holds the admin endpoints, so the feature stays
 one package as the constitution requires. It calls
-the accounts `UserRepository` and `PasswordLinkService` and duplicates neither. Accounts
+the accounts `UserRepository` and `AccountService` and duplicates neither. Accounts
 classes it needs become `public` if they are not already.
 
 ### D2. API
@@ -78,8 +78,8 @@ and a check would need a trigger, which is not worth it here.
 
 ### D8. One validation rule per field
 Each field's rule is defined once in `common.validation` as a composed constraint:
-`@PersonName` (not blank, at most 200, at least one character outside `\p{Z}` and
-`\p{C}`) and `@EmailAddress` (not blank, valid, at most
+`@PersonName` (not blank, at most 200, at least one letter or digit other than the Hangul
+fillers, no `\p{Cc}`, `\p{Cf}`, `\p{Zl}` or `\p{Zp}`) and `@EmailAddress` (not blank, valid, at most
 320, no Unicode separator or control or format characters). `@TimeZoneId` also includes not blank. `CreateTeacherRequest`,
 `UpdateProfileRequest` and the new request use them, so they cannot drift apart. Errors
 stay 400 `VALIDATION_FAILED`. `@ReportAsSingleViolation` makes each constraint's message
@@ -95,21 +95,23 @@ creation and `ADMIN_EMAIL`. Addresses with these characters could not be typed a
 anyway.
 
 ### D9. Malformed id
-The enrolment controllers map a path id that is not a UUID to 404 `NOT_FOUND` with a local
-`@ExceptionHandler`. Alternative: a global handler. Rejected: accounts endpoints have
+The enrolment controllers map a path id that is not a UUID to 404 `NOT_FOUND` through `MalformedIdAdvice`, an
+advice limited to `com.teachdash.enrolment.api`. Alternative: a global handler. Rejected: accounts endpoints have
 their own behaviour here, and this change does not alter them.
 
 ### D10. Whitespace is removed before validation
 Compact constructors of `RegisterStudentRequest`, `CreateTeacherRequest`,
 `UpdateProfileRequest` and `LoginRequest` strip name and email, keeping null as null. The
-`strip()` calls leave the services, so the value checked is the value stored.
+`strip()` calls leave the services, so the value checked is the value stored. Names also
+lose leading and trailing `\p{Z}` and `\p{C}` characters. `createPasswordlessUser` trusts
+its caller; #48 tracks moving this normalisation so non-HTTP callers get it too.
 `AdminBootstrap` keeps its own strip because it reads environment variables, not requests.
 
 ### D11. One account creation method
 A public accounts method, `createPasswordlessUser(role, name, email, timeZone)`, inserts the
 user, maps a lost race to 409 `EMAIL_TAKEN` and issues the set-password link.
-`TeacherAdminService` and `StudentRegistrationService` both call it and join its
-transaction. Each still does its own check for an existing email, because their 409 codes
+`TeacherAdminService` and `StudentRegistrationService` both call it, and it joins their
+transaction, so `register` rolls back the account if the assignment fails. Each still does its own check for an existing email, because their 409 codes
 differ.
 
 ### D12. Records
@@ -124,6 +126,13 @@ to the constitution's `api/dto` layout, and the owner reviews it here.
 these paths no longer load `password_hash`. `reactivate` still loads the teacher, because
 it needs the fields.
 
+### D14. Name order
+List queries order by `u.name collate "und-x-icu", u.id`. The database default in
+`postgres:17-alpine` sorts by code point, which puts capitals first and Ё before А.
+Alternative: creating the database with an ICU locale. Rejected: it would need a change
+to existing databases and to both compose files. The admin teacher list has the same
+order issue and is tracked in #48.
+
 No new dependencies.
 
 ## Risks / Trade-offs
@@ -134,5 +143,7 @@ No new dependencies.
   teacher creation also shows that an email is taken.
 - [Until #29 lands, an existing student cannot be assigned to another teacher] →
   Accepted. The API is not in production yet, and #29 is next in the split.
+- [The response with the set-password link is lost, or the teacher double-clicks, so the
+  retry gets `ALREADY_ENROLLED`] → Only an admin can recover the link until #30. See #48.
 - [A new student's link is lost or expires after 7 days and the teacher cannot issue
   another until #30] → Accepted. Until then the admin can issue a reset link.
