@@ -9,8 +9,13 @@ Keep the main agent's context small. It talks to the owner, writes and edits Ope
 artifacts, decides, and delegates. It does not read large parts of the codebase or
 write production code itself.
 
-- **Investigation** (searching the codebase, tracing behaviour, web research) →
-  `Explore` or `general-purpose` agent with `model: "sonnet"`.
+- **Before a proposal** → the main agent restates the task, proposes research angles
+  and agrees them with the owner.
+- **Investigation** (tracing behaviour, comparing options, web research) → `researcher`
+  agent (Sonnet), one per angle. Give it the task, the angle and what you need to
+  decide. `Explore` is only for a quick search for where something is.
+- **Spec critique** → `spec-critic` agent (Sonnet), after the spec is drafted and before
+  asking for the spec gate, on every change.
 - **Implementation** (tests in pass 1, code in pass 2) → `implementer` agent
   (Sonnet). Give it one coherent slice of `tasks.md` at a time, not the whole change.
 - **Review** → `reviewer` agent (Sonnet by default). Run it:
@@ -18,7 +23,8 @@ write production code itself.
   - whenever an implementer report raises doubt (unsure items, unexpected files,
     failing or changed tests, security-sensitive code);
   - once per PR with `model: "opus"`, before asking for the code gate.
-  Fix findings as constitution §1 step 8 says, then re-review if the fix was non-trivial.
+  Fix findings as the Code review step in constitution §1 says, then re-review if the
+  fix was non-trivial.
 
 Agents' reports are not shown to the owner — relay what matters in a few lines.
 
