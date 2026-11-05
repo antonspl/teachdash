@@ -85,7 +85,10 @@ reset link survives (R4-S13).
   R5-S1 are rewritten to the new scenarios. Their GIVEN steps change to one
   teacher.
 - R1-S14 to R1-S18, R3-S9, R4-S14 and R7-S1 to R7-S6 are new.
-- R7-S4 injects the failure into the enrolment listener, the same way as R1-S12.
+- R7-S4 injects the failure with `@MockitoSpyBean PasswordLinkService`, making the
+  two-argument `invalidateLinks(any(), any())` throw, as R1-S12 does for `issue`. Only
+  removal and the new listener call that overload, so the test compiles in pass 1 and
+  fails at THEN (204 instead of 500).
 - R1-S17 uses the same failure injection as R1-S12.
 - R1-S16 uses the same parallel-request helper as R1-S13.
 
@@ -102,7 +105,9 @@ The constitution changes in this PR, with the owner's approval recorded in the p
 
 `TeacherAdminService.deactivateTeacher` (accounts, `@Transactional`) publishes a public
 record `com.teachdash.accounts.domain.TeacherDeactivated(teacherId)` inside its
-transaction. An enrolment listener handles it with a plain `@EventListener`. It MUST NOT
+transaction, after `users.deactivate`. The order matters: the update takes the teacher-row
+lock before the listener deletes assignments, so a registration holding that lock finishes
+first and its assignment is deleted too. An enrolment listener handles it with a plain `@EventListener`. It MUST NOT
 be `@Async` or `@TransactionalEventListener`, so it runs synchronously in the same
 transaction, and a failure rolls back the deactivation (R7-S4).
 
