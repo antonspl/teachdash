@@ -12,6 +12,7 @@ Questions asked before this proposal, and the owner's answers (2026-11-05):
 6. **Who makes the check required in `protect-main`?** Claude, after the owner merges this PR and asks.
 7. **May constitution section 2 be edited here?** Yes, approved by the owner, so it no longer says the script is run by hand until CI exists.
 8. **Where is the workflow for a tooling change with no spec written?** As a general rule in constitution section 1 and `openspec/config.yaml`, in this PR, approved by the owner. Later tooling changes can reuse it.
+9. **Which Gradle cache?** The basic provider (`cache-provider: basic`), by the owner's decision, so the repo does not accept Gradle's terms for the closed-source default.
 
 ## Research
 

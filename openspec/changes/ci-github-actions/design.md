@@ -70,9 +70,11 @@ These are the first GitHub Actions dependencies (constitution section 7):
 |---|---|
 | `actions/checkout` | Gets the code |
 | `actions/setup-java` | JDK 25 (`temurin`, matching the backend image) |
-| `gradle/actions/setup-gradle` | Gradle cache and wrapper validation. It replaces `cache:` in `setup-java`, which its docs say not to combine with it |
+| `gradle/actions/setup-gradle` | Gradle cache (with `cache-provider: basic`) and wrapper validation. It replaces `cache:` in `setup-java`, which its docs say not to combine with it |
 | `actions/setup-node` | Node from `frontend/.nvmrc`, npm cache |
 | `actions/upload-artifact` | Failure reports |
+
+`setup-gradle` v6 defaults to a closed-source caching component under Gradle's terms of use. The owner chose the MIT-licensed basic provider, which uses GitHub's cache.
 
 - Each action is pinned to a full commit SHA with a version comment, resolved when the file is written. #39 keeps them updated later.
 - The workflow has `permissions: contents: read`, and checkout uses `persist-credentials: false`.
