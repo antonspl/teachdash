@@ -29,11 +29,11 @@ One workflow, `ci`, with these jobs running in parallel:
 
 | Job | Runs |
 |---|---|
-| `backend` | `./gradlew test` in `backend/` |
+| `backend` | `./gradlew cleanTest test` in `backend/`, so a later Gradle build cache cannot turn the tests into a no-op |
 | `frontend` | `npm ci`, `lint`, `format:check`, `test`, `build` |
-| `coverage` | `npm ci`, `scripts/check-scenario-coverage.sh` |
-| `e2e` | `docker compose up --build --wait`, then Playwright |
-| `ci-ok` | Runs with `if: always()`, needs the other four, and fails unless all four results are `success` |
+| `coverage` | `setup-node`, `npm ci`, `scripts/check-scenario-coverage.sh` |
+| `e2e` | `docker compose up --build --wait`, `playwright install --with-deps`, then Playwright |
+| `ci-ok` | Runs with `if: always()`, needs the other four, and fails unless all four results are `success`, so `skipped` and `cancelled` count as red. It has no other condition that could skip it |
 
 `coverage` is separate so a reviewer at the test gate sees "every scenario has a test" go green while `backend` is red by design.
 
@@ -41,7 +41,7 @@ Only `ci-ok` becomes required, so other jobs can be renamed or added without edi
 
 ### D2. Triggers, and no path filters
 
-Triggers are `pull_request`, `push` to `main`, and `workflow_dispatch`. Concurrency is grouped by PR number or ref, and cancels older runs only for pull requests, never on `main`.
+Triggers are `pull_request`, `push` to `main`, and `workflow_dispatch`. Concurrency is grouped by PR number, cancelling older runs of that PR. Other events are grouped by commit SHA: GitHub keeps only one pending run per group, so a shared `main` group could drop a commit's run even without cancelling.
 
 There are no path filters. A required check from a workflow skipped by a path filter stays "Pending" and blocks merging. Docs-only PRs therefore pay for a full run, which is acceptable on a public repo.
 
@@ -51,6 +51,8 @@ There are no path filters. A required check from a workflow skipped by a path fi
 - `push` to `main` and `workflow_dispatch`: all 3 projects, installing Chromium and WebKit.
 
 A phone failure on `main` shows as a red run and blocks no PR. It is fixed later. No retries, so every failure is visible.
+
+The phone-only test `[web-client/R7-S1]` skips itself on desktop, so it runs only on `main`. The coverage script still counts it, because it is a runtime skip.
 
 `frontend/playwright.config.ts` gains `forbidOnly: !!process.env.CI`. Without it, a stray `test.only` would make E2E pass while running one test. Vitest already refuses `.only` in CI by default.
 
@@ -83,13 +85,13 @@ Backend scenarios keep the text match. For capabilities in `FRONTEND_CAPABILITIE
 - `npx vitest list --json`, using each entry's `name`. Skipped tests are not listed.
 - `npx playwright test --list --reporter=json`, walking suites recursively. Tests with `expectedStatus: skipped` do not count. A title appears once per project, and any non-skipped entry counts.
 
-A scenario is covered when a title starts with `[<id>]`. A scenario ID only in a `describe` title no longer counts, which matches the rule in `openspec/config.yaml`.
+`vitest list --json` prefixes a name with its `describe` titles (`Suite > [id] title`), so only the part after the last ` > ` is compared. A scenario is covered when that test title starts with `[<id>]`. A scenario ID only in a `describe` title no longer counts, which matches the rule in `openspec/config.yaml`.
 
 Node parses the JSON, because the script's users already need it and `jq` would be a new requirement. The script exits with a clear error when `frontend/node_modules` is missing or a list command fails, instead of reporting every scenario as `MISSING`. When frontend scenarios are missing, the message also says to look for a stray `test.only`, because that hides other Vitest tests.
 
 ### D7. Required check after merge
 
-The ruleset is changed after merge, because `ci-ok` should already have reported from `main`. This PR therefore says "Refs #7", and #7 closes only after the check is required and proven (see `tasks.md`).
+The ruleset is changed after merge, once `ci-ok` has reported from `main`. This PR therefore says "Refs #7", and #7 closes only after the check is required and proven (see `tasks.md`).
 
 ## Risks / Trade-offs
 
@@ -99,6 +101,7 @@ The ruleset is changed after merge, because `ci-ok` should already have reported
 - [The backend healthcheck allows about 100 seconds, which a slow runner could exceed] → Compose logs are printed on failure. Adjust only if it really happens.
 - [Docker Hub rate limits on shared runners] → Re-run the job. Add a mirror only if it repeats.
 - [The list commands were tested on sample files, not this repo's tests] → Task 1.4 checks them on the real tests, including `.tsx`.
+- [`workflow_dispatch` works only once the file is on `main`, so the all-projects path cannot use it before merge] → Task 3.2 proves that path with a temporary branch `push` trigger.
 - [Runner support for Node 26 and Temurin 25, and `setup-gradle` with a `backend/` subdirectory, are not confirmed] → The first run on the PR proves or disproves them.
 
 ## Open Questions
