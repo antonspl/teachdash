@@ -136,6 +136,19 @@ dependency one way. Spring's event publisher is already on the classpath.
 Alternative: `on delete cascade`-style cleanup in SQL. Rejected because deactivation does
 not delete the user, and the link invalidation needs code anyway.
 
+### D8. Coverage script and removed requirements
+
+`scripts/check-scenario-coverage.sh` reads scenario IDs from the main specs and the active
+change deltas. This change removes requirements, so the main spec keeps six scenario IDs
+without tests until archive (R3-S7, R4-S2, R4-S12, R5-S3, R5-S4, R5-S5), and the script
+would fail until then.
+
+The script learns about `## REMOVED Requirements` in an active change delta: a scenario ID
+in the main spec of that capability, under a requirement header that the delta removes, is
+not required, unless the same ID appears in an active change delta outside a REMOVED
+section (for example, in the requirement that replaces it). Everything else is unchanged.
+The owner chose to fix the script in this PR (proposal, answer 8).
+
 ### Flyway migrations
 
 - `V4__one_teacher_per_student.sql` (D1).

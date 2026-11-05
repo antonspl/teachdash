@@ -19,6 +19,12 @@ Question from the spec critique on 2026-11-05, and the owner's answer.
 | 6 | A deactivated teacher cannot log in to remove their students, so those students could never get another teacher. What should happen? | Deactivating a teacher removes all their assignments, as if the teacher removed each student. Reactivation does not restore them. |
 | 7 | Registration locks the teacher's row so a parallel deactivation cannot leave an inactive teacher with a student. No scenario can test that timing. Keep it? | Yes, without a scenario. A code comment explains the lock, and the reviewer checks it at the code gate. |
 
+Question during the tests on 2026-11-06, and the owner's answer.
+
+| # | Question | Answer |
+|---|----------|--------|
+| 8 | The coverage script fails on the six removed scenarios until archive. Accept that, or fix the script? | Fix the script in this PR (design D8). |
+
 ## Research
 
 Angles agreed with the owner, and their conclusions:
@@ -95,4 +101,5 @@ None.
   deleted, and so are R3-S7, R5-S3 and R5-S4, because a deactivated teacher has no
   students. R1-S14 to R1-S18, R3-S9, R4-S14 and R7-S1 to R7-S6 are new.
 - `openspec/constitution.md` §8.
+- `scripts/check-scenario-coverage.sh` skips scenarios of removed requirements (design D8).
 - Issues #29 and #30 get smaller.
