@@ -13,7 +13,7 @@ See `proposal.md` for motivation and the owner's decisions.
 
 **Goals:**
 
-- A red check is visible on every PR, and after the ruleset step it blocks a normal merge.
+- A red check is visible on every PR, and after the ruleset step it blocks merging for everyone, including admins.
 - A failure shows which area failed, and leaves enough output to diagnose it.
 - The required check name does not change when jobs change.
 
@@ -58,9 +58,10 @@ Both tests with the ID `[web-client/R7-S1]` skip themselves on desktop, and noth
 
 ### D4. Failure output
 
-- `backend`: upload `backend/build/reports/tests/` on failure.
+- `backend`: upload `backend/build/reports/tests/` on failure. After the tests, a step prints the total from `backend/build/test-results/test/*.xml` and fails if it is 0, so a run of no tests cannot pass and the count is visible.
 - `e2e`: upload `frontend/playwright-report/` and `frontend/test-results/`, and print `docker compose logs`, on failure.
-- Artifacts are kept for 7 days. Every job has a 20-minute timeout.
+- The Playwright step has a 10-minute timeout. A job that hits its own timeout is cancelled and `if: failure()` steps do not run, while a step timeout fails the job, so a hung run still leaves its report and logs.
+- Artifacts are kept for 7 days. Every job has a timeout: 20 minutes, and 2 for `ci-ok`.
 
 ### D5. Actions and permissions
 
@@ -93,7 +94,12 @@ Node parses the JSON, because the script's users already need it and `jq` would 
 
 ### D7. Required check after merge
 
-The ruleset is changed after merge, once `ci-ok` has reported from `main`. This PR therefore says "Refs #7", and #7 closes only after the check is required and proven (see `tasks.md`).
+The owner merges through the admin bypass in `protect-main`, because an author cannot approve their own PR. That bypass would also skip a required check there. So `ci-ok` goes in a separate ruleset on `main`: rulesets stack, and this one has no bypass actors.
+
+- The check is pinned to the GitHub Actions app, so another check named `ci-ok` cannot satisfy it.
+- "Branch must be up to date" stays off. Only the owner merges and PRs are few, so the extra rebases are not worth it, and the run on `main` still shows a bad combination after merge.
+
+The ruleset is added after merge, once `ci-ok` has reported from `main`. This PR therefore says "Refs #7", and #7 closes only after the check is required and proven (see `tasks.md`).
 
 ### D8. Rule for tooling changes
 
@@ -105,7 +111,7 @@ Text to add to constitution section 1, after the list of steps:
 
 ## Risks / Trade-offs
 
-- [Admins can bypass the pull request rules, so the owner can still merge past a red check on purpose] → Accepted unless the owner wants it changed. The proof shows a blocked normal merge, and this is stated when reporting it.
+- [CI itself breaks, and no PR can merge] → The owner turns the separate ruleset off in GitHub settings, merges the fix, and turns it back on. The owner accepted this.
 - [CI is red on draft PRs until pass 2 by design, so red can start to look normal] → `CONTRIBUTING.md` explains which red is expected in each phase, and only the code gate requires all green.
 - [Phone bugs reach `main`] → The owner accepted this. `main` still runs all 3 projects, so they show up.
 - [The backend healthcheck allows about 100 seconds, which a slow runner could exceed] → Compose logs are printed on failure. Adjust only if it really happens.

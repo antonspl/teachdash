@@ -9,10 +9,12 @@ Questions asked before this proposal, and the owner's answers (2026-11-05):
 3. **Can the frontend part be faster, or Playwright be left out?** Keep Playwright. Pull requests run only `desktop-chromium`; pushes to `main` run all 3 projects. Phone problems do not block a PR and are fixed later, if they appear.
 4. **Should the coverage script catch skipped frontend tests?** Yes, static skips and commented-out tests, through the list commands. Runtime and conditional skips stay a review item. The same gap in backend tests (`@Disabled`) goes to a new issue.
 5. **Should Playwright retry in CI?** No retries at first.
-6. **Who makes the check required in `protect-main`?** Claude, after the owner merges this PR and asks.
+6. **Who makes the check required?** Claude, after the owner merges this PR and asks.
 7. **May constitution section 2 be edited here?** Yes, approved by the owner, so it no longer says the script is run by hand until CI exists.
 8. **Where is the workflow for a tooling change with no spec written?** As a general rule in constitution section 1 and `openspec/config.yaml`, in this PR, approved by the owner. Later tooling changes can reuse it.
 9. **Which Gradle cache?** The basic provider (`cache-provider: basic`), by the owner's decision, so the repo does not accept Gradle's terms for the closed-source default.
+10. **Should a red `ci-ok` stop the owner too?** Yes. The owner merges through the admin bypass in `protect-main`, which would also skip a check there. So `ci-ok` goes in a separate ruleset with no bypass. If CI itself breaks, the owner turns that ruleset off to merge.
+11. **Which review follow-ups are fixed here?** The owner chose to fix the timed-out E2E output and the zero-test check in this PR. The others stay in #60.
 
 ## Research
 
@@ -33,7 +35,7 @@ No workflow exists, so tests and the scenario coverage check run only when someo
 - Set `forbidOnly` in CI for Playwright, so a stray `test.only` cannot silently turn off the other E2E tests.
 - Update constitution section 2, `CONTRIBUTING.md`, and the script header.
 - Add a general rule for tooling changes with no spec to constitution section 1 and `openspec/config.yaml`.
-- **After merge:** add `ci-ok` to the `protect-main` ruleset, and show that a red check blocks merging.
+- **After merge:** add a separate ruleset that requires `ci-ok` with no bypass, and show that a red check blocks merging.
 
 ## Out of Scope
 
@@ -57,7 +59,7 @@ None. This is tooling: no product behaviour changes, so `.openspec.yaml` sets `s
 ## Impact
 
 - **New:** `.github/workflows/ci.yml`.
-- **Changed:** `scripts/check-scenario-coverage.sh`, `frontend/playwright.config.ts`, `openspec/constitution.md`, `openspec/config.yaml`, `CONTRIBUTING.md`.
+- **Changed:** `scripts/check-scenario-coverage.sh`, `frontend/playwright.config.ts`, `openspec/constitution.md`, `openspec/config.yaml`, `CONTRIBUTING.md`, `README.md`.
 - **Process:** every PR waits for CI. CI is expected to be red on a draft PR until pass 2 is finished, because the spec phase has scenarios without tests and the tests phase has failing tests.
-- **Repository settings:** the `protect-main` ruleset gains a required status check after merge.
+- **Repository settings:** a new ruleset requires `ci-ok` after merge, with no bypass. `protect-main` does not change.
 - **Hand runs:** the coverage script needs `npm ci` in `frontend/` first.
