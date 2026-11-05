@@ -33,6 +33,7 @@ jobs:
         run: ./gradlew cleanTest test
       - name: Count tests
         run: |
+          rm -f backend/build/test-results/test/*.xml
           total=0
           files=0
           for file in backend/build/test-results/test/*.xml; do
