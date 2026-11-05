@@ -117,9 +117,9 @@ jobs:
         working-directory: frontend
         run: npx --no-install playwright install --with-deps $BROWSERS
       - name: Run Playwright
-        timeout-minutes: 1
+        timeout-minutes: 10
         working-directory: frontend
-        run: sleep 300
+        run: npm run test:e2e -- $PROJECT_ARGS
       - name: Upload Playwright output
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
