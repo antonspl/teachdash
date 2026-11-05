@@ -139,7 +139,7 @@ shared test helpers live in `com.teachdash.support`.
 
 ## 8. Multiple teachers
 
-- The platform serves several teachers from day one (a small number, not thousands).
+- The platform serves several teachers from day one (about 1000 teachers).
 - One shared database. Teacher-owned data (students' enrolments, lessons, exercises,
   homework, materials) carries an owning `teacher_id`.
 - A teacher changes only their own data. Every backend query on teacher-owned
@@ -150,7 +150,7 @@ shared test helpers live in `com.teachdash.support`.
   original or the copy do not affect the other. Student data, homework results and
   progress stay private to the teacher.
 - Lessons and exercises (own or copied) can be copied into homework the same way.
-- A student may study with more than one teacher and sees data from each of them.
+- A student has at most one teacher.
 - Admin manages teacher accounts and can see all data.
 
 ## 9. Subjects and languages
