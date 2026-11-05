@@ -1,13 +1,13 @@
 # Tasks
 
-This change has no spec scenarios and no backend tests, so it follows the exception for a change without backend scenarios: no "Failing tests" section and no test review stop. Tests and code are reviewed together at the code gate.
+This is a tooling change with `skip_specs: true`, under the rule that task 4.1 adds (design D8). The spec gate covers the proposal and design. There is no "Failing tests" section and no test review stop. Proof is recorded in the PR and reviewed at the code gate.
 
 ## 1. Coverage script
 
 - [ ] 1.1 Read frontend titles through `vitest list --json` and `playwright test --list --reporter=json` (design D6), leaving the backend text match unchanged. Verify: the script prints `OK` for all scenarios on this branch.
 - [ ] 1.2 Exit with a clear error when `frontend/node_modules` is missing or a list command fails, and mention `test.only` when frontend scenarios are missing. Verify: run with `node_modules` temporarily moved aside, and with a syntax error in a temporary test.
 - [ ] 1.3 Update the script header comment to match. Verify: it no longer describes a text match or a planned replacement for frontend tests.
-- [ ] 1.4 Check detection on this repo's real tests, one case at a time, restoring each: `test.skip` in a `.test.ts`, a `.test.tsx` and an E2E spec; `describe.skip`; a commented-out test. Also add a temporary test with its scenario ID inside a nested `describe`, which must count as covered. Verify: each gives `MISSING` for that scenario, and the script is green again once restored. Record the results in the PR.
+- [ ] 1.4 Check detection on this repo's real tests, one case at a time, restoring each: `test.skip` in a `.test.ts`, a `.test.tsx` and an E2E spec; `describe.skip`; a commented-out test. Verify: each gives `MISSING` for that scenario, and the script is green again once restored. Separately, move a scenario's only test into a nested `describe` temporarily. Verify: it still counts as covered. Record the results in the PR.
 
 ## 2. Workflow
 
@@ -23,7 +23,7 @@ This change has no spec scenarios and no backend tests, so it follows the except
 
 ## 4. Documentation and follow-up issues
 
-- [ ] 4.1 Update constitution section 2 as approved: CI runs `scripts/check-scenario-coverage.sh` and fails on a missing test. Verify: `grep -in "until CI" openspec/constitution.md` finds nothing.
+- [ ] 4.1 Update the constitution as approved: section 2 says CI runs `scripts/check-scenario-coverage.sh` and fails on a missing test, and section 1 gains the tooling rule (design D8). Add the matching exception to `openspec/config.yaml`. Verify: `grep -in "until CI" openspec/constitution.md` finds nothing, and `openspec validate ci-github-actions` passes.
 - [ ] 4.2 Update `CONTRIBUTING.md`: CI runs the script, the script needs `npm ci` for hand runs, which red results are expected in the spec and tests phases, and that `ci-ok` must be green to merge. Verify: `grep -in "until CI" CONTRIBUTING.md` finds nothing.
 - [ ] 4.3 Open an issue for the backend `@Disabled` gap in the coverage script, and link it in the PR. Verify: the issue exists.
 

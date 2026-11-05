@@ -93,6 +93,14 @@ Node parses the JSON, because the script's users already need it and `jq` would 
 
 The ruleset is changed after merge, once `ci-ok` has reported from `main`. This PR therefore says "Refs #7", and #7 closes only after the check is required and proven (see `tasks.md`).
 
+### D8. Rule for tooling changes
+
+Text to add to constitution section 1, after the list of steps:
+
+> **Tooling changes.** A change that does not change product behaviour (CI, scripts, repository tooling) may set `skip_specs: true`. It has no spec deltas or scenarios. The spec critique and spec review gate (steps 5 and 6) apply to its proposal and design. It has no Red step or test review gate. Its tasks say how each part is proven, and the proof is recorded in the PR for the code review. Archive merges nothing into `openspec/specs/`.
+
+`openspec/config.yaml` gains a matching exception in the `tasks` rules and in `apply` guidance: no "Failing tests" section and no test review stop. The rule covers tooling only; it is not a way to skip a spec for product behaviour.
+
 ## Risks / Trade-offs
 
 - [Admins can bypass the pull request rules, so the owner can still merge past a red check on purpose] → Accepted unless the owner wants it changed. The proof shows a blocked normal merge, and this is stated when reporting it.

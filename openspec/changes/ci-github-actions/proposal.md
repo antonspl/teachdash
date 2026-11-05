@@ -11,6 +11,7 @@ Questions asked before this proposal, and the owner's answers (2026-11-05):
 5. **Should Playwright retry in CI?** No retries at first.
 6. **Who makes the check required in `protect-main`?** Claude, after the owner merges this PR and asks.
 7. **May constitution section 2 be edited here?** Yes, approved by the owner, so it no longer says the script is run by hand until CI exists.
+8. **Where is the workflow for a tooling change with no spec written?** As a general rule in constitution section 1 and `openspec/config.yaml`, in this PR, approved by the owner. Later tooling changes can reuse it.
 
 ## Research
 
@@ -30,6 +31,7 @@ No workflow exists, so tests and the scenario coverage check run only when someo
 - Change `scripts/check-scenario-coverage.sh` so frontend scenarios are found through the list commands. It then needs `npm ci` in `frontend/` first.
 - Set `forbidOnly` in CI for Playwright, so a stray `test.only` cannot silently turn off the other E2E tests.
 - Update constitution section 2, `CONTRIBUTING.md`, and the script header.
+- Add a general rule for tooling changes with no spec to constitution section 1 and `openspec/config.yaml`.
 - **After merge:** add `ci-ok` to the `protect-main` ruleset, and show that a red check blocks merging.
 
 ## Out of Scope
@@ -54,7 +56,7 @@ None. This is tooling: no product behaviour changes, so `.openspec.yaml` sets `s
 ## Impact
 
 - **New:** `.github/workflows/ci.yml`.
-- **Changed:** `scripts/check-scenario-coverage.sh`, `frontend/playwright.config.ts`, `openspec/constitution.md`, `CONTRIBUTING.md`.
+- **Changed:** `scripts/check-scenario-coverage.sh`, `frontend/playwright.config.ts`, `openspec/constitution.md`, `openspec/config.yaml`, `CONTRIBUTING.md`.
 - **Process:** every PR waits for CI. CI is expected to be red on a draft PR until pass 2 is finished, because the spec phase has scenarios without tests and the tests phase has failing tests.
 - **Repository settings:** the `protect-main` ruleset gains a required status check after merge.
 - **Hand runs:** the coverage script needs `npm ci` in `frontend/` first.
