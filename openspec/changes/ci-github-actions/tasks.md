@@ -23,7 +23,7 @@ This is a tooling change with `skip_specs: true`, under the rule that task 4.1 a
 - [x] 3.2 In the same way, push a temporary `push` trigger for this branch. Verify: that run installs Chromium and WebKit and runs all 3 projects. A real phone failure here does not block this change: open an issue for it and report it to the owner. Record the run link in the PR.
 - [x] 3.3 In the same way, push a temporary `test.only` in Vitest and in Playwright. Verify: each makes its job and `ci-ok` red. Record the run links in the PR.
 
-- [ ] 3.4 In the same way, push a temporary commit that removes the JUnit XML before the count step, and one that makes the Playwright step hang past a shortened timeout. Verify: the first makes `backend` and `ci-ok` red at the count step, and the second makes `e2e` and `ci-ok` red with the report upload and compose logs still running. Record the run links in the PR.
+- [x] 3.4 In the same way, push a temporary commit that removes the JUnit XML before the count step, and one that makes the Playwright step hang past a shortened timeout. Verify: the first makes `backend` and `ci-ok` red at the count step, and the second makes `e2e` and `ci-ok` red with the report upload and compose logs still running. Record the run links in the PR.
 
 ## 4. Documentation and follow-up issues
 
