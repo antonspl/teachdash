@@ -84,24 +84,10 @@ reset link survives (R4-S13).
 - The tests for R1-S2, R1-S5, R1-S7, R1-S9, R3-S3, R3-S8, R4-S3, R4-S7, R4-S13 and
   R5-S1 are rewritten to the new scenarios. Their GIVEN steps change to one
   teacher.
-- R1-S14 to R1-S18, R3-S9, R4-S14 and R7-S1 to R7-S3 are new.
+- R1-S14 to R1-S18, R3-S9, R4-S14 and R7-S1 to R7-S6 are new.
+- R7-S4 injects the failure into the enrolment listener, the same way as R1-S12.
 - R1-S17 uses the same failure injection as R1-S12.
 - R1-S16 uses the same parallel-request helper as R1-S13.
-
-### D7. Deactivation releases students
-
-`TeacherAdminService.deactivateTeacher` (accounts) publishes a `TeacherDeactivated` event
-inside its transaction. An enrolment listener (`@EventListener`, synchronous, so it runs in
-the same transaction) deletes the teacher's assignments and invalidates each released
-student's unused SET_PASSWORD link, using the same queries as removal (D4). A failure rolls
-back the deactivation.
-
-Enrolment already depends on accounts (`PasswordLinkService`), so a direct call from
-accounts into enrolment would make the packages depend on each other. The event keeps the
-dependency one way. Spring's event publisher is already on the classpath.
-
-Alternative: `on delete cascade`-style cleanup in SQL. Rejected because deactivation does
-not delete the user, and the link invalidation needs code anyway.
 
 ### D6. Constitution §8
 
@@ -111,6 +97,37 @@ The constitution changes in this PR, with the owner's approval recorded in the p
   becomes "(about 1000 teachers)".
 - "A student may study with more than one teacher and sees data from each of them" becomes
   "A student has at most one teacher."
+
+### D7. Deactivation releases students
+
+`TeacherAdminService.deactivateTeacher` (accounts, `@Transactional`) publishes a public
+record `com.teachdash.accounts.domain.TeacherDeactivated(teacherId)` inside its
+transaction. An enrolment listener handles it with a plain `@EventListener`. It MUST NOT
+be `@Async` or `@TransactionalEventListener`, so it runs synchronously in the same
+transaction, and a failure rolls back the deactivation (R7-S4).
+
+The listener deletes the teacher's assignments with a new repository query
+(`delete ... where teacher_id = ? returning student_id`) and invalidates each released
+student's unused SET_PASSWORD links, as removal does (D4). Deactivating twice, or a teacher
+without students, deletes nothing (R7-S6).
+
+**Race with registration.** A registration already in flight could insert an assignment
+after the listener ran. Registration therefore locks the teacher's row with
+`select ... from users where id = ? and active for update` before it inserts. Deactivation
+updates the same row, so the two serialise. A registration that finds the teacher inactive
+returns 401 `UNAUTHENTICATED`, as the session check would on the next request.
+
+**Lock order.** Deactivation locks the teacher's links, then the teacher's row, then the
+students' assignments and links. Registration locks the teacher's row, then the student's
+assignment and links. An admin reset link locks only the student's links. No path takes
+these locks in the opposite order, so they cannot deadlock.
+
+Enrolment already depends on accounts (`PasswordLinkService`), so a direct call from
+accounts into enrolment would make the packages depend on each other. The event keeps the
+dependency one way. Spring's event publisher is already on the classpath.
+
+Alternative: `on delete cascade`-style cleanup in SQL. Rejected because deactivation does
+not delete the user, and the link invalidation needs code anyway.
 
 ### Flyway migrations
 

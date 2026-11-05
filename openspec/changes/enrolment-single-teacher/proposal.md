@@ -82,6 +82,7 @@ None.
 - `student-enrolment`: R1 assigns an existing student with no teacher; R3 and R5 lists
   have at most one teacher; R4 removal always invalidates the unused set-password link;
   new R7: deactivating a teacher releases their students.
+- `accounts`: R6 says deactivation also releases the teacher's students.
 
 ## Impact
 
@@ -91,6 +92,6 @@ None.
 - The register response's `setPasswordLink` becomes optional.
 - Tests for R1, R3, R4 and R5 change. R4-S2, R4-S12 and R5-S5 and their tests are
   deleted, and so are R3-S7, R5-S3 and R5-S4, because a deactivated teacher has no
-  students. R1-S14 to R1-S18, R3-S9, R4-S14 and R7-S1 to R7-S3 are new.
+  students. R1-S14 to R1-S18, R3-S9, R4-S14 and R7-S1 to R7-S6 are new.
 - `openspec/constitution.md` §8.
 - Issues #29 and #30 get smaller.
