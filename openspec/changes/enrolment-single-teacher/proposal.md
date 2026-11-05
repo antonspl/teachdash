@@ -17,6 +17,7 @@ Question from the spec critique on 2026-11-05, and the owner's answer.
 | # | Question | Answer |
 |---|----------|--------|
 | 6 | A deactivated teacher cannot log in to remove their students, so those students could never get another teacher. What should happen? | Deactivating a teacher removes all their assignments, as if the teacher removed each student. Reactivation does not restore them. |
+| 7 | Registration locks the teacher's row so a parallel deactivation cannot leave an inactive teacher with a student. No scenario can test that timing. Keep it? | Yes, without a scenario. A code comment explains the lock, and the reviewer checks it at the code gate. |
 
 ## Research
 

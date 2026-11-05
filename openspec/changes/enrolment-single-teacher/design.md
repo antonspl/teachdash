@@ -120,7 +120,9 @@ without students, deletes nothing (R7-S6).
 after the listener ran. Registration therefore locks the teacher's row with
 `select ... from users where id = ? and active for update` before it inserts. Deactivation
 updates the same row, so the two serialise. A registration that finds the teacher inactive
-returns 401 `UNAUTHENTICATED`, as the session check would on the next request.
+returns 401 `UNAUTHENTICATED`, as the session check would on the next request. No scenario
+can force this timing (proposal, answer 7), so a code comment at the lock explains it, and
+the reviewer checks it at the code gate.
 
 **Lock order.** Deactivation locks the teacher's links, then the teacher's row, then the
 students' assignments and links. Registration locks the teacher's row, then the student's

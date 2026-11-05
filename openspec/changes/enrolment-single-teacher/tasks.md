@@ -15,7 +15,7 @@
 
 - [ ] 3.1 Assign an existing student with no teacher in registration, with the conflict handling and link issuing of design D2 and the response of D3; verify all R1 tests pass
 - [ ] 3.2 Always invalidate the unused set-password link on removal (design D4); verify all R4 tests pass
-- [ ] 3.3 Release a deactivated teacher's students through an event handled in enrolment, with the new `delete ... returning student_id` query published after `users.deactivate`, and the teacher-row lock in registration (design D7); verify all R7 tests (R7-S2 also needs 3.1) and the accounts R6 tests pass
+- [ ] 3.3 Release a deactivated teacher's students through an event handled in enrolment, with the new `delete ... returning student_id` query published after `users.deactivate`, and the teacher-row lock in registration with a comment explaining the race (design D7); verify all R7 tests (R7-S2 also needs 3.1) and the accounts R6 tests pass
 - [ ] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and approved tests are unchanged
 
 ## Workflow follow-up
