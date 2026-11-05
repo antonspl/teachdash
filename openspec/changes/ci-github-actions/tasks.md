@@ -4,10 +4,10 @@ This is a tooling change with `skip_specs: true`, under the rule that task 4.1 a
 
 ## 1. Coverage script
 
-- [ ] 1.1 Read frontend titles through `vitest list --json` and `playwright test --list --reporter=json` (design D6), leaving the backend text match unchanged. Verify: the script prints `OK` for all scenarios on this branch.
-- [ ] 1.2 Exit with a clear error when `frontend/node_modules` is missing or a list command fails, and mention `test.only` when frontend scenarios are missing. Verify: run with `node_modules` temporarily moved aside, and with a syntax error in a temporary test.
-- [ ] 1.3 Update the script header comment to match. Verify: it no longer describes a text match or a planned replacement for frontend tests.
-- [ ] 1.4 Check detection on this repo's real tests, one case at a time, restoring each: `test.skip` in a `.test.ts`, a `.test.tsx` and an E2E spec; `describe.skip`; a commented-out test. Verify: each gives `MISSING` for that scenario, and the script is green again once restored. Separately, move a scenario's only test into a nested `describe` temporarily. Verify: it still counts as covered. Record the results in the PR.
+- [x] 1.1 Read frontend titles through `vitest list --json` and `playwright test --list --reporter=json` (design D6), leaving the backend text match unchanged. Verify: the script prints `OK` for all scenarios on this branch.
+- [x] 1.2 Exit with a clear error when `frontend/node_modules` is missing or a list command fails, and mention `test.only` when frontend scenarios are missing. Verify: run with `node_modules` temporarily moved aside, and with a syntax error in a temporary test.
+- [x] 1.3 Update the script header comment to match. Verify: it no longer describes a text match or a planned replacement for frontend tests.
+- [x] 1.4 Check detection on this repo's real tests, one case at a time, restoring each: `test.skip` in a `.test.ts`, a `.test.tsx` and an E2E spec; `describe.skip`; a commented-out test. Verify: each gives `MISSING` for that scenario, and the script is green again once restored. Separately, move a scenario's only test into a nested `describe` temporarily. Verify: it still counts as covered. Record the results in the PR.
 
 ## 2. Workflow
 

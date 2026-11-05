@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Fails if a spec scenario has no test. A plain text match, nothing is parsed: skipped or
-# commented-out tests still count. CI runs this script (constitution §2); under #7 only the
-# frontend text match is planned to be replaced by `vitest list --json` and
-# `playwright test --list`.
+# Fails if a spec scenario has no test. CI runs this script (constitution §2).
 #
 # Scenario IDs come from "#### Scenario: <capability>/R<n>-S<m> ..." headings in
 # openspec/specs/**/spec.md and openspec/changes/*/specs/**/spec.md (archive excluded).
 # Where a scenario's test is looked up depends on its capability:
-#   - a capability in FRONTEND_CAPABILITIES: only in frontend tests, as a string starting
-#     with [<id>] (quote ', " or ` right before it) in frontend/src/**/*.test.ts(x) or
-#     frontend/e2e/**/*.spec.ts;
-#   - any other capability: only as @DisplayName("[<id>] in backend/src/test.
+#   - a capability in FRONTEND_CAPABILITIES: in the tests the runners list, from
+#     `npx vitest list --json` and `npx playwright test --list --reporter=json`, run in
+#     frontend/ (needs `npm ci` there; no browser or running stack). Covered means a test
+#     title starts with [<id>]. Skipped tests are not listed, so they do not count; a
+#     scenario ID only in a describe title does not count either. A stray test.only hides
+#     other tests from Vitest, so it shows up as MISSING;
+#   - any other capability: only as a plain text match of @DisplayName("[<id>] in
+#     backend/src/test (a @Disabled test still counts).
 # So a backend scenario cannot pass on a frontend test, or the other way round.
 #
 # To add a capability whose tests are frontend tests, put its name in the list below.
@@ -48,34 +49,104 @@ has_backend_test() {
   grep -r -F -q "@DisplayName(\"[$1]" backend/src/test 2>/dev/null
 }
 
-# Missing frontend directories are fine: grep fails, so the ID counts as missing.
-has_frontend_test() {
-  grep -r -F -q -e "'[$1]" -e "\"[$1]" -e "\`[$1]" \
-    --include='*.test.ts' --include='*.test.tsx' frontend/src 2>/dev/null ||
-  grep -r -F -q -e "'[$1]" -e "\"[$1]" -e "\`[$1]" \
-    --include='*.spec.ts' frontend/e2e 2>/dev/null
-}
-
 has_test() {
   if is_frontend_capability "$1"; then
-    has_frontend_test "$1"
+    grep -q -F -x -e "[$1]" "$frontend_ids"
   else
     has_backend_test "$1"
   fi
 }
 
+# Writes the IDs ([<id>]) of the frontend tests that are not skipped, one per line.
+collect_frontend_ids() {
+  local tmp="$1"
+  if [ ! -d frontend/node_modules ]; then
+    echo "frontend/node_modules is missing: run 'npm ci' in frontend/ first" >&2
+    return 1
+  fi
+  if ! (cd frontend && npx vitest list --json) >"$tmp/vitest.json" 2>"$tmp/vitest.err"; then
+    echo "'npx vitest list --json' failed:" >&2
+    cat "$tmp/vitest.err" >&2
+    return 1
+  fi
+  if ! (cd frontend && npx playwright test --list --reporter=json) >"$tmp/playwright.json" 2>"$tmp/playwright.err"; then
+    echo "'npx playwright test --list --reporter=json' failed:" >&2
+    cat "$tmp/playwright.err" >&2
+    node -e 'try { for (const e of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).errors) console.error(e.message); } catch {}' "$tmp/playwright.json" >&2
+    return 1
+  fi
+  if ! node - "$tmp/vitest.json" "$tmp/playwright.json" >"$tmp/ids.txt" 2>"$tmp/parse.err" <<'NODE'
+const fs = require('fs');
+const [vitestFile, playwrightFile] = process.argv.slice(2);
+const titles = [];
+
+const vitest = JSON.parse(fs.readFileSync(vitestFile, 'utf8'));
+for (const test of vitest) {
+  titles.push(test.name.split(' > ').pop());
+}
+
+const playwright = JSON.parse(fs.readFileSync(playwrightFile, 'utf8'));
+if (playwright.errors && playwright.errors.length > 0) {
+  throw new Error(playwright.errors.map((e) => e.message).join('\n'));
+}
+function walk(suite) {
+  for (const spec of suite.specs || []) {
+    if (spec.tests.some((t) => t.expectedStatus !== 'skipped')) {
+      titles.push(spec.title);
+    }
+  }
+  for (const child of suite.suites || []) {
+    walk(child);
+  }
+}
+for (const suite of playwright.suites) {
+  walk(suite);
+}
+
+for (const title of titles) {
+  const match = /^\[[^\]]+\]/.exec(title);
+  if (match) {
+    console.log(match[0]);
+  }
+}
+NODE
+  then
+    echo "Could not read the test lists from Vitest and Playwright:" >&2
+    cat "$tmp/parse.err" >&2
+    return 1
+  fi
+}
+
+frontend_ids=""
+for id in $ids; do
+  if is_frontend_capability "$id"; then
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    collect_frontend_ids "$tmp" || exit 1
+    frontend_ids="$tmp/ids.txt"
+    break
+  fi
+done
+
 missing=0
+frontend_missing=0
 total=0
 for id in $ids; do
   total=$((total + 1))
   if ! has_test "$id"; then
     echo "MISSING test for scenario [$id]" >&2
     missing=$((missing + 1))
+    if is_frontend_capability "$id"; then
+      frontend_missing=$((frontend_missing + 1))
+    fi
   fi
 done
 
 if [ "$missing" -gt 0 ]; then
   echo "$missing of $total scenarios have no test" >&2
+  if [ "$frontend_missing" -gt 0 ]; then
+    echo "For frontend scenarios, also look for a stray test.only: it hides other tests." >&2
+  fi
   exit 1
 fi
 echo "OK: all $total scenarios have a test"
