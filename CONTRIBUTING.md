@@ -38,8 +38,14 @@ THEN step, never in setup. Setup creates data and sessions directly, not through
 endpoints that do not exist yet. Production code in pass 1 is limited to stubs
 returning 501 (marked `STUB`) and schema migrations; the PR description lists
 both. Migrations are permanent — review them as production code. Before asking
-for the tests review, run `scripts/check-scenario-coverage.sh` (by hand until CI
-exists, #7).
+for the tests review, check that `scripts/check-scenario-coverage.sh` passes. CI runs it; for a hand
+run, do `npm ci` in `frontend/` first.
+
+**CI.** CI runs on every pull request, and `ci-ok` must be green to merge. On a
+draft PR, red is expected until the code phase: `coverage` in the spec phase
+(scenarios with no tests yet) and `backend` in the tests phase (tests fail by
+design). Pull requests run Playwright on desktop Chromium only. `main` runs all 3
+projects, and a phone failure there is fixed later.
 
 **Specs reach `main` only at the end.** A change's spec is not on `main` until
 its whole PR merges. A change that depends on another unmerged change branches

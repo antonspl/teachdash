@@ -52,7 +52,7 @@ There are no path filters. A required check from a workflow skipped by a path fi
 
 A phone failure on `main` shows as a red run and blocks no PR. It is fixed later. No retries, so every failure is visible.
 
-The phone-only test `[web-client/R7-S1]` skips itself on desktop, so it runs only on `main`. The coverage script still counts it, because it is a runtime skip.
+Both tests with the ID `[web-client/R7-S1]` skip themselves on desktop, and nothing else does, so they run only on `main`. The coverage script still counts them, because it is a runtime skip.
 
 `frontend/playwright.config.ts` gains `forbidOnly: !!process.env.CI`. Without it, a stray `test.only` would make E2E pass while running one test. Vitest already refuses `.only` in CI by default.
 

@@ -23,9 +23,9 @@ This is a tooling change with `skip_specs: true`, under the rule that task 4.1 a
 
 ## 4. Documentation and follow-up issues
 
-- [ ] 4.1 Update the constitution as approved: section 2 says CI runs `scripts/check-scenario-coverage.sh` and fails on a missing test, and section 1 gains the tooling rule (design D8). Add the matching exception to `openspec/config.yaml`. Verify: `grep -in "until CI" openspec/constitution.md` finds nothing, and `openspec validate ci-github-actions` passes.
-- [ ] 4.2 Update `CONTRIBUTING.md`: CI runs the script, the script needs `npm ci` for hand runs, which red results are expected in the spec and tests phases, and that `ci-ok` must be green to merge. Verify: `grep -in "until CI" CONTRIBUTING.md` finds nothing.
-- [ ] 4.3 Open an issue for the backend `@Disabled` gap in the coverage script, and link it in the PR. Verify: the issue exists.
+- [x] 4.1 Update the constitution as approved: section 2 says CI runs `scripts/check-scenario-coverage.sh` and fails on a missing test, and section 1 gains the tooling rule (design D8). Add the matching exception to `openspec/config.yaml`. Verify: `grep -in "until CI" openspec/constitution.md` finds nothing, and `openspec validate ci-github-actions` passes.
+- [x] 4.2 Update `CONTRIBUTING.md`: CI runs the script, the script needs `npm ci` for hand runs, which red results are expected in the spec and tests phases, and that `ci-ok` must be green to merge. Verify: `grep -in "until CI" CONTRIBUTING.md` finds nothing.
+- [x] 4.3 Open an issue for the backend `@Disabled` gap in the coverage script, and link it in the PR. Verify: the issue exists.
 
 ## Workflow follow-up
 

@@ -65,8 +65,8 @@ collect_frontend_ids() {
     return 1
   fi
   if ! (cd frontend && npx vitest list --json) >"$tmp/vitest.json" 2>"$tmp/vitest.err"; then
-    echo "'npx vitest list --json' failed:" >&2
-    cat "$tmp/vitest.err" >&2
+    echo "'npx vitest list --json' failed (a stray test.only fails it in CI):" >&2
+    if [ -s "$tmp/vitest.err" ]; then cat "$tmp/vitest.err" >&2; else cat "$tmp/vitest.json" >&2; fi
     return 1
   fi
   if ! (cd frontend && npx playwright test --list --reporter=json) >"$tmp/playwright.json" 2>"$tmp/playwright.err"; then

@@ -47,6 +47,8 @@ with its own issue, spec and PR.
 12. **Owner review** — mark the PR ready. The owner reviews spec, tests and code
     together and merges. Only the owner merges into `main`.
 
+**Tooling changes.** A change that does not change product behaviour (CI, scripts, repository tooling) may set `skip_specs: true`. It has no spec deltas or scenarios. The spec critique and spec review gate (steps 5 and 6) apply to its proposal and design. It has no Red step or test review gate. Its tasks say how each part is proven, and the proof is recorded in the PR for the code review. Archive merges nothing into `openspec/specs/`.
+
 A gate is approved by a PR comment naming it (e.g. "tests approved") plus the
 matching box ticked in the PR description. A GitHub review "Approve" is used only
 for the final owner review: it does not say which gate it is for, and it stays on
@@ -63,9 +65,8 @@ All artifacts, code, comments and commit messages are in English.
 - One test per spec scenario. `@DisplayName` starts with the scenario ID, e.g.
   `@DisplayName("[accounts/R4-S2] Teacher cannot call admin endpoints")`.
 - Test body is structured with `// given`, `// when`, `// then` comments.
-- Every spec scenario has a matching test. Until CI exists (#7), the author runs
-  `scripts/check-scenario-coverage.sh` by hand before asking for the test review;
-  once CI exists, it runs the script and fails on a missing test.
+- Every spec scenario has a matching test. CI runs `scripts/check-scenario-coverage.sh`
+  and fails on a missing test.
 - Frontend: Vitest for logic, Playwright E2E for key user flows. No review gate.
 
 ## 3. Architecture
