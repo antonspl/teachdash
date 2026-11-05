@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// @types/node is not installed; this is all the config needs from it.
+declare const process: { env: Record<string, string | undefined> }
+
 export default defineConfig({
   testDir: 'e2e',
   forbidOnly: !!process.env.CI,
