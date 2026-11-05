@@ -51,7 +51,7 @@ async function expectFitsPhoneScreen(
   expect(layout.innerWidth).toBe(expectedWidth)
 }
 
-test('[web-client/R1-S1] Root path shows the placeholder page', async ({
+test.only('[web-client/R1-S1] Root path shows the placeholder page', async ({
   page,
 }) => {
   await page.goto('/')
