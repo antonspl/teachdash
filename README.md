@@ -51,4 +51,4 @@ browsers (after `npm ci`, so the locked version is used):
 (`docker compose up --build --wait`) and run `npm run test:e2e`. Run `docker compose up -d --wait` first if the stack was
 stopped. If the web container or the backend is down, the run stops with a message saying which. The HTML report goes to `frontend/playwright-report/`.
 
-Spec coverage check, from the repo root: `scripts/check-scenario-coverage.sh`.
+Spec coverage check, from the repo root: `scripts/check-scenario-coverage.sh` (needs `npm ci` in `frontend/` first).
