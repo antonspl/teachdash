@@ -80,13 +80,28 @@ reset link survives (R4-S13).
 
 - `ApiTest.assignStudent` stays a direct insert. A test that assigns a second teacher now
   fails on the unique index, which flags any leftover multi-teacher setup.
-- The tests for R4-S2, R4-S12 and R5-S5 are deleted.
-- The tests for R1-S2, R1-S5, R1-S7, R1-S9, R3-S3, R3-S7, R3-S8, R4-S3, R4-S7, R4-S13,
-  R5-S1 and R5-S3 are rewritten to the new scenarios. Their GIVEN steps change to one
+- The tests for R3-S7, R4-S2, R4-S12, R5-S3, R5-S4 and R5-S5 are deleted.
+- The tests for R1-S2, R1-S5, R1-S7, R1-S9, R3-S3, R3-S8, R4-S3, R4-S7, R4-S13 and
+  R5-S1 are rewritten to the new scenarios. Their GIVEN steps change to one
   teacher.
-- R1-S14 to R1-S17 and R3-S9 are new.
+- R1-S14 to R1-S18, R3-S9, R4-S14 and R7-S1 to R7-S3 are new.
 - R1-S17 uses the same failure injection as R1-S12.
 - R1-S16 uses the same parallel-request helper as R1-S13.
+
+### D7. Deactivation releases students
+
+`TeacherAdminService.deactivateTeacher` (accounts) publishes a `TeacherDeactivated` event
+inside its transaction. An enrolment listener (`@EventListener`, synchronous, so it runs in
+the same transaction) deletes the teacher's assignments and invalidates each released
+student's unused SET_PASSWORD link, using the same queries as removal (D4). A failure rolls
+back the deactivation.
+
+Enrolment already depends on accounts (`PasswordLinkService`), so a direct call from
+accounts into enrolment would make the packages depend on each other. The event keeps the
+dependency one way. Spring's event publisher is already on the classpath.
+
+Alternative: `on delete cascade`-style cleanup in SQL. Rejected because deactivation does
+not delete the user, and the link invalidation needs code anyway.
 
 ### D6. Constitution §8
 
@@ -108,6 +123,9 @@ No new dependencies.
 - [Any teacher can claim a student with no teacher by knowing their email] → They see only
   the name, email and time zone. The previous teacher's data stays private to that teacher.
   The owner accepted this (proposal, answer 2).
+- [Claiming a student who never set a password hands the claiming teacher a set-password
+  link, so that teacher can log in as the student] → Such an account was never used, so it
+  holds nothing of the student's. This is the same power the registering teacher has today.
 - [Issuing a new link voids an admin's unused reset link for a student without a password]
   → Both links set the password, and the student gets the new one from the teacher.
 - [A removal that runs in parallel with another teacher's registration can make the
@@ -115,8 +133,11 @@ No new dependencies.
   the teacher can retry.
 - [The scenarios R4-S2, R4-S12 and R5-S5 and their tests are deleted] → They describe
   behaviour that no longer exists. The R4 and R5 blocks are replaced as a whole, because
-  OpenSpec cannot drop scenarios from a modified requirement. At archive, both blocks are
-  moved back after R3 in the main spec.
+  OpenSpec cannot drop scenarios from a modified requirement. R3 is replaced the same way.
+  At archive, R3, R4 and R5 are moved back after R2 in the main spec.
+- [A reactivated teacher has lost their students] → Accepted by the owner (proposal,
+  answer 6). Their teacher-owned data stays theirs; they re-register students who have not
+  moved to another teacher.
 
 ## Migration Plan
 

@@ -12,6 +12,12 @@ Questions asked on 2026-11-05, while planning #29, and the owner's answers.
 | 4 | How many teachers does the platform target? | About 1000. Constitution §8 changes from "a small number, not thousands". |
 | 5 | Should a person be able to study with several teachers later? | Maybe, as "spaces": one login, with a separate student profile per teacher. Not in this change. |
 
+Question from the spec critique on 2026-11-05, and the owner's answer.
+
+| # | Question | Answer |
+|---|----------|--------|
+| 6 | A deactivated teacher cannot log in to remove their students, so those students could never get another teacher. What should happen? | Deactivating a teacher removes all their assignments, as if the teacher removed each student. Reactivation does not restore them. |
+
 ## Research
 
 Angles agreed with the owner, and their conclusions:
@@ -28,9 +34,9 @@ Assumptions (owner may override during review):
 
 - Registering an existing student with no teacher returns 201, like a new account. The
   response carries a set-password link only when the student has no password.
-- When the same teacher sends parallel requests for the same student, the requests that
-  lose get 409 `ALREADY_ENROLLED`. When different teachers do, they get
-  `STUDENT_EXISTS`.
+- When teachers send parallel requests to register the same existing student, the
+  winning teacher's other requests get 409 `ALREADY_ENROLLED` and the other teacher's get
+  `STUDENT_EXISTS`. For a new email, the race loser still gets `EMAIL_TAKEN`, as today.
 - Issuing a new set-password link to a student without a password voids any unused link
   they hold, including an admin's reset link, because a user has at most one unused
   link. The new link sets the password in the same way.
@@ -53,6 +59,8 @@ of that change's open problems.
 - A removed student can be registered again, by the same or another teacher
   (**BREAKING**: R4-S7 returned 409).
 - The lists of a student's teachers return at most one entry.
+- Deactivating a teacher releases all their students (**BREAKING**: a reactivated teacher
+  had their students back).
 - Constitution §8: one teacher per student, and about 1000 teachers.
 
 ## Out of Scope
@@ -72,14 +80,17 @@ None.
 ### Modified Capabilities
 
 - `student-enrolment`: R1 assigns an existing student with no teacher; R3 and R5 lists
-  have at most one teacher; R4 removal always invalidates the unused set-password link.
+  have at most one teacher; R4 removal always invalidates the unused set-password link;
+  new R7: deactivating a teacher releases their students.
 
 ## Impact
 
 - Flyway migration `V4`: a unique index on `teacher_students (student_id)`.
-- `StudentRegistrationService`, `StudentRemovalService`, `TeacherStudentRepository`.
+- `StudentRegistrationService`, `StudentRemovalService`, `TeacherStudentRepository`, and
+  teacher deactivation in `TeacherAdminService`.
 - The register response's `setPasswordLink` becomes optional.
 - Tests for R1, R3, R4 and R5 change. R4-S2, R4-S12 and R5-S5 and their tests are
-  deleted. R1-S14 to R1-S17 and R3-S9 are new.
+  deleted, and so are R3-S7, R5-S3 and R5-S4, because a deactivated teacher has no
+  students. R1-S14 to R1-S18, R3-S9, R4-S14 and R7-S1 to R7-S3 are new.
 - `openspec/constitution.md` §8.
 - Issues #29 and #30 get smaller.
