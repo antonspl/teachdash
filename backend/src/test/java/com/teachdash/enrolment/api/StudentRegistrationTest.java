@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -20,12 +21,20 @@ import java.util.concurrent.Future;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import io.restassured.response.Response;
+
 import com.teachdash.support.ApiTest;
 import com.teachdash.support.TestClient;
 
 class StudentRegistrationTest extends ApiTest {
 
 	private static final String STUDENTS = "/api/teacher/students";
+
+	/** A missing link gives a token that no link accepts, so the test fails at its THEN step. */
+	private String linkToken(Response response) {
+		String link = response.path("setPasswordLink");
+		return link == null ? "no-link" : tokenFrom(link);
+	}
 
 	@Test
 	@DisplayName("[student-enrolment/R1-S1] New email creates and assigns a student")
@@ -80,6 +89,9 @@ class StudentRegistrationTest extends ApiTest {
 				.query(Long.class)
 				.single());
 		teacher.get(STUDENTS).then().statusCode(200).body("$", empty());
+		// and the student is still in teacher B's list
+		loggedInAs("b@example.com").get(STUDENTS).then().statusCode(200)
+				.body("id", contains(student.toString()));
 		// and the student's name and time zone are unchanged
 		var stored = jdbc.sql("select name, time_zone from users where id = :id")
 				.param("id", student)
@@ -144,13 +156,15 @@ class StudentRegistrationTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R1-S5] Email case is ignored")
 	void emailCaseIsIgnored() {
-		// given a student account with email "student@example.com"
-		createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
+		// given a student with email "student@example.com", assigned to teacher B
+		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
+		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
+		assignStudent(teacherB, student);
 		createTeacher("teacher@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("teacher@example.com");
 		long usersBefore = jdbc.sql("select count(*) from users").query(Long.class).single();
 
-		// when a teacher registers a student with email "STUDENT@example.com"
+		// when teacher A registers a student with email "STUDENT@example.com"
 		var response = teacher.post(STUDENTS,
 				Map.of("name", "Student", "email", "STUDENT@example.com", "timeZone", "UTC"));
 
@@ -189,7 +203,7 @@ class StudentRegistrationTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R1-S7] Email with invisible characters is rejected")
 	void emailWithInvisibleCharactersIsRejected() {
-		// given a logged-in teacher and a student account with email "nina@example.com"
+		// given a logged-in teacher and a student account with email "nina@example.com" and no teacher
 		createTeacher("teacher@example.com", "teacher-pass-1");
 		createUser("STUDENT", "Nina", "nina@example.com", null, true);
 		TestClient teacher = loggedInAs("teacher@example.com");
@@ -206,6 +220,8 @@ class StudentRegistrationTest extends ApiTest {
 		emSpace.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
 		// and no account is created
 		assertEquals(usersBefore, jdbc.sql("select count(*) from users").query(Long.class).single());
+		// and the student is not in the teacher's list
+		teacher.get(STUDENTS).then().statusCode(200).body("$", empty());
 	}
 
 	@Test
@@ -244,13 +260,15 @@ class StudentRegistrationTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R1-S9] Surrounding whitespace is ignored")
 	void surroundingWhitespaceIsIgnored() {
-		// given a logged-in teacher and a student account with email "nina@example.com"
+		// given a logged-in teacher A and a student with email "nina@example.com", assigned to teacher B
 		createTeacher("teacher@example.com", "teacher-pass-1");
-		createUser("STUDENT", "Nina", "nina@example.com", null, true);
+		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
+		UUID nina = createUser("STUDENT", "Nina", "nina@example.com", null, true);
+		assignStudent(teacherB, nina);
 		TestClient teacher = loggedInAs("teacher@example.com");
 		String name = "a".repeat(199);
 
-		// when the teacher registers a student with a 199-character name followed by two spaces and email " anna@example.com ", then with email " nina@example.com "
+		// when teacher A registers a student with a 199-character name followed by two spaces and email " anna@example.com ", then with email " nina@example.com "
 		var padded = teacher.post(STUDENTS,
 				Map.of("name", name + "  ", "email", " anna@example.com ", "timeZone", "UTC"));
 		var existing = teacher.post(STUDENTS,
@@ -302,6 +320,165 @@ class StudentRegistrationTest extends ApiTest {
 		response.then().statusCode(403).body("code", equalTo("CSRF_INVALID"));
 		// and no account is created
 		assertEquals(usersBefore, jdbc.sql("select count(*) from users").query(Long.class).single());
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R1-S14] Student with no teacher and a password is assigned")
+	void studentWithNoTeacherAndAPasswordIsAssigned() {
+		// given a student with no teacher, with a name, time zone and the password "old-password-1"
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID student = createUser("STUDENT", "Анна", "anna@example.com", "old-password-1", true);
+		jdbc.sql("update users set time_zone = 'Europe/Moscow' where id = :id")
+				.param("id", student)
+				.update();
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A registers a student with email " ANNA@example.com ", name "Anna" and time zone "Europe/Berlin"
+		var response = teacher.post(STUDENTS,
+				Map.of("name", "Anna", "email", " ANNA@example.com ", "timeZone", "Europe/Berlin"));
+
+		// then the response is 201 with the student's id and no set-password link
+		response.then().statusCode(201)
+				.body("id", equalTo(student.toString()))
+				.body("setPasswordLink", nullValue());
+		// and there is still exactly one account with that email
+		assertEquals(1, jdbc.sql("select count(*) from users where lower(email) = 'anna@example.com'")
+				.query(Long.class).single());
+		// and the student is in teacher A's list with the old name and time zone
+		teacher.get(STUDENTS).then().statusCode(200)
+				.body("id", contains(student.toString()))
+				.body("name", contains("Анна"))
+				.body("timeZone", contains("Europe/Moscow"));
+		// and teacher A's request for the student's details returns 200
+		teacher.get(STUDENTS + "/" + student).then().statusCode(200);
+		// and teacher A is in the student's list of teachers
+		loggedInAs("anna@example.com").get("/api/student/teachers").then().statusCode(200)
+				.body("id", contains(teacherA.toString()));
+		// and the student logs in with "old-password-1"
+		newClient().login("anna@example.com", "old-password-1").then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R1-S15] Student with no teacher and no password gets a new link")
+	void studentWithNoTeacherAndNoPasswordGetsANewLink() {
+		// given a student without a password and with email "nina@example.com", assigned to teacher B, with an unused set-password link
+		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
+		createTeacher("a@example.com", "teacher-pass-1");
+		UUID student = createUser("STUDENT", "Nina", "nina@example.com", null, true);
+		assignStudent(teacherB, student);
+		createToken(student, "SET_PASSWORD", false);
+		TestClient b = loggedInAs("b@example.com");
+		TestClient a = loggedInAs("a@example.com");
+
+		// when teacher B removes the student, teacher A then registers a student with email "Nina@Example.com", and the link returned to teacher A is used to set the password "new-password-1"
+		var removal = b.delete(STUDENTS + "/" + student);
+		var response = a.post(STUDENTS,
+				Map.of("name", "Nina", "email", "Nina@Example.com", "timeZone", "UTC"));
+		var passwordSet = newClient().post(
+				"/api/password-links",
+				Map.of("token", linkToken(response), "password", "new-password-1"));
+
+		// then the response to registering is 201 with the student's id and a set-password link
+		removal.then().statusCode(204);
+		response.then().statusCode(201)
+				.body("id", equalTo(student.toString()))
+				.body("setPasswordLink", startsWith(APP_BASE_URL + "/set-password#token="));
+		// and there is still exactly one account with that email
+		assertEquals(1, jdbc.sql("select count(*) from users where lower(email) = 'nina@example.com'")
+				.query(Long.class).single());
+		// and the student is in teacher A's list
+		a.get(STUDENTS).then().statusCode(200).body("id", contains(student.toString()));
+		// and the student logs in with "new-password-1"
+		passwordSet.then().statusCode(200);
+		newClient().login("nina@example.com", "new-password-1").then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R1-S16] Parallel requests assign a student with no teacher once")
+	void parallelRequestsAssignAStudentWithNoTeacherOnce() throws Exception {
+		// given a student without a password and with no teacher, and two logged-in teachers
+		createTeacher("a@example.com", "teacher-pass-1");
+		createTeacher("b@example.com", "teacher-pass-1");
+		UUID student = createUser("STUDENT", "Nina", "nina@example.com", null, true);
+		int requests = 8;
+		List<TestClient> clients = new ArrayList<>();
+		for (int i = 0; i < requests; i++) {
+			clients.add(loggedInAs(i % 2 == 0 ? "a@example.com" : "b@example.com"));
+		}
+		CountDownLatch ready = new CountDownLatch(requests);
+		CountDownLatch start = new CountDownLatch(1);
+		ExecutorService executor = Executors.newFixedThreadPool(requests);
+
+		// when both teachers send several parallel requests to register that student's email
+		List<Future<Response>> responses = new ArrayList<>();
+		try {
+			for (TestClient client : clients) {
+				Callable<Response> call = () -> {
+					ready.countDown();
+					start.await();
+					return client.post(STUDENTS,
+							Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+				};
+				responses.add(executor.submit(call));
+			}
+			ready.await();
+			start.countDown();
+			List<Response> results = new ArrayList<>();
+			for (Future<Response> response : responses) {
+				results.add(response.get());
+			}
+
+			// then exactly one response is 201
+			List<Integer> codes = results.stream().map(Response::statusCode).toList();
+			assertEquals(1, codes.stream().filter(code -> code == 201).count(), codes.toString());
+			// and the other responses to the winning teacher are 409 with code ALREADY_ENROLLED,
+			// and the responses to the other teacher are 409 with code STUDENT_EXISTS
+			int winner = codes.indexOf(201) % 2;
+			for (int i = 0; i < requests; i++) {
+				if (codes.get(i) == 201) {
+					continue;
+				}
+				String expected = i % 2 == winner ? "ALREADY_ENROLLED" : "STUDENT_EXISTS";
+				assertEquals(409, codes.get(i), codes.toString());
+				assertEquals(expected, results.get(i).path("code"), codes.toString());
+			}
+		} finally {
+			executor.shutdownNow();
+		}
+		// and the student has exactly one assignment and one unused link
+		assertEquals(1, jdbc.sql("select count(*) from teacher_students where student_id = :id")
+				.param("id", student)
+				.query(Long.class).single());
+		assertEquals(1, jdbc.sql("select count(*) from one_time_tokens where used_at is null")
+				.query(Long.class).single());
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R1-S18] New link voids an admin's unused link")
+	void newLinkVoidsAnAdminsUnusedLink() {
+		// given a student without a password and with no teacher, with an unused reset link issued by an admin
+		createTeacher("a@example.com", "teacher-pass-1");
+		UUID student = createUser("STUDENT", "Nina", "nina@example.com", null, true);
+		String adminToken = createToken(student, "RESET_PASSWORD", false);
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A registers a student with that email, the admin's link is then used to set the password "admin-password-1", and the link returned to teacher A is used to set the password "new-password-1"
+		var response = teacher.post(STUDENTS,
+				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+		var adminLink = newClient().post(
+				"/api/password-links",
+				Map.of("token", adminToken, "password", "admin-password-1"));
+		var teacherLink = newClient().post(
+				"/api/password-links",
+				Map.of("token", linkToken(response), "password", "new-password-1"));
+
+		// then the response to registering is 201 with a set-password link
+		response.then().statusCode(201).body("setPasswordLink", notNullValue());
+		// and the admin's link response is 410 with code LINK_INVALID
+		adminLink.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and the student logs in with "new-password-1"
+		teacherLink.then().statusCode(200);
+		newClient().login("nina@example.com", "new-password-1").then().statusCode(200);
 	}
 
 	@Test
