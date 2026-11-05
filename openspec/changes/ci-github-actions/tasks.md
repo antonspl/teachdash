@@ -11,9 +11,9 @@ This is a tooling change with `skip_specs: true`, under the rule that task 4.1 a
 
 ## 2. Workflow
 
-- [ ] 2.1 Add `.github/workflows/ci.yml` with triggers, concurrency, permissions and the `backend`, `frontend` and `coverage` jobs (design D1, D2, D4, D5), with actions pinned by commit SHA, checked against the version's peeled tag (`git ls-remote` with `^{}`). Verify: all three are green on the PR, and the `backend` job's reports show tests actually ran.
-- [ ] 2.2 Add the `e2e` job with event-dependent Playwright projects (design D3, D4), and set `forbidOnly` in `frontend/playwright.config.ts`. Verify: the PR run uses only `desktop-chromium` (the all-projects path is proven in 3.2).
-- [ ] 2.3 Add the `ci-ok` aggregator (design D1). Verify: green when all four jobs pass (red cases are proven in 3.1).
+- [x] 2.1 Add `.github/workflows/ci.yml` with triggers, concurrency, permissions and the `backend`, `frontend` and `coverage` jobs (design D1, D2, D4, D5), with actions pinned by commit SHA, checked against the version's peeled tag (`git ls-remote` with `^{}`). Verify: all three are green on the PR, and the `backend` job's reports show tests actually ran.
+- [x] 2.2 Add the `e2e` job with event-dependent Playwright projects (design D3, D4), and set `forbidOnly` in `frontend/playwright.config.ts`. Verify: the PR run uses only `desktop-chromium` (the all-projects path is proven in 3.2).
+- [x] 2.3 Add the `ci-ok` aggregator (design D1). Verify: green when all four jobs pass (red cases are proven in 3.1).
 
 ## 3. Prove that failures are caught
 
