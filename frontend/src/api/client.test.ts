@@ -35,7 +35,7 @@ afterEach(() => {
   document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
 })
 
-test.only('[web-client/R4-S1] State-changing request carries the CSRF token', async () => {
+test('[web-client/R4-S1] State-changing request carries the CSRF token', async () => {
   // given
   document.cookie = 'XSRF-TOKEN=abc; path=/'
   fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
