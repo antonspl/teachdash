@@ -14,6 +14,11 @@
 #     backend/src/test (a @Disabled test still counts).
 # So a backend scenario cannot pass on a frontend test, or the other way round.
 #
+# A scenario ID is not required when it sits in a main spec under a requirement that an
+# active change delta lists under "## REMOVED Requirements" (same capability, same header,
+# compared ignoring whitespace differences), unless the same ID also appears in an active
+# change delta outside a REMOVED section, e.g. in the ADDED requirement that replaces it.
+#
 # To add a capability whose tests are frontend tests, put its name in the list below.
 # Forgetting it shows up as MISSING, never as a false pass.
 FRONTEND_CAPABILITIES="web-client"
@@ -21,6 +26,70 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
+
+# Prints "<capability>|<header>" for each requirement that an active change delta removes.
+removed_requirements() {
+  local delta
+  for delta in $(find openspec/changes -path '*/specs/*/spec.md' -not -path '*/archive/*' | sort); do
+    awk -v capability="$(basename "$(dirname "$delta")")" '
+      /^## / { removed = ($0 ~ /^## REMOVED Requirements[[:space:]]*$/) }
+      removed && /^### Requirement:/ {
+        header = $0
+        sub(/^### Requirement:/, "", header)
+        gsub(/[[:space:]]+/, " ", header)
+        sub(/^ /, "", header)
+        sub(/ $/, "", header)
+        print capability "|" header
+      }
+    ' "$delta"
+  done
+}
+
+# Prints the IDs of scenarios in active change deltas that are outside a REMOVED section.
+delta_scenarios_kept() {
+  local delta
+  for delta in $(find openspec/changes -path '*/specs/*/spec.md' -not -path '*/archive/*' | sort); do
+    awk '
+      /^## / { removed = ($0 ~ /^## REMOVED Requirements[[:space:]]*$/) }
+      !removed && /^#### Scenario: / {
+        id = $0
+        sub(/^#### Scenario: /, "", id)
+        sub(/ .*/, "", id)
+        print id
+      }
+    ' "$delta"
+  done
+}
+
+# Prints the IDs of main spec scenarios under a requirement that a delta removes.
+main_scenarios_removed() {
+  local removed_list="$1"
+  local spec
+  for spec in $(find openspec/specs -name spec.md | sort); do
+    REMOVED_LIST="$removed_list" awk -v capability="$(basename "$(dirname "$spec")")" '
+      BEGIN {
+        count = split(ENVIRON["REMOVED_LIST"], entries, "\n")
+        for (i = 1; i <= count; i++) {
+          removed[entries[i]] = 1
+        }
+      }
+      /^### Requirement:/ {
+        header = $0
+        sub(/^### Requirement:/, "", header)
+        gsub(/[[:space:]]+/, " ", header)
+        sub(/^ /, "", header)
+        sub(/ $/, "", header)
+        in_removed = ((capability "|" header) in removed)
+      }
+      in_removed && /^#### Scenario: / {
+        id = $0
+        sub(/^#### Scenario: /, "", id)
+        sub(/ .*/, "", id)
+        print id
+      }
+    ' "$spec"
+  done
+}
 
 specs=$(find openspec/specs openspec/changes -name spec.md -not -path '*/archive/*' 2>/dev/null | sort || true)
 if [ -z "$specs" ]; then
@@ -33,6 +102,17 @@ ids=$(grep -h -E '^#### Scenario: ' $specs | sed -E 's/^#### Scenario: ([^ ]+).*
 if [ -z "$ids" ]; then
   echo "No scenarios found in specs" >&2
   exit 1
+fi
+
+# Drop the IDs of removed requirements that no delta brings back.
+removed_list=$(removed_requirements)
+if [ -n "$removed_list" ]; then
+  not_required=$(comm -23 \
+    <(main_scenarios_removed "$removed_list" | sort -u) \
+    <(delta_scenarios_kept | sort -u))
+  if [ -n "$not_required" ]; then
+    ids=$(comm -23 <(echo "$ids") <(echo "$not_required"))
+  fi
 fi
 
 is_frontend_capability() {
