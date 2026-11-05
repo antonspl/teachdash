@@ -17,9 +17,9 @@ This is a tooling change with `skip_specs: true`, under the rule that task 4.1 a
 
 ## 3. Prove that failures are caught
 
-- [ ] 3.1 On the PR, push temporary commits that break one job at a time (a failing backend test, a lint error, a format error, a type error, a temporary `spec.md` with a scenario that has no test, a failing E2E test), then revert them with new commits, without force-pushing. Verify: each makes its own job and `ci-ok` red, and the final run is green. Record the run links in the PR.
-- [ ] 3.2 In the same way, push a temporary `push` trigger for this branch. Verify: that run installs Chromium and WebKit and runs all 3 projects. A real phone failure here does not block this change: open an issue for it and report it to the owner. Record the run link in the PR.
-- [ ] 3.3 In the same way, push a temporary `test.only` in Vitest and in Playwright. Verify: each makes its job and `ci-ok` red. Record the run links in the PR.
+- [x] 3.1 On the PR, push temporary commits that break one job at a time (a failing backend test, a lint error, a format error, a type error, a temporary `spec.md` with a scenario that has no test, a failing E2E test), then revert them with new commits, without force-pushing. Verify: each makes its own job and `ci-ok` red, and the final run is green. Record the run links in the PR.
+- [x] 3.2 In the same way, push a temporary `push` trigger for this branch. Verify: that run installs Chromium and WebKit and runs all 3 projects. A real phone failure here does not block this change: open an issue for it and report it to the owner. Record the run link in the PR.
+- [x] 3.3 In the same way, push a temporary `test.only` in Vitest and in Playwright. Verify: each makes its job and `ci-ok` red. Record the run links in the PR.
 
 ## 4. Documentation and follow-up issues
 
