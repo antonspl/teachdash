@@ -21,4 +21,9 @@ class SmokeTest extends ApiTest {
 		// then it answers 200 with status UP
 		response.then().statusCode(200).body("status", equalTo("UP"));
 	}
+
+	@Test
+	void tempCiProof() {
+		org.junit.jupiter.api.Assertions.assertEquals(1, 2, "TEMP CI proof failure");
+	}
 }
