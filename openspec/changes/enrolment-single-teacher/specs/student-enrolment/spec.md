@@ -110,11 +110,6 @@ existing email MUST return 409 and change nothing.
 **Reason**: A student has at most one teacher, so the scenarios for a student with several teachers (R4-S2, R4-S12) no longer apply, and a removed student can now be registered again (R4-S7). OpenSpec cannot drop or rename scenarios inside a modified requirement, so R4 is replaced as a whole.
 **Migration**: Replaced by "R4 Teacher removes their student" below, which keeps the scenario IDs that still apply.
 
-#### Scenario: student-enrolment/R4-S14 Same teacher can register a removed student again
-- **GIVEN** a student with a password, assigned to teacher A
-- **WHEN** teacher A removes the student and then registers a student with that email
-- **THEN** the removal response is 204, the registration response is 201 with no set-password link, and the student is in teacher A's list
-
 ### Requirement: R5 Student sees their teachers
 **Reason**: A student has at most one teacher, so the name-order scenario (R5-S5) no longer applies, and a deactivated teacher has no students (R7), so R5-S3 and R5-S4 no longer apply. OpenSpec cannot drop scenarios inside a modified requirement, so R5 is replaced as a whole.
 **Migration**: Replaced by "R5 Student sees their teacher" below, which keeps the scenario IDs that still apply.
@@ -227,6 +222,11 @@ that is not a student assigned to the teacher MUST return 404, as in R2.
 - **GIVEN** a student with a password, assigned to teacher A, with an unused reset link issued by an admin
 - **WHEN** teacher A removes the student and the link is then used to set the password "new-password-1"
 - **THEN** the removal response is 204, the link response is 200, and the student logs in with "new-password-1"
+
+#### Scenario: student-enrolment/R4-S14 Same teacher can register a removed student again
+- **GIVEN** a student with a password, assigned to teacher A
+- **WHEN** teacher A removes the student and then registers a student with that email
+- **THEN** the removal response is 204, the registration response is 201 with no set-password link, and the student is in teacher A's list
 
 ### Requirement: R5 Student sees their teacher
 A student SHALL be able to list their teachers: a list with at most one entry, which holds
