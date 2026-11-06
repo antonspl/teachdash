@@ -27,8 +27,6 @@ public class StudentRemovalService {
 		if (!assignments.delete(teacherId, studentId)) {
 			throw ApiException.notFound();
 		}
-		if (!assignments.existsForStudent(studentId)) {
-			links.invalidateLinks(studentId, TokenPurpose.SET_PASSWORD);
-		}
+		links.invalidateLinks(studentId, TokenPurpose.SET_PASSWORD);
 	}
 }
