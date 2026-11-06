@@ -106,7 +106,7 @@ test('[web-auth/R6-S1] Session end sends the user to login', async () => {
 test('[web-auth/R6-S2] After logging in again the user returns to the page', async () => {
   // given
   backend('TEACHER', 'TEACHER')
-  open('/teacher')
+  open('/teacher?x=1')
   await screen.findByText(en.cabinet.teacher)
   await endSession()
 
@@ -115,7 +115,7 @@ test('[web-auth/R6-S2] After logging in again the user returns to the page', asy
 
   // then
   expect(await screen.findByText(en.cabinet.teacher)).toBeTruthy()
-  expect(window.location.pathname).toBe('/teacher')
+  expect(window.location.pathname + window.location.search).toBe('/teacher?x=1')
 })
 
 test('[web-auth/R6-S3] A page of another role is not restored', async () => {
@@ -136,7 +136,7 @@ test('[web-auth/R6-S3] A page of another role is not restored', async () => {
 test('[web-auth/R6-S4] After a reload the return is not kept', async () => {
   // given
   backend('TEACHER', 'TEACHER')
-  const first = open('/teacher')
+  const first = open('/teacher?x=1')
   await screen.findByText(en.cabinet.teacher)
   await endSession()
 
@@ -149,5 +149,6 @@ test('[web-auth/R6-S4] After a reload the return is not kept', async () => {
 
   // then
   expect(await screen.findByText(en.cabinet.teacher)).toBeTruthy()
-  expect(window.location.pathname).toBe('/teacher')
+  expect(window.location.pathname + window.location.search).toBe('/teacher')
+  expect(screen.queryByText(en.login.sessionEnded)).toBeNull()
 })

@@ -95,7 +95,10 @@ export async function createTeacher(
   const { setPasswordLink } = (await created.json()) as {
     setPasswordLink: string
   }
-  expect(setPasswordLink).toContain('token=')
+  expect(
+    setPasswordLink.includes('token='),
+    'the set-password link has a token',
+  ).toBe(true)
   return { name, email, setPasswordLink }
 }
 

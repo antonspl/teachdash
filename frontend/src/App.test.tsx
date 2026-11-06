@@ -258,7 +258,9 @@ test('[web-auth/R1-S5] Page explains how to get a link', async () => {
   open('/login')
 
   // then
-  expect(await screen.findByText(en.login.linkHint)).toBeTruthy()
+  const hint = await screen.findByText(en.login.linkHint)
+  expect(hint.textContent).toMatch(/ask your teacher or administrator/i)
+  expect(hint.textContent).toMatch(/link/i)
 })
 
 test('[web-auth/R1-S6] Network error or rejected CSRF check', async () => {
