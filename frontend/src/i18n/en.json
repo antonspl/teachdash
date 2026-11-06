@@ -2,9 +2,6 @@
   "app": {
     "name": "teachdash"
   },
-  "status": {
-    "reachable": "The server is reachable."
-  },
   "notFound": {
     "title": "Page not found",
     "message": "There is nothing at this address.",
