@@ -1,5 +1,6 @@
 # Code owners. A code owner other than the author approves every PR before merge
-# (constitution §1, step 12). The owner (@antonspl) merges and may merge without one.
+# (constitution §1, step 12). Then anyone on the team merges it; only the owner
+# (@antonspl) may merge without an approval.
 * @antonspl @andreilebedevops
 
 # The constitution, the OpenSpec config and this file need the owner's approval.

@@ -25,7 +25,7 @@ engineer who took the task, approve each one after checking what Claude produced
 
 Then the author archives the change (in the same PR) and marks the PR ready. A
 **code owner** (`.github/CODEOWNERS`) other than the author reviews spec, tests and
-code together and approves the PR. The **owner** merges.
+code together and approves the PR. Then anyone on the team merges it.
 
 ### Steps and commands
 
@@ -36,7 +36,7 @@ code together and approves the PR. The **owner** merges.
 | Propose + spec critique | `/openspec-propose`; Claude runs the spec-critic, then stops for "spec approved" |
 | Tests, then code | `/openspec-apply-change`. Backend: pass 1 writes failing tests and stops for "tests approved"; pass 2 writes the code. Frontend-only: tests and code in one pass. Claude runs the Opus review, then stops for "code approved" |
 | Archive | `/openspec-archive-change`, then mark the PR ready |
-| Final review | another code owner approves; the owner merges |
+| Final review | another code owner approves; then anyone merges |
 
 The author answers the clarifying questions and decides trade-offs for their change.
 Anyone can improve the workflow (`CLAUDE.md`, `CONTRIBUTING.md`, `.claude/`, the PR
@@ -77,8 +77,9 @@ THEN, per-teacher data scoping, no secrets.
 
 ## Git
 
-- `main` is protected. Only the owner merges into it; the owner may merge without an
-  approval.
+- `main` is protected: changes land only through PRs with a code owner's approval and
+  green `ci-ok`. Anyone on the team can merge such a PR; only the owner may merge
+  without an approval.
 - Branch name = change name. Link the issue in the PR (`Closes #N`).
 
 ## Run locally

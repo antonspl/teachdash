@@ -21,4 +21,4 @@ Closes #
 - [ ] Code approved by @ (all tests green)
 - [ ] Change archived (`openspec/specs/` updated)
 - [ ] Final review by a code owner (not the author)
-- [ ] Merged by the owner
+- [ ] Merged

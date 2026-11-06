@@ -13,14 +13,14 @@ Roles:
   spec-critic (spec gate) and the Opus review (code gate).
 - **Code owner** — a team member listed in `.github/CODEOWNERS`. A code owner other
   than the engineer gives the final approval.
-- **Owner** — the project owner. Merges into `main`, and may merge without an
+- **Owner** — the project owner. The only one who may merge into `main` without an
   approval. Changes to this file, `openspec/config.yaml` and `.github/CODEOWNERS`
   need the owner's approval. Any engineer may improve the rest of the workflow
   (`CLAUDE.md`, `CONTRIBUTING.md`, `.claude/`, the PR template) through a normal PR.
 
 One change = one branch = one pull request. The PR goes through three review gates
 approved by the engineer, then a code owner other than the engineer approves the
-whole PR and the owner merges it.
+whole PR. Then anyone on the team merges it.
 
 A change has at most 6 requirements, and fewer is better, so one person can review
 it. The number of scenarios is not limited. A larger feature is split into several changes, each
@@ -60,8 +60,9 @@ with its own issue, spec and PR.
    an issue, so rare edge cases do not add more review rounds.
 11. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
 12. **Final review** — mark the PR ready. A code owner other than the engineer
-    reviews spec, tests and code together and approves the PR on GitHub. Then the
-    owner merges. Only the owner merges into `main`.
+    reviews spec, tests and code together and approves the PR on GitHub. Then anyone on
+    the team merges it (with `ci-ok` green). Only the owner may merge without an
+    approval.
 
 **Tooling changes.** A change that does not change product behaviour (CI, scripts, repository tooling) may set `skip_specs: true`. It has no spec deltas or scenarios. The spec critique and spec review gate (steps 5 and 6) apply to its proposal and design. It has no Red step or test review gate. Its tasks say how each part is proven, and the proof is recorded in the PR for the code review. Archive merges nothing into `openspec/specs/`.
 

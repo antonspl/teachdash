@@ -32,7 +32,8 @@ Agents' reports are not shown to the engineer — relay what matters in a few li
 
 ## Git flow
 
-- `main` is protected: changes land only through pull requests, merged by the owner.
+- `main` is protected: changes land only through pull requests, approved by a code owner
+  other than the author and merged by anyone on the team.
 - One change = one branch (named after the OpenSpec change) = one PR, opened as a
   draft right after the spec is written. Spec, tests and code are added to it in
   turn; each stops at its review gate (constitution §1). Check the PR for a
