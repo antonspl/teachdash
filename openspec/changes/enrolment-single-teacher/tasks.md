@@ -21,7 +21,7 @@
 
 - [x] 3.5 Apply the lock-order rule of design D7 (user row before its links) to `PasswordLinkService.issue` and `TeacherAdminService.deactivateTeacher`, and fix the stale Javadoc there; verify `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh` pass and approved tests are unchanged
 - [x] 3.6 Registration locks only a student's row, by id, after an unlocked read that rejects non-students with `EMAIL_TAKEN` (design D2); add a one-line comment where `findByIdForUpdate` is called only for its lock; drop the design reference from the listener's Javadoc; verify `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh` pass and approved tests are unchanged
-- [ ] 3.7 Map the registration response to a DTO in `enrolment/api/dto` with `@JsonInclude(NON_NULL)`, and remove the annotation from `CreatedAccount` (design D3); verify `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh` pass and approved tests are unchanged
+- [x] 3.7 Map the registration response to a DTO in `enrolment/api/dto` with `@JsonInclude(NON_NULL)`, and remove the annotation from `CreatedAccount` (design D3); verify `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh` pass and approved tests are unchanged
 
 ## Workflow follow-up
 
