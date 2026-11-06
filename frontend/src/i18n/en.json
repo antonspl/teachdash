@@ -21,7 +21,7 @@
     "LINK_INVALID": "This link is not valid or has expired. Please ask for a new one.",
     "ACCOUNT_DEACTIVATED": "This account is deactivated.",
     "WRONG_PASSWORD": "The password is incorrect.",
-    "INVALID_CREDENTIALS": "The email or password is incorrect. If you have not set a password yet, use the link you were given."
+    "INVALID_CREDENTIALS": "The email or password is incorrect. Don't have a password, or forgot it? Ask your teacher or administrator for a new link."
   },
   "ui": {
     "showPassword": "Show",
@@ -34,7 +34,7 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
-    "linkHint": "If you have not set a password yet, use the link you were given.",
+    "linkHint": "Don't have a password, or forgot it? Ask your teacher or administrator for a new link.",
     "sessionEnded": "Your session has ended. Please sign in again.",
     "unreachable": "The server cannot be reached."
   },

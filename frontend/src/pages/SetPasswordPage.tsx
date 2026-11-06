@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { ApiError } from '../api/client'
@@ -13,10 +13,14 @@ import { Title } from '../ui/Title'
 const MIN_LENGTH = 8
 const MAX_BYTES = 72
 
-// Read in the first render (a useState initialiser), so a second effect run under
-// React strict mode cannot lose it; the fragment is removed right after.
-function takeToken(): string | undefined {
+// Read without side effects in a useState initialiser, so a repeated render or effect
+// under React strict mode cannot lose it; the fragment is removed in a layout effect.
+function readToken(): string | undefined {
   const token = new URLSearchParams(window.location.hash.slice(1)).get('token')
+  return token ? token : undefined
+}
+
+function removeFragment() {
   if (window.location.hash) {
     window.history.replaceState(
       window.history.state,
@@ -24,14 +28,14 @@ function takeToken(): string | undefined {
       window.location.pathname + window.location.search,
     )
   }
-  return token ? token : undefined
 }
 
 export function SetPasswordPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { setPasswordWithLink } = useAuth()
-  const [token] = useState(takeToken)
+  const [token] = useState(readToken)
+  useLayoutEffect(removeFragment, [])
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string>()
