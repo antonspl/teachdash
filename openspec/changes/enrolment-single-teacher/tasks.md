@@ -19,7 +19,7 @@
 - [x] 3.3 Release a deactivated teacher's students through an event handled in enrolment, with the new `delete ... returning student_id` query published after `users.deactivate`, the teacher-row lock in registration with a comment explaining the race (design D7), the student-row lock (design D2), and the user-row lock first in `PasswordLinkService.use` (design D7, lock order); verify all R7 tests (R7-S2 also needs 3.1) and the accounts R6 tests pass
 - [x] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and approved tests are unchanged
 
-- [ ] 3.5 Apply the lock-order rule of design D7 (user row before its links) to `PasswordLinkService.issue` and `TeacherAdminService.deactivateTeacher`, and fix the stale Javadoc there; verify `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh` pass and approved tests are unchanged
+- [x] 3.5 Apply the lock-order rule of design D7 (user row before its links) to `PasswordLinkService.issue` and `TeacherAdminService.deactivateTeacher`, and fix the stale Javadoc there; verify `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh` pass and approved tests are unchanged
 
 ## Workflow follow-up
 

@@ -46,16 +46,16 @@ public class TeacherAdminService {
 	}
 
 	/**
-	 * Revokes the teacher's sessions (session version) and unused links, then deactivates.
-	 * Rows are always locked in the same order: links first, then the user.
+	 * Deactivates the teacher and revokes their sessions (session version), then invalidates
+	 * their unused links. The user row is always locked before its links.
 	 */
 	@Transactional
 	public void deactivateTeacher(UUID id) {
 		if (!users.existsByIdAndRole(id, Role.TEACHER)) {
 			throw notFound();
 		}
-		links.invalidateLinks(id);
 		users.deactivate(id);
+		links.invalidateLinks(id);
 		events.publishEvent(new TeacherDeactivated(id));
 	}
 

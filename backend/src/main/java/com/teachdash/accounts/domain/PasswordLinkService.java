@@ -62,6 +62,7 @@ public class PasswordLinkService {
 		RANDOM.nextBytes(bytes);
 		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 		Instant now = clock.instant();
+		users.findByIdForUpdate(userId);
 		tokens.markUnusedAsUsed(userId, now);
 		try {
 			tokens.save(OneTimeToken.create(
