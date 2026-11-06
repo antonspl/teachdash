@@ -14,24 +14,41 @@ Labels: `area:backend`, `area:frontend`, `area:devops`, `type:task`, `type:bug`,
 
 Read `openspec/constitution.md` first (section 1 is the workflow).
 
-**One change = one branch = one PR.** The PR passes three review gates, each
-approved by a reviewer — any team member except the author:
+**One change = one branch = one PR.** The PR passes three review gates. You, the
+engineer who took the task, approve each one after checking what Claude produced:
 
 | Phase | Author does | Gate |
 |---|---|---|
-| Spec | OpenSpec change in `openspec/changes/<name>/`; open a **draft** PR | reviewer approves the spec |
-| Tests | one failing backend test per scenario, scenario ID in `@DisplayName`; each fails at its THEN step | reviewer approves the tests |
-| Code | implement until all tests pass; approved tests are not changed | reviewer approves the code |
+| Spec | OpenSpec change in `openspec/changes/<name>/`; open a **draft** PR | you approve the spec |
+| Tests | one failing backend test per scenario, scenario ID in `@DisplayName`; each fails at its THEN step | you approve the tests |
+| Code | implement until all tests pass; approved tests are not changed | you approve the code |
 
-Then the author archives the change (in the same PR) and marks the PR ready. The
-**owner** reviews spec, tests and code together and merges.
+Then the author archives the change (in the same PR) and marks the PR ready. A
+**code owner** (`.github/CODEOWNERS`) other than the author reviews spec, tests and
+code together and approves the PR. Then anyone on the team merges it.
 
-To ask for a gate review, post a comment with the commit range of that phase
-(e.g. `Tests: abc123..def456`), so the reviewer reads only what is new.
+### Steps and commands
+
+| Step | How |
+|---|---|
+| Explore (optional, for a big or unclear feature; skip when the issue already has it) | `/openspec-explore` |
+| Clarify, Research | Claude restates the task and asks only what the issue does not answer; you answer and agree the research angles (or none) |
+| Propose + spec critique | `/openspec-propose`; Claude runs the spec-critic, then stops for "spec approved" |
+| Tests, then code | `/openspec-apply-change`. Backend: pass 1 writes failing tests and stops for "tests approved"; pass 2 writes the code. Frontend-only: tests and code in one pass. Claude runs the Opus review, then stops for "code approved" |
+| Archive | `/openspec-archive-change`, then mark the PR ready |
+| Final review | another code owner approves; then anyone merges |
+
+The author answers the clarifying questions and decides trade-offs for their change.
+Anyone can improve the workflow (`CLAUDE.md`, `CONTRIBUTING.md`, `.claude/`, the PR
+template) through a normal PR. Changes to the constitution, `openspec/config.yaml` and
+`.github/CODEOWNERS` need the owner's approval.
+
+At each gate Claude stops and posts the commit range of that phase
+(e.g. `Tests: abc123..def456`), so you read only what is new.
 
 To approve a gate: post a comment naming it ("spec approved", "tests approved",
 "code approved") and tick the box in the PR description. GitHub's "Approve"
-button is used only for the owner's final review. Request changes the usual way.
+button is used only for the final review. Request changes the usual way.
 
 **Tests phase (pass 1).** Tests "fail for the right reason": each fails at its
 THEN step, never in setup. Setup creates data and sessions directly, not through
@@ -53,14 +70,16 @@ from it and targets its branch (stacked PRs, e.g. #2 on `accounts`).
 
 ## Reviewing
 
-Anyone on the team can review any PR except their own. Open PRs waiting for a gate:
-[draft PRs](https://github.com/antonspl/teachdash/pulls?q=is%3Apr+is%3Aopen+draft%3Atrue).
+Any code owner can give the final approval on any PR except their own. PRs waiting
+for it: [open PRs ready for review](https://github.com/antonspl/teachdash/pulls?q=is%3Apr+is%3Aopen+draft%3Afalse).
 Check against the constitution: one test per scenario, tests assert the scenario's
 THEN, per-teacher data scoping, no secrets.
 
 ## Git
 
-- `main` is protected. Only the owner merges into it.
+- `main` is protected: changes land only through PRs with a code owner's approval and
+  green `ci-ok`. Anyone on the team can merge such a PR; only the owner may merge
+  without an approval.
 - Branch name = change name. Link the issue in the PR (`Closes #N`).
 
 ## Run locally

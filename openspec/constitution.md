@@ -5,28 +5,43 @@ MUST comply. Changing this file requires explicit approval from the project owne
 
 ## 1. Workflow
 
+Roles:
+
+- **Engineer** — the team member who took the task. The engineer answers the
+  clarifying questions, agrees the research angles, decides trade-offs and approves
+  the gates: at each gate the engineer checks what Claude produced, helped by the
+  spec-critic (spec gate) and the Opus review (code gate).
+- **Code owner** — a team member listed in `.github/CODEOWNERS`. A code owner other
+  than the engineer gives the final approval.
+- **Owner** — the project owner. The only one who may merge into `main` without an
+  approval. Changes to this file, `openspec/config.yaml` and `.github/CODEOWNERS`
+  need the owner's approval. Any engineer may improve the rest of the workflow
+  (`CLAUDE.md`, `CONTRIBUTING.md`, `.claude/`, the PR template) through a normal PR.
+
 One change = one branch = one pull request. The PR goes through three review gates
-by a **reviewer** (any team member other than the author; the owner while the team
-has no other reviewers), then the **owner** reviews the whole PR and merges it.
+approved by the engineer, then a code owner other than the engineer approves the
+whole PR. Then anyone on the team merges it.
 
 A change has at most 6 requirements, and fewer is better, so one person can review
 it. The number of scenarios is not limited. A larger feature is split into several changes, each
 with its own issue, spec and PR.
 
-1. **Explore** (optional) — discuss the idea; no artifacts.
+1. **Explore** (optional) — discuss the idea; no artifacts. The engineer decides
+   whether it is needed: skip it when the issue already has the exploration.
 2. **Clarify** — before writing a proposal, restate the task in plain words, list
-   open questions and ambiguities, and propose research angles. Get the owner's
+   open questions and ambiguities, and propose research angles. Get the engineer's
    answers and agreement on the angles, or agreement that a small task needs none.
-   Record the answers in the proposal.
+   Record the answers in the proposal. Keep it short: ask only what the issue and
+   the exploration do not already answer.
 3. **Research** — one researcher agent per agreed angle. If the findings raise new
-   decisions, ask the owner before proposing.
+   decisions, ask the engineer before proposing.
 4. **Propose** — proposal, spec deltas, design, tasks. Every requirement has at
    least one Given/When/Then scenario. No code. Push the branch, open a draft PR.
 5. **Spec critique** — the spec-critic agent attacks the draft, on every change.
-   Fix what has a clear answer, ask the owner about real trade-offs, and turn
+   Fix what has a clear answer, ask the engineer about real trade-offs, and turn
    findings outside the change into issues. Run it again if a fix was non-trivial.
    Its report is not an approval; the gate request summarises what it found.
-6. **Spec review gate** — STOP. A reviewer approves the spec in the PR. No tests
+6. **Spec review gate** — STOP. The engineer approves the spec in the PR. No tests
    until approved.
 7. **Red** — write backend tests for every scenario; they MUST compile and fail
    for the right reason: each test fails at its THEN step because the behaviour is
@@ -34,28 +49,30 @@ with its own issue, spec and PR.
    depend on endpoints that are not implemented yet (create data and sessions
    directly). Pass 1 may add only:
    - **stubs** that return 501, each marked with a `STUB` comment; pass 2 rewrites them;
-   - **schema migrations** — permanent production code; the reviewer reviews them
+   - **schema migrations** — permanent production code; the engineer reviews them
      as production code at the test review gate.
-8. **Test review gate** — STOP. A reviewer approves the tests in the PR. No
+8. **Test review gate** — STOP. The engineer approves the tests in the PR. No
    production code until approved.
 9. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
-   if a test looks wrong, stop and ask the reviewer.
-10. **Code review** — a reviewer approves the code in the PR. Security problems,
+   if a test looks wrong, stop and ask the engineer.
+10. **Code review** — the Opus review runs, then the engineer approves the code in the PR. Security problems,
    data loss and spec violations are fixed in the PR. Every other finding becomes
    an issue, so rare edge cases do not add more review rounds.
 11. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
-12. **Owner review** — mark the PR ready. The owner reviews spec, tests and code
-    together and merges. Only the owner merges into `main`.
+12. **Final review** — mark the PR ready. A code owner other than the engineer
+    reviews spec, tests and code together and approves the PR on GitHub. Then anyone on
+    the team merges it (with `ci-ok` green). Only the owner may merge without an
+    approval.
 
 **Tooling changes.** A change that does not change product behaviour (CI, scripts, repository tooling) may set `skip_specs: true`. It has no spec deltas or scenarios. The spec critique and spec review gate (steps 5 and 6) apply to its proposal and design. It has no Red step or test review gate. Its tasks say how each part is proven, and the proof is recorded in the PR for the code review. Archive merges nothing into `openspec/specs/`.
 
 A gate is approved by a PR comment naming it (e.g. "tests approved") plus the
 matching box ticked in the PR description. A GitHub review "Approve" is used only
-for the final owner review: it does not say which gate it is for, and it stays on
+for the final review: it does not say which gate it is for, and it stays on
 the PR when the next phase is pushed.
 
-When asking for a gate review, the author posts the commit range of that phase
-(e.g. `abc123..def456`), so the reviewer reads only what is new.
+At each gate Claude stops and posts the commit range of that phase
+(e.g. `abc123..def456`), so the engineer reads only what is new.
 
 All artifacts, code, comments and commit messages are in English.
 

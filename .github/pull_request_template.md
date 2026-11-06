@@ -1,6 +1,6 @@
 <!-- One OpenSpec change per PR. Open as draft; mark ready after the archive step.
      A gate is approved by a comment naming it ("spec approved", "tests approved",
-     "code approved") plus the ticked box. GitHub "Approve" = final owner review only. -->
+     "code approved") plus the ticked box. GitHub "Approve" = final code owner review only. -->
 
 **Change:** `openspec/changes/<name>/`
 Closes #
@@ -20,4 +20,5 @@ Closes #
 - [ ] Tests approved by @ (fail for the right reason)
 - [ ] Code approved by @ (all tests green)
 - [ ] Change archived (`openspec/specs/` updated)
-- [ ] Owner review and merge
+- [ ] Final review by a code owner (not the author)
+- [ ] Merged

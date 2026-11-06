@@ -34,5 +34,5 @@ exists in `main` or comes from this change. Say plainly if you found nothing.
 
 Mark each finding as one of:
 - **Fix in spec:** the right answer is clear.
-- **Owner decision:** there is a real trade-off, or it changes scope.
+- **Engineer decision:** there is a real trade-off, or it changes scope.
 - **Issue:** real, but outside this change.

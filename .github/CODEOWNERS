@@ -1,2 +1,10 @@
-# Every change to main needs approval from the project owner.
-* @antonspl
+# Code owners. A code owner other than the author approves every PR before merge
+# (constitution §1, step 12). Then anyone on the team merges it; only the owner
+# (@antonspl) may merge without an approval.
+* @antonspl @andreilebedevops
+
+# The constitution, the OpenSpec config and this file need the owner's approval.
+# The rest of the workflow (CLAUDE.md, CONTRIBUTING.md, .claude/) is open to any code owner.
+/openspec/constitution.md @antonspl
+/openspec/config.yaml @antonspl
+/.github/CODEOWNERS @antonspl
