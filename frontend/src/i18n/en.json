@@ -21,7 +21,7 @@
     "LINK_INVALID": "This link is not valid or has expired. Please ask for a new one.",
     "ACCOUNT_DEACTIVATED": "This account is deactivated.",
     "WRONG_PASSWORD": "The password is incorrect.",
-    "INVALID_CREDENTIALS": "The email or password is incorrect. Don't have a password, or forgot it? Ask your teacher or administrator for a new link."
+    "INVALID_CREDENTIALS": "That email and password don't match."
   },
   "ui": {
     "showPassword": "Show",

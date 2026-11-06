@@ -34,8 +34,8 @@ request it SHALL send the value of the `XSRF-TOKEN` cookie in the `X-XSRF-TOKEN`
 When a request fails, the API client SHALL give the caller a translated message chosen
 by the problem `code`. A code without a translation, or a response that is not a problem
 response, SHALL give a generic translated message. The message for `INVALID_CREDENTIALS`
-SHALL say that the email or password is incorrect, and that a user who has not set a
-password yet uses the link they were given.
+SHALL say only that the email and password do not match; the login page shows the hint
+about getting a link separately (`web-auth` R1).
 
 #### Scenario: web-client/R5-S1 Known problem code gives its translated message
 - **GIVEN** the backend answers with a problem response with code `WRONG_PASSWORD`
@@ -52,10 +52,11 @@ password yet uses the link they were given.
 - **WHEN** a client sends a login with an empty body and the headers the API client uses
 - **THEN** the response has content type `application/problem+json` and code `VALIDATION_FAILED`
 
-#### Scenario: web-client/R5-S4 Failed login message includes the set-password hint
+#### Scenario: web-client/R5-S4 Failed login message does not repeat the link hint
 - **GIVEN** the backend answers with a problem response with code `INVALID_CREDENTIALS`
 - **WHEN** the API client handles the response
-- **THEN** the caller gets a message saying the email or password is incorrect and pointing to the set-password link
+- **THEN** the caller gets a message saying the email and password do not match
+- **AND** the message says nothing about a link or setting a password
 
 ### Requirement: R6 Same-origin serving
 
