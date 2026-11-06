@@ -6,6 +6,7 @@ import { useReachability } from '../api/useReachability'
 import { useAuth } from '../auth/AuthProvider'
 import { cabinetPath } from '../auth/guards'
 import { Button } from '../ui/Button'
+import { Form } from '../ui/Form'
 import { Page } from '../ui/Page'
 import { PasswordInput } from '../ui/PasswordInput'
 import { StatusMessage } from '../ui/StatusMessage'
@@ -68,7 +69,7 @@ export function LoginPage() {
       {remembered !== undefined ? (
         <StatusMessage tone="neutral">{t('login.sessionEnded')}</StatusMessage>
       ) : null}
-      <form onSubmit={(event) => void onSubmit(event)}>
+      <Form onSubmit={(event) => void onSubmit(event)}>
         <TextInput
           label={t('login.email')}
           type="email"
@@ -88,7 +89,7 @@ export function LoginPage() {
         <Button type="submit" disabled={submitting}>
           {t('login.submit')}
         </Button>
-      </form>
+      </Form>
       <Text>{t('login.linkHint')}</Text>
     </Page>
   )
