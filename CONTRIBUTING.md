@@ -14,26 +14,37 @@ Labels: `area:backend`, `area:frontend`, `area:devops`, `type:task`, `type:bug`,
 
 Read `openspec/constitution.md` first (section 1 is the workflow).
 
-**One change = one branch = one PR.** The PR passes three review gates, each
-approved by a reviewer — any team member except the author:
+**One change = one branch = one PR.** The PR passes three review gates. You, the
+engineer who took the task, approve each one after checking what Claude produced:
 
 | Phase | Author does | Gate |
 |---|---|---|
-| Spec | OpenSpec change in `openspec/changes/<name>/`; open a **draft** PR | reviewer approves the spec |
-| Tests | one failing backend test per scenario, scenario ID in `@DisplayName`; each fails at its THEN step | reviewer approves the tests |
-| Code | implement until all tests pass; approved tests are not changed | reviewer approves the code |
+| Spec | OpenSpec change in `openspec/changes/<name>/`; open a **draft** PR | you approve the spec |
+| Tests | one failing backend test per scenario, scenario ID in `@DisplayName`; each fails at its THEN step | you approve the tests |
+| Code | implement until all tests pass; approved tests are not changed | you approve the code |
 
 Then the author archives the change (in the same PR) and marks the PR ready. A
 **code owner** (`.github/CODEOWNERS`) other than the author reviews spec, tests and
 code together and approves the PR. The **owner** merges.
+
+### Steps and commands
+
+| Step | How |
+|---|---|
+| Explore (optional, for a big or unclear feature) | `/openspec-explore` |
+| Clarify, Research (optional; skip when the issue already explains the task) | Claude asks; say "go straight to the proposal" to skip |
+| Propose + spec critique | `/openspec-propose`; Claude runs the spec-critic, then stops for "spec approved" |
+| Tests, then code | `/openspec-apply-change`. Backend: pass 1 writes failing tests and stops for "tests approved"; pass 2 writes the code. Frontend-only: tests and code in one pass. Claude runs the Opus review, then stops for "code approved" |
+| Archive | `/openspec-archive-change`, then mark the PR ready |
+| Final review | another code owner approves; the owner merges |
 
 The author answers the clarifying questions and decides trade-offs for their change.
 Anyone can improve the workflow (`CLAUDE.md`, `CONTRIBUTING.md`, `.claude/`, the PR
 template) through a normal PR. Changes to the constitution, `openspec/config.yaml` and
 `.github/CODEOWNERS` need the owner's approval.
 
-To ask for a gate review, post a comment with the commit range of that phase
-(e.g. `Tests: abc123..def456`), so the reviewer reads only what is new.
+At each gate Claude stops and posts the commit range of that phase
+(e.g. `Tests: abc123..def456`), so you read only what is new.
 
 To approve a gate: post a comment naming it ("spec approved", "tests approved",
 "code approved") and tick the box in the PR description. GitHub's "Approve"
@@ -59,8 +70,8 @@ from it and targets its branch (stacked PRs, e.g. #2 on `accounts`).
 
 ## Reviewing
 
-Anyone on the team can review any PR except their own. Open PRs waiting for a gate:
-[draft PRs](https://github.com/antonspl/teachdash/pulls?q=is%3Apr+is%3Aopen+draft%3Atrue).
+Any code owner can give the final approval on any PR except their own. PRs waiting
+for it: [open PRs ready for review](https://github.com/antonspl/teachdash/pulls?q=is%3Apr+is%3Aopen+draft%3Afalse).
 Check against the constitution: one test per scenario, tests assert the scenario's
 THEN, per-teacher data scoping, no secrets.
 

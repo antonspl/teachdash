@@ -8,8 +8,9 @@ MUST comply. Changing this file requires explicit approval from the project owne
 Roles:
 
 - **Engineer** — the team member who took the task. The engineer answers the
-  clarifying questions, agrees the research angles and decides trade-offs.
-- **Reviewer** — any team member other than the engineer. Approves the gates.
+  clarifying questions, agrees the research angles, decides trade-offs and approves
+  the gates: at each gate the engineer checks what Claude produced, helped by the
+  spec-critic (spec gate) and the Opus review (code gate).
 - **Code owner** — a team member listed in `.github/CODEOWNERS`. A code owner other
   than the engineer gives the final approval.
 - **Owner** — the project owner. Merges into `main`, and may merge without an
@@ -18,7 +19,8 @@ Roles:
   (`CLAUDE.md`, `CONTRIBUTING.md`, `.claude/`, the PR template) through a normal PR.
 
 One change = one branch = one pull request. The PR goes through three review gates
-by a reviewer, then a code owner approves the whole PR and the owner merges it.
+approved by the engineer, then a code owner other than the engineer approves the
+whole PR and the owner merges it.
 
 A change has at most 6 requirements, and fewer is better, so one person can review
 it. The number of scenarios is not limited. A larger feature is split into several changes, each
@@ -39,7 +41,7 @@ with its own issue, spec and PR.
    Fix what has a clear answer, ask the engineer about real trade-offs, and turn
    findings outside the change into issues. Run it again if a fix was non-trivial.
    Its report is not an approval; the gate request summarises what it found.
-6. **Spec review gate** — STOP. A reviewer approves the spec in the PR. No tests
+6. **Spec review gate** — STOP. The engineer approves the spec in the PR. No tests
    until approved.
 7. **Red** — write backend tests for every scenario; they MUST compile and fail
    for the right reason: each test fails at its THEN step because the behaviour is
@@ -47,13 +49,13 @@ with its own issue, spec and PR.
    depend on endpoints that are not implemented yet (create data and sessions
    directly). Pass 1 may add only:
    - **stubs** that return 501, each marked with a `STUB` comment; pass 2 rewrites them;
-   - **schema migrations** — permanent production code; the reviewer reviews them
+   - **schema migrations** — permanent production code; the engineer reviews them
      as production code at the test review gate.
-8. **Test review gate** — STOP. A reviewer approves the tests in the PR. No
+8. **Test review gate** — STOP. The engineer approves the tests in the PR. No
    production code until approved.
 9. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
-   if a test looks wrong, stop and ask the reviewer.
-10. **Code review** — a reviewer approves the code in the PR. Security problems,
+   if a test looks wrong, stop and ask the engineer.
+10. **Code review** — the Opus review runs, then the engineer approves the code in the PR. Security problems,
    data loss and spec violations are fixed in the PR. Every other finding becomes
    an issue, so rare edge cases do not add more review rounds.
 11. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
@@ -68,8 +70,8 @@ matching box ticked in the PR description. A GitHub review "Approve" is used onl
 for the final review: it does not say which gate it is for, and it stays on
 the PR when the next phase is pushed.
 
-When asking for a gate review, the author posts the commit range of that phase
-(e.g. `abc123..def456`), so the reviewer reads only what is new.
+At each gate Claude stops and posts the commit range of that phase
+(e.g. `abc123..def456`), so the engineer reads only what is new.
 
 All artifacts, code, comments and commit messages are in English.
 
