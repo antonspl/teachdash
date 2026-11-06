@@ -30,11 +30,15 @@ import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /** Real app on a random port, shared Postgres container, tables emptied before each test. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestClockConfig.class)
+@TestPropertySource(properties = {
+		"teachdash.rate-limit.join.max=1000000",
+		"teachdash.rate-limit.preview.max=1000000" })
 public abstract class ApiTest {
 
 	protected static final String APP_BASE_URL = "http://localhost:5173";
@@ -54,8 +58,6 @@ public abstract class ApiTest {
 		registry.add("spring.datasource.username", POSTGRES::getUsername);
 		registry.add("spring.datasource.password", POSTGRES::getPassword);
 		registry.add("APP_BASE_URL", () -> APP_BASE_URL);
-		registry.add("teachdash.rate-limit.join.max", () -> "1000000");
-		registry.add("teachdash.rate-limit.preview.max", () -> "1000000");
 	}
 
 	// low cost keeps tests fast; the app's delegating encoder verifies the {bcrypt} prefix
