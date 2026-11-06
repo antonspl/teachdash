@@ -14,8 +14,8 @@ context: |
 
 rules:
   proposal:
-    - Start with a "Clarifications" section listing the questions asked and the engineer's answers
-    - List the research angles agreed with the engineer and each one's conclusion, or say that the engineer agreed none were needed
+    - Start with a "Clarifications" section listing the questions asked and the engineer's answers, or saying that the engineer skipped clarification and where the task comes from (e.g. the issue)
+    - List the research angles agreed with the engineer and each one's conclusion, or say that none were done
     - State what is out of scope
   specs:
     - Every requirement has at least one Given/When/Then scenario

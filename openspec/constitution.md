@@ -25,12 +25,14 @@ it. The number of scenarios is not limited. A larger feature is split into sever
 with its own issue, spec and PR.
 
 1. **Explore** (optional) — discuss the idea; no artifacts.
-2. **Clarify** — before writing a proposal, restate the task in plain words, list
-   open questions and ambiguities, and propose research angles. Get the engineer's
-   answers and agreement on the angles, or agreement that a small task needs none.
-   Record the answers in the proposal.
-3. **Research** — one researcher agent per agreed angle. If the findings raise new
-   decisions, ask the engineer before proposing.
+2. **Clarify** (optional) — before writing a proposal, restate the task in plain
+   words, list open questions and ambiguities, and propose research angles. Get the
+   engineer's answers and agreement on the angles. Record the answers in the
+   proposal. Skip it when the engineer says so, for example when the issue already
+   has the exploration and the answers: the engineer's word is enough, no questions
+   first.
+3. **Research** (optional) — one researcher agent per agreed angle. If the findings
+   raise new decisions, ask the engineer before proposing.
 4. **Propose** — proposal, spec deltas, design, tasks. Every requirement has at
    least one Given/When/Then scenario. No code. Push the branch, open a draft PR.
 5. **Spec critique** — the spec-critic agent attacks the draft, on every change.

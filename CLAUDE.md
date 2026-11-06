@@ -9,8 +9,10 @@ Keep the main agent's context small. It talks to the engineer (whoever took the 
 artifacts, decides, and delegates. It does not read large parts of the codebase or
 write production code itself.
 
-- **Before a proposal** → the main agent restates the task, proposes research angles
-  and agrees them with the engineer.
+- **Before a proposal** → unless the engineer says to go straight to the proposal,
+  the main agent restates the task, proposes research angles and agrees them with
+  the engineer. When the engineer says to skip, start the proposal from the issue
+  and what the engineer said; do not ask to confirm the skip.
 - **Investigation** (tracing behaviour, comparing options, web research) → `researcher`
   agent (Sonnet), one per angle. Give it the task, the angle and what you need to
   decide. `Explore` is only for a quick search for where something is.
