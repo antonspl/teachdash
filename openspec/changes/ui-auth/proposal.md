@@ -19,7 +19,10 @@ any of them:
 - **After setting a password.** The backend already starts a session on success
   (`accounts/R7-S1`), so the user goes straight to their cabinet.
 - **Logged-in user opens a set-password link.** The page is shown anyway; on success
-  the new session replaces the old one.
+  the new session replaces the old one (fixed by a scenario, `web-auth/R5-S10`).
+- **Session ended during use, while cabinets are still empty.** Kept in this change:
+  the mechanism is shared, so it is built and tested once here (through a test
+  request), and #33 to #37 get it for free.
 - **Logout and "forgot password".** A minimal header on cabinet pages with the user's
   name and "Log out". The login page says to ask the teacher or administrator for a
   new link, since there is no self-service reset.
@@ -29,7 +32,7 @@ any of them:
   new libraries.
 - **Token in the URL.** Read from the fragment and removed from the address bar at
   once.
-- **Client validation.** Only password length and match. Shared field rules are left
+- **Client validation.** Only password length (8 characters to 72 bytes) and match. Shared field rules are left
   to #44.
 
 No separate research was done; facts about the backend come from `openspec/specs/accounts`
@@ -51,7 +54,9 @@ logout, the set-password link and role routing come first.
 - Logout.
 - Set-password page at `/set-password#token=…` (the path the backend puts in its links).
 - When the session ends during use, the user is sent to the login page and brought back
-  after logging in.
+  after logging in (best-effort: a reload drops the return).
+- A failure to load the current user shows an error with "Try again", not the login
+  page; a failed logout shows an error and keeps the user on the page.
 - **BREAKING (UI only):** `/` no longer shows the placeholder page; it redirects.
 - Vitest tests for every scenario, and Playwright E2E for login → cabinet → logout and
   for setting a password from a link.
@@ -75,8 +80,9 @@ logout, the set-password link and role routing come first.
 
 - `web-client`: R1 and R3 are replaced by R11 (the root path redirects instead of
   showing the placeholder page) and R12 (the reachability warning on the login page),
-  because OpenSpec cannot drop a scenario from a modified requirement. R2's scenario
-  now uses the login page.
+  because OpenSpec cannot drop a scenario from a modified requirement. R2, R7 (phone
+  width) and R8 (security headers) now use the login page and the new pages instead of
+  the placeholder page.
 
 ## Impact
 

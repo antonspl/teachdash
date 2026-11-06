@@ -70,6 +70,30 @@ English is the only UI language for now.
 - **THEN** each page shows the test values
 - **AND** no English text from the real resources is shown
 
+### Requirement: R7 Mobile browsers
+
+Pages SHALL fit the screen in mobile browsers, down to a width of 360 CSS pixels, without
+horizontal scrolling and without the browser shrinking the page to fit.
+
+#### Scenario: web-client/R7-S1 Pages fit a phone screen
+- **GIVEN** the local stack is running and the browser has a phone-sized screen
+- **WHEN** a user opens the login page, the set-password page, a cabinet page and the not-found page
+- **THEN** each page has no horizontal scrolling
+- **AND** the page is laid out at the phone's own width, not zoomed out
+
+### Requirement: R8 Security headers
+
+Web application responses SHALL carry a Content Security Policy, `X-Content-Type-Options`
+and `Referrer-Policy` headers, and SHALL NOT allow other sites to frame the application.
+The application SHALL work under that policy.
+
+#### Scenario: web-client/R8-S1 Page is served with security headers and works under them
+- **GIVEN** the local stack is running
+- **WHEN** a user opens `/`
+- **THEN** the response has a Content Security Policy with `default-src 'self'` and `frame-ancestors 'none'`
+- **AND** the response has `X-Content-Type-Options: nosniff` and a `Referrer-Policy` header
+- **AND** the login page it redirects to renders with no Content Security Policy violations
+
 ## REMOVED Requirements
 
 ### Requirement: R1 Application pages
