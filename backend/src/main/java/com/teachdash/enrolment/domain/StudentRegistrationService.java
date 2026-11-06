@@ -46,19 +46,21 @@ public class StudentRegistrationService {
 		// or waits until this registration commits and then releases the new student too.
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
-		Optional<User> existing = users.findByEmailIgnoreCaseForUpdate(email);
+		Optional<User> existing = users.findByEmailIgnoreCase(email);
 		if (existing.isEmpty()) {
 			CreatedAccount created = accounts.createPasswordlessUser(Role.STUDENT, name, email, timeZone);
 			assignments.insert(teacherId, created.id(), clock.instant());
 			return created;
 		}
-		return assignExisting(teacherId, existing.get());
+		if (existing.get().getRole() != Role.STUDENT) {
+			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+		}
+		// Re-read under the lock so the password hash is current.
+		User student = users.findByIdForUpdate(existing.get().getId()).orElseThrow();
+		return assignExisting(teacherId, student);
 	}
 
 	private CreatedAccount assignExisting(UUID teacherId, User student) {
-		if (student.getRole() != Role.STUDENT) {
-			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
-		}
 		UUID studentId = student.getId();
 		if (assignments.exists(teacherId, studentId)) {
 			throw new ApiException(HttpStatus.CONFLICT, "ALREADY_ENROLLED");

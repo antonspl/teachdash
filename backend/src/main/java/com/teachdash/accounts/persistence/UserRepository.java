@@ -18,9 +18,6 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 	@Query("select * from users where lower(email) = lower(:email)")
 	Optional<User> findByEmailIgnoreCase(@Param("email") String email);
 
-	@Query("select * from users where lower(email) = lower(:email) for update")
-	Optional<User> findByEmailIgnoreCaseForUpdate(@Param("email") String email);
-
 	@Query("select * from users where id = :id for update")
 	Optional<User> findByIdForUpdate(@Param("id") UUID id);
 

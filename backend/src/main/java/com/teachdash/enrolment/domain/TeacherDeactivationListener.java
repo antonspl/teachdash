@@ -8,7 +8,7 @@ import com.teachdash.accounts.domain.TeacherDeactivated;
 import com.teachdash.accounts.domain.TokenPurpose;
 import com.teachdash.enrolment.persistence.TeacherStudentRepository;
 
-/** Runs synchronously in the deactivation transaction, so a failure rolls it back (design D7). */
+/** Runs synchronously in the deactivation transaction, so a failure rolls it back. */
 @Component
 class TeacherDeactivationListener {
 
