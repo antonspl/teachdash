@@ -1,6 +1,7 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page, type Request } from '@playwright/test'
 import { ACCEPT } from '../src/api/headers'
 import en from '../src/i18n/en.json' with { type: 'json' }
+import { loginAsAdmin } from './accounts'
 
 const PHONE_WIDTH = 360
 
@@ -36,10 +37,6 @@ async function expectFitsPhoneScreen(
 ) {
   await page.goto(path)
   await expect(page.getByRole('heading')).toBeVisible()
-  // The status text arrives after the request finishes; wait so the layout is final.
-  if (path === '/') {
-    await expect(page.getByText(en.status.reachable)).toBeVisible()
-  }
 
   const layout = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
@@ -51,15 +48,29 @@ async function expectFitsPhoneScreen(
   expect(layout.innerWidth).toBe(expectedWidth)
 }
 
-test('[web-client/R1-S1] Root path shows the placeholder page', async ({
+// The set-password page needs only a token in the fragment to show its form; the cabinet
+// needs a login, so the admin account the stack was started with is used for it.
+async function expectAllPagesFit(page: Page, expectedWidth: number) {
+  await expectFitsPhoneScreen(page, '/login', expectedWidth)
+  await expectFitsPhoneScreen(page, '/set-password#token=abc', expectedWidth)
+  await loginAsAdmin(page.request)
+  await expectFitsPhoneScreen(page, '/admin', expectedWidth)
+  await expectFitsPhoneScreen(page, '/no-such-page', expectedWidth)
+}
+
+test('[web-client/R11-S1] Root path opens the login page for an anonymous user', async ({
   page,
 }) => {
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { name: en.app.name })).toBeVisible()
+  await expect(page).toHaveURL(/\/login$/)
+  await expect(
+    page.getByRole('heading', { name: en.login.title }),
+  ).toBeVisible()
+  await expect(page).toHaveTitle(new RegExp(en.app.name))
 })
 
-test('[web-client/R1-S2] Unknown path opened directly shows the not-found page', async ({
+test('[web-client/R11-S2] Unknown path opened directly shows the not-found page', async ({
   page,
 }) => {
   const response = await page.goto('/no-such-page')
@@ -73,7 +84,7 @@ test('[web-client/R1-S2] Unknown path opened directly shows the not-found page',
   await expect(page.getByText(en.notFound.message)).toBeVisible()
 })
 
-test('[web-client/R1-S3] Missing asset is a real 404', async ({ request }) => {
+test('[web-client/R11-S3] Missing asset is a real 404', async ({ request }) => {
   for (const path of [
     '/assets/no-such-file.js',
     '/robots.txt',
@@ -104,39 +115,50 @@ test('The icon is served as an image under the security headers', async ({
   expectSecurityHeaders(response.headers())
 })
 
-test('[web-client/R3-S1] Anonymous user sees that the backend is reachable', async ({
+test('[web-client/R12-S1] Reachable backend shows no warning', async ({
   page,
 }) => {
-  await page.goto('/')
+  const meResponse = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/me',
+  )
+  await page.goto('/login')
+  await meResponse
+  await expect(
+    page.getByRole('heading', { name: en.login.title }),
+  ).toBeVisible()
 
-  await expect(page.getByText(en.status.reachable)).toBeVisible()
+  await expect(page.getByText(en.login.unreachable)).toHaveCount(0)
 })
 
-test('[web-client/R3-S3] Status check does not send the session cookie', async ({
+test('[web-client/R12-S3] Status check does not send the session cookie', async ({
   page,
   context,
   baseURL,
 }) => {
   const session = 'session-cookie-probe'
   await context.addCookies([{ name: 'SESSION', value: session, url: baseURL! }])
-  const meRequest = page.waitForRequest(
-    (request) => new URL(request.url()).pathname === '/api/me',
+  const meRequests: Request[] = []
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/me') {
+      meRequests.push(request)
+    }
+  })
+
+  await page.goto('/login')
+  await expect(
+    page.getByRole('heading', { name: en.login.title }),
+  ).toBeVisible()
+  // The page sends two requests to /api/me: loading the user, which carries the session,
+  // and the status check, which must not.
+  await expect.poll(() => meRequests.length).toBe(2)
+  const cookies = await Promise.all(
+    meRequests.map(
+      async (request) => (await request.allHeaders())['cookie'] ?? '',
+    ),
   )
 
-  await page.goto('/')
-  const headers = await (await meRequest).allHeaders()
-  await expect(page.getByText(en.status.reachable)).toBeVisible()
-
-  expect(headers['cookie'] ?? '').not.toContain(session)
-
-  // Control: a same-origin fetch with credentials from this page does carry the cookie,
-  // so the check above can fail.
-  const controlRequest = page.waitForRequest(
-    (request) => new URL(request.url()).pathname === '/api/me',
-  )
-  await page.evaluate(() => fetch('/api/me', { credentials: 'include' }))
-  const controlHeaders = await (await controlRequest).allHeaders()
-  expect(controlHeaders['cookie'] ?? '').toContain(session)
+  expect(cookies.filter((cookie) => cookie.includes(session))).toHaveLength(1)
+  expect(cookies.filter((cookie) => !cookie.includes(session))).toHaveLength(1)
 })
 
 test('[web-client/R6-S1] API request reaches the backend on the same origin', async ({
@@ -226,7 +248,10 @@ test('[web-client/R8-S1] Page is served with security headers and works under th
   page.on('pageerror', (error) => problems.push(error.message))
 
   const response = await page.goto('/')
-  await expect(page.getByText(en.status.reachable)).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: en.login.title }),
+  ).toBeVisible()
+  await expect(page.getByLabel(en.login.email)).toBeVisible()
 
   const headers = response!.headers()
   expectSecurityHeaders(headers)
@@ -279,24 +304,15 @@ test.describe('phone screens', () => {
     'R7-S1 runs only on the phone profiles',
   )
 
-  test('[web-client/R7-S1] Pages fit a phone screen at the profile width', async ({
+  test('[web-client/R7-S1] Pages fit a phone screen', async ({
     page,
     viewport,
   }) => {
+    // At the profile's own width, then at the narrowest supported width.
     const profileWidth = viewport!.width
+    await expectAllPagesFit(page, profileWidth)
 
-    await expectFitsPhoneScreen(page, '/', profileWidth)
-    await expectFitsPhoneScreen(page, '/no-such-page', profileWidth)
-  })
-
-  test.describe(`at ${PHONE_WIDTH} CSS pixels`, () => {
-    test.use({ viewport: { width: PHONE_WIDTH, height: 640 } })
-
-    test('[web-client/R7-S1] Pages fit a phone screen at 360 CSS pixels', async ({
-      page,
-    }) => {
-      await expectFitsPhoneScreen(page, '/', PHONE_WIDTH)
-      await expectFitsPhoneScreen(page, '/no-such-page', PHONE_WIDTH)
-    })
+    await page.setViewportSize({ width: PHONE_WIDTH, height: 640 })
+    await expectAllPagesFit(page, PHONE_WIDTH)
   })
 })

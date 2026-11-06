@@ -30,10 +30,10 @@ test per scenario ID, with `[<scenario ID>]` at the start of the test title.
 
 ## 6. End-to-end
 
-- [ ] 6.1 Add an E2E helper that logs in as the admin from `.env` and creates a teacher with a unique email to get a set-password link; fail fast if the admin variables are missing
-- [ ] 6.2 Update `e2e/skeleton.spec.ts`: rename the old R1 and R3 tests to R11 and R12, and move the phone-width and security-header tests to the new pages; verify `[web-client/R7-S1]`, `[web-client/R8-S1]`, `[web-client/R11-S1]` to `[web-client/R11-S3]`, `[web-client/R12-S1]` and `[web-client/R12-S3]` pass against the local stack
-- [ ] 6.3 Add `e2e/auth.spec.ts`; verify `[web-auth/R1-S1]`, `[web-auth/R4-S1]`, `[web-auth/R5-S1]` and `[web-auth/R5-S10]` pass against the local stack
-- [ ] 6.4 Verify `npm run lint`, `npm test`, `npm run test:e2e` and `scripts/check-scenario-coverage.sh` all pass, and that no scenario ID has two tests
+- [x] 6.1 Add an E2E helper that logs in as the admin from `.env` and creates a teacher with a unique email to get a set-password link; fail fast if the admin variables are missing
+- [x] 6.2 Update `e2e/skeleton.spec.ts`: rename the old R1 and R3 tests to R11 and R12, and move the phone-width and security-header tests to the new pages; verify `[web-client/R7-S1]`, `[web-client/R8-S1]`, `[web-client/R11-S1]` to `[web-client/R11-S3]`, `[web-client/R12-S1]` and `[web-client/R12-S3]` pass against the local stack
+- [x] 6.3 Add `e2e/auth.spec.ts`; verify `[web-auth/R1-S1]`, `[web-auth/R4-S1]`, `[web-auth/R5-S1]` and `[web-auth/R5-S10]` pass against the local stack
+- [x] 6.4 Verify `npm run lint`, `npm test`, `npm run test:e2e` and `scripts/check-scenario-coverage.sh` all pass, and that no scenario ID has two tests
 
 ## Workflow follow-up
 
