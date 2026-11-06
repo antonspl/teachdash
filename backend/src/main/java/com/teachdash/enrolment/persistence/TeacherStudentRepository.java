@@ -42,15 +42,17 @@ public class TeacherStudentRepository {
 				.single();
 	}
 
-	public void insert(UUID teacherId, UUID studentId, Instant createdAt) {
-		jdbc.sql("""
+	public boolean insert(UUID teacherId, UUID studentId, Instant createdAt) {
+		int rows = jdbc.sql("""
 				insert into teacher_students (teacher_id, student_id, created_at)
 				values (:teacherId, :studentId, :createdAt)
+				on conflict do nothing
 				""")
 				.param("teacherId", teacherId)
 				.param("studentId", studentId)
 				.param("createdAt", Timestamp.from(createdAt))
 				.update();
+		return rows > 0;
 	}
 
 	public boolean delete(UUID teacherId, UUID studentId) {
@@ -64,7 +66,18 @@ public class TeacherStudentRepository {
 		return rows > 0;
 	}
 
-	public boolean existsForStudent(UUID studentId) {
+	public List<UUID> deleteAllOfTeacher(UUID teacherId) {
+		return jdbc.sql("""
+				delete from teacher_students
+				where teacher_id = :teacherId
+				returning student_id
+				""")
+				.param("teacherId", teacherId)
+				.query(UUID.class)
+				.list();
+	}
+
+	public boolean hasTeacher(UUID studentId) {
 		return jdbc.sql("select exists (select 1 from teacher_students where student_id = :studentId)")
 				.param("studentId", studentId)
 				.query(Boolean.class)

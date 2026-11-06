@@ -78,9 +78,10 @@ public class AccountService {
 		}
 		String newPasswordHash = passwordEncoder.encode(newPassword);
 		int newSessionVersion = transaction.execute(status -> {
-			links.invalidateLinks(id);
-			return users.updatePasswordHashIfSessionCurrent(id, newPasswordHash, expectedSessionVersion)
+			int version = users.updatePasswordHashIfSessionCurrent(id, newPasswordHash, expectedSessionVersion)
 					.orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
+			links.invalidateLinks(id);
+			return version;
 		});
 		return new PasswordChanged(user, newSessionVersion);
 	}

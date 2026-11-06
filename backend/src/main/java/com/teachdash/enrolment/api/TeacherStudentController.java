@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.teachdash.accounts.domain.CreatedAccount;
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
+import com.teachdash.enrolment.api.dto.RegisteredStudent;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
 import com.teachdash.enrolment.domain.UserSummary;
 import com.teachdash.enrolment.domain.StudentRegistrationService;
@@ -40,11 +40,12 @@ class TeacherStudentController {
 
 	@PostMapping("/api/teacher/students")
 	@ResponseStatus(HttpStatus.CREATED)
-	CreatedAccount registerStudent(
+	RegisteredStudent registerStudent(
 			@Valid @RequestBody RegisterStudentRequest request,
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		return registration.register(teacherId, request.name(), request.email(), request.timeZone());
+		return RegisteredStudent.of(
+				registration.register(teacherId, request.name(), request.email(), request.timeZone()));
 	}
 
 	@GetMapping("/api/teacher/students")

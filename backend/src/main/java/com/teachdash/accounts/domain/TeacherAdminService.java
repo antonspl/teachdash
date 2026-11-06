@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,14 +19,17 @@ public class TeacherAdminService {
 	private final UserRepository users;
 	private final AccountService accounts;
 	private final PasswordLinkService links;
+	private final ApplicationEventPublisher events;
 
 	TeacherAdminService(
 			UserRepository users,
 			AccountService accounts,
-			PasswordLinkService links) {
+			PasswordLinkService links,
+			ApplicationEventPublisher events) {
 		this.users = users;
 		this.accounts = accounts;
 		this.links = links;
+		this.events = events;
 	}
 
 	public List<User> listTeachers() {
@@ -42,16 +46,17 @@ public class TeacherAdminService {
 	}
 
 	/**
-	 * Revokes the teacher's sessions (session version) and unused links, then deactivates.
-	 * Rows are always locked in the same order: links first, then the user.
+	 * Deactivates the teacher and revokes their sessions (session version), then invalidates
+	 * their unused links. The user row is always locked before its links.
 	 */
 	@Transactional
 	public void deactivateTeacher(UUID id) {
 		if (!users.existsByIdAndRole(id, Role.TEACHER)) {
 			throw notFound();
 		}
-		links.invalidateLinks(id);
 		users.deactivate(id);
+		links.invalidateLinks(id);
+		events.publishEvent(new TeacherDeactivated(id));
 	}
 
 	/** Returns a new set-password link when an inactive teacher never set a password. */

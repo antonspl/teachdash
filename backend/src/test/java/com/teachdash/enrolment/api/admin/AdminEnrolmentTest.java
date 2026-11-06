@@ -1,6 +1,7 @@
 package com.teachdash.enrolment.api.admin;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.util.UUID;
@@ -55,26 +56,26 @@ class AdminEnrolmentTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R3-S3] Admin lists a student's teachers")
-	void adminListsAStudentsTeachers() {
-		// given a student assigned to teachers A and B, and teacher C without that student
+	@DisplayName("[student-enrolment/R3-S3] Admin lists a student's teacher")
+	void adminListsAStudentsTeacher() {
+		// given a student assigned to teacher A, and teacher C with another student
 		UUID teacherA = createUser("TEACHER", "Zoe", "a@example.com", "teacher-pass-1", true);
-		UUID teacherB = createUser("TEACHER", "Maya", "b@example.com", "teacher-pass-1", true);
-		createUser("TEACHER", "Adam", "c@example.com", "teacher-pass-1", true);
+		UUID teacherC = createUser("TEACHER", "Adam", "c@example.com", "teacher-pass-1", true);
 		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
+		UUID other = createUser("STUDENT", "Other", "other@example.com", "student-pass-1", true);
 		assignStudent(teacherA, student);
-		assignStudent(teacherB, student);
+		assignStudent(teacherC, other);
 		TestClient admin = loggedInAdmin();
 
 		// when the admin lists the student's teachers
 		var response = admin.get("/api/admin/students/" + student + "/teachers");
 
-		// then the response is 200 and the list contains A and B only, ordered by name
+		// then the response is 200 and the list contains A only, with id, name, email and time zone
 		response.then().statusCode(200)
-				.body("id", contains(teacherB.toString(), teacherA.toString()))
-				.body("name", contains("Maya", "Zoe"))
-				.body("email", contains("b@example.com", "a@example.com"))
-				.body("timeZone", contains("UTC", "UTC"));
+				.body("id", contains(teacherA.toString()))
+				.body("name", contains("Zoe"))
+				.body("email", contains("a@example.com"))
+				.body("timeZone", contains("UTC"));
 	}
 
 	@Test
@@ -133,31 +134,9 @@ class AdminEnrolmentTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R3-S7] Deactivated teacher is shown as inactive")
-	void deactivatedTeacherIsShownAsInactive() {
-		// given a student assigned to an active teacher and a deactivated teacher
-		UUID active = createUser("TEACHER", "Adam", "active@example.com", "teacher-pass-1", true);
-		UUID inactive = createUser("TEACHER", "Zoe", "inactive@example.com", "teacher-pass-1", false);
-		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
-		assignStudent(active, student);
-		assignStudent(inactive, student);
-		TestClient admin = loggedInAdmin();
-
-		// when the admin lists the student's teachers
-		var response = admin.get("/api/admin/students/" + student + "/teachers");
-
-		// then both teachers are listed
-		response.then().statusCode(200).body("id", contains(active.toString(), inactive.toString()));
-		// and the active one has active true and the deactivated one has active false
-		response.then()
-				.body("find { it.id == '" + active + "' }.active", equalTo(true))
-				.body("find { it.id == '" + inactive + "' }.active", equalTo(false));
-	}
-
-	@Test
-	@DisplayName("[student-enrolment/R3-S8] Admin lists use the same name order")
-	void adminListsUseTheSameNameOrder() {
-		// given a teacher with students "Boris", "anna", "Ёлка", "Анна" and "яна", and a student with teachers "Яков", "борис" and "Anna"
+	@DisplayName("[student-enrolment/R3-S8] Admin list of students uses the same name order")
+	void adminListOfStudentsUsesTheSameNameOrder() {
+		// given a teacher with students "Boris", "anna", "Ёлка", "Анна" and "яна"
 		UUID teacher = createTeacher("a@example.com", "teacher-pass-1");
 		UUID boris = createUser("STUDENT", "Boris", "boris@example.com", "student-pass-1", true);
 		UUID anna = createUser("STUDENT", "anna", "anna@example.com", "student-pass-1", true);
@@ -169,24 +148,27 @@ class AdminEnrolmentTest extends ApiTest {
 		assignStudent(teacher, elka);
 		assignStudent(teacher, annaCyrillic);
 		assignStudent(teacher, yana);
-		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
-		UUID yakov = createUser("TEACHER", "Яков", "yakov@example.com", "teacher-pass-1", true);
-		UUID borisTeacher = createUser("TEACHER", "борис", "boris-t@example.com", "teacher-pass-1", true);
-		UUID annaTeacher = createUser("TEACHER", "Anna", "anna-t@example.com", "teacher-pass-1", true);
-		assignStudent(yakov, student);
-		assignStudent(borisTeacher, student);
-		assignStudent(annaTeacher, student);
 		TestClient admin = loggedInAdmin();
 
-		// when the admin lists the teacher's students and the student's teachers
+		// when the admin lists the teacher's students
 		var students = admin.get("/api/admin/teachers/" + teacher + "/students");
-		var teachers = admin.get("/api/admin/students/" + student + "/teachers");
 
 		// then the students are in the order "anna", "Boris", "Анна", "Ёлка", "яна"
 		students.then().statusCode(200)
 				.body("name", contains("anna", "Boris", "Анна", "Ёлка", "яна"));
-		// and the teachers in the order "Anna", "борис", "Яков"
-		teachers.then().statusCode(200)
-				.body("name", contains("Anna", "борис", "Яков"));
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R3-S9] Student with no teacher has an empty list")
+	void studentWithNoTeacherHasAnEmptyList() {
+		// given a logged-in admin and a student with no teacher
+		TestClient admin = loggedInAdmin();
+		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
+
+		// when the admin lists the student's teachers
+		var response = admin.get("/api/admin/students/" + student + "/teachers");
+
+		// then the response is 200 with an empty list
+		response.then().statusCode(200).body("$", empty());
 	}
 }

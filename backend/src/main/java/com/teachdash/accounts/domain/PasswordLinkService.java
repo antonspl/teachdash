@@ -62,6 +62,8 @@ public class PasswordLinkService {
 		RANDOM.nextBytes(bytes);
 		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 		Instant now = clock.instant();
+		// Locks the user row first: user before links, see lock order.
+		users.findByIdForUpdate(userId);
 		tokens.markUnusedAsUsed(userId, now);
 		try {
 			tokens.save(OneTimeToken.create(
@@ -106,6 +108,8 @@ public class PasswordLinkService {
 		}
 		String passwordHash = passwordEncoder.encode(password);
 		return transaction.execute(status -> {
+			// Locks the user row first: user before links, see lock order.
+			users.findByIdForUpdate(user.getId()).orElseThrow(PasswordLinkService::invalid);
 			if (tokens.markUsed(stored.getId(), now) != 1) {
 				throw invalid();
 			}
