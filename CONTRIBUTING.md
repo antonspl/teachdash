@@ -12,39 +12,25 @@ Labels: `area:backend`, `area:frontend`, `area:devops`, `type:task`, `type:bug`,
 
 ## How a change is done
 
-Read `openspec/constitution.md` first (section 1 is the workflow).
+Everyone on the project is independent and interchangeable. The constitution, the
+specs and these documents show how work is usually done; they are helpers, not
+blockers. Read `openspec/constitution.md` to see the usual way. Section 1 lists
+the workflow steps.
 
-**One change = one branch = one PR.** The PR passes three review gates, each
-approved by a reviewer — any team member except the author:
+The **engineer** — whoever took the task — leads the change. No step is mandatory
+and the order is not fixed: the engineer decides whether to clarify, research,
+write the spec first or the tests first, and when to ask for review.
 
-| Phase | Author does | Gate |
-|---|---|---|
-| Spec | OpenSpec change in `openspec/changes/<name>/`; open a **draft** PR | reviewer approves the spec |
-| Tests | one failing backend test per scenario, scenario ID in `@DisplayName`; each fails at its THEN step | reviewer approves the tests |
-| Code | implement until all tests pass; approved tests are not changed | reviewer approves the code |
+**One change = one branch = one PR.** Usually the OpenSpec change lives in
+`openspec/changes/<name>/`, every scenario has a test with its scenario ID, and the
+change is archived in the same PR so `openspec/specs/` matches the code.
 
-Then the author archives the change (in the same PR) and marks the PR ready. The
-**owner** reviews spec, tests and code together and merges.
-
-To ask for a gate review, post a comment with the commit range of that phase
-(e.g. `Tests: abc123..def456`), so the reviewer reads only what is new.
-
-To approve a gate: post a comment naming it ("spec approved", "tests approved",
-"code approved") and tick the box in the PR description. GitHub's "Approve"
-button is used only for the owner's final review. Request changes the usual way.
-
-**Tests phase (pass 1).** Tests "fail for the right reason": each fails at its
-THEN step, never in setup. Setup creates data and sessions directly, not through
-endpoints that do not exist yet. Production code in pass 1 is limited to stubs
-returning 501 (marked `STUB`) and schema migrations; the PR description lists
-both. Migrations are permanent — review them as production code. Before asking
-for the tests review, check that `scripts/check-scenario-coverage.sh` passes. CI runs it; for a hand
-run, do `npm ci` in `frontend/` first.
+What goes into the final version of the PR is agreed between the engineer and the
+reviewers through normal GitHub review. The **owner** merges.
 
 **CI.** CI runs on every pull request, and `ci-ok` must be green to merge. On a
-draft PR, red is expected until the code phase: `coverage` in the spec phase
-(scenarios with no tests yet) and `backend` in the tests phase (tests fail by
-design). Pull requests run Playwright on desktop Chromium only. `main` runs all 3
+draft PR, red is expected while work is in progress, for example `coverage` when
+scenarios have no tests yet, or `backend` when tests are written before the code. Pull requests run Playwright on desktop Chromium only. `main` runs all 3
 projects, and a phone failure there is fixed later.
 
 **Specs reach `main` only at the end.** A change's spec is not on `main` until
@@ -53,8 +39,8 @@ from it and targets its branch (stacked PRs, e.g. #2 on `accounts`).
 
 ## Reviewing
 
-Anyone on the team can review any PR except their own. Open PRs waiting for a gate:
-[draft PRs](https://github.com/antonspl/teachdash/pulls?q=is%3Apr+is%3Aopen+draft%3Atrue).
+Anyone on the team can review any PR except their own:
+[open PRs](https://github.com/antonspl/teachdash/pulls).
 Check against the constitution: one test per scenario, tests assert the scenario's
 THEN, per-teacher data scoping, no secrets.
 

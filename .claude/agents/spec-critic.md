@@ -1,6 +1,6 @@
 ---
 name: spec-critic
-description: Attacks a drafted teachdash spec before the spec gate, looking for gaps a reviewer would otherwise find after approval. Reports problems only and does not approve. Read-only.
+description: Attacks a drafted teachdash spec, looking for gaps a reviewer would otherwise find later. Reports problems only and does not approve. Read-only.
 model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
@@ -26,7 +26,7 @@ Ask:
   when the behaviour is wrong? Which claims in the requirement have no scenario?
 - **Consistency:** does it contradict the constitution or a main spec? Does a main spec
   now need a cross-reference?
-- **Scope:** is it at most 6 requirements? Is anything here not needed for the issue?
+- **Scope:** is it small enough to review (about 6 requirements or fewer)? Is anything here not needed for the issue?
 
 Report findings most severe first, in at most 25 lines. Give each one the spec
 reference, the problem and a concrete failure scenario. Say whether the problem already
@@ -34,5 +34,5 @@ exists in `main` or comes from this change. Say plainly if you found nothing.
 
 Mark each finding as one of:
 - **Fix in spec:** the right answer is clear.
-- **Owner decision:** there is a real trade-off, or it changes scope.
+- **Engineer decision:** there is a real trade-off, or it changes scope.
 - **Issue:** real, but outside this change.

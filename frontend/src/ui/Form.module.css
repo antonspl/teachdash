@@ -1,0 +1,7 @@
+.form {
+  margin: 0 0 var(--space-3);
+}
+
+.form > [role='status'] {
+  margin-bottom: var(--space-2);
+}

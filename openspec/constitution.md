@@ -1,61 +1,54 @@
 # teachdash Constitution
 
-Non-negotiable principles for every change. Proposals, designs, tasks and code
-MUST comply. Changing this file requires explicit approval from the project owner.
+How work on teachdash is meant to be done. This file, the OpenSpec specs and the
+rest of the process documents are helpers, not blockers.
+
+**The core principle: everyone is independent and interchangeable.** Whoever takes
+a task is the **engineer** for it and decides what to do. The rules below show how
+the work is normally built: they guide AI assistants, and they show engineers the
+usual way to do things. An engineer may depart from them when they judge it right;
+the place to discuss that is the PR review on GitHub. Changes to this file land
+through a pull request like any other change.
 
 ## 1. Workflow
 
-One change = one branch = one pull request. The PR goes through three review gates
-by a **reviewer** (any team member other than the author; the owner while the team
-has no other reviewers), then the **owner** reviews the whole PR and merges it.
+The **engineer** is the team member who takes the task. The engineer leads the
+change and decides how it is done: which of the steps below to use, in which order,
+and what each one covers. No step is mandatory and the order is not fixed.
 
-A change has at most 6 requirements, and fewer is better, so one person can review
-it. The number of scenarios is not limited. A larger feature is split into several changes, each
-with its own issue, spec and PR.
+One change = one branch = one pull request. What goes into the final version of the
+PR is decided by the engineer together with the reviewers on GitHub. The **owner**
+merges PRs into `main`; only the owner merges.
 
-1. **Explore** (optional) — discuss the idea; no artifacts.
-2. **Clarify** — before writing a proposal, restate the task in plain words, list
-   open questions and ambiguities, and propose research angles. Get the owner's
-   answers and agreement on the angles, or agreement that a small task needs none.
-   Record the answers in the proposal.
-3. **Research** — one researcher agent per agreed angle. If the findings raise new
-   decisions, ask the owner before proposing.
-4. **Propose** — proposal, spec deltas, design, tasks. Every requirement has at
-   least one Given/When/Then scenario. No code. Push the branch, open a draft PR.
-5. **Spec critique** — the spec-critic agent attacks the draft, on every change.
-   Fix what has a clear answer, ask the owner about real trade-offs, and turn
-   findings outside the change into issues. Run it again if a fix was non-trivial.
-   Its report is not an approval; the gate request summarises what it found.
-6. **Spec review gate** — STOP. A reviewer approves the spec in the PR. No tests
-   until approved.
-7. **Red** — write backend tests for every scenario; they MUST compile and fail
-   for the right reason: each test fails at its THEN step because the behaviour is
-   missing — not in setup, not because classes are missing. Test setup MUST NOT
-   depend on endpoints that are not implemented yet (create data and sessions
-   directly). Pass 1 may add only:
-   - **stubs** that return 501, each marked with a `STUB` comment; pass 2 rewrites them;
-   - **schema migrations** — permanent production code; the reviewer reviews them
-     as production code at the test review gate.
-8. **Test review gate** — STOP. A reviewer approves the tests in the PR. No
-   production code until approved.
-9. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
-   if a test looks wrong, stop and ask the reviewer.
-10. **Code review** — a reviewer approves the code in the PR. Security problems,
-   data loss and spec violations are fixed in the PR. Every other finding becomes
-   an issue, so rare edge cases do not add more review rounds.
-11. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
-12. **Owner review** — mark the PR ready. The owner reviews spec, tests and code
-    together and merges. Only the owner merges into `main`.
+Keeping a change small makes it easier to review: about 6 requirements or fewer is
+a good size. A larger feature can be split into several changes, each with its own
+issue, spec and PR.
 
-**Tooling changes.** A change that does not change product behaviour (CI, scripts, repository tooling) may set `skip_specs: true`. It has no spec deltas or scenarios. The spec critique and spec review gate (steps 5 and 6) apply to its proposal and design. It has no Red step or test review gate. Its tasks say how each part is proven, and the proof is recorded in the PR for the code review. Archive merges nothing into `openspec/specs/`.
+Steps the engineer can use:
 
-A gate is approved by a PR comment naming it (e.g. "tests approved") plus the
-matching box ticked in the PR description. A GitHub review "Approve" is used only
-for the final owner review: it does not say which gate it is for, and it stays on
-the PR when the next phase is pushed.
+- **Explore** — discuss the idea; no artifacts.
+- **Clarify** — restate the task in plain words, list open questions and
+  ambiguities, and propose research angles. The engineer answers them. Answers can
+  be recorded in the proposal.
+- **Research** — one researcher agent per angle.
+- **Propose** — proposal, spec deltas, design, tasks. Every requirement has at
+  least one Given/When/Then scenario.
+- **Spec critique** — the spec-critic agent attacks the draft. Fix what has a clear
+  answer, decide trade-offs, and turn findings outside the change into issues.
+- **Review** — at any point the engineer may ask a team member or the reviewer
+  agent to review the spec, the tests or the code. A review is advice; the engineer
+  decides what to change.
+- **Red** — write tests for the scenarios that fail for the right reason: at their
+  THEN step because the behaviour is missing, not in setup. Test setup does not
+  depend on endpoints that are not implemented yet; create data and sessions
+  directly. Temporary stubs returning 501 are marked with a `STUB` comment.
+- **Green** — implement until all tests pass.
+- **Archive** — merge spec deltas into `openspec/specs/`, in the same PR, so specs
+  on `main` describe what the code does.
 
-When asking for a gate review, the author posts the commit range of that phase
-(e.g. `abc123..def456`), so the reviewer reads only what is new.
+**Tooling changes.** A change that does not change product behaviour (CI, scripts,
+repository tooling) may set `skip_specs: true`. It has no spec deltas or scenarios.
+Its tasks say how each part is proven, and the proof is recorded in the PR.
 
 All artifacts, code, comments and commit messages are in English.
 
@@ -67,7 +60,7 @@ All artifacts, code, comments and commit messages are in English.
 - Test body is structured with `// given`, `// when`, `// then` comments.
 - Every spec scenario has a matching test. CI runs `scripts/check-scenario-coverage.sh`
   and fails on a missing test.
-- Frontend: Vitest for logic, Playwright E2E for key user flows. No review gate.
+- Frontend: Vitest for logic, Playwright E2E for key user flows.
 
 ## 3. Architecture
 

@@ -2,11 +2,6 @@
   "app": {
     "name": "teachdash"
   },
-  "status": {
-    "checking": "Checking the connection to the server...",
-    "reachable": "The server is reachable.",
-    "unreachable": "The server cannot be reached."
-  },
   "notFound": {
     "title": "Page not found",
     "message": "There is nothing at this address.",
@@ -26,6 +21,48 @@
     "LINK_INVALID": "This link is not valid or has expired. Please ask for a new one.",
     "ACCOUNT_DEACTIVATED": "This account is deactivated.",
     "WRONG_PASSWORD": "The password is incorrect.",
-    "INVALID_CREDENTIALS": "The email or password is incorrect. If you have not set a password yet, use the link you were given."
+    "INVALID_CREDENTIALS": "That email and password don't match."
+  },
+  "ui": {
+    "showPassword": "Show",
+    "hidePassword": "Hide",
+    "tryAgain": "Try again",
+    "loading": "Loading..."
+  },
+  "login": {
+    "title": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "linkHint": "Don't have a password, or forgot it? Ask your teacher or administrator for a new link.",
+    "sessionEnded": "Your session has ended. Please sign in again.",
+    "unreachable": "The server cannot be reached."
+  },
+  "cabinet": {
+    "admin": "Admin cabinet",
+    "teacher": "Teacher cabinet",
+    "student": "Student cabinet"
+  },
+  "roles": {
+    "ADMIN": "Admin",
+    "TEACHER": "Teacher",
+    "STUDENT": "Student"
+  },
+  "header": {
+    "logout": "Log out",
+    "logoutError": "Could not log out. Please try again."
+  },
+  "setPassword": {
+    "title": "Set your password",
+    "password": "New password",
+    "confirm": "Repeat the password",
+    "submit": "Set password",
+    "mismatch": "The passwords do not match.",
+    "tooShort": "The password must be at least 8 characters.",
+    "tooLong": "The password is too long (at most 72 bytes).",
+    "incompleteLink": "This link is incomplete. Please use the full link you were given or ask for a new one."
+  },
+  "startup": {
+    "error": "We could not load your session. Check the connection and try again."
   }
 }
