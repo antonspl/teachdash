@@ -51,9 +51,9 @@ own link.
 - **THEN** both responses are 403 with code `CSRF_INVALID`, the view still returns L1, and the preview of L1 is 200
 
 #### Scenario: student-enrolment/R8-S9 Failed deactivation keeps the link
-- **GIVEN** teacher A with a password and a join link L1, and a failure while the students are released
+- **GIVEN** teacher A with a password, a student and a join link L1, and a failure while the students are released
 - **WHEN** the admin deactivates teacher A, and the preview of L1 is requested
-- **THEN** the deactivation response is 500, and the preview of L1 is 200
+- **THEN** the deactivation response is 500, the preview of L1 is 200, and the student is still in teacher A's list
 
 ### Requirement: R9 Visitor joins through a join link
 A client without a session SHALL be able to preview an active join link (the teacher's
@@ -75,7 +75,7 @@ with an account 409 `EMAIL_TAKEN`. Rejections change nothing.
 #### Scenario: student-enrolment/R9-S3 Invalid links get one answer
 - **GIVEN** a link with an unknown token, a link replaced by a newer one, a disabled link, and the link of a teacher who was then deactivated
 - **WHEN** a client with no session requests the preview of each and joins through each with a new email
-- **THEN** every response is 410 with code `LINK_INVALID` and the same response body, byte for byte, and no account is created
+- **THEN** every response is 410 with code `LINK_INVALID`, all preview responses have the same body and all join responses have the same body, and no account is created
 
 #### Scenario: student-enrolment/R9-S4 Link is checked before the email
 - **GIVEN** a student account with email "anna@example.com" and an unknown link token
@@ -95,7 +95,7 @@ with an account 409 `EMAIL_TAKEN`. Rejections change nothing.
 #### Scenario: student-enrolment/R9-S7 Submitted values are stored
 - **GIVEN** teacher A with a join link
 - **WHEN** a client with no session joins through the link with name " Анна ", email " Anna@Example.com " and time zone "Europe/Moscow"
-- **THEN** the response is 201, and teacher A's request for the student's details returns the name "Анна", the email "anna@example.com" and the time zone "Europe/Moscow"
+- **THEN** the response is 201, and teacher A's request for the student's details returns the name "Анна", the email "Anna@Example.com" and the time zone "Europe/Moscow"
 
 #### Scenario: student-enrolment/R9-S8 Request without a CSRF token is rejected
 - **GIVEN** teacher A with a join link and a client with no session

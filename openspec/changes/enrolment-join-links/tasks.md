@@ -6,7 +6,7 @@
 - [ ] 1.2 Add stubs returning 501, each marked `STUB`, for the endpoints of design D2: `GET`, `POST`, `DELETE /api/teacher/join-link`, `POST /api/join-links/preview` and `POST /api/join-links/join`, with the public two permitted without a session in `SecurityConfig` (CSRF still on). Add the rate-limit properties of design D5 to configuration with their defaults, very high limits in the shared test configuration, and no filter
 - [ ] 1.3 Add a test helper in `com.teachdash.support` that creates a teacher's join link directly in the database, so test setup does not depend on the stubbed endpoints
 - [ ] 1.4 Write tests for student-enrolment R8-S1 to R8-S9, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`
-- [ ] 1.5 Write tests for student-enrolment R9-S1 to R9-S12 and R10-S1 to R10-S6. R9-S9 injects the failure while the assignment is stored, as R1-S12 does, and R8-S9 as R7-S4 does. R9-S3 compares the raw response bodies
+- [ ] 1.5 Write tests for student-enrolment R9-S1 to R9-S12 and R10-S1 to R10-S6. R9-S9 injects the failure while the assignment is stored, as R1-S12 does, and R8-S9 as R7-S4 does. R9-S3 compares the raw bodies per endpoint
 - [ ] 1.6 Write tests for student-enrolment R11-S1 to R11-S3 in a separate test class with low limits set by properties (design D5), using `X-Forwarded-For` from the loopback peer for a second IP and `MutableClock` to pass the window. Their GIVEN calls the limited endpoints (design D5); each test uses its own `X-Forwarded-For` addresses, so counters from other tests never apply
 - [ ] 1.7 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test fails at its THEN step (not in setup), every existing test passes, and the coverage script passes. Every scenario has a THEN step that needs the new behaviour; report any test that passes anyway to the engineer
 
@@ -17,7 +17,7 @@
 ## 3. Implementation
 
 - [ ] 3.1 Extract the token generator from `PasswordLinkService` into `common` (design D1), with no change in behaviour; verify the accounts tests pass
-- [ ] 3.2 Implement the teacher link endpoints with the teacher-row lock of design D3, and make teacher deactivation delete the link (design D4); verify all R8 tests pass
+- [ ] 3.2 Implement the teacher link endpoints with the teacher-row lock of design D3, and make teacher deactivation delete the link before releasing the students (design D4); verify all R8 tests pass
 - [ ] 3.3 Implement the preview and the visitor join with the check and lock order of design D3, hashing the password before the transaction and starting the session after it; add a comment explaining the teacher-row lock; verify R9 tests pass
 - [ ] 3.4 Implement the student join path (design D3, step 4) with the conflict mapping used by registration; verify R10 tests pass
 - [ ] 3.5 Implement the rate-limit filter of design D5, registered before the security filter chain, with the size cap and `Retry-After` clamp; verify R11 tests pass

@@ -75,13 +75,15 @@ reason.
 Request validation: the token is `@NotBlank @Size(max = 64)`. For a visitor, name, email
 and time zone use `@PersonName`, `@EmailAddress`, `@TimeZoneId` and the same
 normalisation as `RegisterStudentRequest`, and the password uses `@BcryptPassword`. A
-student session needs only the token, so the visitor fields are checked in the service
-for the visitor path (with the same validator classes) rather than with bean validation
-on the request record. Both paths answer 400 `VALIDATION_FAILED`.
+student session needs only the token, so the join body is read as a token record, and
+for a visitor the controller maps it to a separate visitor record and validates that with
+`jakarta.validation.Validator`. Both paths answer 400 `VALIDATION_FAILED`. The preview
+validates its token the same way.
 
-The controller lives in `accounts.api`, next to `SessionStarter`, and calls a service in
-`enrolment.domain`. Alternative: make `SessionStarter` public and put the controller in
-`enrolment.api`; rejected to keep session handling inside `accounts`.
+The controller lives in `enrolment.api`, and `SessionStarter` becomes public so it can
+start the visitor's session. Alternative: put the controller in `accounts.api`, next to
+`SessionStarter`; rejected because `accounts` would then depend on `enrolment`, which
+already depends on `accounts`.
 
 ### D3. Order of checks and locks
 
@@ -108,7 +110,7 @@ bcrypt for every invalid link; the rate limiter (D5) bounds that cost.
 5. Visitor only: after commit, start the session with `SessionStarter`.
 
 Generate locks the teacher row with `findActiveByIdForUpdate` and answers 401
-`ACCOUNT_DEACTIVATED` when the teacher is no longer active, as registration does.
+`UNAUTHENTICATED` when the teacher is no longer active, as registration does.
 Otherwise a generate that passed the session check just before a deactivation could
 create a link after the deactivation deleted it, and reactivation would revive it.
 Disable locks the row with `findByIdForUpdate`; deleting a link is safe either way.
@@ -126,7 +128,8 @@ registration in `enrolment-single-teacher`.
 ### D4. Deactivation disables the link
 
 `TeacherDeactivationListener` also deletes the teacher's row in `teacher_join_links`, in
-the same transaction as the release of students. Alternative: keep the row and refuse it
+the same transaction as the release of students and before it, so a failure while the
+students are released also rolls back the link delete (R8-S9). Alternative: keep the row and refuse it
 while the teacher is inactive; rejected because reactivation would silently revive an old
 link (proposal, Q11).
 
