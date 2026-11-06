@@ -131,7 +131,9 @@ the reviewer checks it at the code gate.
 
 **Lock order.** Deactivation locks the teacher's links, then the teacher's row, then the
 students' assignments and links. Registration locks the teacher's row, then the student's
-row, assignment and links. Using a password link locks only the student's link and row. An admin reset link locks only the student's links. No path takes
+row, assignment and links. Using a password link (`PasswordLinkService.use`) today locks
+the link, then the user row; it changes to lock the user row first (`select ... for update`
+before marking the link used), so it takes the same order as registration. An admin reset link locks only the student's links. No path takes
 these locks in the opposite order, so they cannot deadlock.
 
 Enrolment already depends on accounts (`PasswordLinkService`), so a direct call from
