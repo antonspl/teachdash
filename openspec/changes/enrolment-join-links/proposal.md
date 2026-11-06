@@ -20,7 +20,14 @@ issue #29 as narrowed on 2026-11-05 after #62 (a student has at most one teacher
 | 11 | What happens to the link when the teacher is deactivated? | It is disabled. Reactivation does not bring it back, as with students (student-enrolment R7). |
 | 12 | Which 409 codes? | The existing ones: `EMAIL_TAKEN` for an email with an account, `STUDENT_EXISTS` for a student with another teacher, `ALREADY_ENROLLED` for a student of the same teacher. |
 | 13 | Can a visitor see who they are joining before they register? | Yes. A public preview returns the teacher's name. |
-| 14 | Does the real client IP reach the backend in prod? | Unknown. Recorded as a risk to check after deploy (design D6). |
+| 14 | Does the real client IP reach the backend in prod? | Unknown. Recorded as a risk to check after deploy (design, Risks). |
+
+Questions from the spec critique on 2026-11-07, and the engineer's answers.
+
+| # | Question | Answer |
+|---|----------|--------|
+| 15 | 10 joins and 60 previews per IP per 10 minutes would block a class on one school network. Raise the defaults? | Yes: 30 joins and 120 previews per 10 minutes. |
+| 16 | A removed student without a password gets 409 `EMAIL_TAKEN` at the join page and cannot log in. Let such accounts join and get a set-password link? | No. Accepted: a teacher registering their email sends a new set-password link. Joining would let any link holder take over the account. |
 
 ## Research
 

@@ -153,8 +153,8 @@ counter.
 - Time comes from the shared `Clock`, so R11-S3 moves the test clock instead of waiting.
 - Response: 429, `Retry-After` = seconds until the window ends (rounded up, at least 1),
   ProblemJson with code `RATE_LIMITED`.
-- Properties (defaults): `teachdash.rate-limit.join.max=10`,
-  `teachdash.rate-limit.join.window=10m`, `teachdash.rate-limit.preview.max=60`,
+- Properties (defaults): `teachdash.rate-limit.join.max=30`,
+  `teachdash.rate-limit.join.window=10m`, `teachdash.rate-limit.preview.max=120`,
   `teachdash.rate-limit.preview.window=10m`. The shared test configuration sets very high limits,
   so tests outside R11 are never limited. The R11 tests run in their own context with low
   limits, and each test uses its own client addresses, so counters never carry over.
