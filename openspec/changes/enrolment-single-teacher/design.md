@@ -55,6 +55,11 @@ In one transaction, as today:
 
 The account's name, email and time zone are never changed by this path.
 
+The existing account is read with `select ... for update`, after the teacher-row lock
+(D7). Without it, a student could set a password between that read and step 5, and the
+teacher would get a set-password link for an account in use, which lets them log in as
+the student. With the lock, setting the password waits for the registration to finish.
+
 A new email keeps today's path. The new account's assignment uses the same insert. It
 cannot conflict, because the account was created in the same transaction.
 
@@ -126,7 +131,7 @@ the reviewer checks it at the code gate.
 
 **Lock order.** Deactivation locks the teacher's links, then the teacher's row, then the
 students' assignments and links. Registration locks the teacher's row, then the student's
-assignment and links. An admin reset link locks only the student's links. No path takes
+row, assignment and links. Using a password link locks only the student's link and row. An admin reset link locks only the student's links. No path takes
 these locks in the opposite order, so they cannot deadlock.
 
 Enrolment already depends on accounts (`PasswordLinkService`), so a direct call from
