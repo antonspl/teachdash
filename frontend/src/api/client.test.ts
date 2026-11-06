@@ -65,7 +65,7 @@ test('[web-client/R5-S1] Known problem code gives its translated message', async
   expect(error.isProblem).toBe(true)
 })
 
-test('[web-client/R5-S4] Failed login message includes the set-password hint', async () => {
+test('[web-client/R5-S4] Failed login message does not repeat the link hint', async () => {
   // given
   fetchMock.mockResolvedValue(problem('INVALID_CREDENTIALS'))
 
@@ -73,8 +73,8 @@ test('[web-client/R5-S4] Failed login message includes the set-password hint', a
   const error = await failureOf(apiRequest('auth/login', { method: 'POST' }))
 
   // then
-  expect(error.message).toMatch(/email or password is incorrect/i)
-  expect(error.message).toMatch(/link/i)
+  expect(error.message).toMatch(/email and password don't match/i)
+  expect(error.message).not.toMatch(/link|set a password|set password|forgot/i)
 })
 
 test('[web-client/R5-S2] Unknown code or non-problem response gives the generic message', async () => {
