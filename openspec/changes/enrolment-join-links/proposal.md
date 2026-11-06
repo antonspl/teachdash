@@ -47,6 +47,10 @@ Assumptions (the engineer may override during review):
 - A logged-in student joins with the token alone; other fields in the request are ignored.
 - Login and set-password-by-link are not rate limited in this change; a follow-up issue
   covers them.
+- The web client shows its generic error message for `RATE_LIMITED` and `LINK_INVALID`
+  on the join path until the frontend change adds screens (web-client R5).
+- accounts R6 and student-enrolment R7 are not changed to mention the join link, to stay
+  within six requirements; R8 states that deactivation disables the link.
 
 ## Why
 

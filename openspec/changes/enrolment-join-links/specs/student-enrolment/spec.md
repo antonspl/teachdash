@@ -38,29 +38,34 @@ own link.
 #### Scenario: student-enrolment/R8-S6 Students and admins cannot manage links
 - **GIVEN** a logged-in student and a logged-in admin
 - **WHEN** each views, generates and disables a join link through the teacher endpoints
-- **THEN** all responses are 403, and no link is created
+- **THEN** all responses are 403, no link is created, and a logged-in teacher's view of their link is then 200
 
 #### Scenario: student-enrolment/R8-S7 Link endpoints require a session
 - **GIVEN** a client with a valid CSRF token and no session
 - **WHEN** the client views, generates and disables a join link
-- **THEN** all responses are 401 with code `UNAUTHENTICATED`
+- **THEN** all responses are 401 with code `UNAUTHENTICATED`, and a logged-in teacher's view of their link is then 200
 
 #### Scenario: student-enrolment/R8-S8 Request without a CSRF token is rejected
 - **GIVEN** a teacher with a join link L1
 - **WHEN** the teacher generates a link without a CSRF token, then disables the link without a CSRF token
 - **THEN** both responses are 403 with code `CSRF_INVALID`, the view still returns L1, and the preview of L1 is 200
 
+#### Scenario: student-enrolment/R8-S9 Failed deactivation keeps the link
+- **GIVEN** teacher A with a password and a join link L1, and a failure while the students are released
+- **WHEN** the admin deactivates teacher A, and the preview of L1 is requested
+- **THEN** the deactivation response is 500, and the preview of L1 is 200
+
 ### Requirement: R9 Visitor joins through a join link
 A client without a session SHALL be able to preview an active join link (the teacher's
 name) and register through it with name, email, time zone and password; the new student
-is assigned to the link's teacher and logged in. An invalid link MUST get 410
-`LINK_INVALID`, checked before the email. An email with an account MUST get 409
-`EMAIL_TAKEN`. Teachers and admins MUST get 403. Rejections change nothing.
+is assigned to the link's teacher and logged in. Checks run in this order: a teacher or
+admin session gets 403, invalid input 400, an invalid link 410 `LINK_INVALID`, an email
+with an account 409 `EMAIL_TAKEN`. Rejections change nothing.
 
 #### Scenario: student-enrolment/R9-S1 Visitor registers and is assigned
 - **GIVEN** teacher A with a join link, and a client with a CSRF cookie and no session
 - **WHEN** the client joins through the link with a new email and the password "new-password-1", and then sends a state-changing request with the CSRF token from the join response
-- **THEN** the join response is 201 with the student's id, a session is started for the student, the response sets a new `XSRF-TOKEN` cookie different from the old one, the next request is not rejected for CSRF, the student is in teacher A's list, teacher A is the student's only teacher, and the student logs in with "new-password-1" and has the role student
+- **THEN** the join response is 201 with the student's id, a session is started for the student, the response sets a new `XSRF-TOKEN` cookie different from the old one, the next request is not rejected for CSRF, the student is in teacher A's list, teacher A is the student's only teacher, the student logs in with "new-password-1" and has the role student, and the student has no unused set-password link
 
 #### Scenario: student-enrolment/R9-S2 Preview shows the teacher's name
 - **GIVEN** teacher A with the name "Мария" and a join link, and a client with no session
@@ -70,7 +75,7 @@ is assigned to the link's teacher and logged in. An invalid link MUST get 410
 #### Scenario: student-enrolment/R9-S3 Invalid links get one answer
 - **GIVEN** a link with an unknown token, a link replaced by a newer one, a disabled link, and the link of a teacher who was then deactivated
 - **WHEN** a client with no session requests the preview of each and joins through each with a new email
-- **THEN** every response is 410 with code `LINK_INVALID` and the same body, and no account is created
+- **THEN** every response is 410 with code `LINK_INVALID` and the same response body, byte for byte, and no account is created
 
 #### Scenario: student-enrolment/R9-S4 Link is checked before the email
 - **GIVEN** a student account with email "anna@example.com" and an unknown link token
@@ -94,8 +99,8 @@ is assigned to the link's teacher and logged in. An invalid link MUST get 410
 
 #### Scenario: student-enrolment/R9-S8 Request without a CSRF token is rejected
 - **GIVEN** teacher A with a join link and a client with no session
-- **WHEN** the client requests the preview and joins through the link with a new email, both without a CSRF token
-- **THEN** both responses are 403 with code `CSRF_INVALID`, and no account is created
+- **WHEN** the client requests the preview and joins through the link with a new email, both without a CSRF token, and then joins again with the token
+- **THEN** the first two responses are 403 with code `CSRF_INVALID`, the join with the token is 201, and there is exactly one account with that email
 
 #### Scenario: student-enrolment/R9-S9 Failed join leaves nothing behind
 - **GIVEN** teacher A with a join link and a failure while the assignment is stored
@@ -109,8 +114,13 @@ is assigned to the link's teacher and logged in. An invalid link MUST get 410
 
 #### Scenario: student-enrolment/R9-S11 Teachers and admins cannot join
 - **GIVEN** teacher A with a join link, a logged-in teacher B and a logged-in admin
-- **WHEN** teacher B and the admin each join through the link, with and without a new email
+- **WHEN** teacher B and the admin each request the preview and join through the link, with and without a new email
 - **THEN** all responses are 403, no account is created, and teacher A's list is empty
+
+#### Scenario: student-enrolment/R9-S12 Checks run in a fixed order
+- **GIVEN** a logged-in teacher, a student account with email "anna@example.com", and an unknown link token
+- **WHEN** the teacher joins through the unknown link with an invalid email, and a client with no session joins through the unknown link with an invalid email, then with email "anna@example.com"
+- **THEN** the teacher's response is 403, the second response is 400 with code `VALIDATION_FAILED`, and the third is 410 with code `LINK_INVALID`
 
 ### Requirement: R10 Student with no teacher joins through a join link
 A logged-in student with no teacher SHALL be assigned to the teacher of an active join
@@ -145,9 +155,9 @@ otherwise. An invalid link MUST get 410 with code `LINK_INVALID` and change noth
 - **THEN** exactly one response is 200, the other responses through the winning teacher's link are 409 with code `ALREADY_ENROLLED`, those through the other link are 409 with code `STUDENT_EXISTS`, and the student has exactly one teacher
 
 #### Scenario: student-enrolment/R10-S6 Invalid link changes nothing
-- **GIVEN** teacher A whose join link was disabled, and a logged-in student with no teacher
-- **WHEN** the student joins through the disabled link
-- **THEN** the response is 410 with code `LINK_INVALID`, and the student still has no teacher
+- **GIVEN** teacher A whose join link was disabled, teacher B with a join link who was then deactivated, and a logged-in student with no teacher
+- **WHEN** the student joins through teacher A's disabled link and through teacher B's link
+- **THEN** both responses are 410 with code `LINK_INVALID`, and the student still has no teacher
 
 ### Requirement: R11 Join endpoints are rate limited
 The join-link preview and join endpoints SHALL be limited per client IP, each with its own

@@ -85,21 +85,33 @@ The controller lives in `accounts.api`, next to `SessionStarter`, and calls a se
 
 ### D3. Order of checks and locks
 
+Before any lookup: a teacher or admin session → 403, then input validation → 400
+(student-enrolment R9). A request whose session is no longer valid (logged out, or the
+account deactivated) has no principal after `SessionRevocationFilter`, so it is treated
+as a visitor, and `SessionStarter` replaces that session on success.
+
 Join, in one transaction, after the password is hashed outside it (as `AccountService`
-does, so no connection is held during bcrypt):
+does, so no connection is held during bcrypt). Hashing before the link check costs a
+bcrypt for every invalid link; the rate limiter (D5) bounds that cost.
 
 1. Find the link by token. Not found → 410 `LINK_INVALID`.
 2. Lock the teacher row with `findActiveByIdForUpdate`. Not found (deactivated) → 410
    `LINK_INVALID`.
 3. Re-read the link under the teacher lock; if the token changed or the row is gone →
    410 `LINK_INVALID`.
-4. Visitor: insert the user (`DuplicateKeyException` → 409 `EMAIL_TAKEN`), then the
-   assignment. Student: lock the student row, check the assignment (409
+4. Visitor: insert the user with the password hash and no one-time token
+   (`DuplicateKeyException` → 409 `EMAIL_TAKEN`), then the assignment. A new
+   `AccountService` method creates a user with a password; `createPasswordlessUser` is not
+   used, because it issues a set-password link. Student: lock the student row, check the assignment (409
    `ALREADY_ENROLLED` or `STUDENT_EXISTS`), insert it; a lost insert race is mapped the
    same way, as in registration.
 5. Visitor only: after commit, start the session with `SessionStarter`.
 
-Generate and disable lock the teacher row (`findByIdForUpdate`) before changing the link.
+Generate locks the teacher row with `findActiveByIdForUpdate` and answers 401
+`ACCOUNT_DEACTIVATED` when the teacher is no longer active, as registration does.
+Otherwise a generate that passed the session check just before a deactivation could
+create a link after the deactivation deleted it, and reactivation would revive it.
+Disable locks the row with `findByIdForUpdate`; deleting a link is safe either way.
 Deactivation already updates the teacher row first. So link changes, deactivation and
 joins all serialise on the teacher row, and the lock order stays teacher → student →
 links everywhere.
@@ -125,22 +137,31 @@ so a limited request gets 429 before CSRF or session checks. It matches only
 `POST /api/join-links/preview` and `POST /api/join-links/join`, each with its own
 counter.
 
+- Match: the exact paths, compared on `getRequestURI()`. Non-normalised variants
+  (`/api/join-links/./join`) are not matched, and Spring Security's firewall rejects them.
 - Key: `request.getRemoteAddr()`. Tomcat's `RemoteIpValve`
   (`server.forward-headers-strategy=native`) has already replaced it with the client IP
   from `X-Forwarded-For` when the direct peer is a trusted proxy. The filter never reads
   the header itself.
 - Algorithm: fixed window per key, in a `ConcurrentHashMap<String, Window>`. A window
   stores its start and count. Every request counts, whatever its response (R11).
-  Expired windows are removed on access and by a sweep when the map grows past a size
-  limit, so memory cannot grow without bound.
+  Expired windows are removed on access and by a sweep when the map reaches a size cap
+  (default 100 000 keys). If the map is still full after the sweep, a request from a new
+  key gets 429 (fail closed), so rotating addresses cannot grow memory.
+- `Retry-After` is computed from `Instant`s and clamped to 1..window seconds, so a clock
+  moved backwards in tests cannot produce an out-of-range value.
 - Time comes from the shared `Clock`, so R11-S3 moves the test clock instead of waiting.
 - Response: 429, `Retry-After` = seconds until the window ends (rounded up, at least 1),
   ProblemJson with code `RATE_LIMITED`.
 - Properties (defaults): `teachdash.rate-limit.join.max=10`,
   `teachdash.rate-limit.join.window=10m`, `teachdash.rate-limit.preview.max=60`,
-  `teachdash.rate-limit.preview.window=10m`. Tests set low limits on a separate context,
-  so other tests are not limited. Tests send `X-Forwarded-For` from the loopback peer to
-  act as different IPs (R11-S2).
+  `teachdash.rate-limit.preview.window=10m`. The shared test configuration sets very high limits,
+  so tests outside R11 are never limited. The R11 tests run in their own context with low
+  limits, and each test uses its own client addresses, so counters never carry over.
+  Tests send `X-Forwarded-For` from the loopback peer to act as different IPs (R11-S2).
+  R11 tests must build their GIVEN by calling the limited endpoints, because there is no
+  other way to fill a counter; the endpoints are implemented by then in pass 2, and in
+  pass 1 those calls get 501, which still count.
 
 Alternatives: Bucket4j (a dependency and its Spring Boot 4.1 support for one endpoint);
 a Caddy plugin (custom Caddy build, not testable by the backend tests). Both rejected
@@ -169,4 +190,8 @@ Everything above uses Spring Boot, Spring Security and the JDK.
   probing defence.
 - [Counters are in memory: a restart resets them, and they break with several backend
   instances.] → One instance on one VPS (constitution §6). Revisit if that changes.
-- [A token in plain text can be read from a database dump.] → See D1.
+- [A token in plain text can be read from a database dump.] → See D1. Tokens are never
+  logged (constitution §4); the code review checks the 410, 429 and view paths.
+- [A released student without a password gets 409 `EMAIL_TAKEN` at the join page.] →
+  They cannot log in or set a password; a teacher registering their email (R1) sends
+  them a new set-password link.

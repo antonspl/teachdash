@@ -7,8 +7,8 @@ Every endpoint except login, set-password-by-link, the join-link preview and joi
 (student-enrolment R9) and the health check (`/actuator/health`) SHALL require a session. Admin
 endpoints SHALL be allowed only for admins. Later capabilities apply the same rule to
 teacher and student endpoints. A state-changing request (POST, PUT, PATCH, DELETE)
-without a valid CSRF token MUST be rejected with 403. Login SHALL replace the CSRF token,
-and its response SHALL carry the new one.
+without a valid CSRF token MUST be rejected with 403. Login, set-password-by-link and a
+visitor's join SHALL replace the CSRF token, and their responses SHALL carry the new one.
 
 #### Scenario: accounts/R4-S1 No session is rejected
 - **WHEN** a request without a session calls the current-user endpoint
