@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -53,6 +54,8 @@ public abstract class ApiTest {
 		registry.add("spring.datasource.username", POSTGRES::getUsername);
 		registry.add("spring.datasource.password", POSTGRES::getPassword);
 		registry.add("APP_BASE_URL", () -> APP_BASE_URL);
+		registry.add("teachdash.rate-limit.join.max", () -> "1000000");
+		registry.add("teachdash.rate-limit.preview.max", () -> "1000000");
 	}
 
 	// low cost keeps tests fast; the app's delegating encoder verifies the {bcrypt} prefix
@@ -144,6 +147,30 @@ public abstract class ApiTest {
 				.param("student", studentId)
 				.param("now", Timestamp.from(Instant.now(clock)))
 				.update();
+	}
+
+	/** Inserts the teacher's join link directly and returns its token. */
+	protected String createJoinLink(UUID teacherId) {
+		byte[] bytes = new byte[32];
+		RANDOM.nextBytes(bytes);
+		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+		jdbc.sql("""
+				insert into teacher_join_links (teacher_id, token, created_at)
+				values (:teacher, :token, :now)
+				""")
+				.param("teacher", teacherId)
+				.param("token", token)
+				.param("now", Timestamp.from(Instant.now(clock)))
+				.update();
+		return token;
+	}
+
+	/** The teacher's current join link token, or empty when there is no link. */
+	protected Optional<String> findJoinLinkToken(UUID teacherId) {
+		return jdbc.sql("select token from teacher_join_links where teacher_id = :teacher")
+				.param("teacher", teacherId)
+				.query(String.class)
+				.optional();
 	}
 
 	protected TestClient loggedInAdmin() {
