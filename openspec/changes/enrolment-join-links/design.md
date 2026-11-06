@@ -104,7 +104,8 @@ bcrypt for every invalid link; the rate limiter (D5) bounds that cost.
 4. Visitor: insert the user with the password hash and no one-time token
    (`DuplicateKeyException` → 409 `EMAIL_TAKEN`), then the assignment. A new
    `AccountService` method creates a user with a password; `createPasswordlessUser` is not
-   used, because it issues a set-password link. Student: lock the student row, check the assignment (409
+   used, because it issues a set-password link. Both paths store the assignment through
+   `TeacherStudentRepository.insert` (R9-S9 injects its failure there). Student: lock the student row, check the assignment (409
    `ALREADY_ENROLLED` or `STUDENT_EXISTS`), insert it; a lost insert race is mapped the
    same way, as in registration.
 5. Visitor only: after commit, start the session with `SessionStarter`.
@@ -147,7 +148,9 @@ counter.
   from `X-Forwarded-For` when the direct peer is a trusted proxy. The filter never reads
   the header itself.
 - Algorithm: fixed window per key, in a `ConcurrentHashMap<String, Window>`. A window
-  stores its start and count. Every request counts, whatever its response (R11).
+  stores its start and count. Every request counts, whatever its response (R11). A
+  window ends exactly at start + window: a request at that instant opens a new window
+  (R11-S3 moves the clock by exactly the window).
   Expired windows are removed on access and by a sweep when the map reaches a size cap
   (default 100 000 keys). If the map is still full after the sweep, a request from a new
   key gets 429 (fail closed), so rotating addresses cannot grow memory.
