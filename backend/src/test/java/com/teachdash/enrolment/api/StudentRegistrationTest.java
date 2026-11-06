@@ -323,8 +323,8 @@ class StudentRegistrationTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R1-S14] Student with no teacher and a password is assigned")
-	void studentWithNoTeacherAndAPasswordIsAssigned() {
+	@DisplayName("[student-enrolment/R1-S14] Registering a student with no teacher and a password assigns their account")
+	void registeringStudentWithNoTeacherAndPasswordAssignsTheirAccount() {
 		// given a student with no teacher, with a name, time zone and the password "old-password-1"
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID student = createUser("STUDENT", "Анна", "anna@example.com", "old-password-1", true);
@@ -359,8 +359,8 @@ class StudentRegistrationTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R1-S15] Student with no teacher and no password gets a new link")
-	void studentWithNoTeacherAndNoPasswordGetsANewLink() {
+	@DisplayName("[student-enrolment/R1-S15] Registering a student with no teacher and no password assigns them with a new link")
+	void registeringStudentWithNoTeacherAndNoPasswordAssignsThemWithNewLink() {
 		// given a student without a password and with email "nina@example.com", assigned to teacher B, with an unused set-password link
 		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
 		createTeacher("a@example.com", "teacher-pass-1");

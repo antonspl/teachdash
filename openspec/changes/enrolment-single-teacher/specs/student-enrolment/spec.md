@@ -75,12 +75,12 @@ existing email MUST return 409 and change nothing.
 - **WHEN** both send several parallel requests to register the same new email
 - **THEN** exactly one response is 201, all others are 409, and there is exactly one account, one assignment and one unused link
 
-#### Scenario: student-enrolment/R1-S14 Student with no teacher and a password is assigned
+#### Scenario: student-enrolment/R1-S14 Registering a student with no teacher and a password assigns their account
 - **GIVEN** a student with no teacher, with email "anna@example.com", name "Анна", time zone "Europe/Moscow" and the password "old-password-1"
 - **WHEN** teacher A registers a student with email " ANNA@example.com ", name "Anna" and time zone "Europe/Berlin"
 - **THEN** the response is 201 with the student's id and no set-password link, there is still exactly one account with that email, the student is in teacher A's list with name "Анна" and time zone "Europe/Moscow", teacher A's request for the student's details returns 200, teacher A is in the student's list of teachers, and the student logs in with "old-password-1"
 
-#### Scenario: student-enrolment/R1-S15 Student with no teacher and no password gets a new link
+#### Scenario: student-enrolment/R1-S15 Registering a student with no teacher and no password assigns them with a new link
 - **GIVEN** a student without a password and with email "nina@example.com", assigned to teacher B, with an unused set-password link
 - **WHEN** teacher B removes the student, teacher A then registers a student with email "Nina@Example.com", and the link returned to teacher A is used to set the password "new-password-1"
 - **THEN** the response to registering is 201 with the student's id and a set-password link, there is still exactly one account with that email, the student is in teacher A's list, and the student logs in with "new-password-1"
