@@ -42,13 +42,20 @@ public class StudentRegistrationService {
 
 	@Transactional
 	public CreatedAccount register(UUID teacherId, String name, String email, String timeZone) {
-		Optional<User> existing = users.findByEmailIgnoreCase(email);
+		// A parallel deactivation updates this row, so it either finishes first (401 here)
+		// or waits until this registration commits and then releases the new student too.
+		users.findActiveByIdForUpdate(teacherId)
+				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
+		Optional<User> existing = users.findByEmailIgnoreCaseForUpdate(email);
 		if (existing.isEmpty()) {
 			CreatedAccount created = accounts.createPasswordlessUser(Role.STUDENT, name, email, timeZone);
 			assignments.insert(teacherId, created.id(), clock.instant());
 			return created;
 		}
-		User student = existing.get();
+		return assignExisting(teacherId, existing.get());
+	}
+
+	private CreatedAccount assignExisting(UUID teacherId, User student) {
 		if (student.getRole() != Role.STUDENT) {
 			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
 		}

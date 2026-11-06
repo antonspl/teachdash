@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,14 +19,17 @@ public class TeacherAdminService {
 	private final UserRepository users;
 	private final AccountService accounts;
 	private final PasswordLinkService links;
+	private final ApplicationEventPublisher events;
 
 	TeacherAdminService(
 			UserRepository users,
 			AccountService accounts,
-			PasswordLinkService links) {
+			PasswordLinkService links,
+			ApplicationEventPublisher events) {
 		this.users = users;
 		this.accounts = accounts;
 		this.links = links;
+		this.events = events;
 	}
 
 	public List<User> listTeachers() {
@@ -52,6 +56,7 @@ public class TeacherAdminService {
 		}
 		links.invalidateLinks(id);
 		users.deactivate(id);
+		events.publishEvent(new TeacherDeactivated(id));
 	}
 
 	/** Returns a new set-password link when an inactive teacher never set a password. */

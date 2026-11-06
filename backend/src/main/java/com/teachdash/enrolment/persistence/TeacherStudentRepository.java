@@ -66,6 +66,17 @@ public class TeacherStudentRepository {
 		return rows > 0;
 	}
 
+	public List<UUID> deleteAllOfTeacher(UUID teacherId) {
+		return jdbc.sql("""
+				delete from teacher_students
+				where teacher_id = :teacherId
+				returning student_id
+				""")
+				.param("teacherId", teacherId)
+				.query(UUID.class)
+				.list();
+	}
+
 	public boolean hasTeacher(UUID studentId) {
 		return jdbc.sql("select exists (select 1 from teacher_students where student_id = :studentId)")
 				.param("studentId", studentId)

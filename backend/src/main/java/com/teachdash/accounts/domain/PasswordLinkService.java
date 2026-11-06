@@ -106,6 +106,7 @@ public class PasswordLinkService {
 		}
 		String passwordHash = passwordEncoder.encode(password);
 		return transaction.execute(status -> {
+			users.findByIdForUpdate(user.getId()).orElseThrow(PasswordLinkService::invalid);
 			if (tokens.markUsed(stored.getId(), now) != 1) {
 				throw invalid();
 			}
