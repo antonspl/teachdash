@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import en from '../i18n/en.json'
-import { ApiError, apiRequest } from './client'
+import { ApiError, apiRequest, setUnauthorizedHandler } from './client'
 
 function problem(
   code: unknown,
@@ -418,4 +418,51 @@ test('Credentials are passed to fetch only when the caller sets them', async () 
 
   expect(fetchMock.mock.calls[0][1].credentials).toBe('omit')
   expect(fetchMock.mock.calls[1][1].credentials).toBeUndefined()
+})
+
+test('onUnauthorized is called on a 401 from an ordinary request', async () => {
+  // given
+  const handler = vi.fn()
+  setUnauthorizedHandler(handler)
+  fetchMock.mockResolvedValue(problem('UNAUTHENTICATED'))
+
+  // when
+  const error = await failureOf(apiRequest('courses'))
+
+  // then
+  setUnauthorizedHandler(undefined)
+  expect(error.status).toBe(401)
+  expect(handler).toHaveBeenCalledTimes(1)
+})
+
+test('onUnauthorized is not called for login, logout, me and password links', async () => {
+  // given
+  const handler = vi.fn()
+  setUnauthorizedHandler(handler)
+  fetchMock.mockImplementation(() =>
+    Promise.resolve(problem('UNAUTHENTICATED')),
+  )
+
+  // when
+  for (const path of ['auth/login', 'auth/logout', 'me', 'password-links']) {
+    await failureOf(apiRequest(path, { method: 'POST' }))
+  }
+
+  // then
+  setUnauthorizedHandler(undefined)
+  expect(handler).not.toHaveBeenCalled()
+})
+
+test('onUnauthorized is not called for other failures', async () => {
+  // given
+  const handler = vi.fn()
+  setUnauthorizedHandler(handler)
+  fetchMock.mockResolvedValue(problem('FORBIDDEN', 403))
+
+  // when
+  await failureOf(apiRequest('courses'))
+
+  // then
+  setUnauthorizedHandler(undefined)
+  expect(handler).not.toHaveBeenCalled()
 })

@@ -9,6 +9,9 @@
   --color-success-text: #14532d;
   --color-danger-background: #fee2e2;
   --color-danger-text: #7f1d1d;
+  --color-surface: #ffffff;
+  --color-border: #9aa5b1;
+  --color-on-accent: #ffffff;
 
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
@@ -24,6 +27,8 @@
   --space-3: 1.5rem;
   --space-4: 2.5rem;
 
+  --border-width: 1px;
+  --control-height: 2.75rem;
   --radius: 0.5rem;
   --shadow-card: 0 1px 3px rgb(0 0 0 / 12%);
 }

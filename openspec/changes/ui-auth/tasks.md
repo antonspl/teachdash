@@ -5,28 +5,28 @@ test per scenario ID, with `[<scenario ID>]` at the start of the test title.
 
 ## 1. Shared UI and strings
 
-- [ ] 1.1 Add `TextInput`, `PasswordInput` (with show toggle), `Button`, `ErrorWithRetry` and `AppHeader` to `src/ui/` using design tokens; verify `npm run lint` passes
-- [ ] 1.2 Add the new strings to `src/i18n/en.json` (login, link hint, cabinets, header, set-password, password checks, session ended, start-up error, logout error) and remove the placeholder strings; verify `npm run build` passes
+- [x] 1.1 Add `TextInput`, `PasswordInput` (with show toggle), `Button`, `ErrorWithRetry` and `AppHeader` to `src/ui/` using design tokens; verify `npm run lint` passes
+- [x] 1.2 Add the new strings to `src/i18n/en.json` (login, link hint, cabinets, header, set-password, password checks, session ended, start-up error, logout error) and remove the placeholder strings; verify `npm run build` passes
 
 ## 2. Session state and API client
 
-- [ ] 2.1 Add the `onUnauthorized` hook to `apiRequest`, skipping login, logout, `/api/me` and password links; verify with a Vitest unit test
-- [ ] 2.2 Add `AuthProvider` (`loading`, `error`, `anonymous`, `user`; `login`, `logout`, `setPasswordWithLink`, `retry`; session-ended reason and path in memory); verify with Vitest unit tests
+- [x] 2.1 Add the `onUnauthorized` hook to `apiRequest`, skipping login, logout, `/api/me` and password links; verify with a Vitest unit test
+- [x] 2.2 Add `AuthProvider` (`loading`, `error`, `anonymous`, `user`; `login`, `logout`, `setPasswordWithLink`, `retry`; session-ended reason and path in memory); verify with Vitest unit tests
 
 ## 3. Routing and cabinets
 
-- [ ] 3.1 Add `RequireRole`, `AnonymousOnly` and `HomeRedirect`, and the `/admin`, `/teacher`, `/student` routes in `App.tsx`; verify `[web-auth/R2-S1]` to `[web-auth/R2-S7]` in Vitest
-- [ ] 3.2 Add the three empty cabinet pages with the header; verify `[web-auth/R3-S1]` in Vitest
+- [x] 3.1 Add `RequireRole`, `AnonymousOnly` and `HomeRedirect`, and the `/admin`, `/teacher`, `/student` routes in `App.tsx`; verify `[web-auth/R2-S1]` to `[web-auth/R2-S7]` in Vitest
+- [x] 3.2 Add the three empty cabinet pages with the header; verify `[web-auth/R3-S1]` in Vitest
 
 ## 4. Login and logout
 
-- [ ] 4.1 Add the login page with the reachability warning and the link hint; the page decides where to go after login; remove the placeholder page and move its tests; verify `[web-auth/R1-S2]` to `[web-auth/R1-S6]`, `[web-client/R2-S1]`, `[web-client/R12-S2]` and `[web-client/R12-S4]` in Vitest
-- [ ] 4.2 Wire "Log out" in the header; verify `[web-auth/R4-S2]` and `[web-auth/R4-S3]` in Vitest
-- [ ] 4.3 Handle the session ending during use and the return to the page, using a request sent through `apiRequest` from a test page; verify `[web-auth/R6-S1]` to `[web-auth/R6-S4]` in Vitest
+- [x] 4.1 Add the login page with the reachability warning and the link hint; the page decides where to go after login; remove the placeholder page and move its tests; verify `[web-auth/R1-S2]` to `[web-auth/R1-S6]`, `[web-client/R2-S1]`, `[web-client/R12-S2]` and `[web-client/R12-S4]` in Vitest
+- [x] 4.2 Wire "Log out" in the header; verify `[web-auth/R4-S2]` and `[web-auth/R4-S3]` in Vitest
+- [x] 4.3 Handle the session ending during use and the return to the page, using a request sent through `apiRequest` from a test page; verify `[web-auth/R6-S1]` to `[web-auth/R6-S4]` in Vitest
 
 ## 5. Set-password page
 
-- [ ] 5.1 Add the `/set-password` page (token read in the first render, fragment removed, two fields, length and byte checks, link error codes); verify `[web-auth/R5-S2]` to `[web-auth/R5-S9]` in Vitest, with `R5-S2` rendered in strict mode
+- [x] 5.1 Add the `/set-password` page (token read in the first render, fragment removed, two fields, length and byte checks, link error codes); verify `[web-auth/R5-S2]` to `[web-auth/R5-S9]` in Vitest, with `R5-S2` rendered in strict mode
 
 ## 6. End-to-end
 

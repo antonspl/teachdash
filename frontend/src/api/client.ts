@@ -24,6 +24,25 @@ export class ApiError extends Error {
   }
 }
 
+// Requests whose 401 is an answer to the request itself, not a sign that a session ended.
+const UNAUTHORIZED_EXEMPT = new Set([
+  'auth/login',
+  'auth/logout',
+  'me',
+  'password-links',
+])
+
+let unauthorizedHandler: (() => void) | undefined
+
+// Set by AuthProvider; called on a 401 from any request that is not exempt.
+export function setUnauthorizedHandler(handler: (() => void) | undefined) {
+  unauthorizedHandler = handler
+}
+
+function isExemptFromUnauthorized(path: string): boolean {
+  return UNAUTHORIZED_EXEMPT.has(path.split(/[?#]/)[0].replace(/\/+$/, ''))
+}
+
 export function messageForCode(code: string | undefined): string {
   if (code && i18n.exists(`errors.${code}`)) {
     return i18n.t(`errors.${code}`)
@@ -163,7 +182,11 @@ export async function apiRequest(
   }
 
   if (!response.ok) {
-    throw await toApiError(response, options.signal)
+    const error = await toApiError(response, options.signal)
+    if (response.status === 401 && !isExemptFromUnauthorized(path)) {
+      unauthorizedHandler?.()
+    }
+    throw error
   }
   return response
 }
