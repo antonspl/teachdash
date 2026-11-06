@@ -129,12 +129,21 @@ returns 401 `UNAUTHENTICATED`, as the session check would on the next request. N
 can force this timing (proposal, answer 7), so a code comment at the lock explains it, and
 the reviewer checks it at the code gate.
 
-**Lock order.** Deactivation locks the teacher's links, then the teacher's row, then the
-students' assignments and links. Registration locks the teacher's row, then the student's
-row, assignment and links. Using a password link (`PasswordLinkService.use`) today locks
-the link, then the user row; it changes to lock the user row first (`select ... for update`
-before marking the link used), so it takes the same order as registration. An admin reset link locks only the student's links. No path takes
-these locks in the opposite order, so they cannot deadlock.
+**Lock order.** One rule: a transaction locks a user's row before that user's links
+(`one_time_tokens`). Inserting a link takes a key-share lock on the user row through the
+foreign key, so any path that touches links without locking the user first can deadlock
+with one that does. Concretely:
+
+- `PasswordLinkService.issue` locks the user row (`select ... for update`) before it marks
+  old links used and inserts the new one.
+- `PasswordLinkService.use` locks the user row before it marks the link used.
+- `deactivateTeacher` updates the teacher's row first, then invalidates the teacher's
+  links, then publishes the event. The listener deletes assignments and invalidates the
+  released students' links; it never waits for a student's row, because updating a link
+  does not touch the foreign key.
+- Registration locks the teacher's row, then the student's row, then inserts the
+  assignment and the link.
+- Reactivation locks the teacher's row through `issue` before it updates it.
 
 Enrolment already depends on accounts (`PasswordLinkService`), so a direct call from
 accounts into enrolment would make the packages depend on each other. The event keeps the
