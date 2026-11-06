@@ -141,7 +141,7 @@ class TeacherJoinLinkTest extends ApiTest {
 		// then the two links differ
 		viewA.then().statusCode(200).body("link", equalTo(urlOf(tokenA)));
 		viewB.then().statusCode(200).body("link", equalTo(urlOf(tokenB)));
-		assertNotEquals(tokenA, tokenB);
+		assertNotEquals(viewA.<String>path("link"), viewB.<String>path("link"));
 		// and the new student is in teacher B's list and not in teacher A's
 		join.then().statusCode(201);
 		b.get(STUDENTS).then().statusCode(200).body("id", contains(join.<String>path("studentId")));

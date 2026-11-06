@@ -46,7 +46,7 @@ class JoinLinkRateLimitTest extends ApiTest {
 		// given a join limit of 2 requests per 10 minutes, and teacher A with a join link
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		String token = createJoinLink(teacherA);
-		TestClient client = clientFrom("10.11.0.1");
+		TestClient client = clientFrom("203.0.113.11");
 		long usersBefore = jdbc.sql("select count(*) from users").query(Long.class).single();
 
 		// when a client from one IP joins through the link with an unknown token twice, and then with a new email
@@ -72,12 +72,12 @@ class JoinLinkRateLimitTest extends ApiTest {
 		// given a join limit of 2 and a preview limit of 2 requests per 10 minutes, teacher A with a join link, and a client from IP 1 that has used up the join limit
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		String token = createJoinLink(teacherA);
-		TestClient ipOne = clientFrom("10.12.0.1");
+		TestClient ipOne = clientFrom("203.0.113.12");
 		ipOne.post(JOIN, joinBody("unknown-token-value", "x@example.com"));
 		ipOne.post(JOIN, joinBody("unknown-token-value", "x@example.com"));
 
 		// when a client from IP 2 joins through the link with a new email, and the client from IP 1 requests the preview and logs in as an existing teacher
-		var joinFromIpTwo = clientFrom("10.12.0.2").post(JOIN, joinBody(token, "nina@example.com"));
+		var joinFromIpTwo = clientFrom("198.51.100.12").post(JOIN, joinBody(token, "nina@example.com"));
 		var previewFromIpOne = ipOne.post(PREVIEW, Map.of("token", token));
 		var loginFromIpOne = ipOne.login("a@example.com", "teacher-pass-1");
 
@@ -93,7 +93,7 @@ class JoinLinkRateLimitTest extends ApiTest {
 		// given a preview limit of 2 requests per 10 minutes, teacher A with a join link, and a client that has used up the preview limit
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		String token = createJoinLink(teacherA);
-		TestClient client = clientFrom("10.13.0.1");
+		TestClient client = clientFrom("203.0.113.13");
 		client.post(PREVIEW, Map.of("token", token));
 		client.post(PREVIEW, Map.of("token", token));
 

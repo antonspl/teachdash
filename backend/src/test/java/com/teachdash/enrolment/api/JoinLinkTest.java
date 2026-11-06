@@ -236,7 +236,8 @@ class JoinLinkTest extends ApiTest {
 
 		// then each response is 400 with code VALIDATION_FAILED
 		for (int i = 0; i < responses.size(); i++) {
-			responses.get(i).then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
+			assertEquals(400, responses.get(i).statusCode(), "unexpected status for body: " + bodies.get(i));
+			responses.get(i).then().body("code", equalTo("VALIDATION_FAILED"));
 		}
 		// and no account is created
 		assertEquals(usersBefore, userCount());
