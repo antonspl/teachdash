@@ -209,6 +209,7 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 ### Requirement: R6 Admin deactivates and reactivates teachers
 An admin SHALL be able to deactivate and reactivate a teacher account. Deactivation
 MUST end the teacher's sessions: every request re-checks that the account is active.
+Deactivation also releases the teacher's students (student-enrolment R7).
 The teacher list SHALL show whether each teacher is active. An id that is not a teacher
 MUST get 404 and change nothing. Reactivating a teacher who has no password SHALL return
 a new set-password link.
