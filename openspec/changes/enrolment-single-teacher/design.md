@@ -55,8 +55,11 @@ In one transaction, as today:
 
 The account's name, email and time zone are never changed by this path.
 
-The existing account is read with `select ... for update`, after the teacher-row lock
-(D7). Without it, a student could set a password between that read and step 5, and the
+The existing account is read without a lock; if it is not a student, the request ends
+with `EMAIL_TAKEN` (a role never changes). A student's row is then locked by id with
+`select ... for update`, after the teacher-row lock (D7), and the password check reads
+that locked row. Locking any other user's row would let two teachers who register each
+other's emails deadlock. Without it, a student could set a password between that read and step 5, and the
 teacher would get a set-password link for an account in use, which lets them log in as
 the student. With the lock, setting the password waits for the registration to finish.
 
@@ -144,6 +147,8 @@ with one that does. Concretely:
 - Registration locks the teacher's row, then the student's row, then inserts the
   assignment and the link.
 - Reactivation locks the teacher's row through `issue` before it updates it.
+- Removal deletes the assignment and invalidates the student's links without locking the
+  student's row. It takes no user lock afterwards, so it cannot close a cycle.
 
 Enrolment already depends on accounts (`PasswordLinkService`), so a direct call from
 accounts into enrolment would make the packages depend on each other. The event keeps the
