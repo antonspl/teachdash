@@ -31,8 +31,8 @@ code together and approves the PR. Then anyone on the team merges it.
 
 | Step | How |
 |---|---|
-| Explore (optional, for a big or unclear feature) | `/openspec-explore` |
-| Clarify, Research (optional; skip when the issue already explains the task) | Claude asks; say "go straight to the proposal" to skip |
+| Explore (optional, for a big or unclear feature; skip when the issue already has it) | `/openspec-explore` |
+| Clarify, Research | Claude restates the task and asks only what the issue does not answer; you answer and agree the research angles (or none) |
 | Propose + spec critique | `/openspec-propose`; Claude runs the spec-critic, then stops for "spec approved" |
 | Tests, then code | `/openspec-apply-change`. Backend: pass 1 writes failing tests and stops for "tests approved"; pass 2 writes the code. Frontend-only: tests and code in one pass. Claude runs the Opus review, then stops for "code approved" |
 | Archive | `/openspec-archive-change`, then mark the PR ready |
