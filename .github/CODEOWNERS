@@ -2,10 +2,8 @@
 # (constitution §1, step 12). The owner (@antonspl) merges and may merge without one.
 * @antonspl @andreilebedevops
 
-# The constitution and the process files need the owner's approval.
-/.github/ @antonspl
-/.claude/ @antonspl
+# The constitution, the OpenSpec config and this file need the owner's approval.
+# The rest of the workflow (CLAUDE.md, CONTRIBUTING.md, .claude/) is open to any code owner.
 /openspec/constitution.md @antonspl
 /openspec/config.yaml @antonspl
-/CLAUDE.md @antonspl
-/CONTRIBUTING.md @antonspl
+/.github/CODEOWNERS @antonspl

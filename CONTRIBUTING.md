@@ -28,7 +28,9 @@ Then the author archives the change (in the same PR) and marks the PR ready. A
 code together and approves the PR. The **owner** merges.
 
 The author answers the clarifying questions and decides trade-offs for their change.
-Changes to the constitution and the process files need the owner's approval.
+Anyone can improve the workflow (`CLAUDE.md`, `CONTRIBUTING.md`, `.claude/`, the PR
+template) through a normal PR. Changes to the constitution, `openspec/config.yaml` and
+`.github/CODEOWNERS` need the owner's approval.
 
 To ask for a gate review, post a comment with the commit range of that phase
 (e.g. `Tests: abc123..def456`), so the reviewer reads only what is new.
