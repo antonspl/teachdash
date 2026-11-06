@@ -14,8 +14,8 @@ context: |
 
 rules:
   proposal:
-    - Start with a "Clarifications" section listing the questions asked and the owner's answers
-    - List the research angles agreed with the owner and each one's conclusion, or say that the owner agreed none were needed
+    - Start with a "Clarifications" section listing the questions asked and the engineer's answers
+    - List the research angles agreed with the engineer and each one's conclusion, or say that the engineer agreed none were needed
     - State what is out of scope
   specs:
     - Every requirement has at least one Given/When/Then scenario
@@ -27,7 +27,7 @@ rules:
     - Section 1 is "Failing tests" - one backend test per scenario (JUnit 5, Testcontainers, RestAssured), plus stubs (501, marked STUB) and schema migrations so tests compile and fail at their THEN step
     - Section 2 is a single task "Reviewer approves tests in the PR" - a hard stop
     - Implementation tasks come only after the review task
-    - 'End with a "Workflow follow-up" section: code review gate, archive in the same PR, mark the PR ready for the owner'
+    - 'End with a "Workflow follow-up" section: code review gate, archive in the same PR, mark the PR ready for the final code owner review'
     - 'Exception for a frontend-only change (no backend scenarios): no "Failing tests" section and no test review task. Each task group lands its own Vitest or Playwright tests, one per scenario, with "[<scenario ID>]" at the start of the test title. Tests and code are reviewed together at the code gate'
     - 'Exception for a tooling change (CI, scripts, repository tooling) with skip_specs: true: no "Failing tests" section and no test review task. Each task says how that part is proven, and the proof is recorded in the PR'
 
@@ -44,4 +44,4 @@ operations:
   archive:
     guidance:
       - Before archiving, confirm every scenario ID has a matching test
-      - Archive in the change's own PR, before the owner's final review
+      - Archive in the change's own PR, before the final code owner review

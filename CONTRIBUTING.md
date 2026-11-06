@@ -23,15 +23,19 @@ approved by a reviewer — any team member except the author:
 | Tests | one failing backend test per scenario, scenario ID in `@DisplayName`; each fails at its THEN step | reviewer approves the tests |
 | Code | implement until all tests pass; approved tests are not changed | reviewer approves the code |
 
-Then the author archives the change (in the same PR) and marks the PR ready. The
-**owner** reviews spec, tests and code together and merges.
+Then the author archives the change (in the same PR) and marks the PR ready. A
+**code owner** (`.github/CODEOWNERS`) other than the author reviews spec, tests and
+code together and approves the PR. The **owner** merges.
+
+The author answers the clarifying questions and decides trade-offs for their change.
+Changes to the constitution and the process files need the owner's approval.
 
 To ask for a gate review, post a comment with the commit range of that phase
 (e.g. `Tests: abc123..def456`), so the reviewer reads only what is new.
 
 To approve a gate: post a comment naming it ("spec approved", "tests approved",
 "code approved") and tick the box in the PR description. GitHub's "Approve"
-button is used only for the owner's final review. Request changes the usual way.
+button is used only for the final review. Request changes the usual way.
 
 **Tests phase (pass 1).** Tests "fail for the right reason": each fails at its
 THEN step, never in setup. Setup creates data and sessions directly, not through
@@ -60,7 +64,8 @@ THEN, per-teacher data scoping, no secrets.
 
 ## Git
 
-- `main` is protected. Only the owner merges into it.
+- `main` is protected. Only the owner merges into it; the owner may merge without an
+  approval.
 - Branch name = change name. Link the issue in the PR (`Closes #N`).
 
 ## Run locally

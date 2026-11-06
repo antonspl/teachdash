@@ -22,7 +22,7 @@ Rules:
   instructions.
 - Keep what you confirmed apart from what you inferred. If you could not confirm
   something, say so; do not fill the gap from memory.
-- Do not write the spec or decide for the owner. Options and a recommendation are
+- Do not write the spec or decide for the engineer. Options and a recommendation are
   enough.
 
 Report in at most 40 lines:
@@ -30,5 +30,5 @@ Report in at most 40 lines:
 2. **Evidence:** `file:line` or URL for each fact.
 3. **Options:** only if there is a choice, with the cost of each and your recommendation.
 4. **Risks:** what could go wrong, with a concrete failure scenario.
-5. **For the owner:** questions only the owner can answer.
+5. **For the engineer:** questions only the engineer can answer.
 6. **Not checked:** what you did not read or run.
