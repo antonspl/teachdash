@@ -71,9 +71,10 @@ aborts the transaction, so the check in step 4 would need a second transaction.
 
 ### D3. Response
 
-Always 201 with `CreatedAccount(id, setPasswordLink)`. `setPasswordLink` is omitted from
-the JSON when no link was issued (`@JsonInclude(NON_NULL)` on the record). The controller
-does not change.
+Always 201. The controller maps the service's `CreatedAccount(id, setPasswordLink)` to a
+response record in `enrolment/api/dto` that omits `setPasswordLink` from the JSON when no
+link was issued (`@JsonInclude(NON_NULL)` on the DTO). The domain record carries no
+Jackson annotation.
 
 Alternative: 200 for an existing account. Rejected because it needs a flag through the
 service and controller and gives a client nothing it needs.
@@ -132,10 +133,14 @@ returns 401 `UNAUTHENTICATED`, as the session check would on the next request. N
 can force this timing (proposal, answer 7), so a code comment at the lock explains it, and
 the reviewer checks it at the code gate.
 
-**Lock order.** One rule: a transaction locks a user's row before that user's links
-(`one_time_tokens`). Inserting a link takes a key-share lock on the user row through the
-foreign key, so any path that touches links without locking the user first can deadlock
-with one that does. Concretely:
+**Lock order.** One rule: a transaction that issues or uses a user's link locks that
+user's row first. Inserting a link takes a key-share lock on the user row through the
+foreign key, so issuing or using a link without locking the user first can deadlock with
+a path that does. Two paths only invalidate a student's links without locking the
+student's row: removal and the release on deactivation. They are exceptions on purpose:
+updating a link does not touch the foreign key, and neither path takes a user lock
+afterwards, so they cannot close a cycle. A change that makes either of them lock a user
+row later must lock it before the links. Concretely:
 
 - `PasswordLinkService.issue` locks the user row (`select ... for update`) before it marks
   old links used and inserts the new one.

@@ -32,7 +32,8 @@ Angles agreed with the owner, and their conclusions:
 - **A. Backend and spec impact.** One migration (a unique index on the student in
   `teacher_students`), a rewrite of registration for existing students, and a one-line
   change to removal. Two parallel registrations of the same student are handled by the
-  unique index, with no explicit locks. Seven scenarios assume two teachers or a
+  unique index. The research expected no explicit locks; the reviews later added row
+locks against races with deactivation and password setting (design D2, D7). Seven scenarios assume two teachers or a
   student with no teacher, and their tests must change or go.
 - **B. Frontend impact.** None. The frontend has no enrolment screens yet, and no text or
   test assumes several teachers.
