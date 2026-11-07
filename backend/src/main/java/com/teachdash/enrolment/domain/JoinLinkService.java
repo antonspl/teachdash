@@ -57,7 +57,9 @@ public class JoinLinkService {
 		return transaction.execute(status -> {
 			UUID teacherId = lockTeacher(token);
 			User student = accounts.createUserWithPassword(Role.STUDENT, name, email, timeZone, passwordHash);
-			assignments.insert(teacherId, student.getId(), clock.instant());
+			if (!assignments.insert(teacherId, student.getId(), clock.instant())) {
+				throw new IllegalStateException("New student already has a teacher");
+			}
 			return student;
 		});
 	}

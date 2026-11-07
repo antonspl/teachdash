@@ -10,4 +10,9 @@ public record JoinLinkJoinRequest(
 		String email,
 		String timeZone,
 		String password) {
+
+	@Override
+	public String toString() {
+		return "JoinLinkJoinRequest[name=" + name + ", email=" + email + ", timeZone=" + timeZone + "]";
+	}
 }

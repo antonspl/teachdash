@@ -19,6 +19,11 @@ public record JoinVisitor(
 		email = Normalize.strip(email);
 	}
 
+	@Override
+	public String toString() {
+		return "JoinVisitor[name=" + name + ", email=" + email + ", timeZone=" + timeZone + "]";
+	}
+
 	public static JoinVisitor of(JoinLinkJoinRequest request) {
 		return new JoinVisitor(request.name(), request.email(), request.timeZone(), request.password());
 	}

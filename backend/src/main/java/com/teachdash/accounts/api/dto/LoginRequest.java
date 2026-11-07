@@ -12,4 +12,9 @@ public record LoginRequest(
 	public LoginRequest {
 		email = Normalize.strip(email);
 	}
+
+	@Override
+	public String toString() {
+		return "LoginRequest[email=" + email + "]";
+	}
 }

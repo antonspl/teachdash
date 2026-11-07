@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Validator;
 
-/** Check order (design D3): role 403, validation 400, link 410, email 409. */
+/** Check order: role 403, validation 400, link 410, email 409. */
 @RestController
 class JoinLinkController {
 

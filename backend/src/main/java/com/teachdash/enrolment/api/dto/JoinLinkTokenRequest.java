@@ -5,4 +5,9 @@ import jakarta.validation.constraints.Size;
 
 public record JoinLinkTokenRequest(
 		@NotBlank @Size(max = 64) String token) {
+
+	@Override
+	public String toString() {
+		return "JoinLinkTokenRequest[]";
+	}
 }

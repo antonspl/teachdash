@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
@@ -24,6 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
 class JoinLinkRateLimitFilter extends OncePerRequestFilter {
 
 	private static final String PREVIEW_PATH = "/api/join-links/preview";
+	private static final Duration SWEEP_INTERVAL = Duration.ofSeconds(1);
 	private static final String JOIN_PATH = "/api/join-links/join";
 
 	private final Clock clock;
@@ -72,6 +74,7 @@ class JoinLinkRateLimitFilter extends OncePerRequestFilter {
 		private final Duration window;
 		private final int maxKeys;
 		private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
+		private final AtomicReference<Instant> lastSweep = new AtomicReference<>(Instant.MIN);
 
 		Limiter(int max, Duration window, int maxKeys) {
 			this.max = max;
@@ -81,14 +84,12 @@ class JoinLinkRateLimitFilter extends OncePerRequestFilter {
 
 		/** Returns 0 when the request is allowed, otherwise the Retry-After seconds. */
 		long acquire(String key, Instant now) {
-			if (windows.size() >= maxKeys) {
-				windows.values().removeIf(w -> expired(w, now));
-			}
+			sweepIfFull(now);
 			long[] retryAfter = { 0 };
 			windows.compute(key, (k, current) -> {
 				if (current == null || expired(current, now)) {
 					if (current == null && windows.size() >= maxKeys) {
-						retryAfter[0] = window.getSeconds();
+						retryAfter[0] = clampedSeconds(window.getSeconds());
 						return null;
 					}
 					return new Window(now, 1);
@@ -101,6 +102,17 @@ class JoinLinkRateLimitFilter extends OncePerRequestFilter {
 			return retryAfter[0];
 		}
 
+		private void sweepIfFull(Instant now) {
+			if (windows.size() < maxKeys) {
+				return;
+			}
+			Instant last = lastSweep.get();
+			if (now.isBefore(last.plus(SWEEP_INTERVAL)) || !lastSweep.compareAndSet(last, now)) {
+				return;
+			}
+			windows.values().removeIf(w -> expired(w, now));
+		}
+
 		private boolean expired(Window w, Instant now) {
 			return !now.isBefore(w.start().plus(window));
 		}
@@ -108,6 +120,10 @@ class JoinLinkRateLimitFilter extends OncePerRequestFilter {
 		private long secondsUntilEnd(Window w, Instant now) {
 			Duration left = Duration.between(now, w.start().plus(window));
 			long seconds = left.plusNanos(999_999_999).getSeconds();
+			return clampedSeconds(seconds);
+		}
+
+		private long clampedSeconds(long seconds) {
 			return Math.max(1, Math.min(seconds, window.getSeconds()));
 		}
 	}

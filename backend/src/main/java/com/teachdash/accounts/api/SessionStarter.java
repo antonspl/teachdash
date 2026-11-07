@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-/** Starts a session for a user: principal name = user id, authority ROLE_<role> (design D4). */
+/** Starts a session for a user: principal name = user id, authority ROLE_<role>. */
 @Component
 public class SessionStarter {
 
