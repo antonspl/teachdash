@@ -104,4 +104,24 @@ class JoinLinkRateLimitTest extends ApiTest {
 		// then the response is 200
 		response.then().statusCode(200);
 	}
+
+	@Test
+	@DisplayName("[student-enrolment/R11-S4] Encoded path is limited too")
+	void encodedPathIsLimitedToo() {
+		// given a join limit of 2, teacher A with a join link, and a client that has used up the join limit
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		String token = createJoinLink(teacherA);
+		TestClient client = clientFrom("203.0.113.14");
+		client.post(JOIN, joinBody("unknown-token-value", "x@example.com"));
+		client.post(JOIN, joinBody("unknown-token-value", "x@example.com"));
+
+		// when the client joins with a new email, sending the path with one letter percent-encoded
+		var response = client.postWithoutUrlEncoding("/api/join-links/joi%6E", joinBody(token, "nina@example.com"));
+
+		// then the response is 429 with code RATE_LIMITED
+		response.then().statusCode(429).body("code", equalTo("RATE_LIMITED"));
+		// and no account is created
+		assertEquals(0L, jdbc.sql("select count(*) from users where email = :email")
+				.param("email", "nina@example.com").query(Long.class).single());
+	}
 }

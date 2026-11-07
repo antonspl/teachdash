@@ -87,6 +87,11 @@ public class TestClient {
 		return spec().body(body).post(path);
 	}
 
+	/** Sends the path as is, so percent-encoded characters reach the server unchanged. */
+	public Response postWithoutUrlEncoding(String path, Object body) {
+		return spec().urlEncodingEnabled(false).body(body).post(path);
+	}
+
 	public Response post(String path) {
 		return spec().post(path);
 	}
