@@ -20,7 +20,7 @@
 - [x] 3.2 Implement the teacher link endpoints with the teacher-row lock of design D3, and make teacher deactivation delete the link before releasing the students (design D4); verify all R8 tests pass
 - [x] 3.3 Implement the preview and the visitor join with the check and lock order of design D3, hashing the password before the transaction and starting the session after it; add a comment explaining the teacher-row lock; verify R9 tests pass
 - [x] 3.4 Implement the student join path (design D3, step 4) with the conflict mapping used by registration; verify R10 tests pass
-- [ ] 3.5 Implement the rate-limit filter of design D5, registered before the security filter chain, with the size cap and `Retry-After` clamp; verify R11 tests pass
+- [x] 3.5 Implement the rate-limit filter of design D5, registered before the security filter chain, with the size cap and `Retry-After` clamp; verify R11 tests pass
 - [ ] 3.6 Check that no join token appears in logs on the view, preview, join, 410 and 429 paths (constitution §4); fix any that does
 - [ ] 3.7 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
