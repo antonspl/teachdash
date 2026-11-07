@@ -1,5 +1,6 @@
 package com.teachdash.support;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -21,6 +22,7 @@ public class TestClient {
 	private final int port;
 	private final CookieFilter cookies = new CookieFilter();
 	private boolean sendCsrfHeader = true;
+	private final Map<String, String> headers = new HashMap<>();
 
 	TestClient(int port) {
 		this.port = port;
@@ -45,6 +47,11 @@ public class TestClient {
 		return this;
 	}
 
+	public TestClient withHeader(String name, String value) {
+		headers.put(name, value);
+		return this;
+	}
+
 	public TestClient snapshot() {
 		TestClient copy = new TestClient(port);
 		copy.sendCsrfHeader = sendCsrfHeader;
@@ -66,6 +73,7 @@ public class TestClient {
 		RequestSpecification spec = RestAssured.given()
 				.port(port)
 				.contentType("application/json")
+				.headers(headers)
 				.filter(cookies);
 		String xsrf = cookie("XSRF-TOKEN");
 		return xsrf == null || !sendCsrfHeader ? spec : spec.header("X-XSRF-TOKEN", xsrf);
@@ -77,6 +85,11 @@ public class TestClient {
 
 	public Response post(String path, Object body) {
 		return spec().body(body).post(path);
+	}
+
+	/** Sends the path as is, so percent-encoded characters reach the server unchanged. */
+	public Response postWithoutUrlEncoding(String path, Object body) {
+		return spec().urlEncodingEnabled(false).body(body).post(path);
 	}
 
 	public Response post(String path) {

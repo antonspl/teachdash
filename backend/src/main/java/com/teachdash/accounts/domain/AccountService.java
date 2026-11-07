@@ -60,6 +60,27 @@ public class AccountService {
 		return new CreatedAccount(user.getId(), links.issue(user.getId(), TokenPurpose.SET_PASSWORD));
 	}
 
+	/** Creates an account with a ready password hash and no one-time token; joins the caller's transaction. */
+	@Transactional
+	public User createUserWithPassword(Role role, String name, String email, String timeZone, String passwordHash) {
+		try {
+			return users.save(User.create(
+					email,
+					name,
+					role,
+					passwordHash,
+					timeZone,
+					clock.instant()));
+		} catch (DuplicateKeyException e) {
+			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+		}
+	}
+
+	/** Hashes a password; callers do this before opening a transaction. */
+	public String hashPassword(String password) {
+		return passwordEncoder.encode(password);
+	}
+
 	/**
 	 * Changes the password if the caller's session version is still current, revokes older
 	 * sessions and unused links; returns the user and the new session version. Bcrypt runs before the
