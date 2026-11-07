@@ -141,8 +141,10 @@ so a limited request gets 429 before CSRF or session checks. It matches only
 `POST /api/join-links/preview` and `POST /api/join-links/join`, each with its own
 counter.
 
-- Match: the exact paths, compared on `getRequestURI()`. Non-normalised variants
-  (`/api/join-links/./join`) are not matched, and Spring Security's firewall rejects them.
+- Match: the exact paths, compared on the decoded servlet path (`getServletPath()`), the
+  same form Spring Security and MVC match on. The raw `getRequestURI()` is not used: a
+  percent-encoded letter (`/api/join-links/joi%6E`) passes the firewall and reaches the
+  controller, but would not match the raw path (R11-S4).
 - Key: `request.getRemoteAddr()`. Tomcat's `RemoteIpValve`
   (`server.forward-headers-strategy=native`) has already replaced it with the client IP
   from `X-Forwarded-For` when the direct peer is a trusted proxy. The filter never reads

@@ -180,3 +180,8 @@ count towards the limit, whatever their response.
 - **GIVEN** a preview limit of 2 requests per 10 minutes, teacher A with a join link, and a client that has used up the preview limit
 - **WHEN** 10 minutes pass and the client requests the preview again
 - **THEN** the response is 200
+
+#### Scenario: student-enrolment/R11-S4 Encoded path is limited too
+- **GIVEN** a join limit of 2 requests per 10 minutes, teacher A with a join link, and a client from one IP that has used up the join limit
+- **WHEN** the client joins through the link with a new email, sending the request to the join path with one letter percent-encoded (`/api/join-links/joi%6E`)
+- **THEN** the response is 429 with code `RATE_LIMITED`, and no account is created
