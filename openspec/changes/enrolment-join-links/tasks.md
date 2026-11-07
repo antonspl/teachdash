@@ -24,7 +24,7 @@
 - [x] 3.6 Check that no join token appears in logs on the view, preview, join, 410 and 429 paths (constitution §4); fix any that does
 - [x] 3.7 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 - [ ] 3.8 Code review fix (Opus review): add a test for R11-S4 and confirm it fails on the current filter; the engineer approves this test in the PR. Then match the limiter on the decoded servlet path (design D5); verify all tests pass
-- [ ] 3.9 Code review fixes: no token in the link response's `toString`, no email or name in request records' `toString`, remove the unused import in `JoinLinkController`
+- [x] 3.9 Code review fixes: no token in the link response's `toString`, no email or name in request records' `toString`, remove the unused import in `JoinLinkController`
 
 ## Workflow follow-up
 

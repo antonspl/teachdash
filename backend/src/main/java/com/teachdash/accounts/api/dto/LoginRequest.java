@@ -15,6 +15,6 @@ public record LoginRequest(
 
 	@Override
 	public String toString() {
-		return "LoginRequest[email=" + email + "]";
+		return "LoginRequest[]";
 	}
 }

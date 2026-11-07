@@ -21,7 +21,7 @@ public record JoinVisitor(
 
 	@Override
 	public String toString() {
-		return "JoinVisitor[name=" + name + ", email=" + email + ", timeZone=" + timeZone + "]";
+		return "JoinVisitor[timeZone=" + timeZone + "]";
 	}
 
 	public static JoinVisitor of(JoinLinkJoinRequest request) {

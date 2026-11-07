@@ -13,6 +13,6 @@ public record JoinLinkJoinRequest(
 
 	@Override
 	public String toString() {
-		return "JoinLinkJoinRequest[name=" + name + ", email=" + email + ", timeZone=" + timeZone + "]";
+		return "JoinLinkJoinRequest[timeZone=" + timeZone + "]";
 	}
 }
