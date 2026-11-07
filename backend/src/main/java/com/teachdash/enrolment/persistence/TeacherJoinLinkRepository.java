@@ -24,6 +24,13 @@ public class TeacherJoinLinkRepository {
 				.optional();
 	}
 
+	public Optional<UUID> findTeacherId(String token) {
+		return jdbc.sql("select teacher_id from teacher_join_links where token = :token")
+				.param("token", token)
+				.query(UUID.class)
+				.optional();
+	}
+
 	public void upsert(UUID teacherId, String token, Instant createdAt) {
 		jdbc.sql("""
 				insert into teacher_join_links (teacher_id, token, created_at)

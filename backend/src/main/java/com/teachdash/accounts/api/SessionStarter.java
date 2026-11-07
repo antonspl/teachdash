@@ -18,7 +18,7 @@ import jakarta.servlet.http.HttpSession;
 
 /** Starts a session for a user: principal name = user id, authority ROLE_<role> (design D4). */
 @Component
-class SessionStarter {
+public class SessionStarter {
 
 	private final HttpSessionSecurityContextRepository contextRepository =
 			new HttpSessionSecurityContextRepository();
@@ -28,7 +28,7 @@ class SessionStarter {
 		this.csrfStrategy = new CsrfAuthenticationStrategy(csrfTokenRepository);
 	}
 
-	void start(User user, HttpServletRequest request, HttpServletResponse response) {
+	public void start(User user, HttpServletRequest request, HttpServletResponse response) {
 		start(user, user.getSessionVersion(), request, response);
 	}
 
