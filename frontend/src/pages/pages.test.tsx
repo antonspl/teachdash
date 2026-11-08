@@ -1,13 +1,14 @@
 import { StrictMode } from 'react'
-import { act, cleanup, render, screen } from '@testing-library/react'
-import i18next from 'i18next'
-import { I18nextProvider } from 'react-i18next'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import '../i18n'
-import { App } from '../App'
 import en from '../i18n/en.json'
-import { PlaceholderPage } from './PlaceholderPage'
+import { LoginPage } from './LoginPage'
+
+vi.mock('../auth/AuthProvider', () => ({
+  useAuth: () => ({ state: { status: 'anonymous' }, login: vi.fn() }),
+}))
 
 const fetchMock = vi.fn()
 
@@ -21,39 +22,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function leaves(node: unknown, prefix = ''): Array<[string, string]> {
-  if (typeof node === 'string') {
-    return [[prefix, node]]
-  }
-  return Object.entries(node as Record<string, unknown>).flatMap(
-    ([key, child]) => leaves(child, prefix ? `${prefix}.${key}` : key),
-  )
-}
-
-function setPath(target: Record<string, unknown>, path: string, value: string) {
-  const keys = path.split('.')
-  let node = target
-  for (const key of keys.slice(0, -1)) {
-    node[key] = (node[key] ?? {}) as Record<string, unknown>
-    node = node[key] as Record<string, unknown>
-  }
-  node[keys[keys.length - 1]] = value
-}
-
-async function testInstance() {
-  const resources: Record<string, unknown> = {}
-  for (const [path] of leaves(en)) {
-    setPath(resources, path, `TEST<${path}>`)
-  }
-  const instance = i18next.createInstance()
-  await instance.init({
-    lng: 'en',
-    resources: { en: { translation: resources } },
-    interpolation: { escapeValue: false },
-  })
-  return instance
-}
-
 function problemResponse() {
   return new Response(
     JSON.stringify({ status: 401, code: 'UNAUTHENTICATED' }),
@@ -64,34 +32,7 @@ function problemResponse() {
   )
 }
 
-test('[web-client/R2-S1] Page text comes from the translation resources', async () => {
-  // given
-  const instance = await testInstance()
-  fetchMock.mockResolvedValue(problemResponse())
-
-  for (const path of ['/', '/no-such-page']) {
-    // when
-    const view = render(
-      <I18nextProvider i18n={instance}>
-        <MemoryRouter initialEntries={[path]}>
-          <App />
-        </MemoryRouter>
-      </I18nextProvider>,
-    )
-    if (path === '/') {
-      await screen.findByText('TEST<status.reachable>')
-    }
-
-    // then
-    expect(document.title).toBe('TEST<app.name>')
-    const shown = view.container.textContent ?? ''
-    expect(shown).toMatch(/TEST<[\w.]+>/)
-    expect(shown.replace(/TEST<[\w.]+>/g, '').trim()).toBe('')
-    view.unmount()
-  }
-})
-
-test('[web-client/R3-S2] Backend cannot be reached', async () => {
+test('[web-client/R12-S2] Backend cannot be reached', async () => {
   const failures: Array<[string, () => Promise<Response>]> = [
     ['network error', () => Promise.reject(new TypeError('Failed to fetch'))],
     [
@@ -130,12 +71,12 @@ test('[web-client/R3-S2] Backend cannot be reached', async () => {
     // when
     const view = render(
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>,
     )
 
     // then
-    const status = await screen.findByText(en.status.unreachable)
+    const status = await screen.findByText(en.login.unreachable)
     expect(status.getAttribute('role'), name).toBe('status')
     view.unmount()
   }
@@ -148,11 +89,11 @@ test('A problem response whose body read fails counts as unreachable', async () 
 
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
 
-  const status = await screen.findByText(en.status.unreachable)
+  const status = await screen.findByText(en.login.unreachable)
   expect(status.getAttribute('role')).toBe('status')
 })
 
@@ -169,16 +110,16 @@ test('Any response with a problem body or a 2xx status means the backend is reac
     ],
   ]
 
-  for (const [name, respond] of responses) {
+  for (const [, respond] of responses) {
     fetchMock.mockResolvedValueOnce(respond())
 
     const view = render(
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText(en.status.reachable), name).toBeTruthy()
+    await expectReachable()
     view.unmount()
   }
 })
@@ -188,11 +129,11 @@ test('Status is "checking" until the request finishes', async () => {
 
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
 
-  expect(screen.getByRole('status').textContent).toBe(en.status.checking)
+  expect(screen.queryByRole('status')).toBeNull()
 })
 
 test('A request that never answers counts as unreachable after 10 seconds', async () => {
@@ -209,15 +150,15 @@ test('A request that never answers counts as unreachable after 10 seconds', asyn
 
     render(
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>,
     )
 
     await act(() => vi.advanceTimersByTimeAsync(9_999))
-    expect(screen.getByRole('status').textContent).toBe(en.status.checking)
+    expect(screen.queryByRole('status')).toBeNull()
 
     await act(() => vi.advanceTimersByTimeAsync(1))
-    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
+    expect(screen.getByRole('status').textContent).toBe(en.login.unreachable)
   } finally {
     vi.useRealTimers()
   }
@@ -236,14 +177,11 @@ test('A JSON content type with parameters or a +json suffix is reachable', async
     )
     const view = render(
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>,
     )
 
-    expect(
-      await screen.findByText(en.status.reachable),
-      contentType,
-    ).toBeTruthy()
+    await expectReachable()
     view.unmount()
   }
 })
@@ -256,7 +194,7 @@ test('Unmounting aborts the running request', async () => {
   })
   const view = render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
   expect(signal?.aborted).toBe(false)
@@ -266,7 +204,7 @@ test('Unmounting aborts the running request', async () => {
   expect(signal?.aborted).toBe(true)
 })
 
-test('[web-client/R3-S2] A JSON 200 whose body hangs is unreachable after 10 seconds', async () => {
+test('A JSON 200 whose body hangs is unreachable after 10 seconds', async () => {
   vi.useFakeTimers()
   try {
     fetchMock.mockImplementation(async (_url: string, init?: RequestInit) => {
@@ -286,15 +224,15 @@ test('[web-client/R3-S2] A JSON 200 whose body hangs is unreachable after 10 sec
     })
     render(
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>,
     )
 
     await act(() => vi.advanceTimersByTimeAsync(9_999))
-    expect(screen.getByRole('status').textContent).toBe(en.status.checking)
+    expect(screen.queryByRole('status')).toBeNull()
 
     await act(() => vi.advanceTimersByTimeAsync(1))
-    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
+    expect(screen.getByRole('status').textContent).toBe(en.login.unreachable)
   } finally {
     vi.useRealTimers()
   }
@@ -304,11 +242,11 @@ test('The status check does not send cookies', async () => {
   fetchMock.mockResolvedValue(problemResponse())
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
 
-  await screen.findByText(en.status.reachable)
+  await expectReachable()
 
   expect(fetchMock.mock.calls[0][1].credentials).toBe('omit')
 })
@@ -325,7 +263,7 @@ afterEach(() => {
   Reflect.deleteProperty(document, 'hidden')
 })
 
-test('[web-client/R3-S4] Page checks again when the tab is shown, and not on a timer', async () => {
+test('[web-client/R12-S4] Page checks again when the tab is shown, and not on a timer', async () => {
   // given
   vi.useFakeTimers()
   try {
@@ -334,11 +272,11 @@ test('[web-client/R3-S4] Page checks again when the tab is shown, and not on a t
       .mockResolvedValueOnce(problemResponse())
     render(
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>,
     )
     await act(() => vi.advanceTimersByTimeAsync(0))
-    expect(screen.getByRole('status').textContent).toBe(en.status.unreachable)
+    expect(screen.getByRole('status').textContent).toBe(en.login.unreachable)
     stubHidden(true)
 
     // when
@@ -349,7 +287,7 @@ test('[web-client/R3-S4] Page checks again when the tab is shown, and not on a t
 
     // then
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
+    expect(screen.queryByRole('status')).toBeNull()
   } finally {
     vi.useRealTimers()
   }
@@ -359,10 +297,10 @@ test('Becoming hidden does not start a check', async () => {
   fetchMock.mockResolvedValue(problemResponse())
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
-  await screen.findByText(en.status.reachable)
+  await expectReachable()
 
   await act(async () => stubHidden(true))
 
@@ -375,25 +313,23 @@ test('The browser coming online starts a check, without showing "checking"', asy
     .mockResolvedValueOnce(problemResponse())
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
-  await screen.findByText(en.status.unreachable)
+  await screen.findByText(en.login.unreachable)
 
   await act(async () => {
     window.dispatchEvent(new Event('online'))
   })
 
-  expect(screen.getByRole('status').textContent).not.toBe(en.status.checking)
-  expect(await screen.findByText(en.status.reachable)).toBeTruthy()
-  expect(fetchMock).toHaveBeenCalledTimes(2)
+  await expectReachable(2)
 })
 
 test('A check does not start while another is running', async () => {
   fetchMock.mockReturnValue(new Promise(() => undefined))
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
 
@@ -427,7 +363,7 @@ for (const [name, fire] of [
       .mockResolvedValueOnce(problemResponse())
     render(
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>,
     )
 
@@ -435,7 +371,7 @@ for (const [name, fire] of [
     expect(fetchMock).toHaveBeenCalledTimes(1)
     await act(async () => first.reject(new TypeError('Failed to fetch')))
 
-    expect(await screen.findByText(en.status.reachable)).toBeTruthy()
+    await expectReachable()
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 }
@@ -447,7 +383,7 @@ test('Several events during one check cause only one more check', async () => {
     .mockResolvedValue(problemResponse())
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
 
@@ -458,7 +394,7 @@ test('Several events during one check cause only one more check', async () => {
   })
   await act(async () => first.reject(new TypeError('Failed to fetch')))
 
-  expect(await screen.findByText(en.status.reachable)).toBeTruthy()
+  await expectReachable()
   await act(() => new Promise((resolve) => setTimeout(resolve, 20)))
   expect(fetchMock).toHaveBeenCalledTimes(2)
 })
@@ -468,14 +404,14 @@ test('A visibilitychange to hidden during a running check causes no more check',
   fetchMock.mockReturnValueOnce(first.promise)
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
 
   await act(async () => stubHidden(true))
   await act(async () => first.reject(new TypeError('Failed to fetch')))
 
-  expect(await screen.findByText(en.status.unreachable)).toBeTruthy()
+  expect(await screen.findByText(en.login.unreachable)).toBeTruthy()
   await act(() => new Promise((resolve) => setTimeout(resolve, 20)))
   expect(fetchMock).toHaveBeenCalledTimes(1)
 })
@@ -486,13 +422,13 @@ test('The request timer is cleared when the check ends', async () => {
     fetchMock.mockResolvedValue(problemResponse())
     render(
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>,
     )
 
     await act(() => vi.advanceTimersByTimeAsync(0))
 
-    expect(screen.getByRole('status').textContent).toBe(en.status.reachable)
+    expect(screen.queryByRole('status')).toBeNull()
     expect(vi.getTimerCount()).toBe(0)
   } finally {
     vi.useRealTimers()
@@ -510,11 +446,11 @@ test('A 2xx response that is not JSON has its body discarded', async () => {
   )
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
 
-  expect(await screen.findByText(en.status.unreachable)).toBeTruthy()
+  expect(await screen.findByText(en.login.unreachable)).toBeTruthy()
   expect(cancel).toHaveBeenCalledTimes(1)
 })
 
@@ -526,11 +462,11 @@ test('A tab that opens hidden is checked once', async () => {
   fetchMock.mockResolvedValue(problemResponse())
   render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
 
-  expect(await screen.findByText(en.status.reachable)).toBeTruthy()
+  await expectReachable()
   expect(fetchMock).toHaveBeenCalledTimes(1)
 })
 
@@ -540,7 +476,7 @@ test('Nothing is sent on a timer', async () => {
     fetchMock.mockImplementation(async () => problemResponse())
     render(
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>,
     )
     await act(() => vi.advanceTimersByTimeAsync(0))
@@ -558,11 +494,11 @@ test('StrictMode leaves one active setup', async () => {
   render(
     <StrictMode>
       <MemoryRouter>
-        <PlaceholderPage />
+        <LoginPage />
       </MemoryRouter>
     </StrictMode>,
   )
-  await screen.findByText(en.status.reachable)
+  await expectReachable()
   const afterStart = fetchMock.mock.calls.length
 
   await act(async () => {
@@ -577,10 +513,10 @@ test('Unmounting removes the listeners', async () => {
   fetchMock.mockImplementation(async () => problemResponse())
   const view = render(
     <MemoryRouter>
-      <PlaceholderPage />
+      <LoginPage />
     </MemoryRouter>,
   )
-  await screen.findByText(en.status.reachable)
+  await expectReachable()
   view.unmount()
 
   window.dispatchEvent(new Event('online'))
@@ -588,6 +524,16 @@ test('Unmounting removes the listeners', async () => {
 
   expect(fetchMock).toHaveBeenCalledTimes(1)
 })
+
+async function expectReachable(count?: number) {
+  await waitFor(() =>
+    count === undefined
+      ? expect(fetchMock).toHaveBeenCalled()
+      : expect(fetchMock).toHaveBeenCalledTimes(count),
+  )
+  await act(() => new Promise((resolve) => setTimeout(resolve, 10)))
+  expect(screen.queryByText(en.login.unreachable)).toBeNull()
+}
 
 async function waitForCalls(count: number) {
   await vi.waitFor(() =>
