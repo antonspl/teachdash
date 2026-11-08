@@ -8,7 +8,10 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -244,5 +247,63 @@ class TeacherJoinLinkTest extends ApiTest {
 		// and the view still returns L1, and the preview of L1 is 200
 		view.then().statusCode(200).body("link", equalTo(urlOf(tokenOne)));
 		previewOne.then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R8-S10] Link expires after 7 days")
+	void linkExpiresAfterSevenDays() {
+		// given a logged-in teacher A, a logged-in student with no teacher, and a client with no session
+		createTeacher("a@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("a@example.com");
+		UUID studentId = createStudent("student@example.com", "student-pass-1");
+		TestClient student = loggedInAs("student@example.com");
+		TestClient visitor = newClient();
+		Instant generatedAt = Instant.now(clock);
+
+		// when teacher A generates a link L1
+		var generatedOne = teacher.post(LINK);
+		String tokenOne = tokenOf(generatedOne);
+		// and 7 days less one minute pass, the client requests the preview of L1
+		testClock().advance(Duration.ofDays(7).minusMinutes(1));
+		var previewBefore = visitor.post(PREVIEW, Map.of("token", tokenOne));
+		// and one more minute passes, the client requests the preview of L1 and joins through it with a new email
+		testClock().advance(Duration.ofMinutes(1));
+		var previewAfter = visitor.post(PREVIEW, Map.of("token", tokenOne));
+		Map<String, String> joinBody = Map.of(
+				"token", tokenOne,
+				"name", "Nina",
+				"email", "nina@example.com",
+				"timeZone", "UTC",
+				"password", "new-password-1");
+		var visitorJoin = visitor.post(JOIN, joinBody);
+		// and the student joins through L1, teacher A views the link, and teacher A then generates a link L2
+		var studentJoin = student.post(JOIN, joinBody);
+		var view = teacher.get(LINK);
+		Instant secondGeneratedAt = Instant.now(clock);
+		var generatedTwo = teacher.post(LINK);
+		var previewTwo = visitor.post(PREVIEW, Map.of("token", tokenOf(generatedTwo)));
+
+		// then the generate response carries an expiry 7 days after it was generated
+		generatedOne.then().statusCode(200);
+		assertNotNull(generatedOne.path("expiresAt"));
+		assertEquals(generatedAt.plus(Duration.ofDays(7)), Instant.parse(generatedOne.<String>path("expiresAt")));
+		// and the first preview is 200
+		previewBefore.then().statusCode(200);
+		// and the second preview and both joins are 410 with code LINK_INVALID
+		previewAfter.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		visitorJoin.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		studentJoin.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and no account is created
+		assertEquals(0, jdbc.sql("select count(*) from users where email = 'nina@example.com'")
+				.query(Long.class).single());
+		// and the student still has no teacher
+		assertEquals(0, jdbc.sql("select count(*) from teacher_students where student_id = :id")
+				.param("id", studentId).query(Long.class).single());
+		// and the view is 200 with no link
+		view.then().statusCode(200).body("link", nullValue());
+		// and the preview of L2 is 200 with an expiry 7 days after L2 was generated in the generate response
+		previewTwo.then().statusCode(200);
+		assertNotNull(generatedTwo.path("expiresAt"));
+		assertEquals(secondGeneratedAt.plus(Duration.ofDays(7)), Instant.parse(generatedTwo.<String>path("expiresAt")));
 	}
 }
