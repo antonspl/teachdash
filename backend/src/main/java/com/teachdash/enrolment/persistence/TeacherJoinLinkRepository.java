@@ -3,6 +3,7 @@ package com.teachdash.enrolment.persistence;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,7 +46,7 @@ public class TeacherJoinLinkRepository {
 	}
 
 	private static Timestamp cutoff(Instant now) {
-		return Timestamp.from(now.minus(VALIDITY));
+		return Timestamp.from(now.truncatedTo(ChronoUnit.MICROS).minus(VALIDITY));
 	}
 
 	public void upsert(UUID teacherId, String token, Instant createdAt) {

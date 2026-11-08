@@ -2,6 +2,7 @@ package com.teachdash.enrolment.domain;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,7 +55,7 @@ public class TeacherJoinLinkService {
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 		String token = TokenGenerator.generate();
-		Instant now = clock.instant();
+		Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
 		joinLinks.upsert(teacherId, token, now);
 		return new IssuedLink(url(token), now.plus(TeacherJoinLinkRepository.VALIDITY));
 	}
