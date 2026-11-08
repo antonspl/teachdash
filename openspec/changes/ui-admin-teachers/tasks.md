@@ -45,6 +45,13 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 - [x] 8.3 Update the Playwright tests for web-admin-teachers/R2-S1 (opens the dialog, new teacher is the first row) and R1-S4 (dialog fits 360 pixels); verify `npm run test:e2e` on all projects
 - [x] 8.4 Run the full checks of 7.1 again; all pass and every scenario has a test
 
+## 9. Layout fixes and link box per row (asked while trying the page by hand)
+
+- [ ] 9.1 Add `ui/ButtonRow` with a gap token and use it for every button group (row actions, both dialogs); add spacing between the toolbar and the list; verify `npm run lint` and the existing tests
+- [ ] 9.2 Make the `success` variant light lime green with dark green text (contrast at least 4.5:1) and move "Add teacher" to the top right under the header's name and "Log out"; verify `npm run lint` and R1-S4 on all Playwright projects
+- [ ] 9.3 Render the link box inside its teacher's row, closing the old one when a new link is issued, and above the list when the row is missing (design D6); Vitest for web-admin-teachers/R3-S6 and the updated R2-S1/R3-S5, Playwright R2-S1 checks the link inside the first row; verify `npm test` and `npm run test:e2e`
+- [ ] 9.4 Run the full checks of 7.1 again; all pass and every scenario has a test
+
 ## Workflow follow-up
 
 - Opus review of the code, then ask for the code gate in the PR with the commit range.

@@ -56,8 +56,8 @@ the page is reloaded. On failure the dialog SHALL stay open with the entered val
 #### Scenario: web-admin-teachers/R2-S1 Admin creates a teacher
 - **GIVEN** a logged-in admin on `/admin`
 - **WHEN** the admin presses "Add teacher", enters a name, a new email and a time zone, and submits
-- **THEN** the dialog closes and the set-password link is shown with the new teacher's name
-- **AND** the new teacher is the first row of the list
+- **THEN** the dialog closes and the new teacher is the first row of the list
+- **AND** the set-password link is shown inside that row
 
 #### Scenario: web-admin-teachers/R2-S2 The browser's time zone is preselected
 - **GIVEN** the browser's time zone is "Europe/Moscow"
@@ -99,11 +99,11 @@ the page is reloaded. On failure the dialog SHALL stay open with the entered val
 
 ### Requirement: R3 Issued link
 
-A link returned by the backend SHALL be shown once with the teacher's name, as plain
-text and not as a link, with "Copy" and "Close" buttons and a note: it is shown only
-now, works once within 7 days, replaces any earlier unused link and must not be opened
-in this browser. A new link SHALL replace the one shown. Only "Close" or a new link
-SHALL remove it.
+A link SHALL be shown once inside its teacher's row, as plain text and not as a link,
+with "Copy" and "Close" and a note: shown only now, works once within 7 days, replaces
+any earlier unused link, not to be opened in this browser. Only one link SHALL be
+shown: a new one closes the old one. Only "Close" or a new link SHALL remove it. If
+the teacher's row is not in the list, the link SHALL be shown above the list.
 
 #### Scenario: web-admin-teachers/R3-S1 Link is shown as text with a note
 - **GIVEN** the backend returned a set-password link for "Anna Smith"
@@ -128,7 +128,13 @@ SHALL remove it.
 #### Scenario: web-admin-teachers/R3-S5 Link stays when the list fails to reload
 - **GIVEN** the create request succeeds with a link
 - **WHEN** loading the list again fails
-- **THEN** the link is still shown with the teacher's name, together with the list's error and "Try again"
+- **THEN** the link is still shown with the teacher's name above the list, together with the list's error and "Try again"
+
+#### Scenario: web-admin-teachers/R3-S6 A new link moves to its teacher's row
+- **GIVEN** a link for "Anna Smith" is shown in her row
+- **WHEN** the admin presses the link button in the row of "Bob Brown" and gets a link
+- **THEN** the link for "Bob Brown" is shown in his row
+- **AND** no link box is left in the row of "Anna Smith"
 
 ### Requirement: R4 Deactivate and reactivate
 

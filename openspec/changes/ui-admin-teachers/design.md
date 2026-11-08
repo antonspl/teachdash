@@ -110,7 +110,10 @@ JVM's time zone data (e.g. `Europe/Kyiv` on an older JDK).
 `<a>`), the note, "Copy" and "Close". Copy calls `navigator.clipboard.writeText`. That
 works on `localhost` and HTTPS, the only places the app runs. On rejection or when the
 API is missing, the box shows the "copy by hand" message and selects the field's text.
-There is one box on the page; a new link replaces it. The field's label names the
+There is one box on the page, rendered inside its teacher's row (keyed by teacher id
+and link); a new link closes it and opens one in the new teacher's row. If that row is
+not in the list (for example the reload after create failed), the box is shown above
+the list (R3-S5, R3-S6). The field's label names the
 teacher, and the "Copied" / "copy by hand" messages use `StatusMessage`
 (`role="status"`), so screen readers announce them.
 
@@ -122,7 +125,12 @@ teacher, and the "Copied" / "copy by hand" messages use `StatusMessage`
   name, details, badge and actions. They are a card per row rather than a table, so
   they fit phone widths (web-client R7).
 - `Button`: a `danger` variant for "Deactivate" and the dialog's confirm, and a
-  green `success` variant for "Add teacher" (new tokens in `styles/tokens.css`).
+  light lime-green `success` variant for "Add teacher" with dark green text, since
+  white text on a light green fails contrast (new tokens in `styles/tokens.css`).
+- `ButtonRow`: a row of buttons with a fixed gap token, wrapping on narrow screens.
+  Every group of buttons (row actions, dialog actions) uses it, and there is spacing
+  between the page toolbar and the list, so buttons never touch each other, fields
+  or cards.
 
 All CSS uses tokens from `styles/tokens.css`, and new tokens are added there if needed.
 
@@ -148,7 +156,8 @@ No new dependencies. No Flyway migrations.
 
 ### D9 Create form in a dialog, new teacher pinned first
 
-"Add teacher" sits at the top of the page, under the header, and opens the create form
+"Add teacher" sits at the top right of the page, aligned under the user's name and
+"Log out" (right-aligned on all widths), and opens the create form
 in the same `ui/Dialog` as deactivation (focus in and back to the opener, Escape as
 cancel). The dialog keeps its values while open; it closes only on success or cancel,
 and opens empty each time. On phones it takes almost the whole screen (R1-S4).
