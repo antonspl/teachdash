@@ -23,7 +23,7 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 ## 4. Create a teacher
 
 - [x] 4.1 Add the create form (name, email, time zone select) with link display, form reset and list reload, the link kept when the reload fails; Vitest for web-admin-teachers/R2-S2 to R2-S6 and R3-S5; verify `npm test`
-- [ ] 4.2 Add `loginAsAdminInUi(page)` to `e2e/accounts.ts` and the Playwright test for web-admin-teachers/R2-S1 (no status check, so it does not need #70); verify `npm run test:e2e` against `docker compose up --build --wait`
+- [x] 4.2 Add `loginAsAdminInUi(page)` to `e2e/accounts.ts` and the Playwright test for web-admin-teachers/R2-S1 (no status check, so it does not need #70); verify `npm run test:e2e` against `docker compose up --build --wait`
 
 ## 5. Deactivate and reactivate
 
@@ -36,7 +36,7 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 
 ## 7. Final checks
 
-- [ ] 7.1 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (desktop and phone projects); all pass, and every web-admin-teachers scenario has a test
+- [x] 7.1 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (desktop and phone projects); all pass, and every web-admin-teachers scenario has a test
 
 ## Workflow follow-up
 

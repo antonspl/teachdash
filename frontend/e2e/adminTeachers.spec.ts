@@ -40,3 +40,39 @@ test('[web-admin-teachers/R1-S4] The page fits a phone screen', async ({
     expect(box!.x + box!.width).toBeLessThanOrEqual(widths.viewport)
   }
 })
+
+test('[web-admin-teachers/R2-S1] Admin creates a teacher', async ({ page }) => {
+  // given a logged-in admin on /admin
+  const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const name = `Created Teacher ${unique}`
+  const email = `e2e-create-${unique}@example.com`
+  await loginAsAdminInUi(page)
+
+  // when the admin enters a name, a new email and a time zone, and submits
+  const nameField = page.getByLabel(en.adminTeachers.create.name)
+  const emailField = page.getByLabel(en.adminTeachers.create.email)
+  await nameField.fill(name)
+  await emailField.fill(email)
+  await page
+    .getByLabel(en.adminTeachers.create.timeZone)
+    .selectOption('Europe/Berlin')
+  await page
+    .getByRole('button', { name: en.adminTeachers.create.submit })
+    .click()
+
+  // then the set-password link is shown with the new teacher's name
+  const link = page.getByLabel(en.issuedLink.label.replace('{{name}}', name))
+  await expect(link).toBeVisible()
+  await expect(link).toHaveValue(
+    /^https?:\/\/[^/]+(\/[^/#?]+)*\/set-password#token=.+/,
+  )
+
+  // and the new teacher appears in the list
+  const row = page.getByRole('listitem').filter({ hasText: email })
+  await expect(row).toBeVisible()
+  await expect(row).toContainText(name)
+
+  // and the form is empty again
+  await expect(nameField).toHaveValue('')
+  await expect(emailField).toHaveValue('')
+})
