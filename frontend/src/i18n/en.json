@@ -74,5 +74,21 @@
     "close": "Close",
     "copied": "Copied, ready to paste!",
     "copyByHand": "Couldn't copy it for you. The link is selected, so just copy it by hand."
+  },
+  "adminTeachers": {
+    "loadError": "Could not load the teachers.",
+    "empty": "No teachers yet. Add the first one below!",
+    "status": {
+      "ACTIVE": "Active",
+      "WAITING": "Waiting for password",
+      "DEACTIVATED": "Deactivated"
+    },
+    "create": {
+      "name": "Name",
+      "email": "Email",
+      "timeZone": "Time zone",
+      "submit": "Add teacher",
+      "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and email, or try another time zone."
+    }
   }
 }

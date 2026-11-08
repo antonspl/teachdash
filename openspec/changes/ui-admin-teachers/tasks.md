@@ -18,11 +18,11 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 
 ## 3. Teacher list
 
-- [ ] 3.1 Render `AdminTeachersPage` on `/admin` inside the cabinet layout (design D1), with the list, statuses (missing `hasPassword` read as `true`), empty state and load error with retry; add i18n strings in an informal tone; tests for web-admin-teachers/R1-S1 to R1-S3; verify `npm test` and that web-auth/R3-S1 and the routing tests still pass
+- [x] 3.1 Render `AdminTeachersPage` on `/admin` inside the cabinet layout (design D1), with the list, statuses (missing `hasPassword` read as `true`), empty state and load error with retry; add i18n strings in an informal tone; tests for web-admin-teachers/R1-S1 to R1-S3; verify `npm test` and that web-auth/R3-S1 and the routing tests still pass
 
 ## 4. Create a teacher
 
-- [ ] 4.1 Add the create form (name, email, time zone select) with link display, form reset and list reload, the link kept when the reload fails; Vitest for web-admin-teachers/R2-S2 to R2-S6 and R3-S5; verify `npm test`
+- [x] 4.1 Add the create form (name, email, time zone select) with link display, form reset and list reload, the link kept when the reload fails; Vitest for web-admin-teachers/R2-S2 to R2-S6 and R3-S5; verify `npm test`
 - [ ] 4.2 Add `loginAsAdminInUi(page)` to `e2e/accounts.ts` and the Playwright test for web-admin-teachers/R2-S1 (needs #70 in the backend); verify `npm run test:e2e` against `docker compose up --build --wait`
 
 ## 5. Deactivate and reactivate

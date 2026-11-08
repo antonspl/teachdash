@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Route, Routes } from 'react-router'
 import { AuthProvider } from './auth/AuthProvider'
 import { AnonymousOnly, HomeRedirect, RequireRole } from './auth/guards'
+import { AdminTeachersPage } from './pages/AdminTeachersPage'
 import { CabinetPage } from './pages/CabinetPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -32,7 +33,9 @@ export function App() {
           path="/admin"
           element={
             <RequireRole role="ADMIN">
-              <CabinetPage role="ADMIN" />
+              <CabinetPage role="ADMIN">
+                <AdminTeachersPage />
+              </CabinetPage>
             </RequireRole>
           }
         />
