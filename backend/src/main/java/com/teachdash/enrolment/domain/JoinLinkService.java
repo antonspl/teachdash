@@ -44,7 +44,7 @@ public class JoinLinkService {
 
 	@Transactional(readOnly = true)
 	public String previewTeacherName(String token) {
-		UUID teacherId = joinLinks.findTeacherId(token).orElseThrow(JoinLinkService::invalidLink);
+		UUID teacherId = joinLinks.findTeacherId(token, clock.instant()).orElseThrow(JoinLinkService::invalidLink);
 		return users.findById(teacherId)
 				.filter(User::isActive)
 				.orElseThrow(JoinLinkService::invalidLink)
@@ -90,9 +90,9 @@ public class JoinLinkService {
 	 * changed or is gone, the join is refused instead of using a link that was just replaced.
 	 */
 	private UUID lockTeacher(String token) {
-		UUID teacherId = joinLinks.findTeacherId(token).orElseThrow(JoinLinkService::invalidLink);
+		UUID teacherId = joinLinks.findTeacherId(token, clock.instant()).orElseThrow(JoinLinkService::invalidLink);
 		users.findActiveByIdForUpdate(teacherId).orElseThrow(JoinLinkService::invalidLink);
-		if (!joinLinks.findTeacherId(token).filter(teacherId::equals).isPresent()) {
+		if (!joinLinks.findTeacherId(token, clock.instant()).filter(teacherId::equals).isPresent()) {
 			throw invalidLink();
 		}
 		return teacherId;

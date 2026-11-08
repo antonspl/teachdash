@@ -1,6 +1,7 @@
 package com.teachdash.enrolment.domain;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,20 +36,27 @@ public class TeacherJoinLinkService {
 				: baseUrl;
 	}
 
+	public record IssuedLink(
+			String link,
+			Instant expiresAt) {
+	}
+
 	@Transactional(readOnly = true)
-	public Optional<String> view(UUID teacherId) {
-		return joinLinks.findToken(teacherId).map(this::url);
+	public Optional<IssuedLink> view(UUID teacherId) {
+		return joinLinks.findValid(teacherId, clock.instant())
+				.map(link -> new IssuedLink(url(link.token()), link.expiresAt()));
 	}
 
 	@Transactional
-	public String generate(UUID teacherId) {
+	public IssuedLink generate(UUID teacherId) {
 		// A parallel deactivation updates this row, so it either finishes first (401 here)
 		// or waits until this commits and then deletes the new link.
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 		String token = TokenGenerator.generate();
-		joinLinks.upsert(teacherId, token, clock.instant());
-		return url(token);
+		Instant now = clock.instant();
+		joinLinks.upsert(teacherId, token, now);
+		return new IssuedLink(url(token), now.plus(TeacherJoinLinkRepository.VALIDITY));
 	}
 
 	@Transactional

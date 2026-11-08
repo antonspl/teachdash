@@ -24,12 +24,14 @@ class TeacherJoinLinkController {
 
 	@GetMapping("/api/teacher/join-link")
 	JoinLinkResponse view(Principal principal) {
-		return new JoinLinkResponse(service.view(teacherId(principal)).orElse(null));
+		return service.view(teacherId(principal))
+				.map(JoinLinkResponse::from)
+				.orElse(new JoinLinkResponse(null, null));
 	}
 
 	@PostMapping("/api/teacher/join-link")
 	JoinLinkResponse generate(Principal principal) {
-		return new JoinLinkResponse(service.generate(teacherId(principal)));
+		return JoinLinkResponse.from(service.generate(teacherId(principal)));
 	}
 
 	@DeleteMapping("/api/teacher/join-link")
