@@ -61,13 +61,20 @@ export async function listTeachers(signal?: AbortSignal): Promise<Teacher[]> {
   return Array.isArray(body) ? body.map(toTeacher) : []
 }
 
-// Returns the set-password link.
-export async function createTeacher(teacher: NewTeacher): Promise<string> {
+// Returns the new teacher's id and the set-password link.
+export async function createTeacher(
+  teacher: NewTeacher,
+): Promise<{ id: string; link: string }> {
   const response = await apiRequest('admin/teachers', {
     method: 'POST',
     body: teacher,
   })
-  return requireLink(await readJson(response), 'setPasswordLink')
+  const body = await readJson(response)
+  const id = (body as Record<string, unknown> | null)?.id
+  if (typeof id !== 'string' && typeof id !== 'number') {
+    throw new Error('Response has no id')
+  }
+  return { id: String(id), link: requireLink(body, 'setPasswordLink') }
 }
 
 export async function deactivateTeacher(id: string): Promise<void> {

@@ -26,6 +26,12 @@
   border: var(--border-width) solid var(--color-danger-text);
 }
 
+.success {
+  color: var(--color-on-accent);
+  background: var(--color-success-solid);
+  border: var(--border-width) solid var(--color-success-solid);
+}
+
 .button:disabled {
   opacity: 0.6;
   cursor: not-allowed;

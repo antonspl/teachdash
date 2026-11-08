@@ -77,17 +77,21 @@
   },
   "adminTeachers": {
     "loadError": "Could not load the teachers.",
-    "empty": "No teachers yet. Add the first one below!",
+    "empty": "No teachers yet. Add the first one with the button above!",
     "status": {
       "ACTIVE": "Active",
       "WAITING": "Waiting for password",
       "DEACTIVATED": "Deactivated"
     },
+    "add": "Add teacher",
+    "justAdded": "Just added",
     "create": {
+      "title": "Add a teacher",
+      "cancel": "Cancel",
       "name": "Name",
       "email": "Email",
       "timeZone": "Time zone",
-      "submit": "Add teacher",
+      "submit": "Create teacher",
       "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and email, or try another time zone."
     },
     "actions": {

@@ -35,12 +35,14 @@ type ShownLink = { name: string; link: string }
 function TeacherRow({
   teacher,
   busy,
+  justAdded,
   onDeactivate,
   onReactivate,
   onLink,
 }: {
   teacher: Teacher
   busy: boolean
+  justAdded: boolean
   onDeactivate: (opener: HTMLElement) => void
   onReactivate: () => void
   onLink: () => void
@@ -51,9 +53,16 @@ function TeacherRow({
     <ListItem
       title={teacher.name}
       badge={
-        <StatusBadge tone={statusTone[status]}>
-          {t(`adminTeachers.status.${status}`)}
-        </StatusBadge>
+        <>
+          <StatusBadge tone={statusTone[status]}>
+            {t(`adminTeachers.status.${status}`)}
+          </StatusBadge>
+          {justAdded ? (
+            <StatusBadge tone="success">
+              {t('adminTeachers.justAdded')}
+            </StatusBadge>
+          ) : null}
+        </>
       }
       details={
         <>
@@ -87,16 +96,113 @@ function TeacherRow({
   )
 }
 
+function CreateDialog({
+  opener,
+  onCancel,
+  onCreated,
+}: {
+  opener: HTMLElement
+  onCancel: () => void
+  onCreated: (created: { id: string; name: string; link: string }) => void
+}) {
+  const { t } = useTranslation()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [timeZone, setTimeZone] = useState(defaultTimeZone)
+  const [error, setError] = useState<string>()
+  const [submitting, setSubmitting] = useState(false)
+  const inFlight = useRef(false)
+  const mounted = useRef(true)
+  const [zones] = useState(timeZoneOptions)
+
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (inFlight.current) {
+      return
+    }
+    inFlight.current = true
+    setSubmitting(true)
+    setError(undefined)
+    const submitted = { name, email, timeZone }
+    try {
+      const { id, link } = await createTeacher(submitted)
+      onCreated({ id, name: submitted.name, link })
+    } catch (failure) {
+      if (!mounted.current) {
+        return
+      }
+      if (failure instanceof ApiError && failure.code === 'VALIDATION_FAILED') {
+        setError(t('adminTeachers.create.validationFailed'))
+      } else {
+        setError(
+          failure instanceof ApiError ? failure.message : t('errors.generic'),
+        )
+      }
+    } finally {
+      inFlight.current = false
+      if (mounted.current) {
+        setSubmitting(false)
+      }
+    }
+  }
+
+  return (
+    <Dialog
+      title={t('adminTeachers.create.title')}
+      returnFocusTo={opener}
+      onCancel={() => {
+        if (!inFlight.current) {
+          onCancel()
+        }
+      }}
+    >
+      <Form onSubmit={(event) => void onSubmit(event)}>
+        <TextInput
+          label={t('adminTeachers.create.name')}
+          required
+          value={name}
+          onChange={setName}
+        />
+        <TextInput
+          label={t('adminTeachers.create.email')}
+          type="email"
+          required
+          value={email}
+          onChange={setEmail}
+        />
+        <Select
+          label={t('adminTeachers.create.timeZone')}
+          required
+          value={timeZone}
+          onChange={setTimeZone}
+          options={zones}
+        />
+        {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}
+        <Button variant="secondary" disabled={submitting} onClick={onCancel}>
+          {t('adminTeachers.create.cancel')}
+        </Button>
+        <Button type="submit" variant="success" disabled={submitting}>
+          {t('adminTeachers.create.submit')}
+        </Button>
+      </Form>
+    </Dialog>
+  )
+}
+
 export function AdminTeachersPage() {
   const { t } = useTranslation()
   const [teachers, setTeachers] = useState<Teacher[]>()
   const [loadError, setLoadError] = useState<string>()
   const [shownLink, setShownLink] = useState<ShownLink>()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [timeZone, setTimeZone] = useState(defaultTimeZone)
-  const [createError, setCreateError] = useState<string>()
-  const [submitting, setSubmitting] = useState(false)
+  const [creating, setCreating] = useState<{ opener: HTMLElement }>()
+  const [pinnedId, setPinnedId] = useState<string>()
   const [busyIds, setBusyIds] = useState<string[]>([])
   const [confirming, setConfirming] = useState<{
     id: string
@@ -105,10 +211,8 @@ export function AdminTeachersPage() {
   }>()
   const [actionError, setActionError] = useState<string>()
   const busyRef = useRef(new Set<string>())
-  const inFlight = useRef(false)
   const mounted = useRef(false)
   const loadSeq = useRef(0)
-  const [zones] = useState(timeZoneOptions)
 
   // Only the newest load may change the state, and none after unmount.
   const load = useCallback(async () => {
@@ -179,46 +283,32 @@ export function AdminTeachersPage() {
     }
   }
 
-  async function onCreate(event: FormEvent) {
-    event.preventDefault()
-    if (inFlight.current) {
+  function onCreated(created: { id: string; name: string; link: string }) {
+    if (!mounted.current) {
       return
     }
-    inFlight.current = true
-    setSubmitting(true)
-    setCreateError(undefined)
-    const submitted = { name, email, timeZone }
-    try {
-      const link = await createTeacher(submitted)
-      if (!mounted.current) {
-        return
-      }
-      setShownLink({ name: submitted.name, link })
-      setName('')
-      setEmail('')
-      setTimeZone(defaultTimeZone())
-      void load()
-    } catch (failure) {
-      if (!mounted.current) {
-        return
-      }
-      if (failure instanceof ApiError && failure.code === 'VALIDATION_FAILED') {
-        setCreateError(t('adminTeachers.create.validationFailed'))
-      } else {
-        setCreateError(
-          failure instanceof ApiError ? failure.message : t('errors.generic'),
-        )
-      }
-    } finally {
-      inFlight.current = false
-      if (mounted.current) {
-        setSubmitting(false)
-      }
-    }
+    setShownLink({ name: created.name, link: created.link })
+    setPinnedId(created.id)
+    setCreating(undefined)
+    void load()
   }
+
+  // The new teacher's row goes first until the page is reloaded.
+  const shown = teachers
+    ? [
+        ...teachers.filter((item) => item.id === pinnedId),
+        ...teachers.filter((item) => item.id !== pinnedId),
+      ]
+    : undefined
 
   return (
     <>
+      <Button
+        variant="success"
+        onClick={(event) => setCreating({ opener: event.currentTarget })}
+      >
+        {t('adminTeachers.add')}
+      </Button>
       {shownLink ? (
         <IssuedLink
           key={shownLink.link}
@@ -233,19 +323,20 @@ export function AdminTeachersPage() {
       {loadError ? (
         <ErrorWithRetry message={loadError} onRetry={() => void load()} />
       ) : null}
-      {teachers === undefined ? (
+      {shown === undefined ? (
         loadError ? null : (
           <Text>{t('ui.loading')}</Text>
         )
-      ) : teachers.length === 0 ? (
+      ) : shown.length === 0 ? (
         <Text>{t('adminTeachers.empty')}</Text>
       ) : (
         <List>
-          {teachers.map((teacher) => (
+          {shown.map((teacher) => (
             <TeacherRow
               key={teacher.id}
               teacher={teacher}
               busy={busyIds.includes(teacher.id)}
+              justAdded={teacher.id === pinnedId}
               onDeactivate={(opener) =>
                 setConfirming({ id: teacher.id, name: teacher.name, opener })
               }
@@ -288,34 +379,13 @@ export function AdminTeachersPage() {
           </Button>
         </Dialog>
       ) : null}
-      <Form onSubmit={(event) => void onCreate(event)}>
-        <TextInput
-          label={t('adminTeachers.create.name')}
-          required
-          value={name}
-          onChange={setName}
+      {creating ? (
+        <CreateDialog
+          opener={creating.opener}
+          onCancel={() => setCreating(undefined)}
+          onCreated={onCreated}
         />
-        <TextInput
-          label={t('adminTeachers.create.email')}
-          type="email"
-          required
-          value={email}
-          onChange={setEmail}
-        />
-        <Select
-          label={t('adminTeachers.create.timeZone')}
-          required
-          value={timeZone}
-          onChange={setTimeZone}
-          options={zones}
-        />
-        {createError ? (
-          <StatusMessage tone="danger">{createError}</StatusMessage>
-        ) : null}
-        <Button type="submit" disabled={submitting}>
-          {t('adminTeachers.create.submit')}
-        </Button>
-      </Form>
+      ) : null}
     </>
   )
 }

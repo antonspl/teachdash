@@ -10,6 +10,7 @@ test('[web-admin-teachers/R1-S4] The page fits a phone screen', async ({
   const email = `e2e-long-${unique}-${'x'.repeat(30)}@a-rather-long-domain-name.example.com`
   await page.setViewportSize({ width: 360, height: 800 })
   await loginAsAdminInUi(page)
+  await page.getByRole('button', { name: en.adminTeachers.add }).click()
   await page.getByLabel(en.adminTeachers.create.name).fill('Long Email Teacher')
   await page.getByLabel(en.adminTeachers.create.email).fill(email)
 
@@ -39,6 +40,24 @@ test('[web-admin-teachers/R1-S4] The page fits a phone screen', async ({
     expect(box!.x).toBeGreaterThanOrEqual(0)
     expect(box!.x + box!.width).toBeLessThanOrEqual(widths.viewport)
   }
+
+  // and the "Add teacher" dialog fits too
+  await page.getByRole('button', { name: en.adminTeachers.add }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  const after = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth,
+  }))
+  expect(after.scroll).toBeLessThanOrEqual(after.viewport)
+  const controls = dialog.locator('input, select, button')
+  expect(await controls.count()).toBeGreaterThan(3)
+  for (const control of await controls.all()) {
+    await expect(control).toBeVisible()
+    const box = await control.boundingBox()
+    expect(box!.x).toBeGreaterThanOrEqual(0)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(after.viewport)
+  }
 })
 
 test('[web-admin-teachers/R2-S1] Admin creates a teacher', async ({ page }) => {
@@ -49,6 +68,7 @@ test('[web-admin-teachers/R2-S1] Admin creates a teacher', async ({ page }) => {
   await loginAsAdminInUi(page)
 
   // when the admin enters a name, a new email and a time zone, and submits
+  await page.getByRole('button', { name: en.adminTeachers.add }).click()
   const nameField = page.getByLabel(en.adminTeachers.create.name)
   const emailField = page.getByLabel(en.adminTeachers.create.email)
   await nameField.fill(name)
@@ -60,19 +80,17 @@ test('[web-admin-teachers/R2-S1] Admin creates a teacher', async ({ page }) => {
     .getByRole('button', { name: en.adminTeachers.create.submit })
     .click()
 
-  // then the set-password link is shown with the new teacher's name
+  // then the dialog closes and the set-password link is shown with the new teacher's name
+  await expect(page.getByRole('dialog')).toBeHidden()
   const link = page.getByLabel(en.issuedLink.label.replace('{{name}}', name))
   await expect(link).toBeVisible()
   await expect(link).toHaveValue(
     /^https?:\/\/[^/]+(\/[^/#?]+)*\/set-password#token=.+/,
   )
 
-  // and the new teacher appears in the list
-  const row = page.getByRole('listitem').filter({ hasText: email })
-  await expect(row).toBeVisible()
+  // and the new teacher is the first row of the list
+  const row = page.getByRole('listitem').first()
+  await expect(row).toContainText(email)
   await expect(row).toContainText(name)
-
-  // and the form is empty again
-  await expect(nameField).toHaveValue('')
-  await expect(emailField).toHaveValue('')
+  await expect(row).toContainText(en.adminTeachers.justAdded)
 })

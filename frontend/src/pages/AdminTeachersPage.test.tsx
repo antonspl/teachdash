@@ -99,7 +99,19 @@ function field(label: string) {
   return screen.findByLabelText<HTMLInputElement>(label)
 }
 
+function addButton() {
+  return screen.findByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.add,
+  })
+}
+
+async function openDialog() {
+  fireEvent.click(await addButton())
+  return screen.findByRole('dialog')
+}
+
 async function fillForm(name: string, email: string) {
+  await openDialog()
   fireEvent.change(await field(en.adminTeachers.create.name), {
     target: { value: name },
   })
@@ -164,7 +176,7 @@ test('[web-admin-teachers/R1-S2] No teachers yet', async () => {
 
   // then
   expect(await screen.findByText(en.adminTeachers.empty)).toBeTruthy()
-  expect(screen.getByLabelText(en.adminTeachers.create.name)).toBeTruthy()
+  expect(await addButton()).toBeTruthy()
   expect(screen.queryByRole('listitem')).toBeNull()
 })
 
@@ -206,6 +218,7 @@ test('[web-admin-teachers/R2-S2] The time zone of the browser is preselected', a
   open()
 
   // then
+  await openDialog()
   const select = await screen.findByLabelText<HTMLSelectElement>(
     en.adminTeachers.create.timeZone,
   )
@@ -343,11 +356,116 @@ test('[web-admin-teachers/R3-S5] Link stays when the list fails to reload', asyn
   expect(linkField.value).toBe('https://x.test/set-password#t=1')
   expect(await screen.findByText(en.errors.INTERNAL_ERROR)).toBeTruthy()
   expect(screen.getByRole('button', { name: en.ui.tryAgain })).toBeTruthy()
-  // the form was cleared and the success path reloaded the list
-  expect(
-    screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.name).value,
-  ).toBe('')
+  // the dialog closed and the success path reloaded the list
+  expect(screen.queryByRole('dialog')).toBeNull()
   expect(calls('GET')).toHaveLength(2)
+})
+
+test('[web-admin-teachers/R2-S7] Cancelling the dialog', async () => {
+  // given
+  backend({ list: () => json([]) })
+  open()
+  const opener = await addButton()
+  for (const cancel of [
+    (dialog: HTMLElement) =>
+      fireEvent.click(
+        within(dialog).getByRole('button', {
+          name: en.adminTeachers.create.cancel,
+        }),
+      ),
+    (dialog: HTMLElement) =>
+      fireEvent(dialog, new Event('cancel', { cancelable: true })),
+  ]) {
+    const dialog = await openDialog()
+    fireEvent.change(screen.getByLabelText(en.adminTeachers.create.name), {
+      target: { value: 'Typed Name' },
+    })
+
+    // when
+    cancel(dialog)
+
+    // then
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(calls('POST')).toHaveLength(0)
+    expect(document.activeElement).toBe(opener)
+    await openDialog()
+    expect(
+      screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.name)
+        .value,
+    ).toBe('')
+    fireEvent(
+      screen.getByRole('dialog'),
+      new Event('cancel', { cancelable: true }),
+    )
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  }
+})
+
+test('[web-admin-teachers/R2-S7] Cancel and Escape are ignored while creating', async () => {
+  // given
+  backend({
+    list: () => json([]),
+    create: () => new Promise<Response>(() => {}),
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+  fireEvent.click(submitButton())
+  await waitFor(() => expect(submitButton().disabled).toBe(true))
+
+  // when
+  fireEvent(
+    screen.getByRole('dialog'),
+    new Event('cancel', { cancelable: true }),
+  )
+
+  // then
+  expect(screen.getByRole('dialog')).toBeTruthy()
+  expect(
+    screen.getByRole<HTMLButtonElement>('button', {
+      name: en.adminTeachers.create.cancel,
+    }).disabled,
+  ).toBe(true)
+})
+
+test('[web-admin-teachers/R2-S8] The new teacher stays first until a reload', async () => {
+  // given the backend sorts by name, so the new teacher comes last
+  const anna = teacher({ id: '1', name: 'Anna Smith' })
+  const zoe = teacher({
+    id: '2',
+    name: 'Zoe Young',
+    email: 'zoe@example.com',
+  })
+  let created = false
+  backend({
+    list: () => json(created ? [anna, zoe] : [anna]),
+    create: () => {
+      created = true
+      return json({ id: '2', setPasswordLink: 'https://x.test/s#t=1' }, 201)
+    },
+  })
+  const first = open()
+  await fillForm('Zoe Young', 'zoe@example.com')
+
+  // when
+  fireEvent.click(submitButton())
+
+  // then
+  await screen.findByDisplayValue('https://x.test/s#t=1')
+  await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(2))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  let rows = screen.getAllByRole('listitem')
+  expect(within(rows[0]).getByText('Zoe Young')).toBeTruthy()
+  expect(within(rows[0]).getByText(en.adminTeachers.justAdded)).toBeTruthy()
+  expect(within(rows[1]).getByText('Anna Smith')).toBeTruthy()
+
+  // and after a reload the backend's order returns without the label
+  first.unmount()
+  open()
+  await screen.findAllByRole('listitem')
+  rows = screen.getAllByRole('listitem')
+  expect(within(rows[0]).getByText('Anna Smith')).toBeTruthy()
+  expect(within(rows[1]).getByText('Zoe Young')).toBeTruthy()
+  expect(screen.queryByText(en.adminTeachers.justAdded)).toBeNull()
 })
 
 // A backend whose teacher list is `state.teachers` and whose action requests are answered
