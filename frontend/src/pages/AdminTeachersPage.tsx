@@ -342,6 +342,7 @@ export function AdminTeachersPage() {
         <Toolbar>
           <Button
             variant="success"
+            icon="plus"
             onClick={(event) => setCreating({ opener: event.currentTarget })}
           >
             {t('adminTeachers.add')}
