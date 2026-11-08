@@ -28,15 +28,18 @@ export function PasswordInput({
       autoComplete={autoComplete}
       error={error}
       required={required}
-      inputType={shown ? 'text' : 'password'}
+      type={shown ? 'text' : 'password'}
       adornment={
         <button
           type="button"
           className={styles.toggle}
           aria-pressed={shown}
+          aria-label={t(shown ? 'ui.hidePassword' : 'ui.showPassword', {
+            label,
+          })}
           onClick={() => setShown((current) => !current)}
         >
-          {shown ? t('ui.hidePassword') : t('ui.showPassword')}
+          {shown ? t('ui.hide') : t('ui.show')}
         </button>
       }
     />

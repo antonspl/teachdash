@@ -5,13 +5,12 @@ export type TextInputProps = {
   label: string
   value: string
   onChange: (value: string) => void
-  type?: 'text' | 'email'
+  type?: 'text' | 'email' | 'password'
   autoComplete?: string
   error?: string
   required?: boolean
   // Extra control shown beside the input (used by PasswordInput).
   adornment?: ReactNode
-  inputType?: string
 }
 
 export function TextInput({
@@ -23,7 +22,6 @@ export function TextInput({
   error,
   required,
   adornment,
-  inputType,
 }: TextInputProps) {
   const id = useId()
   const errorId = `${id}-error`
@@ -36,7 +34,7 @@ export function TextInput({
         <input
           id={id}
           className={`${styles.input} ${error ? styles.invalid : ''}`}
-          type={inputType ?? type}
+          type={type}
           value={value}
           autoComplete={autoComplete}
           required={required}

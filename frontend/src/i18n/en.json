@@ -24,8 +24,10 @@
     "INVALID_CREDENTIALS": "That email and password don't match."
   },
   "ui": {
-    "showPassword": "Show",
-    "hidePassword": "Hide",
+    "show": "Show",
+    "hide": "Hide",
+    "showPassword": "Show {{label}}",
+    "hidePassword": "Hide {{label}}",
     "tryAgain": "Try again",
     "loading": "Loading..."
   },
