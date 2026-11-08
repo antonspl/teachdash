@@ -55,7 +55,7 @@ public class TeacherJoinLinkService {
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 		String token = TokenGenerator.generate();
-		Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 		joinLinks.upsert(teacherId, token, now);
 		return new IssuedLink(url(token), now.plus(TeacherJoinLinkRepository.VALIDITY));
 	}

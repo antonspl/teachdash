@@ -46,7 +46,7 @@ public class TeacherJoinLinkRepository {
 	}
 
 	private static Timestamp cutoff(Instant now) {
-		return Timestamp.from(now.truncatedTo(ChronoUnit.MICROS).minus(VALIDITY));
+		return Timestamp.from(now.truncatedTo(ChronoUnit.MILLIS).minus(VALIDITY));
 	}
 
 	public void upsert(UUID teacherId, String token, Instant createdAt) {
