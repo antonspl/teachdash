@@ -121,7 +121,8 @@ teacher, and the "Copied" / "copy by hand" messages use `StatusMessage`
 - `TeacherList` / row layout: generic `List` and `ListItem` components that stack
   name, details, badge and actions. They are a card per row rather than a table, so
   they fit phone widths (web-client R7).
-- `Button`: a `danger` variant for "Deactivate" and the dialog's confirm.
+- `Button`: a `danger` variant for "Deactivate" and the dialog's confirm, and a
+  green `success` variant for "Add teacher" (new tokens in `styles/tokens.css`).
 
 All CSS uses tokens from `styles/tokens.css`, and new tokens are added there if needed.
 
@@ -144,6 +145,20 @@ All CSS uses tokens from `styles/tokens.css`, and new tokens are added there if 
   take this change over 6 requirements. R1-S5 covers 401 on this page.
 
 No new dependencies. No Flyway migrations.
+
+### D9 Create form in a dialog, new teacher pinned first
+
+"Add teacher" sits at the top of the page, under the header, and opens the create form
+in the same `ui/Dialog` as deactivation (focus in and back to the opener, Escape as
+cancel). The dialog keeps its values while open; it closes only on success or cancel,
+and opens empty each time. On phones it takes almost the whole screen (R1-S4).
+Rejected: a separate page `/admin/teachers/new`; the link would have to be passed back
+through the router's history state, where Back/Forward could show it again.
+
+After a successful create the page keeps the new teacher's id and moves that row to
+the top of every reloaded list, with a "just added" badge (`StatusBadge`). The id lives
+in page state only, so a reload drops it and the backend's order returns (R2-S8). When
+#74 brings `createdAt` and newest-first order, the pin can be removed.
 
 ## Risks / Trade-offs
 

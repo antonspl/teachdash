@@ -38,6 +38,13 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 
 - [x] 7.1 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (desktop and phone projects); all pass, and every web-admin-teachers scenario has a test
 
+## 8. Create form in a dialog (asked while trying the page by hand)
+
+- [ ] 8.1 Add the green `success` variant to `ui/Button` (design tokens only); verify `npm run lint`
+- [ ] 8.2 Move the create form into a `ui/Dialog` opened by "Add teacher" at the top of the page; on success close it, show the link and pin the new teacher first with a "just added" badge (design D9); Vitest for web-admin-teachers/R1-S2, R2-S2 to R2-S8 and R3-S5 updated to the dialog; verify `npm test`
+- [ ] 8.3 Update the Playwright tests for web-admin-teachers/R2-S1 (opens the dialog, new teacher is the first row) and R1-S4 (dialog fits 360 pixels); verify `npm run test:e2e` on all projects
+- [ ] 8.4 Run the full checks of 7.1 again; all pass and every scenario has a test
+
 ## Workflow follow-up
 
 - Opus review of the code, then ask for the code gate in the PR with the commit range.

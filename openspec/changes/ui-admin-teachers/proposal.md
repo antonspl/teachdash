@@ -20,6 +20,14 @@ Answered by the engineer:
 - **Client-side checks of name and email (#44).** Left to #44. The form uses only
   the browser's `required` and `type=email`, and shows the backend's translated
   errors.
+- **Where the create form lives** (asked while trying the page by hand). Not on the
+  page: a green "Add teacher" button at the top opens it in a modal dialog. After
+  creating, the dialog closes and the new teacher is the first row. A separate page
+  was considered and rejected: the one-time link would have to travel back through
+  browser history.
+- **New teacher at the top.** The backend sorts by name and has no creation time, so
+  the page pins the new teacher first (marked "just added") until a reload. A real
+  "newest first" order with `createdAt` is a backend issue, #74.
 
 Defaults suggested by Claude; the engineer can change any of them:
 
@@ -53,7 +61,8 @@ by hand.
 
 - `/admin` shows the list of teachers with each one's name, email, time zone and
   status: active, waiting for password, or deactivated.
-- A form creates a teacher (name, email, time zone) and shows the set-password link.
+- An "Add teacher" button opens a dialog that creates a teacher (name, email, time
+  zone); the set-password link is then shown and the new teacher is listed first.
 - Deactivate (after a confirmation dialog) and reactivate from the list; reactivating
   a teacher who never set a password shows the new link.
 - A new invite or password reset link for an active teacher.
@@ -77,7 +86,7 @@ by hand.
 - Shared client-side field rules (#44).
 - Editing a teacher's name, email or time zone: the backend has no endpoint for it.
 - Paging, search or sorting in the list; the backend returns all teachers sorted by
-  name.
+  name. Newest-first order with `createdAt` is #74.
 - The admin's view of a teacher's students (#36).
 - Links for students (#35) and the admin's own account.
 

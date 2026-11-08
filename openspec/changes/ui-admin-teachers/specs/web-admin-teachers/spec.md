@@ -25,7 +25,7 @@ session-ended flow (web-auth R6).
 #### Scenario: web-admin-teachers/R1-S2 No teachers yet
 - **GIVEN** the backend returns an empty list
 - **WHEN** the admin opens `/admin`
-- **THEN** a translated "no teachers yet" message is shown together with the create form
+- **THEN** a translated "no teachers yet" message is shown together with the "Add teacher" button
 
 #### Scenario: web-admin-teachers/R1-S3 List fails to load
 - **GIVEN** loading the list fails with a server error
@@ -35,8 +35,9 @@ session-ended flow (web-auth R6).
 
 #### Scenario: web-admin-teachers/R1-S4 The page fits a phone screen
 - **GIVEN** a teacher with a long email exists and a link has just been issued for them
-- **WHEN** `/admin` is shown 360 pixels wide
+- **WHEN** `/admin` is shown 360 pixels wide, and then the "Add teacher" dialog is opened
 - **THEN** the page has no horizontal scroll and every row's buttons are visible
+- **AND** the dialog's fields and buttons fit the screen without horizontal scroll
 
 #### Scenario: web-admin-teachers/R1-S5 Session ends during an action
 - **GIVEN** a link is shown on `/admin`
@@ -46,33 +47,33 @@ session-ended flow (web-auth R6).
 
 ### Requirement: R2 Create a teacher
 
-The admin SHALL be able to create a teacher with name, email and time zone. The time
-zone SHALL be chosen from a list of the browser's time zones plus `UTC`, with the
-browser's own zone preselected. On success the page SHALL show the set-password link,
-clear the form and load the list again. On failure the entered values SHALL stay.
+An "Add teacher" button at the top of the page SHALL open a modal dialog with name,
+email and time zone. The time zone SHALL be chosen from the browser's time zones plus
+`UTC`, with the browser's own zone preselected. On success the dialog SHALL close, the
+link SHALL be shown (R3) and the list SHALL load again with the new teacher first until
+the page is reloaded. On failure the dialog SHALL stay open with the entered values.
 
 #### Scenario: web-admin-teachers/R2-S1 Admin creates a teacher
 - **GIVEN** a logged-in admin on `/admin`
-- **WHEN** the admin enters a name, a new email and a time zone, and submits
-- **THEN** the set-password link is shown with the new teacher's name
-- **AND** the new teacher appears in the list
-- **AND** the form is empty again
+- **WHEN** the admin presses "Add teacher", enters a name, a new email and a time zone, and submits
+- **THEN** the dialog closes and the set-password link is shown with the new teacher's name
+- **AND** the new teacher is the first row of the list
 
 #### Scenario: web-admin-teachers/R2-S2 The browser's time zone is preselected
 - **GIVEN** the browser's time zone is "Europe/Moscow"
-- **WHEN** the admin opens `/admin`
+- **WHEN** the admin opens the "Add teacher" dialog
 - **THEN** the time zone select shows "Europe/Moscow" and also offers "UTC"
 
 #### Scenario: web-admin-teachers/R2-S3 Email already in use
 - **GIVEN** the backend answers the create request with 409 `EMAIL_TAKEN`
-- **WHEN** the admin submits the form
-- **THEN** the translated `EMAIL_TAKEN` message is shown
+- **WHEN** the admin submits the dialog
+- **THEN** the dialog stays open with the translated `EMAIL_TAKEN` message
 - **AND** the entered name, email and time zone stay in the form
 
 #### Scenario: web-admin-teachers/R2-S4 Backend rejects the fields
 - **GIVEN** the backend answers the create request with 400 `VALIDATION_FAILED`
-- **WHEN** the admin submits the form
-- **THEN** a translated message asks the admin to check the fields or try another time zone, and the entered values stay
+- **WHEN** the admin submits the dialog
+- **THEN** the dialog stays open with a translated message asking the admin to check the fields or try another time zone, and the entered values stay
 
 #### Scenario: web-admin-teachers/R2-S5 The form is not sent twice
 - **GIVEN** a create request is in progress
@@ -81,8 +82,20 @@ clear the form and load the list again. On failure the entered values SHALL stay
 
 #### Scenario: web-admin-teachers/R2-S6 Network failure on create
 - **GIVEN** the create request fails without reaching the backend
-- **WHEN** the admin submits the form
-- **THEN** the translated generic error is shown, the entered values stay and the submit button works again
+- **WHEN** the admin submits the dialog
+- **THEN** the dialog stays open with the translated generic error, the entered values stay and the submit button works again
+
+#### Scenario: web-admin-teachers/R2-S7 Cancelling the dialog
+- **GIVEN** the admin opened the "Add teacher" dialog and typed a name
+- **WHEN** the admin presses "Cancel", or presses Escape
+- **THEN** the dialog closes, no request is sent and focus returns to the "Add teacher" button
+- **AND** opening the dialog again shows an empty form
+
+#### Scenario: web-admin-teachers/R2-S8 The new teacher stays first until a reload
+- **GIVEN** the backend returns the list sorted by name, with the new teacher "Zoe Young" last
+- **WHEN** the admin creates "Zoe Young"
+- **THEN** "Zoe Young" is the first row and is marked with a translated "just added" label
+- **AND** after the page is reloaded the list is in the backend's order without the label
 
 ### Requirement: R3 Issued link
 
