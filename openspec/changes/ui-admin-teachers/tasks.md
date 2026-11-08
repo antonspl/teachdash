@@ -27,11 +27,11 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 
 ## 5. Deactivate and reactivate
 
-- [ ] 5.1 Add "Deactivate" with the confirm dialog (focus in and back) and "Reactivate" with link display, reload after each and the error message on failure; Vitest for web-admin-teachers/R4-S1 to R4-S8 and R1-S5; verify `npm test`
+- [x] 5.1 Add "Deactivate" with the confirm dialog (focus in and back) and "Reactivate" with link display, reload after each and the error message on failure; Vitest for web-admin-teachers/R4-S1 to R4-S8 and R1-S5; verify `npm test`
 
 ## 6. New links
 
-- [ ] 6.1 Add the per-row link button ("New invite link" / "Password reset link", none for deactivated rows) with one busy flag per row for all its buttons; Vitest for web-admin-teachers/R5-S1 to R5-S5; verify `npm test`
+- [x] 6.1 Add the per-row link button ("New invite link" / "Password reset link", none for deactivated rows) with one busy flag per row for all its buttons; Vitest for web-admin-teachers/R5-S1 to R5-S5; verify `npm test`
 - [ ] 6.2 Playwright test for web-admin-teachers/R1-S4 on the phone projects (no horizontal scroll with a long email and a shown link); verify `npm run test:e2e`
 
 ## 7. Final checks

@@ -89,6 +89,18 @@
       "timeZone": "Time zone",
       "submit": "Add teacher",
       "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and email, or try another time zone."
+    },
+    "actions": {
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "inviteLink": "New invite link",
+      "resetLink": "Password reset link"
+    },
+    "deactivate": {
+      "title": "Deactivate {{name}}?",
+      "body": "{{name}} won't be able to sign in anymore, and their students will be released. The students won't come back if you reactivate them later.",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
     }
   }
 }

@@ -6,7 +6,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { BrowserRouter, MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import '../i18n'
 import { App } from '../App'
@@ -348,4 +348,394 @@ test('[web-admin-teachers/R3-S5] Link stays when the list fails to reload', asyn
     screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.name).value,
   ).toBe('')
   expect(calls('GET')).toHaveLength(2)
+})
+
+// A backend whose teacher list is `state.teachers` and whose action requests are answered
+// by `actions`, keyed like "POST admin/teachers/10/deactivate".
+type Actions = Record<string, () => Response | Promise<Response>>
+
+function world(initial: unknown[], actions: Actions) {
+  const state = { teachers: initial }
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    const method = init?.method ?? 'GET'
+    const path = url.replace('/api/', '')
+    if (path === 'me') {
+      return Promise.resolve(json(admin))
+    }
+    if (path === 'admin/teachers' && method === 'GET') {
+      return Promise.resolve(json(state.teachers))
+    }
+    const handler = actions[`${method} ${path}`]
+    return Promise.resolve(handler ? handler() : problem(404, 'NOT_FOUND'))
+  })
+  return state
+}
+
+function actionCalls(key: string) {
+  return fetchMock.mock.calls.filter(
+    (call: unknown[]) =>
+      `${(call[1] as RequestInit | undefined)?.method ?? 'GET'} ${String(call[0]).replace('/api/', '')}` ===
+      key,
+  )
+}
+
+function listCalls() {
+  return calls('GET').length
+}
+
+async function rowOf(name: string) {
+  const row = (await screen.findByText(name)).closest('li')
+  return within(row as HTMLElement)
+}
+
+const DEACTIVATE = 'POST admin/teachers/10/deactivate'
+const REACTIVATE = 'POST admin/teachers/10/reactivate'
+const RESET = 'POST admin/users/10/reset-link'
+
+function deactivateButton(row: ReturnType<typeof within>) {
+  return row.getByRole('button', { name: en.adminTeachers.actions.deactivate })
+}
+
+test('[web-admin-teachers/R4-S1] Deactivate asks first', async () => {
+  // given
+  world([teacher()], {})
+  open()
+  const row = await rowOf('Anna Smith')
+
+  // when
+  fireEvent.click(deactivateButton(row))
+
+  // then
+  const dialog = await screen.findByRole('dialog')
+  expect(
+    within(dialog).getByText(/Anna Smith/, { selector: 'h2' }),
+  ).toBeTruthy()
+  expect(within(dialog).getByText(/students will be released/)).toBeTruthy()
+  expect(actionCalls(DEACTIVATE)).toHaveLength(0)
+})
+
+test('[web-admin-teachers/R4-S2] Confirming deactivates the teacher once', async () => {
+  // given
+  const state = world([teacher()], {
+    [DEACTIVATE]: () => {
+      state.teachers = [teacher({ active: false })]
+      return new Response(null, { status: 204 })
+    },
+  })
+  open()
+  fireEvent.click(deactivateButton(await rowOf('Anna Smith')))
+  const confirm = within(await screen.findByRole('dialog')).getByRole(
+    'button',
+    {
+      name: en.adminTeachers.deactivate.confirm,
+    },
+  )
+
+  // when
+  fireEvent.click(confirm)
+  fireEvent.click(confirm)
+
+  // then
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  expect(actionCalls(DEACTIVATE)).toHaveLength(1)
+  expect(await screen.findByText('Deactivated')).toBeTruthy()
+})
+
+test.each(['button', 'escape'])(
+  '[web-admin-teachers/R4-S3] Cancelling changes nothing (%s)',
+  async (how) => {
+    // given
+    world([teacher()], {})
+    open()
+    fireEvent.click(deactivateButton(await rowOf('Anna Smith')))
+    const dialog = await screen.findByRole('dialog')
+
+    // when
+    if (how === 'button') {
+      fireEvent.click(
+        within(dialog).getByRole('button', {
+          name: en.adminTeachers.deactivate.cancel,
+        }),
+      )
+    } else {
+      fireEvent(dialog, new Event('cancel', { cancelable: true }))
+    }
+
+    // then
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(actionCalls(DEACTIVATE)).toHaveLength(0)
+    expect(screen.getByText('Active')).toBeTruthy()
+  },
+)
+
+test('[web-admin-teachers/R4-S4] Reactivating a teacher who has a password', async () => {
+  // given
+  const state = world([teacher({ active: false })], {
+    [REACTIVATE]: () => {
+      state.teachers = [teacher()]
+      return new Response(null, { status: 204 })
+    },
+  })
+  open()
+  const row = await rowOf('Anna Smith')
+
+  // when
+  fireEvent.click(
+    row.getByRole('button', { name: en.adminTeachers.actions.reactivate }),
+  )
+
+  // then
+  expect(await screen.findByText('Active')).toBeTruthy()
+  expect(
+    screen.queryByLabelText(
+      en.issuedLink.label.replace('{{name}}', 'Anna Smith'),
+    ),
+  ).toBeNull()
+})
+
+test('[web-admin-teachers/R4-S5] Reactivating a teacher who never set a password', async () => {
+  // given
+  const state = world([teacher({ active: false, hasPassword: false })], {
+    [REACTIVATE]: () => {
+      state.teachers = [teacher({ hasPassword: false })]
+      return json({ setPasswordLink: 'https://x.test/set#token=r' })
+    },
+  })
+  open()
+  const row = await rowOf('Anna Smith')
+
+  // when
+  fireEvent.click(
+    row.getByRole('button', { name: en.adminTeachers.actions.reactivate }),
+  )
+
+  // then
+  const field = await screen.findByLabelText<HTMLInputElement>(
+    en.issuedLink.label.replace('{{name}}', 'Anna Smith'),
+  )
+  expect(field.value).toBe('https://x.test/set#token=r')
+  expect(await screen.findByText('Waiting for password')).toBeTruthy()
+})
+
+test('[web-admin-teachers/R4-S6] A failed deactivation is reported', async () => {
+  // given
+  world([teacher()], { [DEACTIVATE]: () => problem(404, 'NOT_FOUND') })
+  open()
+  fireEvent.click(deactivateButton(await rowOf('Anna Smith')))
+  const before = listCalls()
+
+  // when
+  fireEvent.click(
+    within(await screen.findByRole('dialog')).getByRole('button', {
+      name: en.adminTeachers.deactivate.confirm,
+    }),
+  )
+
+  // then
+  expect(await screen.findByText(en.errors.NOT_FOUND)).toBeTruthy()
+  expect(screen.queryByRole('dialog')).toBeNull()
+  await waitFor(() => expect(listCalls()).toBe(before + 1))
+})
+
+test('[web-admin-teachers/R4-S7] A failed reactivation is reported', async () => {
+  // given
+  world([teacher({ active: false })], {
+    [REACTIVATE]: () => problem(500, 'INTERNAL_ERROR'),
+  })
+  open()
+  const row = await rowOf('Anna Smith')
+  const before = listCalls()
+
+  // when
+  fireEvent.click(
+    row.getByRole('button', { name: en.adminTeachers.actions.reactivate }),
+  )
+
+  // then
+  expect(await screen.findByText(en.errors.INTERNAL_ERROR)).toBeTruthy()
+  await waitFor(() => expect(listCalls()).toBe(before + 1))
+  const button = row.getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.actions.reactivate,
+  })
+  expect(button.disabled).toBe(false)
+})
+
+test('[web-admin-teachers/R4-S8] Focus moves into the dialog and back', async () => {
+  // given
+  world([teacher()], {})
+  open()
+  const opener = deactivateButton(await rowOf('Anna Smith'))
+  opener.focus()
+
+  // when
+  fireEvent.click(opener)
+  const dialog = await screen.findByRole('dialog')
+
+  // then
+  expect(dialog.contains(document.activeElement)).toBe(true)
+  fireEvent.click(
+    within(dialog).getByRole('button', {
+      name: en.adminTeachers.deactivate.cancel,
+    }),
+  )
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  expect(document.activeElement).toBe(opener)
+})
+
+test('[web-admin-teachers/R1-S5] Session ends during an action', async () => {
+  // given
+  let ended = false
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    const path = url.replace('/api/', '')
+    const method = init?.method ?? 'GET'
+    if (path === 'auth/login') {
+      ended = false
+      return Promise.resolve(json(admin))
+    }
+    if (ended) {
+      return Promise.resolve(problem(401, 'UNAUTHENTICATED'))
+    }
+    if (path === 'me') {
+      return Promise.resolve(json(admin))
+    }
+    if (path === 'admin/teachers' && method === 'GET') {
+      return Promise.resolve(json([teacher()]))
+    }
+    if (path === 'admin/teachers' && method === 'POST') {
+      return Promise.resolve(
+        json({ id: '11', setPasswordLink: 'https://x.test/old#token=1' }, 201),
+      )
+    }
+    ended = true
+    return Promise.resolve(problem(401, 'UNAUTHENTICATED'))
+  })
+  window.history.pushState({}, '', '/admin')
+  render(
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>,
+  )
+  await fillForm('Zed Zane', 'zed@example.com')
+  fireEvent.click(submitButton())
+  await screen.findByDisplayValue('https://x.test/old#token=1')
+  fireEvent.click(deactivateButton(await rowOf('Anna Smith')))
+
+  // when
+  fireEvent.click(
+    within(await screen.findByRole('dialog')).getByRole('button', {
+      name: en.adminTeachers.deactivate.confirm,
+    }),
+  )
+
+  // then
+  expect(await screen.findByText(en.login.sessionEnded)).toBeTruthy()
+  fireEvent.change(screen.getByLabelText(en.login.email), {
+    target: { value: 'admin@example.com' },
+  })
+  fireEvent.change(screen.getByLabelText(en.login.password), {
+    target: { value: 'secret-pass' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: en.login.submit }))
+  expect(await screen.findByText('Anna Smith')).toBeTruthy()
+  expect(window.location.pathname).toBe('/admin')
+  expect(screen.queryByDisplayValue('https://x.test/old#token=1')).toBeNull()
+})
+
+test('[web-admin-teachers/R5-S1] New invite link for a teacher without a password', async () => {
+  // given
+  world([teacher({ hasPassword: false })], {
+    [RESET]: () => json({ link: 'https://x.test/set#token=n' }, 201),
+  })
+  open()
+  const row = await rowOf('Anna Smith')
+
+  // when
+  fireEvent.click(
+    row.getByRole('button', { name: en.adminTeachers.actions.inviteLink }),
+  )
+
+  // then
+  const field = await screen.findByLabelText<HTMLInputElement>(
+    en.issuedLink.label.replace('{{name}}', 'Anna Smith'),
+  )
+  expect(field.value).toBe('https://x.test/set#token=n')
+  expect(actionCalls(RESET)).toHaveLength(1)
+})
+
+test('[web-admin-teachers/R5-S2] Password reset link for a teacher with a password', async () => {
+  // given
+  world([teacher()], {})
+
+  // when
+  open()
+  const row = await rowOf('Anna Smith')
+
+  // then
+  expect(
+    row.getByRole('button', { name: en.adminTeachers.actions.resetLink }),
+  ).toBeTruthy()
+  expect(
+    row.queryByRole('button', { name: en.adminTeachers.actions.inviteLink }),
+  ).toBeNull()
+})
+
+test('[web-admin-teachers/R5-S3] No link for a deactivated teacher', async () => {
+  // given
+  world([teacher({ active: false })], {})
+
+  // when
+  open()
+  const row = await rowOf('Anna Smith')
+
+  // then
+  expect(
+    row.getByRole('button', { name: en.adminTeachers.actions.reactivate }),
+  ).toBeTruthy()
+  expect(
+    row.queryByRole('button', { name: en.adminTeachers.actions.resetLink }),
+  ).toBeNull()
+  expect(
+    row.queryByRole('button', { name: en.adminTeachers.actions.inviteLink }),
+  ).toBeNull()
+})
+
+test("[web-admin-teachers/R5-S4] A row's buttons wait for its request", async () => {
+  // given
+  world([teacher()], { [RESET]: () => new Promise<Response>(() => {}) })
+  open()
+  const row = await rowOf('Anna Smith')
+  const link = row.getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.actions.resetLink,
+  })
+  fireEvent.click(link)
+  await waitFor(() => expect(link.disabled).toBe(true))
+
+  // when
+  fireEvent.click(link)
+  fireEvent.click(deactivateButton(row))
+
+  // then
+  expect(actionCalls(RESET)).toHaveLength(1)
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(deactivateButton(row).disabled).toBe(true)
+})
+
+test('[web-admin-teachers/R5-S5] A failed link request is reported', async () => {
+  // given
+  world([teacher()], { [RESET]: () => problem(403, 'CSRF_INVALID') })
+  open()
+  const row = await rowOf('Anna Smith')
+
+  // when
+  fireEvent.click(
+    row.getByRole('button', { name: en.adminTeachers.actions.resetLink }),
+  )
+
+  // then
+  expect(await screen.findByText(en.errors.CSRF_INVALID)).toBeTruthy()
+  expect(screen.queryByLabelText(/^Link for/)).toBeNull()
+  const button = row.getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.actions.resetLink,
+  })
+  await waitFor(() => expect(button.disabled).toBe(false))
 })

@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   createTeacher,
+  deactivateTeacher,
+  issueResetLink,
   listTeachers,
+  reactivateTeacher,
   teacherStatus,
   type Teacher,
   type TeacherStatus,
@@ -10,6 +13,7 @@ import {
 import { ApiError } from '../api/client'
 import { timeZoneOptions, defaultTimeZone } from '../timeZones'
 import { Button } from '../ui/Button'
+import { Dialog } from '../ui/Dialog'
 import { ErrorWithRetry } from '../ui/ErrorWithRetry'
 import { Form } from '../ui/Form'
 import { IssuedLink } from '../ui/IssuedLink'
@@ -28,7 +32,19 @@ const statusTone: Record<TeacherStatus, StatusTone> = {
 
 type ShownLink = { name: string; link: string }
 
-function TeacherRow({ teacher }: { teacher: Teacher }) {
+function TeacherRow({
+  teacher,
+  busy,
+  onDeactivate,
+  onReactivate,
+  onLink,
+}: {
+  teacher: Teacher
+  busy: boolean
+  onDeactivate: () => void
+  onReactivate: () => void
+  onLink: () => void
+}) {
   const { t } = useTranslation()
   const status = teacherStatus(teacher)
   return (
@@ -45,6 +61,24 @@ function TeacherRow({ teacher }: { teacher: Teacher }) {
           <Text>{teacher.timeZone}</Text>
         </>
       }
+      actions={
+        teacher.active ? (
+          <>
+            <Button variant="secondary" disabled={busy} onClick={onLink}>
+              {teacher.hasPassword
+                ? t('adminTeachers.actions.resetLink')
+                : t('adminTeachers.actions.inviteLink')}
+            </Button>
+            <Button variant="danger" disabled={busy} onClick={onDeactivate}>
+              {t('adminTeachers.actions.deactivate')}
+            </Button>
+          </>
+        ) : (
+          <Button variant="secondary" disabled={busy} onClick={onReactivate}>
+            {t('adminTeachers.actions.reactivate')}
+          </Button>
+        )
+      }
     />
   )
 }
@@ -59,6 +93,10 @@ export function AdminTeachersPage() {
   const [timeZone, setTimeZone] = useState(defaultTimeZone)
   const [createError, setCreateError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
+  const [busyIds, setBusyIds] = useState<string[]>([])
+  const [confirming, setConfirming] = useState<{ id: string; name: string }>()
+  const [actionError, setActionError] = useState<string>()
+  const busyRef = useRef(new Set<string>())
   const inFlight = useRef(false)
   const mounted = useRef(false)
   const loadSeq = useRef(0)
@@ -90,6 +128,48 @@ export function AdminTeachersPage() {
       mounted.current = false
     }
   }, [load])
+
+  // Runs one request for a row: one busy flag per row, reload afterwards either way.
+  async function runRowAction(
+    teacher: { id: string; name: string },
+    action: () => Promise<string | null | void>,
+  ) {
+    if (busyRef.current.has(teacher.id)) {
+      return
+    }
+    busyRef.current.add(teacher.id)
+    setBusyIds([...busyRef.current])
+    setActionError(undefined)
+    try {
+      const link = await action()
+      if (mounted.current && link) {
+        setShownLink({ name: teacher.name, link })
+      }
+    } catch (failure) {
+      if (mounted.current) {
+        setActionError(
+          failure instanceof ApiError ? failure.message : t('errors.generic'),
+        )
+      }
+    } finally {
+      busyRef.current.delete(teacher.id)
+      if (mounted.current) {
+        setBusyIds([...busyRef.current])
+        void load()
+      }
+    }
+  }
+
+  async function onConfirmDeactivate() {
+    if (!confirming) {
+      return
+    }
+    const target = confirming
+    await runRowAction(target, () => deactivateTeacher(target.id))
+    if (mounted.current) {
+      setConfirming(undefined)
+    }
+  }
 
   async function onCreate(event: FormEvent) {
     event.preventDefault()
@@ -138,6 +218,9 @@ export function AdminTeachersPage() {
           onClose={() => setShownLink(undefined)}
         />
       ) : null}
+      {actionError ? (
+        <StatusMessage tone="danger">{actionError}</StatusMessage>
+      ) : null}
       {loadError ? (
         <ErrorWithRetry message={loadError} onRetry={() => void load()} />
       ) : null}
@@ -150,10 +233,51 @@ export function AdminTeachersPage() {
       ) : (
         <List>
           {teachers.map((teacher) => (
-            <TeacherRow key={teacher.id} teacher={teacher} />
+            <TeacherRow
+              key={teacher.id}
+              teacher={teacher}
+              busy={busyIds.includes(teacher.id)}
+              onDeactivate={() =>
+                setConfirming({ id: teacher.id, name: teacher.name })
+              }
+              onReactivate={() =>
+                void runRowAction(teacher, () => reactivateTeacher(teacher.id))
+              }
+              onLink={() =>
+                void runRowAction(teacher, () => issueResetLink(teacher.id))
+              }
+            />
           ))}
         </List>
       )}
+      {confirming ? (
+        <Dialog
+          title={t('adminTeachers.deactivate.title', { name: confirming.name })}
+          onCancel={() => {
+            if (!busyIds.includes(confirming.id)) {
+              setConfirming(undefined)
+            }
+          }}
+        >
+          <Text>
+            {t('adminTeachers.deactivate.body', { name: confirming.name })}
+          </Text>
+          <Button
+            variant="secondary"
+            disabled={busyIds.includes(confirming.id)}
+            onClick={() => setConfirming(undefined)}
+          >
+            {t('adminTeachers.deactivate.cancel')}
+          </Button>
+          <Button
+            variant="danger"
+            disabled={busyIds.includes(confirming.id)}
+            onClick={() => void onConfirmDeactivate()}
+          >
+            {t('adminTeachers.deactivate.confirm')}
+          </Button>
+        </Dialog>
+      ) : null}
       <Form onSubmit={(event) => void onCreate(event)}>
         <TextInput
           label={t('adminTeachers.create.name')}
