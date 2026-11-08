@@ -49,7 +49,7 @@ class JoinLinkRateLimitFilter extends OncePerRequestFilter {
 			HttpServletRequest request,
 			HttpServletResponse response,
 			FilterChain chain) throws ServletException, IOException {
-		Limiter limiter = "POST".equals(request.getMethod()) ? limiters.get(request.getRequestURI()) : null;
+		Limiter limiter = "POST".equals(request.getMethod()) ? limiters.get(request.getServletPath()) : null;
 		if (limiter == null) {
 			chain.doFilter(request, response);
 			return;
