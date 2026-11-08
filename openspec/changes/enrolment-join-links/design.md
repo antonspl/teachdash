@@ -37,7 +37,10 @@ teacher_join_links(
 )
 ```
 
-One row per teacher with an active link. Generating upserts the row with a new token;
+One row per teacher with a link. A link is valid while `now < created_at + 7 days`
+(`now` from the shared `Clock`); an expired row is treated exactly like a missing one, and
+the next generate replaces it. Generating upserts the row with a new token and a new
+`created_at`;
 disabling deletes it. Deactivation deletes it, so reactivation has no link (R8-S5).
 
 The token is stored in plain text because the teacher must be able to view the link at
@@ -56,8 +59,10 @@ token stays out of server and proxy logs.
 
 Teacher (role teacher, under `/api/teacher/**`):
 
-- `GET /api/teacher/join-link` → 200 `{ "link": "<url>" | null }`
-- `POST /api/teacher/join-link` → 200 `{ "link": "<url>" }` (generates or replaces)
+- `GET /api/teacher/join-link` → 200 `{ "link": "<url>", "expiresAt": "<instant>" }`, or
+  `{ "link": null, "expiresAt": null }` when there is no valid link
+- `POST /api/teacher/join-link` → 200 `{ "link": "<url>", "expiresAt": "<instant>" }`
+  (generates or replaces)
 - `DELETE /api/teacher/join-link` → 204, also when there is no link
 
 Public (no session needed, CSRF required):
@@ -189,7 +194,8 @@ Everything above uses Spring Boot, Spring Security and the JDK.
   HTTP `:8081`, and whatever sits in front of it is not in the repo.] → If it does not
   forward the client IP, all visitors share one counter, and one prober blocks all joins.
   After deploy, check the logged remote address of a join request; follow-up if wrong.
-- [A link has no expiry.] → Accepted in #29. The teacher can regenerate or disable it.
+- [A shared link works for up to 7 days.] → Anyone holding it can join in that time. The
+  teacher can regenerate or disable it sooner.
 - [Anyone can register any email through a valid link, without proving it is theirs.]
   → Accepted until #46.
 - [A 409 `EMAIL_TAKEN` reveals that an email is registered.] → Accepted. Only holders of

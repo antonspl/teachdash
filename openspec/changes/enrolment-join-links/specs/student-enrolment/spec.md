@@ -3,12 +3,11 @@
 ## ADDED Requirements
 
 ### Requirement: R8 Teacher manages their join link
-A teacher SHALL have at most one join link and SHALL be able to view it, generate a new one
-and disable it. Generating SHALL replace any current link, which then stops working.
-Viewing SHALL NOT create a link. A link SHALL work until it is replaced or disabled.
-Deactivating a teacher SHALL disable their link in the same transaction, and reactivating
-the teacher SHALL NOT restore it. Only teachers may call these endpoints, each for their
-own link.
+A teacher SHALL have at most one join link and SHALL be able to view it (with its expiry),
+generate a new one, which replaces the old, and disable it. Viewing SHALL NOT create a link.
+A link SHALL work for 7 days unless replaced or disabled first; an expired link is shown as
+no link. Deactivating a teacher SHALL disable their link for good. Only teachers may call
+these endpoints, each for their own link.
 
 #### Scenario: student-enrolment/R8-S1 Teacher generates and views the link
 - **GIVEN** a logged-in teacher with no join link
@@ -54,6 +53,11 @@ own link.
 - **GIVEN** teacher A with a password, a student and a join link L1, and a failure while the students are released
 - **WHEN** the admin deactivates teacher A, and the preview of L1 is requested
 - **THEN** the deactivation response is 500, the preview of L1 is 200, and the student is still in teacher A's list
+
+#### Scenario: student-enrolment/R8-S10 Link expires after 7 days
+- **GIVEN** a logged-in teacher A, a logged-in student with no teacher, and a client with no session
+- **WHEN** teacher A generates a link L1, 7 days less one minute pass, the client requests the preview of L1, one more minute passes, the client requests the preview of L1 and joins through it with a new email, the student joins through L1, teacher A views the link, and teacher A then generates a link L2
+- **THEN** the generate response carries an expiry 7 days after it was generated, the first preview is 200, the second preview and both joins are 410 with code `LINK_INVALID`, no account is created, the student still has no teacher, the view is 200 with no link, and the preview of L2 is 200 with an expiry 7 days after L2 was generated in the generate response
 
 ### Requirement: R9 Visitor joins through a join link
 A client without a session SHALL be able to preview an active join link (the teacher's

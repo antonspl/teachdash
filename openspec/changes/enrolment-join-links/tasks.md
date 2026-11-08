@@ -25,6 +25,7 @@
 - [x] 3.7 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 - [x] 3.8 Code review fix (Opus review): add a test for R11-S4 and confirm it fails on the current filter; the engineer approves this test in the PR. Then match the limiter on the decoded servlet path (design D5); verify all tests pass
 - [x] 3.9 Code review fixes: no token in the link response's `toString`, no email or name in request records' `toString`, remove the unused import in `JoinLinkController`
+- [ ] 3.10 Link expiry, decided at the code gate: write the test for R8-S10 and confirm it fails at THEN; the engineer approves it in the PR. Then implement the 7-day validity in view, generate, preview and join, and `expiresAt` in the view and generate responses (design D1, D2); verify `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh` pass and the earlier approved tests are unchanged
 
 ## Workflow follow-up
 

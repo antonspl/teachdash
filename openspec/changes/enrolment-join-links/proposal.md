@@ -16,7 +16,7 @@ issue #29 as narrowed on 2026-11-05 after #62 (a student has at most one teacher
 | 7 | Is email verification (#46) in scope? | No. The gap is accepted until #46 lands. |
 | 8 | Can the teacher see the link again later, or only when it is generated? | Again at any time. The token is stored in plain text. |
 | 9 | What does an unknown, replaced or disabled link, or a deactivated teacher's link, answer? | The same answer for all of them: 410 `LINK_INVALID`, like password links. |
-| 10 | Does a link expire? | No. It works until it is regenerated or disabled (accepted risk in #29). |
+| 10 | Does a link expire? | First answer: no. Changed at the code gate on 2026-11-08: a link expires 7 days after it is generated, like password links, for security. The teacher sends the link when lessons are agreed, so regenerating costs nothing. An expired link is shown to the teacher as no link. |
 | 11 | What happens to the link when the teacher is deactivated? | It is disabled. Reactivation does not bring it back, as with students (student-enrolment R7). |
 | 12 | Which 409 codes? | The existing ones: `EMAIL_TAKEN` for an email with an account, `STUDENT_EXISTS` for a student with another teacher, `ALREADY_ENROLLED` for a student of the same teacher. |
 | 13 | Can a visitor see who they are joining before they register? | Yes. A public preview returns the teacher's name. |
@@ -96,7 +96,7 @@ None.
 - Email verification (#46).
 - Rate limiting login and set-password-by-link (follow-up issue).
 - Per-email or per-link rate limits.
-- Link expiry, and more than one link per teacher.
+- More than one link per teacher.
 
 ## Impact
 
