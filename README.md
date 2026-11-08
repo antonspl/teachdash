@@ -30,7 +30,8 @@ Backend tests: `cd backend && ./gradlew test` (needs Docker for Testcontainers).
 Needs Node 26 (`frontend/.nvmrc`). With the stack running (`docker compose up --build --wait`), the
 container serves the built app on http://localhost:8081 and proxies `/api/*` to the backend.
 Use it for E2E and to check the real setup. For development, `cd frontend && npm ci && npm run dev`
-starts Vite on http://localhost:5173, which proxies `/api` to the backend on 8080.
+starts Vite on http://localhost:5173, which proxies `/api` to the backend on 8080. Set
+`APP_BASE_URL=http://localhost:5173` in a root `.env` so set-password links point at Vite.
 
 Health endpoints: the backend at http://localhost:8080/actuator/health (on 8081 that path returns
 the app), the web container at http://localhost:8081/healthz. The `/api/*` target defaults to
