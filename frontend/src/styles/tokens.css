@@ -7,7 +7,10 @@
   --color-neutral-text: #1f2933;
   --color-success-background: #dcfce7;
   --color-success-text: #14532d;
-  --color-success-solid: #166534;
+  --color-action-success-background: #bef264;
+  --color-action-success-hover: #a3e635;
+  --color-action-success-text: #1a2e05;
+  --color-action-success-border: #4d7c0f;
   --color-danger-background: #fee2e2;
   --color-danger-text: #7f1d1d;
   --color-surface: #ffffff;
@@ -27,6 +30,7 @@
   --space-2: 1rem;
   --space-3: 1.5rem;
   --space-4: 2.5rem;
+  --space-button-gap: 0.75rem;
 
   --border-width: 1px;
   --control-height: 2.75rem;

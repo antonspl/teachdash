@@ -15,9 +15,11 @@ const titleKey = {
 export function CabinetPage({
   role,
   children,
+  toolbar,
 }: {
   role: Role
   children?: ReactNode
+  toolbar?: ReactNode
 }) {
   const { t } = useTranslation()
   const { state, logout } = useAuth()
@@ -35,6 +37,7 @@ export function CabinetPage({
           logout().catch(() => setLogoutFailed(true))
         }}
       />
+      {toolbar}
       <Page>
         <Title>{t(titleKey[role])}</Title>
         {logoutFailed ? (

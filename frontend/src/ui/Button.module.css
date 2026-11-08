@@ -27,9 +27,13 @@
 }
 
 .success {
-  color: var(--color-on-accent);
-  background: var(--color-success-solid);
-  border: var(--border-width) solid var(--color-success-solid);
+  color: var(--color-action-success-text);
+  background: var(--color-action-success-background);
+  border: var(--border-width) solid var(--color-action-success-border);
+}
+
+.success:hover:not(:disabled) {
+  background: var(--color-action-success-hover);
 }
 
 .button:disabled {

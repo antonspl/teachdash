@@ -354,6 +354,7 @@ test('[web-admin-teachers/R3-S5] Link stays when the list fails to reload', asyn
     en.issuedLink.label.replace('{{name}}', 'Anna Smith'),
   )
   expect(linkField.value).toBe('https://x.test/set-password#t=1')
+  expect(linkField.closest('li')).toBeNull()
   expect(await screen.findByText(en.errors.INTERNAL_ERROR)).toBeTruthy()
   expect(screen.getByRole('button', { name: en.ui.tryAgain })).toBeTruthy()
   // the dialog closed and the success path reloaded the list
@@ -780,6 +781,47 @@ test('[web-admin-teachers/R5-S1] New invite link for a teacher without a passwor
   )
   expect(field.value).toBe('https://x.test/set#token=n')
   expect(actionCalls(RESET)).toHaveLength(1)
+  expect(
+    row.getByLabelText(en.issuedLink.label.replace('{{name}}', 'Anna Smith')),
+  ).toBe(field)
+})
+
+test("[web-admin-teachers/R3-S6] A new link moves to its teacher's row", async () => {
+  // given a link for Anna is shown in her row
+  world(
+    [
+      teacher({ id: '10', name: 'Anna Smith' }),
+      teacher({ id: '11', name: 'Bob Brown', email: 'bob@example.com' }),
+    ],
+    {
+      'POST admin/users/10/reset-link': () =>
+        json({ link: 'https://x.test/set#token=anna' }, 201),
+      'POST admin/users/11/reset-link': () =>
+        json({ link: 'https://x.test/set#token=bob' }, 201),
+    },
+  )
+  open()
+  const anna = await rowOf('Anna Smith')
+  const bob = await rowOf('Bob Brown')
+  fireEvent.click(
+    anna.getByRole('button', { name: en.adminTeachers.actions.resetLink }),
+  )
+  await screen.findByDisplayValue('https://x.test/set#token=anna')
+  const annaLabel = en.issuedLink.label.replace('{{name}}', 'Anna Smith')
+  const bobLabel = en.issuedLink.label.replace('{{name}}', 'Bob Brown')
+  expect(anna.getByLabelText(annaLabel)).toBeTruthy()
+
+  // when the admin gets a link for Bob
+  fireEvent.click(
+    bob.getByRole('button', { name: en.adminTeachers.actions.resetLink }),
+  )
+
+  // then it is shown in Bob's row and Anna's row has no box
+  await screen.findByDisplayValue('https://x.test/set#token=bob')
+  expect(bob.getByLabelText(bobLabel)).toBeTruthy()
+  expect(anna.queryByLabelText(annaLabel)).toBeNull()
+  expect(screen.queryByDisplayValue('https://x.test/set#token=anna')).toBeNull()
+  expect(screen.getAllByRole('textbox')).toHaveLength(1)
 })
 
 test('[web-admin-teachers/R3-S2] A new link clears the Copied message', async () => {

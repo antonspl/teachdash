@@ -33,9 +33,6 @@
   color: var(--color-text-muted);
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
+.extra {
   margin-top: var(--space-2);
 }

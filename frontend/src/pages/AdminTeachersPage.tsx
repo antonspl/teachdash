@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   createTeacher,
@@ -13,6 +20,8 @@ import {
 import { ApiError } from '../api/client'
 import { timeZoneOptions, defaultTimeZone } from '../timeZones'
 import { Button } from '../ui/Button'
+import { ButtonRow } from '../ui/ButtonRow'
+import { CabinetPage } from './CabinetPage'
 import { Dialog } from '../ui/Dialog'
 import { ErrorWithRetry } from '../ui/ErrorWithRetry'
 import { Form } from '../ui/Form'
@@ -23,6 +32,7 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { StatusMessage, type StatusTone } from '../ui/StatusMessage'
 import { Text } from '../ui/Text'
 import { TextInput } from '../ui/TextInput'
+import { Toolbar } from '../ui/Toolbar'
 
 const statusTone: Record<TeacherStatus, StatusTone> = {
   ACTIVE: 'success',
@@ -30,12 +40,13 @@ const statusTone: Record<TeacherStatus, StatusTone> = {
   DEACTIVATED: 'danger',
 }
 
-type ShownLink = { name: string; link: string }
+type ShownLink = { id: string; name: string; link: string }
 
 function TeacherRow({
   teacher,
   busy,
   justAdded,
+  linkBox,
   onDeactivate,
   onReactivate,
   onLink,
@@ -43,6 +54,7 @@ function TeacherRow({
   teacher: Teacher
   busy: boolean
   justAdded: boolean
+  linkBox?: ReactNode
   onDeactivate: (opener: HTMLElement) => void
   onReactivate: () => void
   onLink: () => void
@@ -70,9 +82,10 @@ function TeacherRow({
           <Text>{teacher.timeZone}</Text>
         </>
       }
+      extra={linkBox}
       actions={
         teacher.active ? (
-          <>
+          <ButtonRow>
             <Button variant="secondary" disabled={busy} onClick={onLink}>
               {teacher.hasPassword
                 ? t('adminTeachers.actions.resetLink')
@@ -85,11 +98,13 @@ function TeacherRow({
             >
               {t('adminTeachers.actions.deactivate')}
             </Button>
-          </>
+          </ButtonRow>
         ) : (
-          <Button variant="secondary" disabled={busy} onClick={onReactivate}>
-            {t('adminTeachers.actions.reactivate')}
-          </Button>
+          <ButtonRow>
+            <Button variant="secondary" disabled={busy} onClick={onReactivate}>
+              {t('adminTeachers.actions.reactivate')}
+            </Button>
+          </ButtonRow>
         )
       }
     />
@@ -185,12 +200,14 @@ function CreateDialog({
           options={zones}
         />
         {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}
-        <Button variant="secondary" disabled={submitting} onClick={onCancel}>
-          {t('adminTeachers.create.cancel')}
-        </Button>
-        <Button type="submit" variant="success" disabled={submitting}>
-          {t('adminTeachers.create.submit')}
-        </Button>
+        <ButtonRow>
+          <Button variant="secondary" disabled={submitting} onClick={onCancel}>
+            {t('adminTeachers.create.cancel')}
+          </Button>
+          <Button type="submit" variant="success" disabled={submitting}>
+            {t('adminTeachers.create.submit')}
+          </Button>
+        </ButtonRow>
       </Form>
     </Dialog>
   )
@@ -255,7 +272,7 @@ export function AdminTeachersPage() {
     try {
       const link = await action()
       if (mounted.current && link) {
-        setShownLink({ name: teacher.name, link })
+        setShownLink({ id: teacher.id, name: teacher.name, link })
       }
     } catch (failure) {
       if (mounted.current) {
@@ -287,7 +304,11 @@ export function AdminTeachersPage() {
     if (!mounted.current) {
       return
     }
-    setShownLink({ name: created.name, link: created.link })
+    setShownLink({
+      id: created.id,
+      name: created.name,
+      link: created.link,
+    })
     setPinnedId(created.id)
     setCreating(undefined)
     void load()
@@ -301,22 +322,34 @@ export function AdminTeachersPage() {
       ]
     : undefined
 
+  const linkRowShown =
+    shownLink !== undefined && shown?.some((item) => item.id === shownLink.id)
+  const linkBox = (standalone: boolean) =>
+    shownLink ? (
+      <IssuedLink
+        key={`${shownLink.id}:${shownLink.link}`}
+        name={shownLink.name}
+        link={shownLink.link}
+        standalone={standalone}
+        onClose={() => setShownLink(undefined)}
+      />
+    ) : null
+
   return (
-    <>
-      <Button
-        variant="success"
-        onClick={(event) => setCreating({ opener: event.currentTarget })}
-      >
-        {t('adminTeachers.add')}
-      </Button>
-      {shownLink ? (
-        <IssuedLink
-          key={shownLink.link}
-          name={shownLink.name}
-          link={shownLink.link}
-          onClose={() => setShownLink(undefined)}
-        />
-      ) : null}
+    <CabinetPage
+      role="ADMIN"
+      toolbar={
+        <Toolbar>
+          <Button
+            variant="success"
+            onClick={(event) => setCreating({ opener: event.currentTarget })}
+          >
+            {t('adminTeachers.add')}
+          </Button>
+        </Toolbar>
+      }
+    >
+      {shownLink && !linkRowShown ? linkBox(true) : null}
       {actionError ? (
         <StatusMessage tone="danger">{actionError}</StatusMessage>
       ) : null}
@@ -337,6 +370,9 @@ export function AdminTeachersPage() {
               teacher={teacher}
               busy={busyIds.includes(teacher.id)}
               justAdded={teacher.id === pinnedId}
+              linkBox={
+                shownLink?.id === teacher.id ? linkBox(false) : undefined
+              }
               onDeactivate={(opener) =>
                 setConfirming({ id: teacher.id, name: teacher.name, opener })
               }
@@ -363,20 +399,22 @@ export function AdminTeachersPage() {
           <Text>
             {t('adminTeachers.deactivate.body', { name: confirming.name })}
           </Text>
-          <Button
-            variant="secondary"
-            disabled={busyIds.includes(confirming.id)}
-            onClick={() => setConfirming(undefined)}
-          >
-            {t('adminTeachers.deactivate.cancel')}
-          </Button>
-          <Button
-            variant="danger"
-            disabled={busyIds.includes(confirming.id)}
-            onClick={() => void onConfirmDeactivate()}
-          >
-            {t('adminTeachers.deactivate.confirm')}
-          </Button>
+          <ButtonRow>
+            <Button
+              variant="secondary"
+              disabled={busyIds.includes(confirming.id)}
+              onClick={() => setConfirming(undefined)}
+            >
+              {t('adminTeachers.deactivate.cancel')}
+            </Button>
+            <Button
+              variant="danger"
+              disabled={busyIds.includes(confirming.id)}
+              onClick={() => void onConfirmDeactivate()}
+            >
+              {t('adminTeachers.deactivate.confirm')}
+            </Button>
+          </ButtonRow>
         </Dialog>
       ) : null}
       {creating ? (
@@ -386,6 +424,6 @@ export function AdminTeachersPage() {
           onCreated={onCreated}
         />
       ) : null}
-    </>
+    </CabinetPage>
   )
 }

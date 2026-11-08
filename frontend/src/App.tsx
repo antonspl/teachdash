@@ -33,9 +33,7 @@ export function App() {
           path="/admin"
           element={
             <RequireRole role="ADMIN">
-              <CabinetPage role="ADMIN">
-                <AdminTeachersPage />
-              </CabinetPage>
+              <AdminTeachersPage />
             </RequireRole>
           }
         />

@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './Button'
+import { ButtonRow } from './ButtonRow'
 import styles from './IssuedLink.module.css'
 import { StatusMessage } from './StatusMessage'
 
@@ -9,10 +10,13 @@ export function IssuedLink({
   name,
   link,
   onClose,
+  standalone = false,
 }: {
   name: string
   link: string
   onClose: () => void
+  // Shown outside a row (above the list): leaves space below it.
+  standalone?: boolean
 }) {
   const { t } = useTranslation()
   const id = useId()
@@ -31,7 +35,7 @@ export function IssuedLink({
   }
 
   return (
-    <section className={styles.box}>
+    <section className={`${styles.box} ${standalone ? styles.standalone : ''}`}>
       <label htmlFor={id} className={styles.label}>
         {t('issuedLink.label', { name })}
       </label>
@@ -44,12 +48,12 @@ export function IssuedLink({
         value={link}
       />
       <p className={styles.note}>{t('issuedLink.note')}</p>
-      <div className={styles.actions}>
+      <ButtonRow>
         <Button onClick={() => void onCopy()}>{t('issuedLink.copy')}</Button>
         <Button variant="secondary" onClick={onClose}>
           {t('issuedLink.close')}
         </Button>
-      </div>
+      </ButtonRow>
       {copy === 'copied' ? (
         <StatusMessage tone="success">{t('issuedLink.copied')}</StatusMessage>
       ) : null}

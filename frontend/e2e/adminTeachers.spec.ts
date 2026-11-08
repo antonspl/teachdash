@@ -18,13 +18,12 @@ test('[web-admin-teachers/R1-S4] The page fits a phone screen', async ({
   await page
     .getByRole('button', { name: en.adminTeachers.create.submit })
     .click()
+  const row = page.getByRole('listitem').filter({ hasText: email })
   await expect(
-    page.getByLabel(
+    row.getByLabel(
       en.issuedLink.label.replace('{{name}}', 'Long Email Teacher'),
     ),
   ).toBeVisible()
-  const row = page.getByRole('listitem').filter({ hasText: email })
-  await expect(row).toBeVisible()
 
   // then nothing scrolls sideways and the row's buttons are visible
   const widths = await page.evaluate(() => ({
@@ -82,14 +81,14 @@ test('[web-admin-teachers/R2-S1] Admin creates a teacher', async ({ page }) => {
 
   // then the dialog closes and the set-password link is shown with the new teacher's name
   await expect(page.getByRole('dialog')).toBeHidden()
-  const link = page.getByLabel(en.issuedLink.label.replace('{{name}}', name))
+  const row = page.getByRole('listitem').first()
+  const link = row.getByLabel(en.issuedLink.label.replace('{{name}}', name))
   await expect(link).toBeVisible()
   await expect(link).toHaveValue(
     /^https?:\/\/[^/]+(\/[^/#?]+)*\/set-password#token=.+/,
   )
 
-  // and the new teacher is the first row of the list
-  const row = page.getByRole('listitem').first()
+  // and the link box is inside the first row, which is the new teacher
   await expect(row).toContainText(email)
   await expect(row).toContainText(name)
   await expect(row).toContainText(en.adminTeachers.justAdded)

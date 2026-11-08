@@ -11,11 +11,13 @@ export function ListItem({
   badge,
   details,
   actions,
+  extra,
 }: {
   title: ReactNode
   badge?: ReactNode
   details?: ReactNode
   actions?: ReactNode
+  extra?: ReactNode
 }) {
   return (
     <li className={styles.item}>
@@ -24,7 +26,8 @@ export function ListItem({
         {badge}
       </div>
       {details ? <div className={styles.details}>{details}</div> : null}
-      {actions ? <div className={styles.actions}>{actions}</div> : null}
+      {actions}
+      {extra ? <div className={styles.extra}>{extra}</div> : null}
     </li>
   )
 }
