@@ -14,7 +14,7 @@ issue #29 as narrowed on 2026-11-05 after #62 (a student has at most one teacher
 | 5 | How is the public endpoint rate limited? | Per client IP, in the backend, with no new dependency. 429 `RATE_LIMITED` with `Retry-After`. Limits are configurable. |
 | 6 | Is a new visitor logged in right after joining? | Yes, like after setting a password through a link. |
 | 7 | Is email verification (#46) in scope? | No. The gap is accepted until #46 lands. |
-| 8 | Can the teacher see the link again later, or only when it is generated? | Again at any time. The token is stored in plain text. |
+| 8 | Can the teacher see the link again later, or only when it is generated? | Again at any time while it is valid (7 days, see Q10). The token is stored in plain text. |
 | 9 | What does an unknown, replaced or disabled link, or a deactivated teacher's link, answer? | The same answer for all of them: 410 `LINK_INVALID`, like password links. |
 | 10 | Does a link expire? | First answer: no. Changed at the code gate on 2026-11-08: a link expires 7 days after it is generated, like password links, for security. The teacher sends the link when lessons are agreed, so regenerating costs nothing. An expired link is shown to the teacher as no link. |
 | 11 | What happens to the link when the teacher is deactivated? | It is disabled. Reactivation does not bring it back, as with students (student-enrolment R7). |
@@ -68,7 +68,8 @@ student whose teacher removed them join a new teacher.
 ## What Changes
 
 - Each teacher has at most one join link. The teacher can view it, generate a new one
-  (the old one stops working) and disable it. Deactivating the teacher disables it.
+  (the old one stops working) and disable it. A link works for 7 days. Deactivating the
+  teacher disables it.
 - A visitor without a session can preview a link (the teacher's name) and register
   through it with name, email, time zone and password. The new student is assigned to
   the teacher and logged in.

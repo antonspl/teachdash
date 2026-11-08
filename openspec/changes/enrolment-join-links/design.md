@@ -101,7 +101,7 @@ Join, in one transaction, after the password is hashed outside it (as `AccountSe
 does, so no connection is held during bcrypt). Hashing before the link check costs a
 bcrypt for every invalid link; the rate limiter (D5) bounds that cost.
 
-1. Find the link by token. Not found → 410 `LINK_INVALID`.
+1. Find a valid link by token (not expired, D1). Not found → 410 `LINK_INVALID`.
 2. Lock the teacher row with `findActiveByIdForUpdate`. Not found (deactivated) → 410
    `LINK_INVALID`.
 3. Re-read the link under the teacher lock; if the token changed or the row is gone →
