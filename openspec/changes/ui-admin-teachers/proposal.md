@@ -12,8 +12,11 @@ Answered by the engineer:
 - **Getting a new link for a teacher.** The page needs to know who has not set a
   password yet, to show "waiting for password" and offer a new invite link instead
   of a password reset. The list does not say this today. The backend part (a
-  `hasPassword` field in the teacher list) is a separate issue, #70; this change
-  depends on it.
+  `hasPassword` field in the teacher list) is a separate issue, #70. The page reads
+  the field and treats a missing value as "has a password", so this change does not
+  wait for #70: until it lands, every active teacher shows as "Active" with
+  "Password reset link" (a reset link also works for a teacher with no password).
+  The three statuses are tested with stubbed responses (R1-S1).
 - **Client-side checks of name and email (#44).** Left to #44. The form uses only
   the browser's `required` and `type=email`, and shows the backend's translated
   errors.
@@ -85,5 +88,5 @@ by hand.
   tests.
 - `scripts/check-scenario-coverage.sh`: adds `web-admin-teachers` to the frontend
   capabilities.
-- No backend change in this PR, no new dependencies, no migrations. The e2e tests
-  need #70 merged.
+- No backend change in this PR, no new dependencies, no migrations. Nothing here
+  waits for #70.

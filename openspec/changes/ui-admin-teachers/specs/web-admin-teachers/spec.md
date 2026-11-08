@@ -55,7 +55,7 @@ clear the form and load the list again. On failure the entered values SHALL stay
 - **GIVEN** a logged-in admin on `/admin`
 - **WHEN** the admin enters a name, a new email and a time zone, and submits
 - **THEN** the set-password link is shown with the new teacher's name
-- **AND** the new teacher appears in the list as "Waiting for password"
+- **AND** the new teacher appears in the list
 - **AND** the form is empty again
 
 #### Scenario: web-admin-teachers/R2-S2 The browser's time zone is preselected

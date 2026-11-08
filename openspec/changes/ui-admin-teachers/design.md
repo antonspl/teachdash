@@ -147,9 +147,9 @@ No new dependencies. No Flyway migrations.
 
 ## Risks / Trade-offs
 
-- [#70 not merged yet] → Vitest uses stubbed responses and does not need it. The e2e
-  tests need it. Implement in that order, or keep the e2e tests last and run them once
-  #70 is in `main`.
+- [#70 not merged yet] → a missing `hasPassword` is read as `true` (D2), so the page
+  works without it. The statuses are tested in Vitest with stubbed responses (R1-S1);
+  the e2e tests do not check them, so they pass with or without #70.
 - [Browser zone list wider than the JVM's] → generic `VALIDATION_FAILED` message
   (R2-S4); acceptable for a rare id.
 - [A new link replaces a pending one silently] → the note under every shown link says

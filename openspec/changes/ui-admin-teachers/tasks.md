@@ -23,7 +23,7 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 ## 4. Create a teacher
 
 - [x] 4.1 Add the create form (name, email, time zone select) with link display, form reset and list reload, the link kept when the reload fails; Vitest for web-admin-teachers/R2-S2 to R2-S6 and R3-S5; verify `npm test`
-- [ ] 4.2 Add `loginAsAdminInUi(page)` to `e2e/accounts.ts` and the Playwright test for web-admin-teachers/R2-S1 (needs #70 in the backend); verify `npm run test:e2e` against `docker compose up --build --wait`
+- [ ] 4.2 Add `loginAsAdminInUi(page)` to `e2e/accounts.ts` and the Playwright test for web-admin-teachers/R2-S1 (no status check, so it does not need #70); verify `npm run test:e2e` against `docker compose up --build --wait`
 
 ## 5. Deactivate and reactivate
 
@@ -43,5 +43,5 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 - Opus review of the code, then ask for the code gate in the PR with the commit range.
 - Archive the change in the same PR (`openspec/specs/web-admin-teachers` created,
   `web-auth` R3 updated).
-- Rebase onto `main` once #67 (ui-auth) is merged, and make sure #70 is merged.
+- Rebase onto `main` once #67 (ui-auth) is merged.
 - Mark the PR ready for the final review by a code owner other than the engineer.
