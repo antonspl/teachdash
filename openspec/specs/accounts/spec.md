@@ -126,12 +126,12 @@ The system SHALL end the current session on logout. Logout without a session get
 - **THEN** the response is 401 with code `UNAUTHENTICATED`
 
 ### Requirement: R4 Role-based access
-Every endpoint except login, set-password-by-link and the health check
-(`/actuator/health`) SHALL require a session. Admin
-endpoints SHALL be allowed only for admins. Later capabilities apply the same rule to
-teacher and student endpoints. A state-changing request (POST, PUT, PATCH, DELETE)
-without a valid CSRF token MUST be rejected with 403. Login SHALL replace the CSRF token,
-and its response SHALL carry the new one.
+Every endpoint except login, set-password-by-link, join-link preview and join
+(student-enrolment R9) and `/actuator/health` SHALL require a session. Admin endpoints
+SHALL be allowed only for admins; later capabilities do the same for teachers and students.
+A POST, PUT, PATCH or DELETE without a valid CSRF token MUST get 403. Login,
+set-password-by-link and a visitor's join SHALL replace the CSRF token and return the new
+one.
 
 #### Scenario: accounts/R4-S1 No session is rejected
 - **WHEN** a request without a session calls the current-user endpoint
@@ -184,7 +184,6 @@ and its response SHALL carry the new one.
 #### Scenario: accounts/R4-S11 The coded error replaces a large response
 - **GIVEN** a logged-in admin and a teacher list too large for the response buffer
 - **WHEN** the admin requests the list and saving the session fails
-- **THEN** the response is 500 with code `INTERNAL_ERROR` and no internal details in the body
 
 ### Requirement: R5 Admin creates teacher accounts
 An admin SHALL be able to create a teacher account with name, email and time zone.

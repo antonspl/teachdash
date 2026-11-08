@@ -53,7 +53,8 @@ class SecurityConfig {
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.requestMatchers("/api/teacher/**").hasRole("TEACHER")
 						.requestMatchers("/api/student/**").hasRole("STUDENT")
-						.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/password-links").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/password-links",
+								"/api/join-links/preview", "/api/join-links/join").permitAll()
 						.requestMatchers("/actuator/health", "/actuator/health/**", "/error").permitAll()
 						.anyRequest().authenticated())
 				.csrf(csrf -> csrf

@@ -3,11 +3,9 @@ package com.teachdash.accounts.domain;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.HexFormat;
 import java.util.UUID;
 
@@ -23,13 +21,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.teachdash.accounts.persistence.OneTimeTokenRepository;
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
+import com.teachdash.common.TokenGenerator;
 
 /** One-time set/reset password links (design D5); reusable for other roles. */
 @Service
 public class PasswordLinkService {
 
 	private static final Duration VALIDITY = Duration.ofDays(7);
-	private static final SecureRandom RANDOM = new SecureRandom();
 
 	private final OneTimeTokenRepository tokens;
 	private final UserRepository users;
@@ -58,9 +56,7 @@ public class PasswordLinkService {
 	/** Issues a link for the account and invalidates its older unused links. */
 	@Transactional
 	public String issue(UUID userId, TokenPurpose purpose) {
-		byte[] bytes = new byte[32];
-		RANDOM.nextBytes(bytes);
-		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+		String token = TokenGenerator.generate();
 		Instant now = clock.instant();
 		// Locks the user row first: user before links, see lock order.
 		users.findByIdForUpdate(userId);

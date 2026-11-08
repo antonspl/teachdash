@@ -1,6 +1,7 @@
 package com.teachdash.support;
 
 import java.time.Clock;
+import java.time.temporal.ChronoUnit;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -14,7 +15,7 @@ public class MutableClock extends Clock {
 	private final ZoneId zone;
 
 	public MutableClock() {
-		this(new AtomicReference<>(Instant.now()), ZoneOffset.UTC);
+		this(new AtomicReference<>(Instant.now().truncatedTo(ChronoUnit.MILLIS)), ZoneOffset.UTC);
 	}
 
 	private MutableClock(AtomicReference<Instant> now, ZoneId zone) {
@@ -42,6 +43,6 @@ public class MutableClock extends Clock {
 	}
 
 	public void reset() {
-		now.set(Instant.now());
+		now.set(Instant.now().truncatedTo(ChronoUnit.MILLIS));
 	}
 }
