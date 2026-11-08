@@ -20,6 +20,12 @@
   border: var(--border-width) solid var(--color-border);
 }
 
+.danger {
+  color: var(--color-on-accent);
+  background: var(--color-danger-text);
+  border: var(--border-width) solid var(--color-danger-text);
+}
+
 .button:disabled {
   opacity: 0.6;
   cursor: not-allowed;

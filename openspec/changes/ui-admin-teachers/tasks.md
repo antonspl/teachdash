@@ -5,16 +5,16 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 
 ## 1. Groundwork
 
-- [ ] 1.1 Add `web-admin-teachers` to `FRONTEND_CAPABILITIES` in `scripts/check-scenario-coverage.sh`; verify the script lists the new scenarios as missing
-- [ ] 1.2 Add `src/api/adminTeachers.ts` with the five typed calls (design D2), mapping both link keys to one shape and parsing no body on 204; verify with `npm run lint` and `npm run build`
-- [ ] 1.3 Add the time zone list module (design D5) with unit tests for: `UTC` included, browser zone added and preselected, fallback when `supportedValuesOf` is missing; verify `npm test`
-- [ ] 1.4 Add the `showModal`/`close` stub for jsdom to the Vitest setup; verify `npm test` still passes
+- [x] 1.1 Add `web-admin-teachers` to `FRONTEND_CAPABILITIES` in `scripts/check-scenario-coverage.sh`; verify the script lists the new scenarios as missing
+- [x] 1.2 Add `src/api/adminTeachers.ts` with the five typed calls (design D2), mapping both link keys to one shape and parsing no body on 204; verify with `npm run lint` and `npm run build`
+- [x] 1.3 Add the time zone list module (design D5) with unit tests for: `UTC` included, browser zone added and preselected, fallback when `supportedValuesOf` is missing; verify `npm test`
+- [x] 1.4 Add the `showModal`/`close` stub for jsdom to the Vitest setup; verify `npm test` still passes
 
 ## 2. UI components
 
-- [ ] 2.1 Add `ui/Select`, `ui/StatusBadge`, `ui/List`/`ListItem` and the `danger` variant of `ui/Button`, using design tokens only (design D7); verify `npm run lint` passes the design-token check
-- [ ] 2.2 Add `ui/Dialog` on native `<dialog>` (design D4) with Escape mapped to cancel; verify `npm run lint` and `npm run build`
-- [ ] 2.3 Add `ui/IssuedLink` (design D6) with tests for web-admin-teachers/R3-S1 to R3-S4 (clipboard stubbed; the selection checked through `selectionStart`/`selectionEnd`); verify `npm test`
+- [x] 2.1 Add `ui/Select`, `ui/StatusBadge`, `ui/List`/`ListItem` and the `danger` variant of `ui/Button`, using design tokens only (design D7); verify `npm run lint` passes the design-token check
+- [x] 2.2 Add `ui/Dialog` on native `<dialog>` (design D4) with Escape mapped to cancel; verify `npm run lint` and `npm run build`
+- [x] 2.3 Add `ui/IssuedLink` (design D6) with tests for web-admin-teachers/R3-S1 to R3-S4 (clipboard stubbed; the selection checked through `selectionStart`/`selectionEnd`); verify `npm test`
 
 ## 3. Teacher list
 

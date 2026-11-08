@@ -66,5 +66,13 @@
   },
   "startup": {
     "error": "We could not load your session. Check the connection and try again."
+  },
+  "issuedLink": {
+    "label": "Link for {{name}}",
+    "note": "Heads up: you can only see this link right now. It works once, within 7 days, and replaces any earlier unused link. Don't open it in this browser, or you'll be signed out of your admin session.",
+    "copy": "Copy",
+    "close": "Close",
+    "copied": "Copied, ready to paste!",
+    "copyByHand": "Couldn't copy it for you. The link is selected, so just copy it by hand."
   }
 }

@@ -1,0 +1,15 @@
+.dialog {
+  width: calc(100% - 2 * var(--space-2));
+  max-width: var(--content-width);
+  padding: var(--space-3);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-large);
+  line-height: var(--line-height-tight);
+}
