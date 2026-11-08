@@ -32,7 +32,7 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 ## 6. New links
 
 - [x] 6.1 Add the per-row link button ("New invite link" / "Password reset link", none for deactivated rows) with one busy flag per row for all its buttons; Vitest for web-admin-teachers/R5-S1 to R5-S5; verify `npm test`
-- [ ] 6.2 Playwright test for web-admin-teachers/R1-S4 on the phone projects (no horizontal scroll with a long email and a shown link); verify `npm run test:e2e`
+- [x] 6.2 Playwright test for web-admin-teachers/R1-S4 on the phone projects (no horizontal scroll with a long email and a shown link); verify `npm run test:e2e`
 
 ## 7. Final checks
 

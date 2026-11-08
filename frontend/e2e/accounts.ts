@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { expect, type APIRequestContext } from '@playwright/test'
+import { expect, type APIRequestContext, type Page } from '@playwright/test'
+import en from '../src/i18n/en.json' with { type: 'json' }
 import { ACCEPT } from '../src/api/headers'
 
 // @types/node is not installed; this is all the helper needs from it.
@@ -106,4 +107,14 @@ export async function createTeacher(
 export function linkPath(setPasswordLink: string) {
   const url = new URL(setPasswordLink)
   return url.pathname + url.search + url.hash
+}
+
+/** Logs in as the admin through the login page and waits for the admin cabinet. */
+export async function loginAsAdminInUi(page: Page) {
+  const admin = adminCredentials()
+  await page.goto('/login')
+  await page.getByLabel(en.login.email).fill(admin.email)
+  await page.getByLabel(en.login.password, { exact: true }).fill(admin.password)
+  await page.getByRole('button', { name: en.login.submit }).click()
+  await expect(page).toHaveURL(/\/admin$/)
 }
