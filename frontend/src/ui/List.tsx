@@ -23,7 +23,7 @@ export function ListItem({
     <li className={styles.item}>
       <div className={styles.head}>
         <strong className={styles.title}>{title}</strong>
-        {badge}
+        {badge ? <div className={styles.badges}>{badge}</div> : null}
       </div>
       {details ? <div className={styles.details}>{details}</div> : null}
       {actions}

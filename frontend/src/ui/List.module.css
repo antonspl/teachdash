@@ -28,6 +28,15 @@
   min-width: 0;
 }
 
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
 .details {
   margin-top: var(--space-1);
   color: var(--color-text-muted);
