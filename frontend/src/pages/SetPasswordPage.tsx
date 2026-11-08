@@ -5,6 +5,7 @@ import { ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthProvider'
 import { cabinetPath } from '../auth/guards'
 import { Button } from '../ui/Button'
+import { Form } from '../ui/Form'
 import { Page } from '../ui/Page'
 import { PasswordInput } from '../ui/PasswordInput'
 import { StatusMessage } from '../ui/StatusMessage'
@@ -89,7 +90,7 @@ export function SetPasswordPage() {
           {t('setPassword.incompleteLink')}
         </StatusMessage>
       ) : (
-        <form onSubmit={(event) => void onSubmit(event)}>
+        <Form onSubmit={(event) => void onSubmit(event)}>
           <PasswordInput
             label={t('setPassword.password')}
             autoComplete="new-password"
@@ -108,7 +109,7 @@ export function SetPasswordPage() {
           <Button type="submit" disabled={submitting}>
             {t('setPassword.submit')}
           </Button>
-        </form>
+        </Form>
       )}
     </Page>
   )
