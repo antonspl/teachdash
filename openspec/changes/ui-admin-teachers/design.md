@@ -69,7 +69,8 @@ teacher who has no password yet.
 
 The page uses `useState` for the list, the shown link, the open dialog and per-row busy
 flags. After a successful create, deactivate, reactivate or link, and after a failed
-action, it loads the list again. A failed action keeps the old list while the reload
+deactivate, reactivate or link request, it loads the list again. A failed create
+keeps the list as it is (R2). A failed action keeps the old list while the reload
 runs. The shown link is separate state from the list: a failed reload shows the list's
 error and "Try again" but never hides the link (R3-S5). The teacher's name for the link
 box is taken from the submitted values before the form is cleared. The deactivate dialog
