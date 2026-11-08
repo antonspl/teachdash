@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import styles from './Button.module.css'
 
 export function Button({
@@ -9,7 +9,7 @@ export function Button({
   disabled,
 }: {
   children: ReactNode
-  onClick?: () => void
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void
   type?: 'button' | 'submit'
   variant?: 'primary' | 'secondary' | 'danger'
   disabled?: boolean

@@ -565,7 +565,9 @@ test('[web-admin-teachers/R4-S8] Focus moves into the dialog and back', async ()
   world([teacher()], {})
   open()
   const opener = deactivateButton(await rowOf('Anna Smith'))
-  opener.focus()
+  // Safari and macOS Firefox do not focus a button on click: focus is on <body>.
+  opener.blur()
+  expect(document.activeElement).toBe(document.body)
 
   // when
   fireEvent.click(opener)
@@ -660,6 +662,35 @@ test('[web-admin-teachers/R5-S1] New invite link for a teacher without a passwor
   )
   expect(field.value).toBe('https://x.test/set#token=n')
   expect(actionCalls(RESET)).toHaveLength(1)
+})
+
+test('[web-admin-teachers/R3-S2] A new link clears the Copied message', async () => {
+  // given
+  let issued = 0
+  world([teacher()], {
+    [RESET]: () => json({ link: `https://x.test/set#token=${++issued}` }, 201),
+  })
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  vi.stubGlobal('navigator', { clipboard: { writeText } })
+  open()
+  const row = await rowOf('Anna Smith')
+  const resetLink = () =>
+    row.getByRole<HTMLButtonElement>('button', {
+      name: en.adminTeachers.actions.resetLink,
+    })
+  fireEvent.click(resetLink())
+  await screen.findByDisplayValue('https://x.test/set#token=1')
+  fireEvent.click(screen.getByRole('button', { name: en.issuedLink.copy }))
+  await screen.findByText(en.issuedLink.copied)
+  await waitFor(() => expect(resetLink().disabled).toBe(false))
+
+  // when
+  fireEvent.click(resetLink())
+
+  // then
+  await screen.findByDisplayValue('https://x.test/set#token=2')
+  expect(screen.queryByText(en.issuedLink.copied)).toBeNull()
+  expect(screen.queryByText(en.issuedLink.copyByHand)).toBeNull()
 })
 
 test('[web-admin-teachers/R5-S2] Password reset link for a teacher with a password', async () => {

@@ -3,27 +3,31 @@ import styles from './Dialog.module.css'
 
 // A modal dialog on the native <dialog>. Mount it to open it, unmount it to close it.
 // Escape (the native "cancel") calls onCancel. Focus moves to the first button or field inside
-// (put the safe choice first) and goes back to the element focused when it opened.
+// (put the safe choice first) and goes back to `returnFocusTo` (the element that opened it;
+// browsers like Safari do not focus a clicked button, so activeElement cannot be trusted).
 export function Dialog({
   title,
   children,
   onCancel,
+  returnFocusTo,
 }: {
   title: string
   children: ReactNode
   onCancel: () => void
+  returnFocusTo?: HTMLElement | null
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const cancelRef = useRef(onCancel)
+  const returnRef = useRef(returnFocusTo)
 
   useEffect(() => {
     cancelRef.current = onCancel
+    returnRef.current = returnFocusTo
   })
 
   useEffect(() => {
     const dialog = ref.current
-    const opener = document.activeElement
     dialog?.showModal()
     // Browsers focus the first focusable element themselves; make it explicit so the
     // behaviour does not depend on that.
@@ -34,7 +38,8 @@ export function Dialog({
       if (dialog?.open) {
         dialog.close()
       }
-      if (opener instanceof HTMLElement && opener.isConnected) {
+      const opener = returnRef.current
+      if (opener?.isConnected) {
         opener.focus()
       }
     }

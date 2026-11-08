@@ -41,7 +41,7 @@ function TeacherRow({
 }: {
   teacher: Teacher
   busy: boolean
-  onDeactivate: () => void
+  onDeactivate: (opener: HTMLElement) => void
   onReactivate: () => void
   onLink: () => void
 }) {
@@ -69,7 +69,11 @@ function TeacherRow({
                 ? t('adminTeachers.actions.resetLink')
                 : t('adminTeachers.actions.inviteLink')}
             </Button>
-            <Button variant="danger" disabled={busy} onClick={onDeactivate}>
+            <Button
+              variant="danger"
+              disabled={busy}
+              onClick={(event) => onDeactivate(event.currentTarget)}
+            >
               {t('adminTeachers.actions.deactivate')}
             </Button>
           </>
@@ -94,7 +98,11 @@ export function AdminTeachersPage() {
   const [createError, setCreateError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
   const [busyIds, setBusyIds] = useState<string[]>([])
-  const [confirming, setConfirming] = useState<{ id: string; name: string }>()
+  const [confirming, setConfirming] = useState<{
+    id: string
+    name: string
+    opener: HTMLElement
+  }>()
   const [actionError, setActionError] = useState<string>()
   const busyRef = useRef(new Set<string>())
   const inFlight = useRef(false)
@@ -213,6 +221,7 @@ export function AdminTeachersPage() {
     <>
       {shownLink ? (
         <IssuedLink
+          key={shownLink.link}
           name={shownLink.name}
           link={shownLink.link}
           onClose={() => setShownLink(undefined)}
@@ -237,8 +246,8 @@ export function AdminTeachersPage() {
               key={teacher.id}
               teacher={teacher}
               busy={busyIds.includes(teacher.id)}
-              onDeactivate={() =>
-                setConfirming({ id: teacher.id, name: teacher.name })
+              onDeactivate={(opener) =>
+                setConfirming({ id: teacher.id, name: teacher.name, opener })
               }
               onReactivate={() =>
                 void runRowAction(teacher, () => reactivateTeacher(teacher.id))
@@ -253,6 +262,7 @@ export function AdminTeachersPage() {
       {confirming ? (
         <Dialog
           title={t('adminTeachers.deactivate.title', { name: confirming.name })}
+          returnFocusTo={confirming.opener}
           onCancel={() => {
             if (!busyIds.includes(confirming.id)) {
               setConfirming(undefined)
