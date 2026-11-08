@@ -14,25 +14,25 @@ Every Vitest or Playwright test title starts with its `[<scenario ID>]`.
 
 - [ ] 2.1 Add `ui/Select`, `ui/StatusBadge`, `ui/List`/`ListItem` and the `danger` variant of `ui/Button`, using design tokens only (design D7); verify `npm run lint` passes the design-token check
 - [ ] 2.2 Add `ui/Dialog` on native `<dialog>` (design D4) with Escape mapped to cancel; verify `npm run lint` and `npm run build`
-- [ ] 2.3 Add `ui/IssuedLink` (design D6) with tests for web-admin-teachers/R3-S1 to R3-S4 (clipboard stubbed; rejection selects the text); verify `npm test`
+- [ ] 2.3 Add `ui/IssuedLink` (design D6) with tests for web-admin-teachers/R3-S1 to R3-S4 (clipboard stubbed; the selection checked through `selectionStart`/`selectionEnd`); verify `npm test`
 
 ## 3. Teacher list
 
-- [ ] 3.1 Render `AdminTeachersPage` on `/admin` inside the cabinet layout (design D1), with the list, statuses, empty state and load error with retry; add i18n strings in an informal tone; tests for web-admin-teachers/R1-S1 to R1-S3; verify `npm test` and that web-auth/R3-S1 and the routing tests still pass
+- [ ] 3.1 Render `AdminTeachersPage` on `/admin` inside the cabinet layout (design D1), with the list, statuses (missing `hasPassword` read as `true`), empty state and load error with retry; add i18n strings in an informal tone; tests for web-admin-teachers/R1-S1 to R1-S3; verify `npm test` and that web-auth/R3-S1 and the routing tests still pass
 
 ## 4. Create a teacher
 
-- [ ] 4.1 Add the create form (name, email, time zone select) with link display, form reset and list reload; Vitest for web-admin-teachers/R2-S2 to R2-S5; verify `npm test`
+- [ ] 4.1 Add the create form (name, email, time zone select) with link display, form reset and list reload, the link kept when the reload fails; Vitest for web-admin-teachers/R2-S2 to R2-S6 and R3-S5; verify `npm test`
 - [ ] 4.2 Add `loginAsAdminInUi(page)` to `e2e/accounts.ts` and the Playwright test for web-admin-teachers/R2-S1 (needs #70 in the backend); verify `npm run test:e2e` against `docker compose up --build --wait`
 
 ## 5. Deactivate and reactivate
 
-- [ ] 5.1 Add "Deactivate" with the confirm dialog and "Reactivate" with link display, reload after each and the error message on failure; Vitest for web-admin-teachers/R4-S1, R4-S3 to R4-S6; verify `npm test`
-- [ ] 5.2 Playwright test for web-admin-teachers/R4-S2 (creates its own teacher via the API); verify `npm run test:e2e`
+- [ ] 5.1 Add "Deactivate" with the confirm dialog (focus in and back) and "Reactivate" with link display, reload after each and the error message on failure; Vitest for web-admin-teachers/R4-S1 to R4-S8 and R1-S5; verify `npm test`
 
 ## 6. New links
 
-- [ ] 6.1 Add the per-row link button ("New invite link" / "Password reset link", none for deactivated rows) with per-row busy state; Vitest for web-admin-teachers/R5-S1 to R5-S4; verify `npm test`
+- [ ] 6.1 Add the per-row link button ("New invite link" / "Password reset link", none for deactivated rows) with one busy flag per row for all its buttons; Vitest for web-admin-teachers/R5-S1 to R5-S5; verify `npm test`
+- [ ] 6.2 Playwright test for web-admin-teachers/R1-S4 on the phone projects (no horizontal scroll with a long email and a shown link); verify `npm run test:e2e`
 
 ## 7. Final checks
 
