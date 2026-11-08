@@ -9,7 +9,9 @@ async function setPasswordOnLinkPage(page: Page, link: string) {
   await page
     .getByLabel(en.setPassword.password, { exact: true })
     .fill(TEACHER_PASSWORD)
-  await page.getByLabel(en.setPassword.confirm).fill(TEACHER_PASSWORD)
+  await page
+    .getByLabel(en.setPassword.confirm, { exact: true })
+    .fill(TEACHER_PASSWORD)
   await page.getByRole('button', { name: en.setPassword.submit }).click()
 }
 
