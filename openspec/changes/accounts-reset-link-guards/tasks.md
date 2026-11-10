@@ -5,9 +5,9 @@
 No stubs and no migrations are needed. Each test fails at its THEN step, because both
 requests return 201 today. Test setup creates users and sessions directly.
 
-- [ ] 1.1 In `PasswordLinkTest`, add `[accounts/R8-S4]`: a deactivated teacher with a password and an unused link inserted with `createToken` (design D6); the admin's reset-link request gets 409 `ACCOUNT_DEACTIVATED`, the seeded link is still unused and it is the teacher's only row in `one_time_tokens`. Assert the status and code before the rows; verify it fails at THEN
-- [ ] 1.2 In `PasswordLinkTest`, add `[accounts/R8-S5]`: create the admin with `createAdmin` and log in with `loggedInAs`, because `loggedInAdmin()` does not return the id; insert an unused reset link for the admin with `createToken` (design D6) and create a second admin with `createAdmin`. The admin's request for their own account gets 409 `OWN_ACCOUNT`, the seeded link is still unused and it is the admin's only row in `one_time_tokens`; then the request for the second admin gets 201 with a link (design D5). Assert the first response before everything else; verify it fails at THEN
-- [ ] 1.3 Run `scripts/check-scenario-coverage.sh` and verify it reports no missing scenario, then push and post the commit range of this pass in the PR
+- [x] 1.1 In `PasswordLinkTest`, add `[accounts/R8-S4]`: a deactivated teacher with a password and an unused link inserted with `createToken` (design D6); the admin's reset-link request gets 409 `ACCOUNT_DEACTIVATED`, the seeded link is still unused and it is the teacher's only row in `one_time_tokens`. Assert the status and code before the rows; verify it fails at THEN
+- [x] 1.2 In `PasswordLinkTest`, add `[accounts/R8-S5]`: create the admin with `createAdmin` and log in with `loggedInAs`, because `loggedInAdmin()` does not return the id; insert an unused reset link for the admin with `createToken` (design D6) and create a second admin with `createAdmin`. The admin's request for their own account gets 409 `OWN_ACCOUNT`, the seeded link is still unused and it is the admin's only row in `one_time_tokens`; then the request for the second admin gets 201 with a link (design D5). Assert the first response before everything else; verify it fails at THEN
+- [x] 1.3 Run `scripts/check-scenario-coverage.sh` and verify it reports no missing scenario, then push and post the commit range of this pass in the PR
 
 ## 2. Test review
 
