@@ -11,7 +11,7 @@ requests return 201 today. Test setup creates users and sessions directly.
 
 ## 2. Test review
 
-- [ ] 2.1 Engineer approves tests in the PR
+- [x] 2.1 Engineer approves tests in the PR
 
 ## 3. Reset-link guards
 
