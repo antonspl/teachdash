@@ -71,6 +71,16 @@ is written, so it could not fail for the right reason in pass 1. R8-S5 asserts b
 admin's own account is rejected and a second admin's account still gets a link. This guards
 against an implementation that refuses every admin account.
 
+### D6. The tests seed an unused link
+
+"No link is stored" alone cannot tell a request rejected before `issue` from one rejected
+after it, because `issue` first marks the account's unused links as used. So R8-S4 and
+R8-S5 start with an unused link for the account, inserted directly, and assert that it is
+still unused and is the account's only link. For the admin this state is reachable in
+production: a second admin issues the link. For a deactivated teacher it is not, because
+deactivation invalidates the teacher's links; the test inserts the row to prove the order
+of the checks.
+
 No new dependencies. No Flyway migrations.
 
 ## Risks / Trade-offs
