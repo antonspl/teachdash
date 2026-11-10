@@ -5,6 +5,8 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Map;
 import java.util.UUID;
@@ -168,6 +170,65 @@ class TeacherManagementTest extends ApiTest {
 				.statusCode(200)
 				.body("find { it.email == 'active@example.com' }.active", equalTo(true))
 				.body("find { it.email == 'inactive@example.com' }.active", equalTo(false));
+	}
+
+	@Test
+	@DisplayName("[accounts/R12-S1] Teacher who has not set a password")
+	void teacherWhoHasNotSetAPassword() {
+		// given a logged-in admin and a teacher who has not set a password
+		TestClient admin = loggedInAdmin();
+		createUser("TEACHER", "Anna", "anna@example.com", null, true);
+
+		// when the admin lists teachers
+		var response = admin.get("/api/admin/teachers");
+
+		// then the teacher's list item has hasPassword equal to false
+		response.then()
+				.statusCode(200)
+				.body("find { it.email == 'anna@example.com' }.hasPassword", equalTo(false));
+	}
+
+	@Test
+	@DisplayName("[accounts/R12-S2] Teacher who set a password with a link")
+	void teacherWhoSetAPasswordWithALink() {
+		// given a logged-in admin and a teacher who set a password with a set-password link
+		TestClient admin = loggedInAdmin();
+		UUID annaId = createUser("TEACHER", "Anna", "anna@example.com", null, true);
+		String token = createToken(annaId, "SET_PASSWORD", false);
+		newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"))
+				.then().statusCode(200);
+		String hash = jdbc.sql("select password_hash from users where id = :id")
+				.param("id", annaId).query(String.class).single();
+		assertNotNull(hash);
+		assertFalse(hash.isBlank());
+
+		// when the admin lists teachers
+		var response = admin.get("/api/admin/teachers");
+
+		// then the teacher's list item has hasPassword equal to true
+		response.then()
+				.statusCode(200)
+				.body("find { it.email == 'anna@example.com' }.hasPassword", equalTo(true));
+		// and the response does not contain the teacher's stored password hash
+		assertFalse(response.asString().contains(hash));
+	}
+
+	@Test
+	@DisplayName("[accounts/R12-S3] Deactivated teachers keep their password status")
+	void deactivatedTeachersKeepTheirPasswordStatus() {
+		// given a logged-in admin, a deactivated teacher with a password and a deactivated teacher who never set one
+		TestClient admin = loggedInAdmin();
+		createUser("TEACHER", "With", "with@example.com", "teacher-pass-1", false);
+		createUser("TEACHER", "Without", "without@example.com", null, false);
+
+		// when the admin lists teachers
+		var response = admin.get("/api/admin/teachers");
+
+		// then hasPassword is true for the first teacher and false for the second
+		response.then()
+				.statusCode(200)
+				.body("find { it.email == 'with@example.com' }.hasPassword", equalTo(true))
+				.body("find { it.email == 'without@example.com' }.hasPassword", equalTo(false));
 	}
 
 	@Test
