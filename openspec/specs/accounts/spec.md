@@ -291,9 +291,11 @@ and change nothing.
 - **THEN** the response is 401 with code `ACCOUNT_DEACTIVATED`, the teacher still has no password, and no session is started
 
 ### Requirement: R8 Admin issues password reset links
-An admin SHALL be able to issue a reset link for any account. After a reset, the old
-password MUST stop working and the account's other sessions MUST end. Each account has
-a session version; a session started under an older version MUST NOT work.
+An admin SHALL be able to issue a reset link for any active account except their own.
+A deactivated account MUST get 409 `ACCOUNT_DEACTIVATED` and the admin's own account
+409 `OWN_ACCOUNT`; neither stores a link or invalidates an existing one. After a reset, the old password MUST stop
+working and the account's other sessions MUST end. Each account has a session version;
+a session started under an older version MUST NOT work.
 
 #### Scenario: accounts/R8-S1 Admin issues a reset link
 - **GIVEN** a logged-in admin and a teacher account
@@ -309,6 +311,16 @@ a session version; a session started under an older version MUST NOT work.
 - **GIVEN** a logged-in teacher whose session still exists
 - **WHEN** the account's session version is raised in the database without the session being touched
 - **THEN** the teacher's next request gets 401
+
+#### Scenario: accounts/R8-S4 Reset link for a deactivated account is rejected
+- **GIVEN** a logged-in admin and a deactivated teacher with a password and an unused link
+- **WHEN** the admin requests a reset link for the teacher
+- **THEN** the response is 409 with code `ACCOUNT_DEACTIVATED`, the teacher's existing link is still unused, and no other link is stored for the teacher
+
+#### Scenario: accounts/R8-S5 Reset link for the admin's own account is rejected
+- **GIVEN** a logged-in admin with an unused reset link for their own account, and a second admin account
+- **WHEN** the admin requests a reset link for their own account and then for the second admin's account
+- **THEN** the first response is 409 with code `OWN_ACCOUNT`, the admin's existing link is still unused, and no other link is stored for the admin; the second response is 201 with a link
 
 ### Requirement: R9 Profile
 A logged-in user SHALL be able to change their name and time zone, and change their
