@@ -7,7 +7,7 @@ items have no `hasPassword` field yet. Test setup creates users and link tokens 
 and uses only endpoints that already exist.
 
 - [ ] 1.1 In `TeacherManagementTest`, add `[accounts/R12-S1]`: a teacher created without a password has `hasPassword` equal to `false` in the list; verify it fails at THEN
-- [ ] 1.2 In `TeacherManagementTest`, add `[accounts/R12-S2]`: a teacher without a password uses a set-password link, then the list shows `hasPassword` equal to `true` and the response body does not contain the hash stored in `users.password_hash` (design D3); verify it fails at THEN
+- [ ] 1.2 In `TeacherManagementTest`, add `[accounts/R12-S2]`: a teacher without a password uses a set-password link, then the list shows `hasPassword` equal to `true` and the response body does not contain the hash stored in `users.password_hash` (design D3). Assert `hasPassword` before the hash check, because the hash check alone cannot fail in pass 1; verify it fails at THEN on `hasPassword`
 - [ ] 1.3 In `TeacherManagementTest`, add `[accounts/R12-S3]`: a deactivated teacher with a password has `hasPassword` equal to `true`, and a deactivated teacher without one has `false`; verify it fails at THEN
 - [ ] 1.4 Run `scripts/check-scenario-coverage.sh` and verify it reports no missing scenario, then push and post the commit range of this pass in the PR
 

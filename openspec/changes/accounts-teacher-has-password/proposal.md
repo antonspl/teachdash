@@ -25,7 +25,8 @@ instead of a password reset. The teacher list does not say this today.
 
 - Each item of `GET /api/admin/teachers` gains a boolean `hasPassword`: `false` until the
   teacher sets a password, `true` afterwards.
-- The list still never returns the password hash or anything else derived from it.
+- The list still never returns the password hash, or anything derived from it other than
+  the boolean `hasPassword`.
 
 ### Out of scope
 
