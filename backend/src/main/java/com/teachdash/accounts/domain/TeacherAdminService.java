@@ -79,9 +79,29 @@ public class TeacherAdminService {
 				.orElseThrow(TeacherAdminService::notFound);
 	}
 
-	public String issueResetLink(UUID userId) {
-		User user = users.findById(userId).orElseThrow(TeacherAdminService::notFound);
+	/**
+	 * Returns a reset link for the user. Rejects the admin's own account and inactive accounts
+	 * before anything is issued, so a rejected request leaves existing links untouched. The user
+	 * row is locked first, so a concurrent deactivation is ordered against this request (R8).
+	 */
+	@Transactional
+	public String issueResetLink(UUID userId, UUID currentUserId) {
+		User user = users.findByIdForUpdate(userId).orElseThrow(TeacherAdminService::notFound);
+		if (user.getId().equals(currentUserId)) {
+			throw ownAccount();
+		}
+		if (!user.isActive()) {
+			throw accountDeactivated();
+		}
 		return links.issue(user.getId(), TokenPurpose.RESET_PASSWORD);
+	}
+
+	private static ApiException ownAccount() {
+		return new ApiException(HttpStatus.CONFLICT, "OWN_ACCOUNT");
+	}
+
+	private static ApiException accountDeactivated() {
+		return new ApiException(HttpStatus.CONFLICT, "ACCOUNT_DEACTIVATED");
 	}
 
 	private static ApiException emailTaken() {

@@ -15,9 +15,9 @@ requests return 201 today. Test setup creates users and sessions directly.
 
 ## 3. Reset-link guards
 
-- [ ] 3.1 In `TeacherAdminService.issueResetLink`, add the current admin's id as an argument and the checks in the order of design D1; make the method transactional and load the user with `findByIdForUpdate` (design D3); verify `[accounts/R8-S4]` and `[accounts/R8-S5]` pass
-- [ ] 3.2 In `AdminController.resetLink`, pass the current user's id from the `Principal` (design D2); verify `[accounts/R8-S1]`, `[accounts/R8-S2]` and `[accounts/R8-S3]` still pass unchanged
-- [ ] 3.3 Run the full backend test suite and `scripts/check-scenario-coverage.sh`; verify all pass with the approved tests unchanged
+- [x] 3.1 In `TeacherAdminService.issueResetLink`, add the current admin's id as an argument and the checks in the order of design D1; make the method transactional and load the user with `findByIdForUpdate` (design D3); verify `[accounts/R8-S4]` and `[accounts/R8-S5]` pass
+- [x] 3.2 In `AdminController.resetLink`, pass the current user's id from the `Principal` (design D2); verify `[accounts/R8-S1]`, `[accounts/R8-S2]` and `[accounts/R8-S3]` still pass unchanged
+- [x] 3.3 Run the full backend test suite and `scripts/check-scenario-coverage.sh`; verify all pass with the approved tests unchanged
 
 ## Workflow follow-up
 
