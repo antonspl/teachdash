@@ -11,7 +11,8 @@ public record TeacherResponse(
 		String email,
 		Role role,
 		String timeZone,
-		boolean active) {
+		boolean active,
+		boolean hasPassword) {
 
 	public static TeacherResponse of(User user) {
 		return new TeacherResponse(
@@ -20,6 +21,7 @@ public record TeacherResponse(
 				user.getEmail(),
 				user.getRole(),
 				user.getTimeZone(),
-				user.isActive());
+				user.isActive(),
+				user.getPasswordHash() != null);
 	}
 }

@@ -17,8 +17,8 @@ and uses only endpoints that already exist.
 
 ## 3. Teacher list field
 
-- [ ] 3.1 Add `hasPassword` to `TeacherResponse`, set from `user.getPasswordHash() != null` (design D1, D2); verify all `accounts/R12-*` tests pass
-- [ ] 3.2 Run the full backend test suite and `scripts/check-scenario-coverage.sh`; verify all pass with the approved tests unchanged
+- [x] 3.1 Add `hasPassword` to `TeacherResponse`, set from `user.getPasswordHash() != null` (design D1, D2); verify all `accounts/R12-*` tests pass
+- [x] 3.2 Run the full backend test suite and `scripts/check-scenario-coverage.sh`; verify all pass with the approved tests unchanged
 
 ## Workflow follow-up
 
