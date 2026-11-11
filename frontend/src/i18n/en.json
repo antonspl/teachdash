@@ -52,7 +52,9 @@
   },
   "header": {
     "logout": "Log out",
-    "logoutError": "Could not log out. Please try again."
+    "logoutError": "Could not log out. Please try again.",
+    "profile": "Profile",
+    "backToCabinet": "Back to cabinet"
   },
   "password": {
     "mismatch": "The passwords do not match.",
@@ -108,5 +110,11 @@
       "confirm": "Confirm",
       "cancel": "Cancel"
     }
+  },
+  "profile": {
+    "title": "Your profile",
+    "email": "Your email: {{email}}",
+    "profileHeading": "About you",
+    "passwordHeading": "Password"
   }
 }

@@ -14,8 +14,8 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 2. Route, header and page shell
 
-- [ ] 2.1 Add `RequireUser` (design D1), the `/profile` route and `ProfilePage` with the header, the email as text and "Back to cabinet" (design D2); i18n strings in an informal tone; Vitest for web-profile/R1-S1, R1-S2, R1-S4, R1-S6 and R1-S7; add the page to `i18n/translations.test.tsx`; verify `npm test`
-- [ ] 2.2 Add the "Profile" button to the cabinet header and the wrapping rule for the header's name (design D2); update the web-auth/R3-S1 test and add web-auth/R3-S2; verify `npm test`, including the admin teachers tests
+- [x] 2.1 Add `RequireUser` (design D1), the `/profile` route and `ProfilePage` with the header, the email as text and "Back to cabinet" (design D2); i18n strings in an informal tone; Vitest for web-profile/R1-S1, R1-S2, R1-S4, R1-S6 and R1-S7; add the page to `i18n/translations.test.tsx`; verify `npm test`
+- [x] 2.2 Add the "Profile" button to the cabinet header and the wrapping rule for the header's name (design D2); update the web-auth/R3-S1 test and add web-auth/R3-S2; verify `npm test`, including the admin teachers tests
 
 ## 3. Profile form
 

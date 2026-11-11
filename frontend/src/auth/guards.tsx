@@ -54,6 +54,21 @@ export function RequireRole({
   return <>{children}</>
 }
 
+// Any logged-in user may open the page, whatever the role.
+export function RequireUser({ children }: { children: ReactNode }) {
+  const { state } = useAuth()
+  if (state.status === 'loading') {
+    return <Loading />
+  }
+  if (state.status === 'error') {
+    return <StartupError />
+  }
+  if (state.status === 'anonymous') {
+    return <Navigate to="/login" replace />
+  }
+  return <>{children}</>
+}
+
 // Redirects a logged-in user away from the page, but only when the page was
 // opened by that user. A login submitted on the page is left to the page, which
 // decides where to go (design.md, "Who decides where to go after login").

@@ -32,6 +32,8 @@ export function CabinetPage({
       <AppHeader
         userName={state.user.name}
         roleLabel={t(`roles.${state.user.role}`)}
+        navLabel={t('header.profile')}
+        navTo="/profile"
         onLogout={() => {
           setLogoutFailed(false)
           logout().catch(() => setLogoutFailed(true))

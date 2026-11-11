@@ -88,3 +88,38 @@ test('[web-client/R2-S1] Page text comes from the translation resources', async 
     view.unmount()
   }
 })
+
+test('[web-client/R2-S1] The profile page text comes from the translation resources', async () => {
+  // given
+  const instance = await testInstance()
+  fetchMock.mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        id: '1',
+        name: 'Anna Smith',
+        email: 'anna@example.com',
+        role: 'TEACHER',
+        timeZone: 'UTC',
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    ),
+  )
+
+  // when
+  const view = render(
+    <I18nextProvider i18n={instance}>
+      <MemoryRouter initialEntries={['/profile']}>
+        <App />
+      </MemoryRouter>
+    </I18nextProvider>,
+  )
+  await screen.findByText('TEST<profile.title>')
+
+  // then
+  // The user's name and the brackets around the role are data, not text.
+  const shown = (view.container.textContent ?? '').replace(
+    /Anna Smith|[()]/g,
+    '',
+  )
+  expect(shown.replace(/TEST<[\w.]+>/g, '').trim()).toBe('')
+})
