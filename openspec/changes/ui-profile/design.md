@@ -69,9 +69,16 @@ children for any role.
 ### D2. The profile page renders the header itself
 
 `ProfilePage` renders `ui/Page`, `ui/AppHeader` and the two forms. `AppHeader` gets one
-new prop that says which button to show before "Log out": "Profile" (a link to
-`/profile`) or "Back to cabinet" (a link to `cabinetPath[role]`). `CabinetPage` passes
-"Profile". Both are secondary buttons, like "Log out".
+new prop that says which button to show before "Log out": "Profile" (goes to
+`/profile`) or "Back to cabinet" (goes to `cabinetPath[role]`). `CabinetPage` passes
+"Profile". Both are the existing `ui/Button` in its secondary variant, like "Log out",
+and navigate with the router on click. The engineer chose a button over a real link:
+no link-styled-as-button component exists, and the spec says "button".
+
+The header's name gets a wrapping rule (`overflow-wrap: anywhere` and `min-width: 0` on
+the flex item), so a long name without spaces wraps and does not widen the page. The
+header has no such rule today, and the second button makes the row wider
+(web-profile R1-S5 checks the profile page and a cabinet).
 
 - **Rejected: reuse `CabinetPage` with a title prop.** Its `role` prop selects the
   cabinet title, and the profile has no role of its own.
@@ -93,14 +100,17 @@ visitor. A save by a logged-in user is different: its 401 means the session ende
 (web-profile R4-S1). The exemption for `me` is narrowed to GET requests. `me/password`
 is a different path and is not exempt today.
 
-This touches the list #75 wants to replace with a per-request option. The change is one
-condition, and #75 can replace it later.
+The exemption check gets the request method as well as the path. This touches the list
+#75 wants to replace with a per-request option; the change is one condition, and #75
+can replace it later.
 
 ### D5. `/profile` is restored after logging in again
 
 `LoginPage` restores the previous path only when it is the user's cabinet path or under
-it. `/profile` is added as a path that belongs to every role (web-profile R4-S3). The
-rule for cabinet paths does not change (web-auth R6-S2 to R6-S4 still pass).
+it. `/profile` is added as a path that belongs to every role (web-profile R4-S3,
+web-auth R6). The comparison ignores a trailing slash, so `/profile/` is restored too.
+The rule for cabinet paths does not change (web-auth R6-S2 to R6-S4 still pass).
+`/profile/x` matches no route and shows the not-found page (web-client R11).
 
 ### D6. One password rule module
 
@@ -126,12 +136,23 @@ answers `VALIDATION_FAILED` and the form shows its general message (web-profile 
 
 Each form has one `ui/StatusMessage` above its button: tone `danger` for errors, tone
 `success` after a save. Client-side password messages use the same place. The message
-is cleared when a field of that form changes and when the form is submitted. A
-`VALIDATION_FAILED` answer gets its own friendly string per form; every other error
+is cleared when a field of that form changes and when the form is submitted; editing
+the other form does not clear it. A `VALIDATION_FAILED` answer gets its own friendly
+string per form; every other error, including 403 `CSRF_INVALID` ("reload the page"),
 uses the message already on `ApiError`.
 
+The password form's `VALIDATION_FAILED` string is neutral ("check the passwords"),
+because the backend gives the same code for a bad new password and for a blank current
+one (the engineer's choice over a blank check in the browser).
+
 Each form has its own in-flight ref and `submitting` state, as `SetPasswordPage` has,
-so the two forms never block each other and a second press sends nothing.
+so a second press sends nothing. The page also knows when either form is sending and
+disables the other form's button until it ends (web-profile R3-S11). This keeps a save
+and a password change from running at the same time, which matters because the
+password change replaces the session and the CSRF token (see Risks).
+
+A form's fields are disabled while it is sending, so the values the backend returns
+never overwrite something typed meanwhile.
 
 ### D9. Nothing extra after a password change
 
@@ -146,8 +167,12 @@ No new dependencies. No Flyway migrations.
 
 - [A request already running when the password changes gets 401 or 403, because the
   session and the CSRF token were replaced] → This is #65. Here the two forms are the
-  only senders on the page and each blocks its own double submit; a profile save and a
-  password change pressed at the same moment can still collide.
+  only senders on the page, each blocks its own double submit, and each form's button
+  is disabled while the other is sending (D8). A request from another tab can still
+  collide; that stays with #65.
+- [Pressing "Profile" on the admin page drops a link that is shown there] → Accepted:
+  the link is page state and the admin can issue a new one. An open dialog makes the
+  header inert, so typed dialog values are safe.
 - [The success message may not be read out by a screen reader, because the live region
   mounts together with its text] → Known, #73 item 3. Not made worse here.
 - [The 200-character name limit and the name rules are not checked in the browser] →

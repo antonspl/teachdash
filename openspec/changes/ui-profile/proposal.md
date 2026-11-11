@@ -17,9 +17,14 @@ Answered by the engineer:
 - **Client-side checks of name and time zone (#44).** Left to #44. The form uses only
   the browser's `required`, and shows a friendly general message when the backend
   rejects the values. The backend does not say which field failed.
-- **The late 401 from an old session (#65).** Left to #65. This change only blocks a
-  double submit on both forms.
+- **The late 401 from an old session (#65).** Left to #65. This change blocks a double
+  submit on both forms and, decided after the spec critique, disables each form's
+  button while the other form is sending.
 - **"Profile" in the header.** A secondary button next to "Log out", in the same style.
+  After the spec critique: a real button that navigates, not a link styled as one.
+- **Message when the backend rejects a password change as invalid** (asked after the
+  spec critique). Neutral: "check the passwords". The backend gives the same code for a
+  bad new password and for a blank current one.
 - **Email.** Shown as plain text, not as a disabled field. It cannot be changed.
 
 Defaults suggested by Claude; the engineer can change any of them:
@@ -37,6 +42,8 @@ Defaults suggested by Claude; the engineer can change any of them:
   so in the success message.
 - **A new password equal to the current one** is sent as is. The backend accepts it.
 - **Strings** are informal and friendly, like the admin teachers page.
+- **A link shown on the admin page is dropped when the admin presses "Profile".** It
+  is page state; the admin can issue a new one.
 
 Research, two angles agreed with the engineer:
 
@@ -79,7 +86,8 @@ the admin typed, and can change the password only by asking the admin for a rese
 
 ### Modified Capabilities
 - `web-auth`: R3 Role cabinets. The header of every cabinet page gets a "Profile"
-  button.
+  button. R6 Session ended during use: the profile page is restored after logging in
+  again, for any role.
 
 ## Out of scope
 

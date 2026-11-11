@@ -20,3 +20,31 @@ text SHALL come from the translation resources.
 - **GIVEN** a logged-in admin on `/admin`
 - **WHEN** the admin presses "Profile"
 - **THEN** `/profile` is shown
+
+### Requirement: R6 Session ended during use
+
+When any API request made by a logged-in page gets 401, the web client SHALL show the
+login page with a translated "your session has ended" message. After the user logs in
+again without reloading, it SHALL return to the page they were on if that page belongs
+to their role or is the profile page (web-profile R4); otherwise, and after a reload,
+it SHALL open their own cabinet.
+
+#### Scenario: web-auth/R6-S1 Session end sends the user to login
+- **GIVEN** a teacher on `/teacher`
+- **WHEN** an API request made through the web client's API client gets 401 (in this change, a test request; the cabinets send none yet)
+- **THEN** the login page is shown with the translated "your session has ended" message
+
+#### Scenario: web-auth/R6-S2 After logging in again the user returns to the page
+- **GIVEN** the session of a teacher on `/teacher` ended and the login page is shown
+- **WHEN** the teacher logs in again
+- **THEN** `/teacher` is shown
+
+#### Scenario: web-auth/R6-S3 A page of another role is not restored
+- **GIVEN** the session ended on `/teacher` and the login page is shown
+- **WHEN** a student logs in on that page
+- **THEN** `/student` is shown
+
+#### Scenario: web-auth/R6-S4 After a reload the return is not kept
+- **GIVEN** the session ended on `/teacher` and the login page is shown
+- **WHEN** the page is reloaded and the teacher logs in
+- **THEN** `/teacher` is shown and no "your session has ended" message is left on the login page after the reload

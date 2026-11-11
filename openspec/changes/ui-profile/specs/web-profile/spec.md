@@ -38,8 +38,18 @@ SHALL come from the translation resources.
 
 #### Scenario: web-profile/R1-S5 Page fits a phone
 - **GIVEN** a logged-in teacher with a 200-character name and a 360-pixel-wide screen
+- **WHEN** `/profile` is opened, and then `/teacher`
+- **THEN** neither page has a horizontal scroll
+
+#### Scenario: web-profile/R1-S6 Profile waits for the startup check
+- **GIVEN** the request for the current user is still running
 - **WHEN** `/profile` is opened
-- **THEN** the page has no horizontal scroll
+- **THEN** the loading state is shown, and neither the login page nor the profile
+
+#### Scenario: web-profile/R1-S7 Startup error on the profile page
+- **GIVEN** the request for the current user fails with a network error
+- **WHEN** `/profile` is opened
+- **THEN** the translated startup error with a "Try again" button is shown, as on a cabinet page
 
 ### Requirement: R2 Change name and time zone
 
@@ -63,8 +73,8 @@ user's stored time zone.
 
 #### Scenario: web-profile/R2-S3 Success message goes away on the next edit
 - **GIVEN** the success message is shown after a save
-- **WHEN** the teacher changes the name field
-- **THEN** the success message is no longer shown
+- **WHEN** the teacher changes the name field, and in a second run the time zone select
+- **THEN** in both runs the success message is no longer shown
 
 #### Scenario: web-profile/R2-S4 An empty name is not sent
 - **WHEN** the name field is emptied and "Save" is pressed
@@ -77,12 +87,12 @@ user's stored time zone.
 - **AND** the fields keep what the teacher typed, the header keeps the old name, and the form can be submitted again
 
 #### Scenario: web-profile/R2-S6 Save that fails for another reason
-- **GIVEN** a save fails with a network error or a 500
+- **GIVEN** a save fails with a network error, a 500, or a 403 with code `CSRF_INVALID`, one at a time
 - **WHEN** the teacher presses "Save"
-- **THEN** a translated error is shown, the header keeps the old name, and the form can be submitted again
+- **THEN** each time a translated error is shown, the login page is not shown, the header keeps the old name, and the form can be submitted again
 
 #### Scenario: web-profile/R2-S7 Stored time zone the browser does not list
-- **GIVEN** a logged-in teacher whose stored time zone "Europe/Kiev" is not in the browser's list of time zones
+- **GIVEN** a logged-in teacher with stored time zone "Europe/Kiev", and a browser whose list of time zones (stubbed in the test) does not contain it
 - **WHEN** `/profile` is rendered and the teacher changes only the name and presses "Save"
 - **THEN** the select has "Europe/Kiev" selected, and the request carries time zone "Europe/Kiev"
 
@@ -94,11 +104,11 @@ user's stored time zone.
 ### Requirement: R3 Change password
 
 The password form SHALL ask for the current password and for the new password twice,
-and SHALL have a "Change password" button. It is independent of the profile form.
-Before sending it SHALL check that the two new passwords match and have at least 8
-characters and at most 72 bytes. On success the user SHALL stay logged in on the page,
-the three fields SHALL be emptied, and a translated success message SHALL stay until
-the next edit of the form.
+with a "Change password" button. Before sending it SHALL check that the new passwords
+match and have 8 characters or more and 72 bytes or fewer. On success the user SHALL
+stay logged in, the fields SHALL be emptied, and a translated message SHALL say that
+other devices were logged out. The forms keep their own values and messages; while one
+is sending, the other's button SHALL be disabled.
 
 #### Scenario: web-profile/R3-S1 Password change keeps the user logged in
 - **GIVEN** a logged-in teacher with password "teacher-pass-1" on `/profile`
@@ -109,7 +119,7 @@ the next edit of the form.
 #### Scenario: web-profile/R3-S2 Success empties the fields
 - **GIVEN** the backend answers a password change with status 204
 - **WHEN** the form is submitted with a current password and a valid new password entered twice
-- **THEN** the request carried the current and the new password, the three fields are empty, and a translated success message is shown
+- **THEN** the request carried the current and the new password, the three fields are empty, and a translated success message says that the password was changed and other devices were logged out
 - **AND** the message goes away when a password field is edited
 
 #### Scenario: web-profile/R3-S3 New passwords that differ are not sent
@@ -132,12 +142,12 @@ the next edit of the form.
 #### Scenario: web-profile/R3-S7 New password the backend rejects
 - **GIVEN** the backend answers with status 400 and code `VALIDATION_FAILED`
 - **WHEN** the form is submitted
-- **THEN** a translated message asks to try another new password, and the form can be submitted again
+- **THEN** a translated message asks to check the passwords, without saying which one, and the form can be submitted again
 
 #### Scenario: web-profile/R3-S8 Password change that fails for another reason
-- **GIVEN** a password change fails with a network error or a 500
+- **GIVEN** a password change fails with a network error, a 500, or a 403 with code `CSRF_INVALID`, one at a time
 - **WHEN** the form is submitted
-- **THEN** a translated error is shown, the fields keep their values, and the form can be submitted again
+- **THEN** each time a translated error is shown, the login page is not shown, the fields keep their values, and the form can be submitted again
 
 #### Scenario: web-profile/R3-S9 A second press while changing sends nothing
 - **GIVEN** a password change request is still running
@@ -148,6 +158,12 @@ the next edit of the form.
 - **GIVEN** the password form shows the `WRONG_PASSWORD` message and holds typed passwords
 - **WHEN** the teacher changes the name and presses "Save"
 - **THEN** the save request carries only the name and the time zone, the profile form shows its success message, and the password form keeps its message and its values
+- **AND** editing a password field afterwards removes the password form's message and leaves the profile form's success message
+
+#### Scenario: web-profile/R3-S11 One form waits while the other is sending
+- **GIVEN** a password change request is still running
+- **WHEN** the teacher looks at the profile form, and in a second run a save is running and the teacher looks at the password form
+- **THEN** in both runs the other form's button is disabled until the request ends, and enabled after it
 
 ### Requirement: R4 Session ended on the profile page
 
