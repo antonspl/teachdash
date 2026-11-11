@@ -1,5 +1,6 @@
 package com.teachdash.accounts.api;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
@@ -60,7 +61,7 @@ class AdminController {
 
 	@PostMapping("/users/{id}/reset-link")
 	@ResponseStatus(HttpStatus.CREATED)
-	LinkResponse resetLink(@PathVariable UUID id) {
-		return new LinkResponse(teachers.issueResetLink(id));
+	LinkResponse resetLink(@PathVariable UUID id, Principal principal) {
+		return new LinkResponse(teachers.issueResetLink(id, UUID.fromString(principal.getName())));
 	}
 }

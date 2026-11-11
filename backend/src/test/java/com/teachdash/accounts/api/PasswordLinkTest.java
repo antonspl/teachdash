@@ -1,5 +1,6 @@
 package com.teachdash.accounts.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -181,5 +182,53 @@ class PasswordLinkTest extends ApiTest {
 
 		// then the teacher's next request gets 401
 		teacher.get("/api/me").then().statusCode(401);
+	}
+
+	private long countTokens(UUID userId, boolean unusedOnly) {
+		return jdbc.sql("select count(*) from one_time_tokens where user_id = :id"
+				+ (unusedOnly ? " and used_at is null" : ""))
+				.param("id", userId)
+				.query(Long.class)
+				.single();
+	}
+
+	@Test
+	@DisplayName("[accounts/R8-S4] Reset link for a deactivated account is rejected")
+	void resetLinkForADeactivatedAccountIsRejected() {
+		// given a logged-in admin and a deactivated teacher with a password and an unused link
+		TestClient admin = loggedInAdmin();
+		UUID teacherId = createUser("TEACHER", "Teacher", "teacher@example.com", "teacher-pass-1", false);
+		createToken(teacherId, "RESET_PASSWORD", false);
+
+		// when the admin requests a reset link for the teacher
+		var response = admin.post("/api/admin/users/" + teacherId + "/reset-link");
+
+		// then the response is 409 with code ACCOUNT_DEACTIVATED
+		response.then().statusCode(409).body("code", equalTo("ACCOUNT_DEACTIVATED"));
+		// and the teacher's existing link is still unused, and no other link is stored for the teacher
+		assertEquals(1, countTokens(teacherId, true));
+		assertEquals(1, countTokens(teacherId, false));
+	}
+
+	@Test
+	@DisplayName("[accounts/R8-S5] Reset link for the admin's own account is rejected")
+	void resetLinkForTheAdminsOwnAccountIsRejected() {
+		// given a logged-in admin with an unused reset link for their own account, and a second admin account
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		TestClient admin = loggedInAs("admin@example.com");
+		createToken(adminId, "RESET_PASSWORD", false);
+		UUID otherAdminId = createAdmin("admin2@example.com", "admin-password-2");
+
+		// when the admin requests a reset link for their own account and then for the second admin's account
+		var own = admin.post("/api/admin/users/" + adminId + "/reset-link");
+		var other = admin.post("/api/admin/users/" + otherAdminId + "/reset-link");
+
+		// then the first response is 409 with code OWN_ACCOUNT
+		own.then().statusCode(409).body("code", equalTo("OWN_ACCOUNT"));
+		// and the admin's existing link is still unused, and no other link is stored for the admin
+		assertEquals(1, countTokens(adminId, true));
+		assertEquals(1, countTokens(adminId, false));
+		// and the second response is 201 with a link
+		other.then().statusCode(201).body("link", startsWith(APP_BASE_URL + "/set-password#token="));
 	}
 }
