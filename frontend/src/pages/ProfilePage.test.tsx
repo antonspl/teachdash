@@ -408,3 +408,337 @@ test('[web-profile/R4-S3] After logging in again the profile is shown', async ()
     (screen.getByLabelText(en.profile.timeZone) as HTMLSelectElement).value,
   ).toBe('Asia/Dubai')
 })
+
+test('[web-profile/R1-S3] Page shows the current values', async () => {
+  // given
+  teacherWithSave(
+    () => Promise.resolve(userResponse('TEACHER')),
+    'Europe/Moscow',
+  )
+
+  // when
+  open()
+  await screen.findByLabelText(en.profile.name)
+
+  // then
+  const email = screen.getByText(/anna@example\.com/)
+  expect(email.tagName).not.toBe('INPUT')
+  expect(
+    screen
+      .getAllByRole('textbox')
+      .some((field) => (field as HTMLInputElement).value.includes('anna@')),
+  ).toBe(false)
+  expect(
+    (screen.getByLabelText(en.profile.name) as HTMLInputElement).value,
+  ).toBe('Anna Smith')
+  expect(
+    (screen.getByLabelText(en.profile.timeZone) as HTMLSelectElement).value,
+  ).toBe('Europe/Moscow')
+  for (const label of [
+    en.profile.currentPassword,
+    en.profile.newPassword,
+    en.profile.repeatPassword,
+  ]) {
+    expect(
+      (screen.getByLabelText(label) as HTMLInputElement).value,
+      label,
+    ).toBe('')
+  }
+})
+
+// Logged in as a teacher; every POST /api/me/password goes to `onChange`, and every
+// PATCH /api/me answers with the same user.
+function teacherWithPassword(onChange: () => Promise<Response>) {
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    if (url === '/api/me/password' && init?.method === 'POST') {
+      return onChange()
+    }
+    return Promise.resolve(userResponse('TEACHER'))
+  })
+}
+
+function changes() {
+  return fetchMock.mock.calls.filter(([url]) => url === '/api/me/password')
+}
+
+function noContent() {
+  return Promise.resolve(new Response(null, { status: 204 }))
+}
+
+function field(label: string) {
+  return screen.getByLabelText(label) as HTMLInputElement
+}
+
+function typePasswords(current: string, next: string, repeat = next) {
+  fireEvent.change(field(en.profile.currentPassword), {
+    target: { value: current },
+  })
+  fireEvent.change(field(en.profile.newPassword), { target: { value: next } })
+  fireEvent.change(field(en.profile.repeatPassword), {
+    target: { value: repeat },
+  })
+}
+
+function pressChange() {
+  fireEvent.click(
+    screen.getByRole('button', { name: en.profile.changePassword }),
+  )
+}
+
+function button(name: string) {
+  return screen.getByRole('button', { name }) as HTMLButtonElement
+}
+
+test('[web-profile/R3-S2] Success empties the fields', async () => {
+  // given
+  teacherWithPassword(noContent)
+  await openForm()
+  typePasswords('old-password', 'new-password-1')
+
+  // when
+  pressChange()
+
+  // then
+  expect(await screen.findByText(en.profile.passwordChanged)).toBeTruthy()
+  expect(changes()).toHaveLength(1)
+  expect(sentBody(changes()[0])).toEqual({
+    currentPassword: 'old-password',
+    newPassword: 'new-password-1',
+  })
+  for (const label of [
+    en.profile.currentPassword,
+    en.profile.newPassword,
+    en.profile.repeatPassword,
+  ]) {
+    expect(field(label).value, label).toBe('')
+  }
+  fireEvent.change(field(en.profile.currentPassword), {
+    target: { value: 'x' },
+  })
+  expect(screen.queryByText(en.profile.passwordChanged)).toBeNull()
+})
+
+test('[web-profile/R3-S3] New passwords that differ are not sent', async () => {
+  // given
+  teacherWithPassword(noContent)
+  await openForm()
+  typePasswords('old-password', 'new-password-1', 'new-password-2')
+
+  // when
+  pressChange()
+
+  // then
+  expect(await screen.findByText(en.password.mismatch)).toBeTruthy()
+  expect(changes()).toHaveLength(0)
+})
+
+test('[web-profile/R3-S4] A short new password is not sent', async () => {
+  // given
+  teacherWithPassword(noContent)
+  await openForm()
+  typePasswords('old-password', '1234567')
+
+  // when
+  pressChange()
+
+  // then
+  expect(await screen.findByText(en.password.tooShort)).toBeTruthy()
+  expect(changes()).toHaveLength(0)
+})
+
+test('[web-profile/R3-S5] A new password over 72 bytes is not sent', async () => {
+  // given
+  teacherWithPassword(noContent)
+  await openForm()
+  typePasswords('old-password', 'ж'.repeat(40))
+
+  // when
+  pressChange()
+
+  // then
+  expect(await screen.findByText(en.password.tooLong)).toBeTruthy()
+  expect(changes()).toHaveLength(0)
+})
+
+test('[web-profile/R3-S6] Wrong current password', async () => {
+  // given
+  teacherWithPassword(() => Promise.resolve(problem(400, 'WRONG_PASSWORD')))
+  await openForm()
+  typePasswords('old-password', 'new-password-1')
+
+  // when
+  pressChange()
+
+  // then
+  expect(await screen.findByText(en.profile.wrongPassword)).toBeTruthy()
+  expect(field(en.profile.currentPassword).value).toBe('old-password')
+  expect(field(en.profile.newPassword).value).toBe('new-password-1')
+  expect(field(en.profile.repeatPassword).value).toBe('new-password-1')
+  expect(button(en.profile.changePassword).disabled).toBe(false)
+  pressChange()
+  await waitFor(() => expect(changes()).toHaveLength(2))
+})
+
+test('[web-profile/R3-S7] New password the backend rejects', async () => {
+  // given
+  teacherWithPassword(() => Promise.resolve(problem(400, 'VALIDATION_FAILED')))
+  await openForm()
+  typePasswords('old-password', 'new-password-1')
+
+  // when
+  pressChange()
+
+  // then
+  expect(
+    await screen.findByText(en.profile.passwordValidationFailed),
+  ).toBeTruthy()
+  expect(button(en.profile.changePassword).disabled).toBe(false)
+  pressChange()
+  await waitFor(() => expect(changes()).toHaveLength(2))
+})
+
+test('[web-profile/R3-S8] Password change that fails for another reason', async () => {
+  for (const [failure, message] of [
+    [() => Promise.reject(new TypeError('Failed to fetch')), en.errors.generic],
+    [
+      () => Promise.resolve(problem(500, 'INTERNAL_ERROR')),
+      en.errors.INTERNAL_ERROR,
+    ],
+    [
+      () => Promise.resolve(problem(403, 'CSRF_INVALID')),
+      en.errors.CSRF_INVALID,
+    ],
+  ] as const) {
+    // given
+    fetchMock.mockReset()
+    teacherWithPassword(failure)
+    const view = open()
+    await screen.findByLabelText(en.profile.name)
+    typePasswords('old-password', 'new-password-1')
+
+    // when
+    pressChange()
+
+    // then
+    const status = await screen.findByRole('status')
+    expect(status.textContent).toBe(message)
+    expect(screen.queryByRole('heading', { name: en.login.title })).toBeNull()
+    expect(field(en.profile.currentPassword).value).toBe('old-password')
+    expect(field(en.profile.newPassword).value).toBe('new-password-1')
+    expect(field(en.profile.repeatPassword).value).toBe('new-password-1')
+    expect(button(en.profile.changePassword).disabled).toBe(false)
+    view.unmount()
+  }
+})
+
+test('[web-profile/R3-S9] A second press while changing sends nothing', async () => {
+  // given
+  teacherWithPassword(() => new Promise(() => undefined))
+  await openForm()
+  typePasswords('old-password', 'new-password-1')
+  pressChange()
+  await waitFor(() => expect(changes()).toHaveLength(1))
+
+  // when
+  pressChange()
+  fireEvent.submit(
+    screen.getByRole('button', { name: en.profile.changePassword }),
+  )
+
+  // then
+  await new Promise((resolve) => setTimeout(resolve, 20))
+  expect(changes()).toHaveLength(1)
+})
+
+test('[web-profile/R3-S10] The two forms do not affect each other', async () => {
+  // given
+  teacherWithPassword(() => Promise.resolve(problem(400, 'WRONG_PASSWORD')))
+  await openForm()
+  typePasswords('old-password', 'new-password-1')
+  pressChange()
+  await screen.findByText(en.profile.wrongPassword)
+
+  // when
+  typeName('Anna S.')
+  pressSave()
+
+  // then
+  expect(await screen.findByText(en.profile.saved)).toBeTruthy()
+  expect(saves()).toHaveLength(1)
+  expect(sentBody(saves()[0])).toEqual({ name: 'Anna S.', timeZone: 'UTC' })
+  expect(screen.getByText(en.profile.wrongPassword)).toBeTruthy()
+  expect(field(en.profile.currentPassword).value).toBe('old-password')
+  expect(field(en.profile.newPassword).value).toBe('new-password-1')
+  expect(field(en.profile.repeatPassword).value).toBe('new-password-1')
+  fireEvent.change(field(en.profile.newPassword), {
+    target: { value: 'another-password' },
+  })
+  expect(screen.queryByText(en.profile.wrongPassword)).toBeNull()
+  expect(screen.getByText(en.profile.saved)).toBeTruthy()
+})
+
+test('[web-profile/R3-S11] One form waits while the other is sending', async () => {
+  // First run: a password change is running, the profile form's button waits.
+  // given
+  let finishChange: (response: Response) => void = () => undefined
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    if (url === '/api/me/password' && init?.method === 'POST') {
+      return new Promise<Response>((resolve) => {
+        finishChange = resolve
+      })
+    }
+    return Promise.resolve(userResponse('TEACHER'))
+  })
+  const first = open()
+  await screen.findByLabelText(en.profile.name)
+  typePasswords('old-password', 'new-password-1')
+
+  // when
+  pressChange()
+  await waitFor(() => expect(changes()).toHaveLength(1))
+
+  // then
+  expect(button(en.profile.save).disabled).toBe(true)
+  finishChange(new Response(null, { status: 204 }))
+  await screen.findByText(en.profile.passwordChanged)
+  expect(button(en.profile.save).disabled).toBe(false)
+  first.unmount()
+
+  // Second run: a save is running, the password form's button waits.
+  // given
+  fetchMock.mockReset()
+  let finishSave: (response: Response) => void = () => undefined
+  teacherWithSave(
+    () =>
+      new Promise<Response>((resolve) => {
+        finishSave = resolve
+      }),
+  )
+  open()
+  await screen.findByLabelText(en.profile.name)
+
+  // when
+  pressSave()
+  await waitFor(() => expect(saves()).toHaveLength(1))
+
+  // then
+  expect(button(en.profile.changePassword).disabled).toBe(true)
+  finishSave(userResponse('TEACHER'))
+  await screen.findByText(en.profile.saved)
+  expect(button(en.profile.changePassword).disabled).toBe(false)
+})
+
+test('[web-profile/R4-S2] A password change with an ended session', async () => {
+  // given
+  teacherWithPassword(() => Promise.resolve(problem(401, 'UNAUTHENTICATED')))
+  openInBrowser('/profile')
+  await screen.findByLabelText(en.profile.name)
+  typePasswords('old-password', 'new-password-1')
+
+  // when
+  pressChange()
+
+  // then
+  expect(await screen.findByText(en.login.sessionEnded)).toBeTruthy()
+  expect(screen.getByRole('heading', { name: en.login.title })).toBeTruthy()
+})

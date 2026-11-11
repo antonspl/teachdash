@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthProvider'
 import { cabinetPath } from '../auth/guards'
+import { PasswordForm } from './PasswordForm'
 import { ProfileForm } from './ProfileForm'
 import { AppHeader } from '../ui/AppHeader'
 import { Page } from '../ui/Page'
@@ -47,8 +48,14 @@ export function ProfilePage() {
             }
           />
         </Section>
-        {/* The password form goes into this section (task 4.1). */}
-        <Section title={t('profile.passwordHeading')} />
+        <Section title={t('profile.passwordHeading')}>
+          <PasswordForm
+            disabled={sending === 'profile'}
+            onSendingChange={(value) =>
+              setSending(value ? 'password' : undefined)
+            }
+          />
+        </Section>
       </Page>
     </>
   )

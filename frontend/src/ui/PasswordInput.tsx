@@ -10,6 +10,7 @@ export function PasswordInput({
   autoComplete,
   error,
   required,
+  disabled,
 }: {
   label: string
   value: string
@@ -17,6 +18,7 @@ export function PasswordInput({
   autoComplete?: string
   error?: string
   required?: boolean
+  disabled?: boolean
 }) {
   const { t } = useTranslation()
   const [shown, setShown] = useState(false)
@@ -28,6 +30,7 @@ export function PasswordInput({
       autoComplete={autoComplete}
       error={error}
       required={required}
+      disabled={disabled}
       type={shown ? 'text' : 'password'}
       adornment={
         <button

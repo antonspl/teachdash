@@ -25,9 +25,9 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 4. Password form
 
-- [ ] 4.1 Add the password form (current password, new password twice, show/hide toggles, "Change password") using `passwordRules`, with the success message that empties the fields, the `WRONG_PASSWORD` message, the neutral `VALIDATION_FAILED` message, the general error, its own in-flight guard, and each form's button disabled while the other is sending (design D8); Vitest for web-profile/R1-S3, R3-S2 to R3-S11 and R4-S2; verify `npm test`
-- [ ] 4.2 Playwright test for web-profile/R3-S1 (change the password, save the profile right after, log out, log in with the new password, the old one is refused); verify `npm run test:e2e`
-- [ ] 4.3 Playwright test for web-profile/R1-S5 on the phone projects (200-character name without spaces, no horizontal scroll on `/profile` and on `/teacher`); verify `npm run test:e2e`
+- [x] 4.1 Add the password form (current password, new password twice, show/hide toggles, "Change password") using `passwordRules`, with the success message that empties the fields, the `WRONG_PASSWORD` message, the neutral `VALIDATION_FAILED` message, the general error, its own in-flight guard, and each form's button disabled while the other is sending (design D8); Vitest for web-profile/R1-S3, R3-S2 to R3-S11 and R4-S2; verify `npm test`
+- [x] 4.2 Playwright test for web-profile/R3-S1 (change the password, save the profile right after, log out, log in with the new password, the old one is refused); verify `npm run test:e2e`
+- [x] 4.3 Playwright test for web-profile/R1-S5 on the phone projects (200-character name without spaces, no horizontal scroll on `/profile` and on `/teacher`); verify `npm run test:e2e`
 
 ## 5. Final checks
 

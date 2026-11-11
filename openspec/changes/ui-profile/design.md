@@ -138,8 +138,10 @@ Each form has one `ui/StatusMessage` above its button: tone `danger` for errors,
 `success` after a save. Client-side password messages use the same place. The message
 is cleared when a field of that form changes and when the form is submitted; editing
 the other form does not clear it. A `VALIDATION_FAILED` answer gets its own friendly
-string per form; every other error, including 403 `CSRF_INVALID` ("reload the page"),
-uses the message already on `ApiError`.
+string per form, and so does `WRONG_PASSWORD` on the password form, so the message says
+it is the current password that is wrong (added during implementation; the shared
+string does not say which password). Every other error, including 403 `CSRF_INVALID`
+("reload the page"), uses the message already on `ApiError`.
 
 The password form's `VALIDATION_FAILED` string is neutral ("check the passwords"),
 because the backend gives the same code for a bad new password and for a blank current

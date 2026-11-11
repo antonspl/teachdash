@@ -120,6 +120,13 @@
     "timeZone": "Time zone",
     "save": "Save",
     "saved": "Saved, all done!",
-    "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and the time zone."
+    "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and the time zone.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "repeatPassword": "Repeat the new password",
+    "changePassword": "Change password",
+    "passwordChanged": "Done, your password is changed! We logged you out on your other devices.",
+    "wrongPassword": "Hmm, that current password doesn't look right. Give it another try.",
+    "passwordValidationFailed": "Hmm, the backend didn't accept those passwords. Please check them and try again."
   }
 }
