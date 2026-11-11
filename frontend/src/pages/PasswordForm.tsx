@@ -25,6 +25,8 @@ export function PasswordForm({
   const [repeat, setRepeat] = useState('')
   const [message, setMessage] = useState<Message>()
   const [submitting, setSubmitting] = useState(false)
+  // Changes on success: the new inputs start with the password hidden again.
+  const [round, setRound] = useState(0)
   const inFlight = useRef(false)
 
   // Editing a field removes the form's own message.
@@ -54,6 +56,7 @@ export function PasswordForm({
       setCurrent('')
       setNext('')
       setRepeat('')
+      setRound((current) => current + 1)
       setMessage({ tone: 'success', text: t('profile.passwordChanged') })
     } catch (failure) {
       if (failure instanceof ApiError && failure.code === 'WRONG_PASSWORD') {
@@ -83,6 +86,7 @@ export function PasswordForm({
   return (
     <Form onSubmit={(event) => void onSubmit(event)}>
       <PasswordInput
+        key={`currentPassword-${round}`}
         label={t('profile.currentPassword')}
         autoComplete="current-password"
         required
@@ -91,6 +95,7 @@ export function PasswordForm({
         onChange={edit(setCurrent)}
       />
       <PasswordInput
+        key={`newPassword-${round}`}
         label={t('profile.newPassword')}
         autoComplete="new-password"
         required
@@ -99,6 +104,7 @@ export function PasswordForm({
         onChange={edit(setNext)}
       />
       <PasswordInput
+        key={`repeatPassword-${round}`}
         label={t('profile.repeatPassword')}
         autoComplete="new-password"
         required

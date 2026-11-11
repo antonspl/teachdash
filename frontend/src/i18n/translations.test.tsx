@@ -63,12 +63,36 @@ function problemResponse() {
   )
 }
 
+function userResponse() {
+  return new Response(
+    JSON.stringify({
+      id: '1',
+      name: 'Anna Smith',
+      email: 'anna@example.com',
+      role: 'TEACHER',
+      timeZone: 'UTC',
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } },
+  )
+}
+
 test('[web-client/R2-S1] Page text comes from the translation resources', async () => {
   // given
   const instance = await testInstance()
-  fetchMock.mockResolvedValue(problemResponse())
+  // A fixed zone list for the profile page, so the check does not depend on the
+  // runtime's own list.
+  vi.stubGlobal(
+    'Intl',
+    Object.create(Intl, {
+      supportedValuesOf: { value: () => ['Test/Zone-One', 'Test/Zone-Two'] },
+    }),
+  )
 
-  for (const path of ['/', '/no-such-page']) {
+  for (const path of ['/', '/no-such-page', '/profile']) {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(path === '/profile' ? userResponse() : problemResponse()),
+    )
+
     // when
     const view = render(
       <I18nextProvider i18n={instance}>
@@ -80,57 +104,25 @@ test('[web-client/R2-S1] Page text comes from the translation resources', async 
     if (path === '/') {
       await screen.findByText('TEST<login.title>')
     }
+    if (path === '/profile') {
+      await screen.findByText('TEST<profile.title>')
+    }
 
     // then
     expect(document.title).toBe('TEST<app.name>')
-    const shown = view.container.textContent ?? ''
+    // The user's name and the brackets around the role are data, not text.
+    // The time zone ids in the select are data too; whole ids are removed, longest first.
+    let shown = (view.container.textContent ?? '').replace(
+      /Anna Smith|[()]/g,
+      '',
+    )
+    for (const zone of timeZoneOptions('UTC').sort(
+      (a, b) => b.length - a.length,
+    )) {
+      shown = shown.replaceAll(zone, '')
+    }
     expect(shown).toMatch(/TEST<[\w.]+>/)
-    expect(shown.replace(/TEST<[\w.]+>/g, '').trim()).toBe('')
+    expect(shown.replace(/TEST<[\w.]+>/g, '').trim(), path).toBe('')
     view.unmount()
   }
-})
-
-test('[web-client/R2-S1] The profile page text comes from the translation resources', async () => {
-  // given
-  const instance = await testInstance()
-  // A fixed zone list, so the check does not depend on the runtime's own list.
-  vi.stubGlobal(
-    'Intl',
-    Object.create(Intl, {
-      supportedValuesOf: { value: () => ['Test/Zone-One', 'Test/Zone-Two'] },
-    }),
-  )
-  fetchMock.mockResolvedValue(
-    new Response(
-      JSON.stringify({
-        id: '1',
-        name: 'Anna Smith',
-        email: 'anna@example.com',
-        role: 'TEACHER',
-        timeZone: 'UTC',
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } },
-    ),
-  )
-
-  // when
-  const view = render(
-    <I18nextProvider i18n={instance}>
-      <MemoryRouter initialEntries={['/profile']}>
-        <App />
-      </MemoryRouter>
-    </I18nextProvider>,
-  )
-  await screen.findByText('TEST<profile.title>')
-
-  // then
-  // The user's name and the brackets around the role are data, not text.
-  // The time zone ids in the select are data too; whole ids are removed, longest first.
-  let shown = (view.container.textContent ?? '').replace(/Anna Smith|[()]/g, '')
-  for (const zone of timeZoneOptions('UTC').sort(
-    (a, b) => b.length - a.length,
-  )) {
-    shown = shown.replaceAll(zone, '')
-  }
-  expect(shown.replace(/TEST<[\w.]+>/g, '').trim()).toBe('')
 })

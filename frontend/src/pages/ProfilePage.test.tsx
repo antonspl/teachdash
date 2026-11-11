@@ -194,6 +194,9 @@ test('[web-profile/R2-S2] Form and header show what the backend returned', async
   expect(
     (screen.getByLabelText(en.profile.name) as HTMLInputElement).value,
   ).toBe('Anna S.')
+  expect(
+    (screen.getByLabelText(en.profile.timeZone) as HTMLSelectElement).value,
+  ).toBe('Asia/Dubai')
   expect(headerHas('Anna S\\. \\(')).toBe(true)
   expect(screen.queryByText(/Anna Smith/)).toBeNull()
   expect(saves()).toHaveLength(1)
@@ -338,6 +341,14 @@ test('[web-profile/R2-S8] A second press while saving sends nothing', async () =
   pressSave()
   await waitFor(() => expect(saves()).toHaveLength(1))
 
+  // then the fields wait too
+  expect(
+    (screen.getByLabelText(en.profile.name) as HTMLInputElement).disabled,
+  ).toBe(true)
+  expect(
+    (screen.getByLabelText(en.profile.timeZone) as HTMLSelectElement).disabled,
+  ).toBe(true)
+
   // when
   pressSave()
   fireEvent.submit(screen.getByRole('button', { name: en.profile.save }))
@@ -411,6 +422,44 @@ test('[web-profile/R4-S3] After logging in again the profile is shown', async ()
   expect(
     (screen.getByLabelText(en.profile.timeZone) as HTMLSelectElement).value,
   ).toBe('Asia/Dubai')
+})
+
+test('After logging in again a profile path with a trailing slash is shown', async () => {
+  // given
+  let ended = false
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    if (url === '/api/me' && init?.method === 'PATCH') {
+      ended = true
+      return Promise.resolve(problem(401, 'UNAUTHENTICATED'))
+    }
+    if (url === '/api/me') {
+      return Promise.resolve(
+        ended
+          ? problem(401, 'UNAUTHENTICATED')
+          : userResponse('TEACHER', 'Anna Smith'),
+      )
+    }
+    return Promise.resolve(userResponse('STUDENT', 'Sam Student'))
+  })
+  openInBrowser('/profile/')
+  await screen.findByLabelText(en.profile.name)
+  pressSave()
+  await screen.findByText(en.login.sessionEnded)
+
+  // when
+  fireEvent.change(screen.getByLabelText(en.login.email), {
+    target: { value: 'sam@example.com' },
+  })
+  fireEvent.change(screen.getByLabelText(en.login.password), {
+    target: { value: 'secret-pass' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: en.login.submit }))
+
+  // then
+  expect(await screen.findByLabelText(en.profile.name)).toBeTruthy()
+  expect(
+    (screen.getByLabelText(en.profile.name) as HTMLInputElement).value,
+  ).toBe('Sam Student')
 })
 
 test('[web-profile/R1-S3] Page shows the current values', async () => {
@@ -499,6 +548,13 @@ test('[web-profile/R3-S2] Success empties the fields', async () => {
   await openForm()
   typePasswords('old-password', 'new-password-1')
 
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: en.ui.showPassword.replace('{{label}}', en.profile.newPassword),
+    }),
+  )
+  expect(field(en.profile.newPassword).type).toBe('text')
+
   // when
   pressChange()
 
@@ -515,6 +571,7 @@ test('[web-profile/R3-S2] Success empties the fields', async () => {
     en.profile.repeatPassword,
   ]) {
     expect(field(label).value, label).toBe('')
+    expect(field(label).type, label).toBe('password')
   }
   fireEvent.change(field(en.profile.currentPassword), {
     target: { value: 'x' },
@@ -642,6 +699,15 @@ test('[web-profile/R3-S9] A second press while changing sends nothing', async ()
   typePasswords('old-password', 'new-password-1')
   pressChange()
   await waitFor(() => expect(changes()).toHaveLength(1))
+
+  // then the fields wait too
+  for (const label of [
+    en.profile.currentPassword,
+    en.profile.newPassword,
+    en.profile.repeatPassword,
+  ]) {
+    expect(field(label).disabled, label).toBe(true)
+  }
 
   // when
   pressChange()

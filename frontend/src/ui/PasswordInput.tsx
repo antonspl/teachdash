@@ -36,6 +36,7 @@ export function PasswordInput({
         <button
           type="button"
           className={styles.toggle}
+          disabled={disabled}
           aria-pressed={shown}
           aria-label={t(shown ? 'ui.hidePassword' : 'ui.showPassword', {
             label,

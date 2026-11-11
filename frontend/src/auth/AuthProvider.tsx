@@ -112,7 +112,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = useCallback(async (name: string, timeZone: string) => {
     const user = await sendProfile({ name, timeZone })
-    setState({ status: 'user', user })
+    // A late answer must not bring back a user who has logged out meanwhile.
+    setState((prev) =>
+      prev.status === 'user' ? { status: 'user', user } : prev,
+    )
     return user
   }, [])
 

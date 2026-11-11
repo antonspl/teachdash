@@ -88,7 +88,9 @@ test('[web-profile/R1-S5] Page fits a phone', async ({
     page.getByRole('heading', { name: en.profile.title }),
   ).toBeVisible()
 
-  // then neither page scrolls sideways
+  // then neither page scrolls sideways, measured with the name on the page
+  const name = page.getByText('W'.repeat(200)).first()
+  await expect(name).toBeVisible()
   const fits = () =>
     page.evaluate(
       () =>
@@ -98,5 +100,6 @@ test('[web-profile/R1-S5] Page fits a phone', async ({
   expect(await fits(), '/profile').toBe(true)
   await page.getByRole('button', { name: en.header.backToCabinet }).click()
   await expect(page).toHaveURL(/\/teacher$/)
+  await expect(name).toBeVisible()
   expect(await fits(), '/teacher').toBe(true)
 })
