@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthProvider'
 import { cabinetPath } from '../auth/guards'
+import { ProfileForm } from './ProfileForm'
 import { AppHeader } from '../ui/AppHeader'
 import { Page } from '../ui/Page'
 import { Section } from '../ui/Section'
@@ -13,6 +14,8 @@ export function ProfilePage() {
   const { t } = useTranslation()
   const { state, logout } = useAuth()
   const [logoutFailed, setLogoutFailed] = useState(false)
+  // Which form is sending a request; the other form's button waits (R3-S11).
+  const [sending, setSending] = useState<'profile' | 'password'>()
   if (state.status !== 'user') {
     return null
   }
@@ -35,8 +38,15 @@ export function ProfilePage() {
           <StatusMessage tone="danger">{t('header.logoutError')}</StatusMessage>
         ) : null}
         <Text wrap>{t('profile.email', { email: user.email })}</Text>
-        {/* The profile form goes into this section (task 3.1). */}
-        <Section title={t('profile.profileHeading')} />
+        <Section title={t('profile.profileHeading')}>
+          <ProfileForm
+            user={user}
+            disabled={sending === 'password'}
+            onSendingChange={(value) =>
+              setSending(value ? 'profile' : undefined)
+            }
+          />
+        </Section>
         {/* The password form goes into this section (task 4.1). */}
         <Section title={t('profile.passwordHeading')} />
       </Page>

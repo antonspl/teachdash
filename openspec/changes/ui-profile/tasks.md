@@ -19,9 +19,9 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 3. Profile form
 
-- [ ] 3.1 Add the profile form (name, time zone select with the stored zone, "Save"), with the success message, the `VALIDATION_FAILED` message, the general error, the in-flight guard and fields disabled while sending (design D8); Vitest for web-profile/R2-S2 to R2-S8; verify `npm test`
-- [ ] 3.2 Restore `/profile` after logging in again, ignoring a trailing slash (design D5); Vitest for web-profile/R4-S1 and R4-S3; verify `npm test`, including web-auth/R6-S2 to R6-S4
-- [ ] 3.3 Add an e2e helper in `e2e/accounts.ts` that creates a teacher with a given name and a password and logs in through the UI; Playwright test for web-profile/R2-S1; verify `npm run test:e2e` against `docker compose up --build --wait`
+- [x] 3.1 Add the profile form (name, time zone select with the stored zone, "Save"), with the success message, the `VALIDATION_FAILED` message, the general error, the in-flight guard and fields disabled while sending (design D8); Vitest for web-profile/R2-S2 to R2-S8; verify `npm test`
+- [x] 3.2 Restore `/profile` after logging in again, ignoring a trailing slash (design D5); Vitest for web-profile/R4-S1 and R4-S3; verify `npm test`, including web-auth/R6-S2 to R6-S4
+- [x] 3.3 Add an e2e helper in `e2e/accounts.ts` that creates a teacher with a given name and a password and logs in through the UI; Playwright test for web-profile/R2-S1; verify `npm run test:e2e` against `docker compose up --build --wait`
 
 ## 4. Password form
 

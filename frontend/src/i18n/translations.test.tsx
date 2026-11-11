@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import '.'
 import { App } from '../App'
 import en from './en.json'
+import { timeZoneOptions } from '../timeZones'
 
 const fetchMock = vi.fn()
 
@@ -92,6 +93,13 @@ test('[web-client/R2-S1] Page text comes from the translation resources', async 
 test('[web-client/R2-S1] The profile page text comes from the translation resources', async () => {
   // given
   const instance = await testInstance()
+  // A fixed zone list, so the check does not depend on the runtime's own list.
+  vi.stubGlobal(
+    'Intl',
+    Object.create(Intl, {
+      supportedValuesOf: { value: () => ['Test/Zone-One', 'Test/Zone-Two'] },
+    }),
+  )
   fetchMock.mockResolvedValue(
     new Response(
       JSON.stringify({
@@ -117,9 +125,12 @@ test('[web-client/R2-S1] The profile page text comes from the translation resour
 
   // then
   // The user's name and the brackets around the role are data, not text.
-  const shown = (view.container.textContent ?? '').replace(
-    /Anna Smith|[()]/g,
-    '',
-  )
+  // The time zone ids in the select are data too; whole ids are removed, longest first.
+  let shown = (view.container.textContent ?? '').replace(/Anna Smith|[()]/g, '')
+  for (const zone of timeZoneOptions('UTC').sort(
+    (a, b) => b.length - a.length,
+  )) {
+    shown = shown.replaceAll(zone, '')
+  }
   expect(shown.replace(/TEST<[\w.]+>/g, '').trim()).toBe('')
 })

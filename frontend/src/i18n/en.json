@@ -115,6 +115,11 @@
     "title": "Your profile",
     "email": "Your email: {{email}}",
     "profileHeading": "About you",
-    "passwordHeading": "Password"
+    "passwordHeading": "Password",
+    "name": "Name",
+    "timeZone": "Time zone",
+    "save": "Save",
+    "saved": "Saved, all done!",
+    "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and the time zone."
   }
 }
