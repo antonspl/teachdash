@@ -25,7 +25,7 @@ import { CabinetPage } from './CabinetPage'
 import { Dialog } from '../ui/Dialog'
 import { ErrorWithRetry } from '../ui/ErrorWithRetry'
 import { Form } from '../ui/Form'
-import { IssuedLink } from '../ui/IssuedLink'
+import { IssuedLink, type CopyStatus } from '../ui/IssuedLink'
 import { List, ListItem } from '../ui/List'
 import { Select } from '../ui/Select'
 import { StatusBadge } from '../ui/StatusBadge'
@@ -47,6 +47,8 @@ function TeacherRow({
   busy,
   justAdded,
   linkBox,
+  refocus,
+  onRefocused,
   onDeactivate,
   onReactivate,
   onLink,
@@ -55,12 +57,27 @@ function TeacherRow({
   busy: boolean
   justAdded: boolean
   linkBox?: ReactNode
+  // Put focus on the Reactivate button as soon as the row shows it.
+  refocus: boolean
+  onRefocused: () => void
   onDeactivate: (opener: HTMLElement) => void
   onReactivate: () => void
   onLink: () => void
 }) {
   const { t } = useTranslation()
   const status = teacherStatus(teacher)
+  const reactivate = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (refocus && !teacher.active && reactivate.current) {
+      // Only when focus was lost with the old button, not when the admin has moved on.
+      if (document.activeElement === document.body) {
+        reactivate.current.focus()
+      }
+      onRefocused()
+    }
+  }, [refocus, teacher.active, onRefocused])
+
   return (
     <ListItem
       title={teacher.name}
@@ -101,7 +118,12 @@ function TeacherRow({
           </ButtonRow>
         ) : (
           <ButtonRow>
-            <Button variant="secondary" disabled={busy} onClick={onReactivate}>
+            <Button
+              ref={reactivate}
+              variant="secondary"
+              disabled={busy}
+              onClick={onReactivate}
+            >
               {t('adminTeachers.actions.reactivate')}
             </Button>
           </ButtonRow>
@@ -177,6 +199,9 @@ function CreateDialog({
           onCancel()
         }
       }}
+      // The browser closed it anyway: unmount it, or keep it open while the request runs.
+      onClose={onCancel}
+      busy={submitting}
     >
       <Form onSubmit={(event) => void onSubmit(event)}>
         <TextInput
@@ -227,6 +252,9 @@ export function AdminTeachersPage() {
     opener: HTMLElement
   }>()
   const [actionError, setActionError] = useState<string>()
+  const [refocusId, setRefocusId] = useState<string>()
+  const [linkCopy, setLinkCopy] = useState<CopyStatus>('idle')
+  const linkFocus = useRef<number | null>(null)
   const busyRef = useRef(new Set<string>())
   const mounted = useRef(false)
   const loadSeq = useRef(0)
@@ -242,6 +270,7 @@ export function AdminTeachersPage() {
       }
     } catch (failure) {
       if (mounted.current && seq === loadSeq.current) {
+        setRefocusId(undefined)
         setLoadError(
           failure instanceof ApiError ? failure.message : t('errors.generic'),
         )
@@ -258,21 +287,33 @@ export function AdminTeachersPage() {
     }
   }, [load])
 
+  // A new link starts with a fresh copy status and no remembered focus.
+  function showLink(next: ShownLink) {
+    setLinkCopy('idle')
+    linkFocus.current = null
+    setShownLink(next)
+  }
+
+  const clearRefocus = useCallback(() => setRefocusId(undefined), [])
+
   // Runs one request for a row: one busy flag per row, reload afterwards either way.
   async function runRowAction(
     teacher: { id: string; name: string },
     action: () => Promise<string | null | void>,
-  ) {
+  ): Promise<boolean> {
     if (busyRef.current.has(teacher.id)) {
-      return
+      return false
     }
     busyRef.current.add(teacher.id)
     setBusyIds([...busyRef.current])
     setActionError(undefined)
+    setRefocusId(undefined)
+    let succeeded = false
     try {
       const link = await action()
+      succeeded = true
       if (mounted.current && link) {
-        setShownLink({ id: teacher.id, name: teacher.name, link })
+        showLink({ id: teacher.id, name: teacher.name, link })
       }
     } catch (failure) {
       if (mounted.current) {
@@ -287,6 +328,7 @@ export function AdminTeachersPage() {
         void load()
       }
     }
+    return succeeded
   }
 
   async function onConfirmDeactivate() {
@@ -294,9 +336,13 @@ export function AdminTeachersPage() {
       return
     }
     const target = confirming
-    await runRowAction(target, () => deactivateTeacher(target.id))
+    const done = await runRowAction(target, () => deactivateTeacher(target.id))
     if (mounted.current) {
       setConfirming(undefined)
+      // The reload swaps Deactivate for Reactivate; focus follows it.
+      if (done) {
+        setRefocusId(target.id)
+      }
     }
   }
 
@@ -304,7 +350,7 @@ export function AdminTeachersPage() {
     if (!mounted.current) {
       return
     }
-    setShownLink({
+    showLink({
       id: created.id,
       name: created.name,
       link: created.link,
@@ -331,6 +377,9 @@ export function AdminTeachersPage() {
         name={shownLink.name}
         link={shownLink.link}
         standalone={standalone}
+        copy={linkCopy}
+        onCopyChange={setLinkCopy}
+        focusMemoryRef={linkFocus}
         onClose={() => setShownLink(undefined)}
       />
     ) : null
@@ -374,6 +423,8 @@ export function AdminTeachersPage() {
               linkBox={
                 shownLink?.id === teacher.id ? linkBox(false) : undefined
               }
+              refocus={teacher.id === refocusId && !confirming}
+              onRefocused={clearRefocus}
               onDeactivate={(opener) =>
                 setConfirming({ id: teacher.id, name: teacher.name, opener })
               }
@@ -396,6 +447,9 @@ export function AdminTeachersPage() {
               setConfirming(undefined)
             }
           }}
+          // The browser closed it anyway: unmount it, or keep it open while the request runs.
+          onClose={() => setConfirming(undefined)}
+          busy={busyIds.includes(confirming.id)}
         >
           <Text>
             {t('adminTeachers.deactivate.body', { name: confirming.name })}

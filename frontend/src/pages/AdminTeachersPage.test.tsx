@@ -930,3 +930,218 @@ test('[web-admin-teachers/R5-S5] A failed link request is reported', async () =>
   })
   await waitFor(() => expect(button.disabled).toBe(false))
 })
+
+// Regression tests for review findings, not spec scenarios. jsdom has no real modal dialog:
+// the "close" a browser sends after an Escape it could not cancel is simulated by hand.
+function closeNatively(dialog: HTMLElement) {
+  dialog.removeAttribute('open')
+  fireEvent(dialog, new Event('close'))
+}
+
+test('A native close while creating keeps the dialog open and a failure shows in it', async () => {
+  // given a create request that is still running
+  let fail: () => void = () => {}
+  backend({
+    list: () => json([]),
+    create: () =>
+      new Promise<Response>((resolve) => {
+        fail = () => resolve(problem(400, 'VALIDATION_FAILED'))
+      }) as unknown as Response,
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+  fireEvent.click(submitButton())
+  await waitFor(() => expect(submitButton().disabled).toBe(true))
+
+  // when the browser closes the dialog itself
+  const dialog = screen.getByRole('dialog')
+  closeNatively(dialog)
+
+  // then it is open again, still busy, and the failure shows in it with the values kept
+  expect(dialog.hasAttribute('open')).toBe(true)
+  expect(submitButton().disabled).toBe(true)
+  fail()
+  expect(
+    await screen.findByText(en.adminTeachers.create.validationFailed),
+  ).toBeTruthy()
+  expect(
+    screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.name).value,
+  ).toBe('Anna Smith')
+  expect(
+    screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.email)
+      .value,
+  ).toBe('anna@example.com')
+})
+
+test('A native close while not creating closes the dialog and Add opens an empty one', async () => {
+  // given
+  backend({ list: () => json([]) })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+
+  // when the browser closes the dialog itself
+  closeNatively(screen.getByRole('dialog'))
+
+  // then it is gone and the Add button opens a fresh, empty one
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  await openDialog()
+  expect(
+    screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.name).value,
+  ).toBe('')
+})
+
+test('A native close while deactivating keeps the confirm dialog open', async () => {
+  // given a deactivate request that is still running
+  world([teacher()], { [DEACTIVATE]: () => new Promise<Response>(() => {}) })
+  open()
+  fireEvent.click(deactivateButton(await rowOf('Anna Smith')))
+  const dialog = await screen.findByRole('dialog')
+  const confirm = () =>
+    within(dialog).getByRole<HTMLButtonElement>('button', {
+      name: en.adminTeachers.deactivate.confirm,
+    })
+  fireEvent.click(confirm())
+  await waitFor(() => expect(confirm().disabled).toBe(true))
+
+  // when the browser closes the dialog itself
+  closeNatively(dialog)
+
+  // then it is open again and still busy
+  expect(dialog.hasAttribute('open')).toBe(true)
+  expect(confirm().disabled).toBe(true)
+})
+
+test('A native close while not deactivating closes the confirm dialog', async () => {
+  // given
+  world([teacher()], {})
+  open()
+  const opener = deactivateButton(await rowOf('Anna Smith'))
+  fireEvent.click(opener)
+
+  // when
+  closeNatively(await screen.findByRole('dialog'))
+
+  // then
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  expect(document.activeElement).toBe(opener)
+})
+
+test('Focus and the Copied message stay when the new teacher link moves into the row', async () => {
+  // given a created teacher whose list reload is still pending, and a copied link
+  const anna = teacher({ id: '1', name: 'Anna Smith' })
+  const zoe = teacher({ id: '2', name: 'Zoe Young', email: 'zoe@example.com' })
+  let created = false
+  let finishReload: () => void = () => {}
+  backend({
+    list: () =>
+      created
+        ? (new Promise<Response>((resolve) => {
+            finishReload = () => resolve(json([anna, zoe]))
+          }) as unknown as Response)
+        : json([anna]),
+    create: () => {
+      created = true
+      return json({ id: '2', setPasswordLink: 'https://x.test/s#t=1' }, 201)
+    },
+  })
+  vi.stubGlobal('navigator', {
+    clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+  })
+  open()
+  await fillForm('Zoe Young', 'zoe@example.com')
+  fireEvent.click(submitButton())
+  await screen.findByDisplayValue('https://x.test/s#t=1')
+  const copy = screen.getByRole<HTMLButtonElement>('button', {
+    name: en.issuedLink.copy,
+  })
+  fireEvent.click(copy)
+  await screen.findByText(en.issuedLink.copied)
+  copy.focus()
+
+  // when the reload returns and the box moves into Zoe's row
+  finishReload()
+  await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(2))
+
+  // then the Copied message is still there and focus is on the Copy button
+  const row = screen.getAllByRole('listitem')[0]
+  expect(within(row).getByDisplayValue('https://x.test/s#t=1')).toBeTruthy()
+  expect(screen.getByText(en.issuedLink.copied)).toBeTruthy()
+  expect(document.activeElement).toBe(
+    within(row).getByRole('button', { name: en.issuedLink.copy }),
+  )
+})
+
+test('Focus moves to Reactivate after a successful deactivation', async () => {
+  // given
+  const state = world([teacher()], {
+    [DEACTIVATE]: () => {
+      state.teachers = [teacher({ active: false })]
+      return new Response(null, { status: 204 })
+    },
+  })
+  open()
+  fireEvent.click(deactivateButton(await rowOf('Anna Smith')))
+  const dialog = await screen.findByRole('dialog')
+
+  // when
+  fireEvent.click(
+    within(dialog).getByRole('button', {
+      name: en.adminTeachers.deactivate.confirm,
+    }),
+  )
+
+  // then
+  await screen.findByText('Deactivated')
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', {
+        name: en.adminTeachers.actions.reactivate,
+      }),
+    ),
+  )
+})
+
+test('Focus is not stolen by a late reload after a deactivation', async () => {
+  // given a deactivation whose list reload is still pending
+  let deactivated = false
+  let finishReload: () => void = () => {}
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    const method = init?.method ?? 'GET'
+    const path = url.replace('/api/', '')
+    if (path === 'me') {
+      return Promise.resolve(json(admin))
+    }
+    if (path === 'admin/teachers' && method === 'GET') {
+      if (!deactivated) {
+        return Promise.resolve(json([teacher()]))
+      }
+      return new Promise<Response>((resolve) => {
+        finishReload = () => resolve(json([teacher({ active: false })]))
+      })
+    }
+    if (`${method} ${path}` === DEACTIVATE) {
+      deactivated = true
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
+    return Promise.resolve(problem(404, 'NOT_FOUND'))
+  })
+  open()
+  fireEvent.click(deactivateButton(await rowOf('Anna Smith')))
+  fireEvent.click(
+    within(await screen.findByRole('dialog')).getByRole('button', {
+      name: en.adminTeachers.deactivate.confirm,
+    }),
+  )
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  await waitFor(() => expect(deactivated).toBe(true))
+  await waitFor(() => expect(typeof finishReload).toBe('function'))
+
+  // when the admin moves on before the reload lands
+  const add = await addButton()
+  add.focus()
+  finishReload()
+
+  // then the row shows Reactivate but focus stays where the admin put it
+  await screen.findByText('Deactivated')
+  expect(document.activeElement).toBe(add)
+})

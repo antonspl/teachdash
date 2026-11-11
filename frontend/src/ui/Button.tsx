@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react'
+import type { MouseEvent, ReactNode, Ref } from 'react'
 import styles from './Button.module.css'
 import { PlusIcon } from './PlusIcon'
 
@@ -9,6 +9,7 @@ export function Button({
   variant = 'primary',
   disabled,
   icon,
+  ref,
 }: {
   children: ReactNode
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void
@@ -16,9 +17,11 @@ export function Button({
   variant?: 'primary' | 'secondary' | 'danger' | 'success'
   disabled?: boolean
   icon?: 'plus'
+  ref?: Ref<HTMLButtonElement>
 }) {
   return (
     <button
+      ref={ref}
       type={type}
       className={`${styles.button} ${styles[variant]}`}
       disabled={disabled}
