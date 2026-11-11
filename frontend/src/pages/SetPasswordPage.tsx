@@ -4,15 +4,13 @@ import { useNavigate } from 'react-router'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthProvider'
 import { cabinetPath } from '../auth/guards'
+import { passwordProblem } from '../passwordRules'
 import { Button } from '../ui/Button'
 import { Form } from '../ui/Form'
 import { Page } from '../ui/Page'
 import { PasswordInput } from '../ui/PasswordInput'
 import { StatusMessage } from '../ui/StatusMessage'
 import { Title } from '../ui/Title'
-
-const MIN_LENGTH = 8
-const MAX_BYTES = 72
 
 // Read without side effects in a useState initialiser, so a repeated render or effect
 // under React strict mode cannot lose it; the fragment is removed in a layout effect.
@@ -43,27 +41,14 @@ export function SetPasswordPage() {
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
 
-  function check(): string | undefined {
-    if (password !== confirm) {
-      return t('setPassword.mismatch')
-    }
-    if (password.length < MIN_LENGTH) {
-      return t('setPassword.tooShort')
-    }
-    if (new TextEncoder().encode(password).length > MAX_BYTES) {
-      return t('setPassword.tooLong')
-    }
-    return undefined
-  }
-
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
     if (token === undefined || inFlight.current) {
       return
     }
-    const problem = check()
+    const problem = passwordProblem(password, confirm)
     if (problem) {
-      setError(problem)
+      setError(t(problem))
       return
     }
     inFlight.current = true

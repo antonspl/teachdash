@@ -6,11 +6,11 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 1. Groundwork
 
-- [ ] 1.1 Add `web-profile` to `FRONTEND_CAPABILITIES` in `scripts/check-scenario-coverage.sh`; verify the script lists the new scenarios as missing
-- [ ] 1.2 Add `src/api/profile.ts` with `updateProfile` and `changePassword` (design D3), the second parsing no body on 204; add `updateProfile` to `AuthProvider`, which stores the returned user; unit test in `AuthProvider.test.tsx` that the stored user changes; verify `npm test`, `npm run lint` and `npm run build`
-- [ ] 1.3 Narrow the `me` entry of the 401 exemption in `api/client.ts` to GET requests by passing the method to the exemption check (design D4), with a unit test in `client.test.ts` for a 401 on `PATCH me` (handler called) and on `GET me` (not called); verify `npm test`, including the existing web-auth R2 and R6 tests
-- [ ] 1.4 Move the password rule to `src/passwordRules.ts` and its three messages to shared `password.*` keys (design D6), used by `SetPasswordPage`; unit tests for mismatch, 7 characters, 80 bytes and a valid password; verify `npm test` with the web-auth/R5-S3, R5-S4 and R5-S8 tests unchanged
-- [ ] 1.5 Let `timeZoneOptions` take an extra zone (design D7), with unit tests for an extra zone that is missing from the browser's list and one that is already in it; verify `npm test`
+- [x] 1.1 Add `web-profile` to `FRONTEND_CAPABILITIES` in `scripts/check-scenario-coverage.sh`; verify the script lists the new scenarios as missing
+- [x] 1.2 Add `src/api/profile.ts` with `updateProfile` and `changePassword` (design D3), the second parsing no body on 204; add `updateProfile` to `AuthProvider`, which stores the returned user; unit test in `AuthProvider.test.tsx` that the stored user changes; verify `npm test`, `npm run lint` and `npm run build`
+- [x] 1.3 Narrow the `me` entry of the 401 exemption in `api/client.ts` to GET requests by passing the method to the exemption check (design D4), with a unit test in `client.test.ts` for a 401 on `PATCH me` (handler called) and on `GET me` (not called); verify `npm test`, including the existing web-auth R2 and R6 tests
+- [x] 1.4 Move the password rule to `src/passwordRules.ts` and its three messages to shared `password.*` keys (design D6), used by `SetPasswordPage`; unit tests for mismatch, 7 characters, 80 bytes and a valid password; verify `npm test` with the web-auth/R5-S3, R5-S4 and R5-S8 tests unchanged
+- [x] 1.5 Let `timeZoneOptions` take an extra zone (design D7), with unit tests for an extra zone that is missing from the browser's list and one that is already in it; verify `npm test`
 
 ## 2. Route, header and page shell
 

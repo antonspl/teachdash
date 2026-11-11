@@ -54,14 +54,16 @@
     "logout": "Log out",
     "logoutError": "Could not log out. Please try again."
   },
+  "password": {
+    "mismatch": "The passwords do not match.",
+    "tooShort": "The password must be at least 8 characters.",
+    "tooLong": "The password is too long (at most 72 bytes)."
+  },
   "setPassword": {
     "title": "Set your password",
     "password": "New password",
     "confirm": "Repeat the password",
     "submit": "Set password",
-    "mismatch": "The passwords do not match.",
-    "tooShort": "The password must be at least 8 characters.",
-    "tooLong": "The password is too long (at most 72 bytes).",
     "incompleteLink": "This link is incomplete. Please use the full link you were given or ask for a new one."
   },
   "startup": {

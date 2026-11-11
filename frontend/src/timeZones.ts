@@ -8,8 +8,12 @@ export function browserTimeZone(): string | undefined {
   }
 }
 
-export function timeZoneOptions(): string[] {
+// An extra zone (e.g. the one already stored for a user) is offered even if the browser lacks it.
+export function timeZoneOptions(extra?: string): string[] {
   const zones = new Set<string>(['UTC'])
+  if (extra) {
+    zones.add(extra)
+  }
   const own = browserTimeZone()
   if (own) {
     zones.add(own)

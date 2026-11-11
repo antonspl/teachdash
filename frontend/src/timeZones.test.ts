@@ -37,3 +37,22 @@ test('without supportedValuesOf only the browser zone and UTC are offered', () =
   expect(timeZoneOptions()).toEqual(['Europe/Moscow', 'UTC'])
   vi.unstubAllGlobals()
 })
+
+test('an extra zone missing from the browser list is added, in sorted order', () => {
+  vi.spyOn(Intl, 'supportedValuesOf').mockReturnValue([
+    'Europe/Berlin',
+    'Asia/Tokyo',
+  ])
+  const zones = timeZoneOptions('America/Nowhere')
+  expect(zones).toContain('America/Nowhere')
+  expect(zones).toEqual([...zones].sort())
+})
+
+test('an extra zone already in the list is not duplicated', () => {
+  vi.spyOn(Intl, 'supportedValuesOf').mockReturnValue([
+    'Europe/Berlin',
+    'Asia/Tokyo',
+  ])
+  const zones = timeZoneOptions('Asia/Tokyo')
+  expect(zones.filter((z) => z === 'Asia/Tokyo')).toHaveLength(1)
+})

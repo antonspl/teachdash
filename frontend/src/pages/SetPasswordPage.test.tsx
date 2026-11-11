@@ -107,7 +107,7 @@ test('[web-auth/R5-S3] Passwords that differ are not sent', async () => {
   await submit('long-enough-1', 'long-enough-2')
 
   // then
-  expect(await screen.findByText(en.setPassword.mismatch)).toBeTruthy()
+  expect(await screen.findByText(en.password.mismatch)).toBeTruthy()
   expect(linkCalls()).toHaveLength(0)
 })
 
@@ -120,7 +120,7 @@ test('[web-auth/R5-S4] A short password is not sent', async () => {
   await submit('1234567')
 
   // then
-  expect(await screen.findByText(en.setPassword.tooShort)).toBeTruthy()
+  expect(await screen.findByText(en.password.tooShort)).toBeTruthy()
   expect(linkCalls()).toHaveLength(0)
 })
 
@@ -172,7 +172,7 @@ test('[web-auth/R5-S8] A password over 72 bytes is not sent', async () => {
   await submit('я'.repeat(40))
 
   // then
-  expect(await screen.findByText(en.setPassword.tooLong)).toBeTruthy()
+  expect(await screen.findByText(en.password.tooLong)).toBeTruthy()
   expect(linkCalls()).toHaveLength(0)
 })
 
