@@ -6,6 +6,11 @@ No stubs and no migrations are needed. Each test fails at its THEN step, because
 items have no `hasPassword` field yet. The R12-S1 and R12-S2 tests build their
 setup through the API, with endpoints that already exist; R12-S3 creates users directly.
 
+Changed in the final review, after all tasks were ticked: the R12-S1 and R12-S2 setup moved
+to the API, and the hash check in R12-S2 became an exact field-set check. Tasks 1.1 and 1.2
+describe the tests as they are now. These versions were not run red: the "fails at THEN"
+checks were done on the first versions, which created the users and the link token directly.
+
 - [x] 1.1 In `TeacherManagementTest`, add `[accounts/R12-S1]`: a teacher created through the API, without a password, has `hasPassword` equal to `false` in the list; verify it fails at THEN
 - [x] 1.2 In `TeacherManagementTest`, add `[accounts/R12-S2]`: a teacher created through the API uses the returned set-password link, then the list shows `hasPassword` equal to `true` and the list item has exactly the expected fields (design D3). Assert `hasPassword` before the field set; verify it fails at THEN on `hasPassword`
 - [x] 1.3 In `TeacherManagementTest`, add `[accounts/R12-S3]`: a deactivated teacher with a password has `hasPassword` equal to `true`, and a deactivated teacher without one has `false`; verify it fails at THEN

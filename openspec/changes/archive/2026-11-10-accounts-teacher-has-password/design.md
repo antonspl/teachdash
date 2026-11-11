@@ -35,7 +35,7 @@ query already loads the whole `User`, so there is no new query and no new column
 The frontend from PR #71 already reads this name. The record component is called
 `hasPassword`, which Jackson writes under the same name.
 
-### D3. The hash check lives in the R12-S2 test
+### D3. The check that the hash is not returned lives in the R12-S2 test
 
 A separate "no hash in the response" scenario would pass before any code is written, so it
 could not fail for the right reason in pass 1. R12-S2 asserts both `hasPassword` and the
@@ -50,9 +50,10 @@ No new dependencies. No Flyway migrations.
 ## Risks / Trade-offs
 
 - [A future code path clears or pre-fills `password_hash` for another reason] → The field
-  would then be wrong. Nothing does this today; R12-S1 and R12-S2 would catch a pre-filled
-  hash on teacher creation, because both create the teacher through the API
-  (`POST /api/admin/teachers`), and R12-S2 sets the password with the returned link.
+  would then be wrong. Nothing does this today. Both R12-S1 and R12-S2 create the teacher
+  through the API (`POST /api/admin/teachers`): R12-S1 would catch a hash pre-filled on
+  teacher creation, and R12-S2, which sets the password with the returned link, would catch
+  a link that does not store the password.
 - [A client that rejects unknown fields] → The only client is the frontend, which ignores
   them and already expects this one.
 
