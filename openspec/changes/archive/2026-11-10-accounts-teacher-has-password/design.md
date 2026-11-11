@@ -38,8 +38,12 @@ The frontend from PR #71 already reads this name. The record component is called
 ### D3. The hash check lives in the R12-S2 test
 
 A separate "no hash in the response" scenario would pass before any code is written, so it
-could not fail for the right reason in pass 1. R12-S2 asserts both `hasPassword` and that
-the response body does not contain the stored hash, read from the database in the test.
+could not fail for the right reason in pass 1. R12-S2 asserts both `hasPassword` and the
+exact set of fields of the list item, so a field added later, the hash or anything derived
+from it, fails the test until it is reviewed.
+
+Changed in the final review: the test first checked that the response body does not contain
+the stored hash, read from the database. That only caught the full stored string.
 
 No new dependencies. No Flyway migrations.
 
@@ -47,7 +51,8 @@ No new dependencies. No Flyway migrations.
 
 - [A future code path clears or pre-fills `password_hash` for another reason] → The field
   would then be wrong. Nothing does this today; R12-S1 and R12-S2 would catch a pre-filled
-  hash on teacher creation.
+  hash on teacher creation, because both create the teacher through the API
+  (`POST /api/admin/teachers`), and R12-S2 sets the password with the returned link.
 - [A client that rejects unknown fields] → The only client is the frontend, which ignores
   them and already expects this one.
 

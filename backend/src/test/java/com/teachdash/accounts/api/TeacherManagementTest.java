@@ -5,10 +5,9 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -173,44 +172,46 @@ class TeacherManagementTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[accounts/R12-S1] Teacher who has not set a password")
-	void teacherWhoHasNotSetAPassword() {
-		// given a logged-in admin and a teacher who has not set a password
+	@DisplayName("[accounts/R12-S1] Admin sees no password set")
+	void adminSeesNoPasswordSet() {
+		// given a logged-in admin and a teacher the admin created, who has not set a password
 		TestClient admin = loggedInAdmin();
-		createUser("TEACHER", "Anna", "anna@example.com", null, true);
+		var created = admin.post("/api/admin/teachers",
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
 
 		// when the admin lists teachers
 		var response = admin.get("/api/admin/teachers");
 
 		// then the teacher's list item has hasPassword equal to false
+		created.then().statusCode(201);
 		response.then()
 				.statusCode(200)
 				.body("find { it.email == 'anna@example.com' }.hasPassword", equalTo(false));
 	}
 
 	@Test
-	@DisplayName("[accounts/R12-S2] Teacher who set a password with a link")
-	void teacherWhoSetAPasswordWithALink() {
-		// given a logged-in admin and a teacher who set a password with a set-password link
+	@DisplayName("[accounts/R12-S2] Admin sees a password has been set")
+	void adminSeesAPasswordHasBeenSet() {
+		// given a logged-in admin and a teacher the admin created, who set a password with the set-password link from the creation
 		TestClient admin = loggedInAdmin();
-		UUID annaId = createUser("TEACHER", "Anna", "anna@example.com", null, true);
-		String token = createToken(annaId, "SET_PASSWORD", false);
-		newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"))
-				.then().statusCode(200);
-		String hash = jdbc.sql("select password_hash from users where id = :id")
-				.param("id", annaId).query(String.class).single();
-		assertNotNull(hash);
-		assertFalse(hash.isBlank());
+		var created = admin.post("/api/admin/teachers",
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+		String token = tokenFrom(created.path("setPasswordLink"));
+		var linkUsed = newClient().post("/api/password-links",
+				Map.of("token", token, "password", "new-password-1"));
 
 		// when the admin lists teachers
 		var response = admin.get("/api/admin/teachers");
 
 		// then the teacher's list item has hasPassword equal to true
+		created.then().statusCode(201);
+		linkUsed.then().statusCode(200);
 		response.then()
 				.statusCode(200)
 				.body("find { it.email == 'anna@example.com' }.hasPassword", equalTo(true));
-		// and the response does not contain the teacher's stored password hash
-		assertFalse(response.asString().contains(hash));
+		// and its fields are exactly id, name, email, role, timeZone, active and hasPassword
+		Map<String, Object> item = response.path("find { it.email == 'anna@example.com' }");
+		assertEquals(Set.of("id", "name", "email", "role", "timeZone", "active", "hasPassword"), item.keySet());
 	}
 
 	@Test
