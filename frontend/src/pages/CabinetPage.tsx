@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth, type Role } from '../auth/AuthProvider'
 import { AppHeader } from '../ui/AppHeader'
@@ -12,7 +12,15 @@ const titleKey = {
   STUDENT: 'cabinet.student',
 } as const
 
-export function CabinetPage({ role }: { role: Role }) {
+export function CabinetPage({
+  role,
+  children,
+  toolbar,
+}: {
+  role: Role
+  children?: ReactNode
+  toolbar?: ReactNode
+}) {
   const { t } = useTranslation()
   const { state, logout } = useAuth()
   const [logoutFailed, setLogoutFailed] = useState(false)
@@ -29,11 +37,13 @@ export function CabinetPage({ role }: { role: Role }) {
           logout().catch(() => setLogoutFailed(true))
         }}
       />
+      {toolbar}
       <Page>
         <Title>{t(titleKey[role])}</Title>
         {logoutFailed ? (
           <StatusMessage tone="danger">{t('header.logoutError')}</StatusMessage>
         ) : null}
+        {children}
       </Page>
     </>
   )

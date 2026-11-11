@@ -66,5 +66,45 @@
   },
   "startup": {
     "error": "We could not load your session. Check the connection and try again."
+  },
+  "issuedLink": {
+    "label": "Link for {{name}}",
+    "note": "Heads up: you can only see this link right now. It works once, within 7 days, and replaces any earlier unused link. Don't open it in this browser, or you'll be signed out of your admin session.",
+    "copy": "Copy",
+    "close": "Close",
+    "copied": "Copied, ready to paste!",
+    "copyByHand": "Couldn't copy it for you. The link is selected, so just copy it by hand."
+  },
+  "adminTeachers": {
+    "loadError": "Could not load the teachers.",
+    "empty": "No teachers yet. Add the first one with the button above!",
+    "status": {
+      "ACTIVE": "Active",
+      "WAITING": "Waiting for password",
+      "DEACTIVATED": "Deactivated"
+    },
+    "add": "Add teacher",
+    "justAdded": "Just added",
+    "create": {
+      "title": "Add a teacher",
+      "cancel": "Cancel",
+      "name": "Name",
+      "email": "Email",
+      "timeZone": "Time zone",
+      "submit": "Create teacher",
+      "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and email, or try another time zone."
+    },
+    "actions": {
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "inviteLink": "New invite link",
+      "resetLink": "Password reset link"
+    },
+    "deactivate": {
+      "title": "Deactivate {{name}}?",
+      "body": "{{name}} won't be able to sign in anymore, and their students will be released. The students won't come back if you reactivate them later.",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    }
   }
 }

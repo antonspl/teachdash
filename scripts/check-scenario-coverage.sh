@@ -21,7 +21,7 @@
 #
 # To add a capability whose tests are frontend tests, put its name in the list below.
 # Forgetting it shows up as MISSING, never as a false pass.
-FRONTEND_CAPABILITIES="web-client web-auth"
+FRONTEND_CAPABILITIES="web-client web-auth web-admin-teachers"
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
