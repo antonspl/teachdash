@@ -264,11 +264,17 @@ test('[web-profile/R2-S5] Values the backend rejects', async () => {
 })
 
 test('[web-profile/R2-S6] Save that fails for another reason', async () => {
-  for (const failure of [
-    () => Promise.reject(new TypeError('Failed to fetch')),
-    () => Promise.resolve(problem(500, 'INTERNAL_ERROR')),
-    () => Promise.resolve(problem(403, 'CSRF_INVALID')),
-  ]) {
+  for (const [failure, message] of [
+    [() => Promise.reject(new TypeError('Failed to fetch')), en.errors.generic],
+    [
+      () => Promise.resolve(problem(500, 'INTERNAL_ERROR')),
+      en.errors.INTERNAL_ERROR,
+    ],
+    [
+      () => Promise.resolve(problem(403, 'CSRF_INVALID')),
+      en.errors.CSRF_INVALID,
+    ],
+  ] as const) {
     // given
     fetchMock.mockReset()
     teacherWithSave(failure)
@@ -281,9 +287,7 @@ test('[web-profile/R2-S6] Save that fails for another reason', async () => {
 
     // then
     const status = await screen.findByRole('status')
-    expect(status.textContent).toBeTruthy()
-    expect(status.textContent).not.toBe(en.profile.saved)
-    expect(status.textContent).not.toBe(en.profile.validationFailed)
+    expect(status.textContent).toBe(message)
     expect(screen.queryByRole('heading', { name: en.login.title })).toBeNull()
     expect(headerHas('Anna Smith')).toBe(true)
     expect(

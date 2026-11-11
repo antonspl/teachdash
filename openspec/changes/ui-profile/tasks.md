@@ -31,7 +31,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 5. Final checks
 
-- [ ] 5.1 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (desktop and phone projects); all pass, and every web-profile scenario and web-auth/R3-S2 has a test
+- [x] 5.1 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (desktop and phone projects); all pass, and every web-profile scenario and web-auth/R3-S2 has a test
 
 ## Workflow follow-up
 
