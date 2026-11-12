@@ -48,7 +48,7 @@ public class StudentRegistrationService {
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 		Optional<User> existing = users.findByEmailIgnoreCase(email);
 		if (existing.isEmpty()) {
-			CreatedAccount created = accounts.createPasswordlessUser(Role.STUDENT, name, email, timeZone);
+			CreatedAccount created = accounts.createPasswordlessUser(Role.STUDENT, name, email, timeZone, teacherId);
 			assignments.insert(teacherId, created.id(), clock.instant());
 			return created;
 		}
@@ -75,7 +75,7 @@ public class StudentRegistrationService {
 			throw new ApiException(HttpStatus.CONFLICT, code);
 		}
 		String link = student.getPasswordHash() == null
-				? links.issue(studentId, TokenPurpose.SET_PASSWORD)
+				? links.issue(studentId, TokenPurpose.SET_PASSWORD, teacherId)
 				: null;
 		return new CreatedAccount(studentId, link);
 	}
