@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.teachdash.common.ApiException;
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
 import com.teachdash.enrolment.api.dto.RegisteredStudent;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
@@ -65,5 +66,11 @@ class TeacherStudentController {
 	void removeStudent(@PathVariable UUID id, Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		removal.removeStudent(teacherId, id);
+	}
+
+	// STUB: pass 2 implements the teacher reset link.
+	@PostMapping("/api/teacher/students/{id}/reset-link")
+	void issueResetLink(@PathVariable UUID id) {
+		throw new ApiException(HttpStatus.NOT_IMPLEMENTED, "NOT_IMPLEMENTED");
 	}
 }
