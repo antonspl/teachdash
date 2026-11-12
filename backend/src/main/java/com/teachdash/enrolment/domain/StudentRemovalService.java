@@ -33,6 +33,7 @@ public class StudentRemovalService {
 	public void removeStudent(UUID teacherId, UUID studentId) {
 		// A concurrent reset by the same teacher takes this lock too; without it the reset
 		// could insert a link after the removal voided the links, and the link would survive.
+		// A teacher deactivated after the session check is not found here and gets 401.
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 		if (!assignments.delete(teacherId, studentId)) {
