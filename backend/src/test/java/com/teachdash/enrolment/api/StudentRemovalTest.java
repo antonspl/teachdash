@@ -116,6 +116,30 @@ class StudentRemovalTest extends ApiTest {
 	}
 
 	@Test
+	@DisplayName("[student-enrolment/R4-S15] Removal invalidates the teacher's reset link")
+	void removalInvalidatesTheTeachersResetLink() {
+		// given a student with the password "old-password-1", assigned to teacher A, with an unused reset link issued by teacher A
+		UUID teacherA = teacher("Teacher A", "a@example.com");
+		UUID student = createStudent("student@example.com", "old-password-1");
+		assignStudent(teacherA, student);
+		String token = createToken(student, "RESET_PASSWORD", false, teacherA);
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A removes the student and the link is then used to set the password "new-password-1"
+		var removal = teacher.delete(STUDENTS + "/" + student);
+		var link = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
+		var newLogin = newClient().login("student@example.com", "new-password-1");
+		var oldLogin = newClient().login("student@example.com", "old-password-1");
+
+		// then the removal response is 204, the link response is 410 with code LINK_INVALID
+		removal.then().statusCode(204);
+		link.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and logging in with "new-password-1" returns 401, and the student logs in with "old-password-1"
+		newLogin.then().statusCode(401);
+		oldLogin.then().statusCode(200);
+	}
+
+	@Test
 	@DisplayName("[student-enrolment/R4-S14] Same teacher can register a removed student again")
 	void sameTeacherCanRegisterARemovedStudentAgain() {
 		// given a student with a password, assigned to teacher A

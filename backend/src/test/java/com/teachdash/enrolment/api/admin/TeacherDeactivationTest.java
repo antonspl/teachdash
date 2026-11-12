@@ -132,6 +132,30 @@ class TeacherDeactivationTest extends ApiTest {
 	}
 
 	@Test
+	@DisplayName("[student-enrolment/R7-S7] Release invalidates the teacher's reset link")
+	void releaseInvalidatesTheTeachersResetLink() {
+		// given teacher A with a student who has the password "old-password-1" and an unused reset link issued by teacher A
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID student = createStudent("student@example.com", "old-password-1");
+		assignStudent(teacherA, student);
+		String token = createToken(student, "RESET_PASSWORD", false, teacherA);
+		TestClient admin = loggedInAdmin();
+
+		// when the admin deactivates teacher A and the link is then used to set the password "new-password-1"
+		var deactivation = admin.post(deactivate(teacherA));
+		var link = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
+		var newLogin = newClient().login("student@example.com", "new-password-1");
+		var oldLogin = newClient().login("student@example.com", "old-password-1");
+
+		// then the deactivation response is 204, the link response is 410 with code LINK_INVALID
+		deactivation.then().statusCode(204);
+		link.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and logging in with "new-password-1" returns 401, and the student logs in with "old-password-1"
+		newLogin.then().statusCode(401);
+		oldLogin.then().statusCode(200);
+	}
+
+	@Test
 	@DisplayName("[student-enrolment/R7-S6] Teacher without students and repeated deactivation")
 	void teacherWithoutStudentsAndRepeatedDeactivation() {
 		// given teacher A with no students, and teacher B with a student
