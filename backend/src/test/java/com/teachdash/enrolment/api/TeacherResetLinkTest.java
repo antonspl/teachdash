@@ -15,7 +15,6 @@ import com.teachdash.support.TestClient;
 
 import io.restassured.response.Response;
 
-/** R12. */
 class TeacherResetLinkTest extends ApiTest {
 
 	private static final String PASSWORD_LINKS = "/api/password-links";
