@@ -74,7 +74,7 @@ class StudentRegistrationTest extends ApiTest {
 		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
 		UUID student = createUser("STUDENT", "Existing", "student@example.com", null, true);
 		assignStudent(teacherB, student);
-		String token = createToken(student, "SET_PASSWORD", false);
+		String token = createToken(student, "SET_PASSWORD", false, teacherB);
 		TestClient teacher = loggedInAs("a@example.com");
 
 		// when teacher A registers a student with that email and a different name and time zone
@@ -366,7 +366,7 @@ class StudentRegistrationTest extends ApiTest {
 		createTeacher("a@example.com", "teacher-pass-1");
 		UUID student = createUser("STUDENT", "Nina", "nina@example.com", null, true);
 		assignStudent(teacherB, student);
-		createToken(student, "SET_PASSWORD", false);
+		createToken(student, "SET_PASSWORD", false, teacherB);
 		TestClient b = loggedInAs("b@example.com");
 		TestClient a = loggedInAs("a@example.com");
 
@@ -458,8 +458,9 @@ class StudentRegistrationTest extends ApiTest {
 	void newLinkVoidsAnAdminsUnusedLink() {
 		// given a student without a password and with no teacher, with an unused reset link issued by an admin
 		createTeacher("a@example.com", "teacher-pass-1");
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		UUID student = createUser("STUDENT", "Nina", "nina@example.com", null, true);
-		String adminToken = createToken(student, "RESET_PASSWORD", false);
+		String adminToken = createToken(student, "RESET_PASSWORD", false, adminId);
 		TestClient teacher = loggedInAs("a@example.com");
 
 		// when teacher A registers a student with that email, the admin's link is then used to set the password "admin-password-1", and the link returned to teacher A is used to set the password "new-password-1"

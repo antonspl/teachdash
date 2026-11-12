@@ -49,11 +49,11 @@ class StudentRemovalTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R4-S3] Removal keeps the account and invalidates the unused link")
 	void removalKeepsTheAccountAndInvalidatesTheUnusedLink() {
-		// given a student without a password, assigned to teacher A, with an unused set-password link, and a logged-in admin
+		// given a student without a password, assigned to teacher A, with an unused set-password link issued by teacher A, and a logged-in admin
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
 		assignStudent(teacherA, student);
-		String token = createToken(student, "SET_PASSWORD", false);
+		String token = createToken(student, "SET_PASSWORD", false, teacherA);
 		TestClient teacher = loggedInAs("a@example.com");
 		TestClient admin = loggedInAdmin();
 
@@ -73,12 +73,12 @@ class StudentRemovalTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R4-S4] Another teacher's student is not found")
 	void anotherTeachersStudentIsNotFound() {
-		// given a student without a password, assigned only to teacher B, with an unused set-password link
+		// given a student without a password, assigned only to teacher B, with an unused set-password link issued by teacher B
 		teacher("Teacher A", "a@example.com");
 		UUID teacherB = teacher("Teacher B", "b@example.com");
 		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
 		assignStudent(teacherB, student);
-		String token = createToken(student, "SET_PASSWORD", false);
+		String token = createToken(student, "SET_PASSWORD", false, teacherB);
 		TestClient a = loggedInAs("a@example.com");
 		TestClient b = loggedInAs("b@example.com");
 
@@ -101,7 +101,8 @@ class StudentRemovalTest extends ApiTest {
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
-		String token = createToken(student, "RESET_PASSWORD", false);
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		String token = createToken(student, "RESET_PASSWORD", false, adminId);
 		TestClient teacher = loggedInAs("a@example.com");
 
 		// when teacher A removes the student and the link is then used to set the password "new-password-1"
