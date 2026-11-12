@@ -7,12 +7,14 @@ export function Select({
   onChange,
   options,
   required,
+  disabled,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   options: string[]
   required?: boolean
+  disabled?: boolean
 }) {
   const id = useId()
   return (
@@ -25,6 +27,7 @@ export function Select({
         className={styles.input}
         value={value}
         required={required}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       >
         {options.map((option) => (

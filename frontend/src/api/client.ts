@@ -28,9 +28,11 @@ export class ApiError extends Error {
 const UNAUTHORIZED_EXEMPT = new Set([
   'auth/login',
   'auth/logout',
-  'me',
   'password-links',
 ])
+
+// A 401 on reading the current user is the startup answer; on other methods it ends a session.
+const UNAUTHORIZED_EXEMPT_GET = new Set(['me'])
 
 let unauthorizedHandler: (() => void) | undefined
 
@@ -39,8 +41,12 @@ export function setUnauthorizedHandler(handler: (() => void) | undefined) {
   unauthorizedHandler = handler
 }
 
-function isExemptFromUnauthorized(path: string): boolean {
-  return UNAUTHORIZED_EXEMPT.has(path.split(/[?#]/)[0].replace(/\/+$/, ''))
+function isExemptFromUnauthorized(path: string, method: string): boolean {
+  const clean = path.split(/[?#]/)[0].replace(/\/+$/, '')
+  return (
+    UNAUTHORIZED_EXEMPT.has(clean) ||
+    (method === 'GET' && UNAUTHORIZED_EXEMPT_GET.has(clean))
+  )
 }
 
 export function messageForCode(code: string | undefined): string {
@@ -183,7 +189,7 @@ export async function apiRequest(
 
   if (!response.ok) {
     const error = await toApiError(response, options.signal)
-    if (response.status === 401 && !isExemptFromUnauthorized(path)) {
+    if (response.status === 401 && !isExemptFromUnauthorized(path, method)) {
       unauthorizedHandler?.()
     }
     throw error

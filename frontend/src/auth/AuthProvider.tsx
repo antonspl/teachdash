@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { ApiError, apiRequest, setUnauthorizedHandler } from '../api/client'
+import { updateProfile as sendProfile } from '../api/profile'
 
 export type Role = 'ADMIN' | 'TEACHER' | 'STUDENT'
 
@@ -33,6 +34,7 @@ export type AuthContextValue = {
   login: (email: string, password: string) => Promise<User>
   logout: () => Promise<void>
   setPasswordWithLink: (token: string, password: string) => Promise<User>
+  updateProfile: (name: string, timeZone: string) => Promise<User>
   retry: () => void
 }
 
@@ -108,6 +110,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const updateProfile = useCallback(async (name: string, timeZone: string) => {
+    const user = await sendProfile({ name, timeZone })
+    // A late answer must not bring back a user who has logged out meanwhile.
+    setState((prev) =>
+      prev.status === 'user' ? { status: 'user', user } : prev,
+    )
+    return user
+  }, [])
+
   const logout = useCallback(async () => {
     try {
       await apiRequest('auth/logout', { method: 'POST' })
@@ -125,8 +136,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ state, login, logout, setPasswordWithLink, retry }),
-    [state, login, logout, setPasswordWithLink, retry],
+    () => ({
+      state,
+      login,
+      logout,
+      setPasswordWithLink,
+      updateProfile,
+      retry,
+    }),
+    [state, login, logout, setPasswordWithLink, updateProfile, retry],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

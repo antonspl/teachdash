@@ -444,9 +444,38 @@ test('onUnauthorized is not called for login, logout, me and password links', as
   )
 
   // when
-  for (const path of ['auth/login', 'auth/logout', 'me', 'password-links']) {
+  for (const path of ['auth/login', 'auth/logout', 'password-links']) {
     await failureOf(apiRequest(path, { method: 'POST' }))
   }
+  await failureOf(apiRequest('me'))
+
+  // then
+  setUnauthorizedHandler(undefined)
+  expect(handler).not.toHaveBeenCalled()
+})
+
+test('onUnauthorized is called on a 401 from PATCH me', async () => {
+  // given
+  const handler = vi.fn()
+  setUnauthorizedHandler(handler)
+  fetchMock.mockResolvedValue(problem('UNAUTHENTICATED'))
+
+  // when
+  await failureOf(apiRequest('me', { method: 'PATCH', body: {} }))
+
+  // then
+  setUnauthorizedHandler(undefined)
+  expect(handler).toHaveBeenCalledTimes(1)
+})
+
+test('onUnauthorized is not called on a 401 from GET me', async () => {
+  // given
+  const handler = vi.fn()
+  setUnauthorizedHandler(handler)
+  fetchMock.mockResolvedValue(problem('UNAUTHENTICATED'))
+
+  // when
+  await failureOf(apiRequest('me'))
 
   // then
   setUnauthorizedHandler(undefined)

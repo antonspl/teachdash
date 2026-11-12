@@ -2,11 +2,17 @@ import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Route, Routes } from 'react-router'
 import { AuthProvider } from './auth/AuthProvider'
-import { AnonymousOnly, HomeRedirect, RequireRole } from './auth/guards'
+import {
+  AnonymousOnly,
+  HomeRedirect,
+  RequireRole,
+  RequireUser,
+} from './auth/guards'
 import { AdminTeachersPage } from './pages/AdminTeachersPage'
 import { CabinetPage } from './pages/CabinetPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { SetPasswordPage } from './pages/SetPasswordPage'
 
 export function App() {
@@ -51,6 +57,14 @@ export function App() {
             <RequireRole role="STUDENT">
               <CabinetPage role="STUDENT" />
             </RequireRole>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <RequireUser>
+              <ProfilePage />
+            </RequireUser>
           }
         />
         <Route path="*" element={<NotFoundPage />} />
