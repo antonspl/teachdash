@@ -18,10 +18,10 @@
 
 - [x] 3.1 Add the issuer argument to `PasswordLinkService.issue`, `OneTimeToken`, `AccountService.createPasswordlessUser`, `TeacherAdminService.createTeacher` and `reactivateTeacher`, and pass the acting user's id from `AdminController` and the registration path (design D2). STOP and ask the engineer before changing the two `issue` stubs in `StudentRegistrationFailureTest` and any direct test caller of the three changed service methods (design D7). Add `V7__token_issuer_required.sql` (design D1); verify the accounts and enrolment tests that passed before still pass
 - [x] 3.2 Add the guarded `PasswordLinkService.issueResetLink(userId, issuerId)` with the shared private insert path and code `TARGET_ACCOUNT_DEACTIVATED`; make `issue` reject `RESET_PASSWORD`; reduce `TeacherAdminService.issueResetLink` to the own-account check plus delegation (design D6); verify all accounts R8 tests pass
-- [ ] 3.3 Replace `invalidateLinks(userId, purpose)` with `invalidateLinks(userId, issuerId)` and use it in removal and release (design D4); make removal lock the teacher row first, with a comment explaining the race (design D3); verify all R4 and R7 tests pass
-- [ ] 3.4 Implement the teacher reset endpoint with the lock order of design D3 and a comment at the teacher-row lock; verify all R12 tests pass
-- [ ] 3.5 Check that no token appears in logs or in `toString` on the new endpoint (constitution §5); fix any that does
-- [ ] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged except for those the engineer approved in 3.1
+- [x] 3.3 Replace `invalidateLinks(userId, purpose)` with `invalidateLinks(userId, issuerId)` and use it in removal and release (design D4); make removal lock the teacher row first, with a comment explaining the race (design D3); verify all R4 and R7 tests pass
+- [x] 3.4 Implement the teacher reset endpoint with the lock order of design D3 and a comment at the teacher-row lock; verify all R12 tests pass
+- [x] 3.5 Check that no token appears in logs or in `toString` on the new endpoint (constitution §5); fix any that does
+- [x] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged except for those the engineer approved in 3.1
 
 ## Workflow follow-up
 
