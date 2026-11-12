@@ -101,9 +101,9 @@ public class PasswordLinkService {
 		tokens.markUnusedAsUsed(userId, clock.instant());
 	}
 
-	/** Makes the account's unused links of one purpose unusable. */
-	public void invalidateLinks(UUID userId, TokenPurpose purpose) {
-		tokens.markUnusedAsUsed(userId, purpose.name(), clock.instant());
+	/** Makes the account's unused links that the given account issued unusable. */
+	public void invalidateLinks(UUID userId, UUID issuerId) {
+		tokens.markUnusedIssuedByAsUsed(userId, issuerId, clock.instant());
 	}
 
 	/**
