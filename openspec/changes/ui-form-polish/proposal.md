@@ -26,9 +26,9 @@ Defaults suggested by Claude; the engineer can change any of them:
 - **Where a hint is shown.** Under its own field, and the field is marked invalid: the
   length hints under the new password, "passwords do not match" under the repeat field.
   Today all three share one message above the button.
-- **Empty fields.** An empty field shows no hint while typing. After the button was
-  pressed with a broken rule, an empty repeat field counts as "do not match", so the
-  press never does nothing without a reason.
+- **Empty fields.** An empty field shows no hint of ours. All password fields are
+  required, so the browser itself asks to fill an empty one when the button is pressed,
+  as it does today.
 - **Two hints at once.** A short new password and a different repeat show both hints,
   each under its own field.
 - **Where the select rule lives.** In `web-client`, because the select is a shared
@@ -59,6 +59,8 @@ Out of scope:
 - Live checks of name, email and time zone (#44).
 - Announcing hints to screen readers through a live region (#73, item 3).
 - The other follow-ups in #73.
+- Clearing a backend error on the set-password page when a field is edited (#89). This
+  change only removes it when the button is pressed again.
 
 ## Capabilities
 
@@ -73,7 +75,8 @@ None.
 
 ## Impact
 
-- `frontend/src/ui/Select.tsx`, `frontend/src/ui/Field.module.css`: the arrow.
+- `frontend/src/ui/Select.tsx`, `frontend/src/ui/Field.module.css`, and
+  `frontend/src/styles/tokens.css` if the arrow needs a size token: the arrow.
 - `frontend/src/passwordRules.ts`, `frontend/src/pages/PasswordForm.tsx`,
   `frontend/src/pages/SetPasswordPage.tsx`: the hints.
 - Vitest and Playwright tests for the new scenarios; the tests of web-profile R3-S3 to

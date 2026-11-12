@@ -30,45 +30,61 @@ See proposal.md for the motivation.
 
 ## Decisions
 
-### D1 The arrow is a pseudo-element on a wrapper, not a background image
+### D1 The arrow is a real element beside the select, not a background image
 
-`Select.tsx` wraps the `<select>` in an element with `position: relative`. The select
-gets `appearance: none` and a right padding of inset + arrow width + gap. The wrapper's
-`::after` draws a chevron, placed `--space-1` from the right border, vertically centred,
-with `pointer-events: none` so a click on it still opens the list.
+`Select.tsx` wraps the `<select>` in an element with `position: relative` that stretches
+to the full width of the field, as the select does today. Inside it:
 
-- The chevron is coloured from the text colour token, so it follows the theme. A
-  data-URI SVG background on the select cannot read CSS variables; that is why it was
-  rejected.
-- A `<select>` cannot carry its own `::after` in all browsers, hence the wrapper.
+- the `<select>` with `appearance: none`, `width: 100%`, `min-width: 0`,
+  `text-overflow: ellipsis` and a right padding of inset + arrow width + gap. `.input`
+  has `flex: 1`, which only works in a flex row, so the width is set explicitly;
+- an `aria-hidden` element with an inline SVG chevron, positioned `--space-1` from the
+  inner edge of the right border, vertically centred, with `pointer-events: none` so a
+  click on it reaches the select.
+
+Why this shape:
+
+- The chevron's stroke is `currentColor` from the text colour token, so it follows the
+  theme. A data-URI SVG background on the select cannot read CSS variables.
+- A real element has a box, so the Playwright tests can measure where the arrow is. A
+  `::after` pseudo-element has none. A `<select>` cannot carry its own `::after` in all
+  browsers anyway.
+- The SVG's drawing fills its box, so the visible gap is the box gap.
 - No image file and no external URL (constitution section 10).
-- Text that does not fit is cut off by the select itself (`text-overflow: ellipsis`);
-  the right padding keeps it away from the arrow.
-- New sizes (arrow width) are added as tokens if the token check requires it.
+- New sizes (arrow width) go into `styles/tokens.css`; the token check forbids raw sizes
+  elsewhere.
 
 ### D2 Per-field hints come from `passwordRules.ts`
 
-Add `passwordHints(password, repeat, submitted)` returning
+Add `passwordHints(password, repeat)` returning
 `{ password?: PasswordProblem; repeat?: PasswordProblem }`:
 
 - `password`: `tooShort` or `tooLong` when the new password is not empty and breaks the
-  rule; when `submitted`, an empty one is `tooShort`.
-- `repeat`: `mismatch` when the repeat is not empty and differs; when `submitted`, also
-  when it is empty and the new password is not.
+  rule;
+- `repeat`: `mismatch` when the repeat is not empty and differs from the new password.
 
-`passwordProblem` stays as the gate on submit, so both functions share the constants and
-the byte count. Unit tests cover the table of cases.
+An empty field gives no hint. There is no "was submitted" state: every password field is
+`required`, so the browser stops a submit with an empty field and shows its own message,
+as it does today. `passwordProblem` stays as the gate on submit, so both functions share
+the constants and the byte count. Unit tests cover the table of cases.
+
+Alternative considered: a `submitted` flag that turns an empty repeat into "do not match"
+after a stopped press. Rejected after the spec critique: it needs rules for when the
+flag is cleared on each page and shows "at least 8 characters" on a field the user has
+just cleared to retype, for a case the browser already handles.
 
 ### D3 Forms pass hints to the fields; the form message is for server replies
 
 Both forms compute the hints on every render from their state and pass them to
-`PasswordInput` through the existing `error` prop. Each form keeps a `submitted` flag:
-set when a submit is stopped by a broken rule, cleared on a successful change (profile
-form; the set-password page navigates away).
+`PasswordInput` through the existing `error` prop.
 
 On submit with a broken rule the form no longer copies the problem into its
 `StatusMessage`; the hint under the field is the message. `StatusMessage` keeps showing
 success and backend errors, so web-profile R3-S2, R3-S6 to R3-S10 are untouched.
+
+Both forms clear their form message before the rule check. `PasswordForm` already does;
+`SetPasswordPage` clears it only after the check today, which would leave an old backend
+error next to a new hint (R14-S11).
 
 Alternative considered: keep the form message and add the hints. Rejected: the same
 sentence would be shown twice.
@@ -77,24 +93,38 @@ sentence would be shown twice.
 
 web-profile R3-S3 to R3-S5 and web-auth R5-S3, R5-S4 and R5-S8 say that a message is
 shown and no request is sent on submit. That stays true; only where the tests look for
-the text may change (a field description, not a status message). Their assertions on the
-text and on "no request" are not weakened.
+the text may change (a field description, not a status message). The hint is now there
+before the press, so finding the text no longer proves the gate: each of these tests
+presses the real button, then checks that no request was sent and that the hint is still
+shown.
 
 ### D5 Tests
 
-- R13: Playwright, because it is about real layout. Gaps are measured from element boxes
-  and computed styles in the desktop and phone projects. R13-S4 holds the save request
-  open with a route handler.
-- R14: Vitest with Testing Library, one test per scenario, each covering both forms
-  where the scenario says so.
+- R13: Playwright, because it is about real layout. Positions come from the bounding
+  boxes of the select and the arrow element and from computed styles: `appearance: none`
+  for "the browser's arrow is switched off", the paddings and border widths for the
+  gaps and the text area, `scrollWidth <= clientWidth` for "no horizontal scroll". R13-S4
+  holds the save request open with a route handler.
+- The Playwright projects are Chromium and the Pixel 7 and iPhone 14 profiles. Firefox
+  has no automated check; it is covered by the screenshots below.
+- R14: Vitest with Testing Library. One parameterised test per scenario (`it.each` over
+  the two forms, the title starting with the scenario ID); `check-scenario-coverage.sh`
+  matches IDs by prefix and accepts this. Scenarios for one form are plain tests.
+- R14 tests press the real submit button and fill every required field the scenario
+  does not leave empty. `fireEvent.submit` would skip the browser's `required` check, and
+  an empty required field would make "no request" pass for the wrong reason.
+- R14-S9 asserts that the fetch mock has no calls.
 - Before the code gate, screenshots of `/profile` and the "Add teacher" dialog at
   desktop and 360-pixel width are looked at by eye, in Chromium, Firefox and WebKit.
 
 ### D6 Stacked branch
 
 The branch starts from `ui-profile` and the PR's base is `ui-profile`. After #84 is
-merged the base is changed to `main` (no rebase needed after a merge commit). Changing
-the base dismisses a GitHub approval, so it is done before the final review is asked.
+merged the base is changed to `main`. This repository merges PRs with a merge commit, so
+no rebase is needed; if #84 is squash-merged instead, the branch is first moved with
+`git rebase --onto main ui-profile`, which needs the engineer's word because it rewrites
+a pushed branch. Changing the base dismisses a GitHub approval, so it is done before the
+final review is asked.
 
 No new dependencies. No Flyway migrations.
 
