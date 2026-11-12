@@ -49,11 +49,11 @@ class StudentRemovalTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R4-S3] Removal keeps the account and invalidates the unused link")
 	void removalKeepsTheAccountAndInvalidatesTheUnusedLink() {
-		// given a student without a password, assigned to teacher A, with an unused set-password link, and a logged-in admin
+		// given a student without a password, assigned to teacher A, with an unused set-password link issued by teacher A, and a logged-in admin
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
 		assignStudent(teacherA, student);
-		String token = createToken(student, "SET_PASSWORD", false);
+		String token = createToken(student, "SET_PASSWORD", false, teacherA);
 		TestClient teacher = loggedInAs("a@example.com");
 		TestClient admin = loggedInAdmin();
 
@@ -73,12 +73,12 @@ class StudentRemovalTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R4-S4] Another teacher's student is not found")
 	void anotherTeachersStudentIsNotFound() {
-		// given a student without a password, assigned only to teacher B, with an unused set-password link
+		// given a student without a password, assigned only to teacher B, with an unused set-password link issued by teacher B
 		teacher("Teacher A", "a@example.com");
 		UUID teacherB = teacher("Teacher B", "b@example.com");
 		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
 		assignStudent(teacherB, student);
-		String token = createToken(student, "SET_PASSWORD", false);
+		String token = createToken(student, "SET_PASSWORD", false, teacherB);
 		TestClient a = loggedInAs("a@example.com");
 		TestClient b = loggedInAs("b@example.com");
 
@@ -101,7 +101,8 @@ class StudentRemovalTest extends ApiTest {
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
-		String token = createToken(student, "RESET_PASSWORD", false);
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		String token = createToken(student, "RESET_PASSWORD", false, adminId);
 		TestClient teacher = loggedInAs("a@example.com");
 
 		// when teacher A removes the student and the link is then used to set the password "new-password-1"
@@ -112,6 +113,30 @@ class StudentRemovalTest extends ApiTest {
 		removal.then().statusCode(204);
 		link.then().statusCode(200);
 		newClient().login("student@example.com", "new-password-1").then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R4-S15] Removal invalidates the teacher's reset link")
+	void removalInvalidatesTheTeachersResetLink() {
+		// given a student with the password "old-password-1", assigned to teacher A, with an unused reset link issued by teacher A
+		UUID teacherA = teacher("Teacher A", "a@example.com");
+		UUID student = createStudent("student@example.com", "old-password-1");
+		assignStudent(teacherA, student);
+		String token = createToken(student, "RESET_PASSWORD", false, teacherA);
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A removes the student and the link is then used to set the password "new-password-1"
+		var removal = teacher.delete(STUDENTS + "/" + student);
+		var link = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
+		var newLogin = newClient().login("student@example.com", "new-password-1");
+		var oldLogin = newClient().login("student@example.com", "old-password-1");
+
+		// then the removal response is 204, the link response is 410 with code LINK_INVALID
+		removal.then().statusCode(204);
+		link.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and logging in with "new-password-1" returns 401, and the student logs in with "old-password-1"
+		newLogin.then().statusCode(401);
+		oldLogin.then().statusCode(200);
 	}
 
 	@Test

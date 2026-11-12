@@ -13,12 +13,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.teachdash.accounts.api.dto.LinkResponse;
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
 import com.teachdash.enrolment.api.dto.RegisteredStudent;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
 import com.teachdash.enrolment.domain.UserSummary;
 import com.teachdash.enrolment.domain.StudentRegistrationService;
 import com.teachdash.enrolment.domain.StudentRemovalService;
+import com.teachdash.enrolment.domain.StudentResetLinkService;
 
 import jakarta.validation.Valid;
 
@@ -28,14 +30,17 @@ class TeacherStudentController {
 	private final StudentRegistrationService registration;
 	private final EnrolmentQueryService queries;
 	private final StudentRemovalService removal;
+	private final StudentResetLinkService resetLinks;
 
 	TeacherStudentController(
 			StudentRegistrationService registration,
 			EnrolmentQueryService queries,
-			StudentRemovalService removal) {
+			StudentRemovalService removal,
+			StudentResetLinkService resetLinks) {
 		this.registration = registration;
 		this.queries = queries;
 		this.removal = removal;
+		this.resetLinks = resetLinks;
 	}
 
 	@PostMapping("/api/teacher/students")
@@ -65,5 +70,12 @@ class TeacherStudentController {
 	void removeStudent(@PathVariable UUID id, Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		removal.removeStudent(teacherId, id);
+	}
+
+	@PostMapping("/api/teacher/students/{id}/reset-link")
+	@ResponseStatus(HttpStatus.CREATED)
+	LinkResponse issueResetLink(@PathVariable UUID id, Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return new LinkResponse(resetLinks.issueResetLink(teacherId, id));
 	}
 }

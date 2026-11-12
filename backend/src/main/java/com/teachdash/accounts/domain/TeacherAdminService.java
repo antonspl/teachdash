@@ -38,11 +38,11 @@ public class TeacherAdminService {
 
 	/** Creates a teacher without a password; returns the id and the set-password link. */
 	@Transactional
-	public CreatedAccount createTeacher(String name, String email, String timeZone) {
+	public CreatedAccount createTeacher(String name, String email, String timeZone, UUID adminId) {
 		if (users.findByEmailIgnoreCase(email).isPresent()) {
 			throw emailTaken();
 		}
-		return accounts.createPasswordlessUser(Role.TEACHER, name, email, timeZone);
+		return accounts.createPasswordlessUser(Role.TEACHER, name, email, timeZone, adminId);
 	}
 
 	/**
@@ -61,13 +61,13 @@ public class TeacherAdminService {
 
 	/** Returns a new set-password link when an inactive teacher never set a password. */
 	@Transactional
-	public Optional<String> reactivateTeacher(UUID id) {
+	public Optional<String> reactivateTeacher(UUID id, UUID adminId) {
 		User teacher = requireTeacher(id);
 		if (teacher.isActive()) {
 			return Optional.empty();
 		}
 		Optional<String> link = teacher.getPasswordHash() == null
-				? Optional.of(links.issue(id, TokenPurpose.SET_PASSWORD))
+				? Optional.of(links.issue(id, TokenPurpose.SET_PASSWORD, adminId))
 				: Optional.empty();
 		users.reactivate(id);
 		return link;
@@ -79,29 +79,16 @@ public class TeacherAdminService {
 				.orElseThrow(TeacherAdminService::notFound);
 	}
 
-	/**
-	 * Returns a reset link for the user. Rejects the admin's own account and inactive accounts
-	 * before anything is issued, so a rejected request leaves existing links untouched. The user
-	 * row is locked first, so a concurrent deactivation is ordered against this request (R8).
-	 */
-	@Transactional
+	/** Returns a reset link for the user; the admin's own account is rejected. */
 	public String issueResetLink(UUID userId, UUID currentUserId) {
-		User user = users.findByIdForUpdate(userId).orElseThrow(TeacherAdminService::notFound);
-		if (user.getId().equals(currentUserId)) {
+		if (userId.equals(currentUserId)) {
 			throw ownAccount();
 		}
-		if (!user.isActive()) {
-			throw accountDeactivated();
-		}
-		return links.issue(user.getId(), TokenPurpose.RESET_PASSWORD);
+		return links.issueResetLink(userId, currentUserId);
 	}
 
 	private static ApiException ownAccount() {
 		return new ApiException(HttpStatus.CONFLICT, "OWN_ACCOUNT");
-	}
-
-	private static ApiException accountDeactivated() {
-		return new ApiException(HttpStatus.CONFLICT, "ACCOUNT_DEACTIVATED");
 	}
 
 	private static ApiException emailTaken() {

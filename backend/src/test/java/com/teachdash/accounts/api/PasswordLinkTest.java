@@ -27,8 +27,9 @@ class PasswordLinkTest extends ApiTest {
 	@DisplayName("[accounts/R7-S1] Valid link sets the password")
 	void validLinkSetsThePassword() {
 		// given an unused set-password link issued 1 day ago
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		UUID annaId = createUser("TEACHER", "Anna", "anna@example.com", null, true);
-		String token = createToken(annaId, "SET_PASSWORD", false);
+		String token = createToken(annaId, "SET_PASSWORD", false, adminId);
 		testClock().advance(Duration.ofDays(1));
 		TestClient holder = newClient();
 
@@ -45,8 +46,9 @@ class PasswordLinkTest extends ApiTest {
 	@DisplayName("[accounts/R7-S2] Used link is rejected")
 	void usedLinkIsRejected() {
 		// given a set-password link that was already used, and the password it set
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		UUID annaId = createTeacher("anna@example.com", "first-password-1");
-		String token = createToken(annaId, "SET_PASSWORD", true);
+		String token = createToken(annaId, "SET_PASSWORD", true, adminId);
 
 		// when someone uses it again
 		var response = useLink(newClient(), token, "second-password-2");
@@ -61,8 +63,9 @@ class PasswordLinkTest extends ApiTest {
 	@DisplayName("[accounts/R7-S3] Expired link is rejected")
 	void expiredLinkIsRejected() {
 		// given an unused link issued 8 days ago for an account with a password
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		UUID annaId = createTeacher("anna@example.com", "old-password-1");
-		String token = createToken(annaId, "SET_PASSWORD", false);
+		String token = createToken(annaId, "SET_PASSWORD", false, adminId);
 		testClock().advance(Duration.ofDays(8));
 
 		// when someone uses it to set a new password
@@ -77,9 +80,10 @@ class PasswordLinkTest extends ApiTest {
 	@DisplayName("[accounts/R7-S4] Newer link replaces older one")
 	void newerLinkReplacesOlderOne() {
 		// given an unused link (inserted directly; the newer one is issued via the API as replacement is under test)
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		UUID teacherId = createTeacher("anna@example.com", "old-password-1");
-		String older = createToken(teacherId, "RESET_PASSWORD", false);
-		TestClient admin = loggedInAdmin();
+		String older = createToken(teacherId, "RESET_PASSWORD", false, adminId);
+		TestClient admin = loggedInAs("admin@example.com");
 		testClock().advance(Duration.ofSeconds(1));
 
 		// when the admin issues a newer link for the same account
@@ -96,8 +100,9 @@ class PasswordLinkTest extends ApiTest {
 	@DisplayName("[accounts/R7-S5] Short password is rejected and link stays valid")
 	void shortPasswordIsRejectedAndLinkStaysValid() {
 		// given an unused link
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		UUID annaId = createUser("TEACHER", "Anna", "anna@example.com", null, true);
-		String token = createToken(annaId, "SET_PASSWORD", false);
+		String token = createToken(annaId, "SET_PASSWORD", false, adminId);
 
 		// when its holder sets a 7-character password
 		var response = useLink(newClient(), token, "1234567");
@@ -154,9 +159,10 @@ class PasswordLinkTest extends ApiTest {
 	@DisplayName("[accounts/R8-S2] Reset replaces the old password and ends sessions")
 	void resetReplacesTheOldPasswordAndEndsSessions() {
 		// given a logged-in student and a reset link issued for them
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		UUID studentId = createStudent("student@example.com", "old-password-1");
 		TestClient student = loggedInAs("student@example.com");
-		String token = createToken(studentId, "RESET_PASSWORD", false);
+		String token = createToken(studentId, "RESET_PASSWORD", false, adminId);
 		TestClient holder = newClient();
 
 		// when the link is used to set a new password
@@ -196,15 +202,16 @@ class PasswordLinkTest extends ApiTest {
 	@DisplayName("[accounts/R8-S4] Reset link for a deactivated account is rejected")
 	void resetLinkForADeactivatedAccountIsRejected() {
 		// given a logged-in admin and a deactivated teacher with a password and an unused link
-		TestClient admin = loggedInAdmin();
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		TestClient admin = loggedInAs("admin@example.com");
 		UUID teacherId = createUser("TEACHER", "Teacher", "teacher@example.com", "teacher-pass-1", false);
-		createToken(teacherId, "RESET_PASSWORD", false);
+		createToken(teacherId, "RESET_PASSWORD", false, adminId);
 
 		// when the admin requests a reset link for the teacher
 		var response = admin.post("/api/admin/users/" + teacherId + "/reset-link");
 
-		// then the response is 409 with code ACCOUNT_DEACTIVATED
-		response.then().statusCode(409).body("code", equalTo("ACCOUNT_DEACTIVATED"));
+		// then the response is 409 with code TARGET_ACCOUNT_DEACTIVATED
+		response.then().statusCode(409).body("code", equalTo("TARGET_ACCOUNT_DEACTIVATED"));
 		// and the teacher's existing link is still unused, and no other link is stored for the teacher
 		assertEquals(1, countTokens(teacherId, true));
 		assertEquals(1, countTokens(teacherId, false));
@@ -216,8 +223,8 @@ class PasswordLinkTest extends ApiTest {
 		// given a logged-in admin with an unused reset link for their own account, and a second admin account
 		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		TestClient admin = loggedInAs("admin@example.com");
-		createToken(adminId, "RESET_PASSWORD", false);
 		UUID otherAdminId = createAdmin("admin2@example.com", "admin-password-2");
+		createToken(adminId, "RESET_PASSWORD", false, otherAdminId);
 
 		// when the admin requests a reset link for their own account and then for the second admin's account
 		var own = admin.post("/api/admin/users/" + adminId + "/reset-link");

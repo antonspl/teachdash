@@ -26,7 +26,7 @@ class TeacherDeactivationTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R7-S1] Deactivation releases every student")
 	void deactivationReleasesEveryStudent() {
-		// given teacher A with a student S1 who has a password and a student S2 without a password with an unused set-password link, and teacher B with a student S3 without a password with an unused set-password link
+		// given teacher A with a student S1 who has a password and a student S2 without a password with an unused set-password link issued by teacher A, and teacher B with a student S3 without a password with an unused set-password link issued by teacher B
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
 		UUID s1 = createStudent("s1@example.com", "student-pass-1");
@@ -35,8 +35,8 @@ class TeacherDeactivationTest extends ApiTest {
 		assignStudent(teacherA, s1);
 		assignStudent(teacherA, s2);
 		assignStudent(teacherB, s3);
-		String tokenS2 = createToken(s2, "SET_PASSWORD", false);
-		String tokenS3 = createToken(s3, "SET_PASSWORD", false);
+		String tokenS2 = createToken(s2, "SET_PASSWORD", false, teacherA);
+		String tokenS3 = createToken(s3, "SET_PASSWORD", false, teacherB);
 		TestClient admin = loggedInAdmin();
 		TestClient studentOne = loggedInAs("s1@example.com");
 		TestClient teacherBClient = loggedInAs("b@example.com");
@@ -117,8 +117,9 @@ class TeacherDeactivationTest extends ApiTest {
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
-		String token = createToken(student, "RESET_PASSWORD", false);
-		TestClient admin = loggedInAdmin();
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		String token = createToken(student, "RESET_PASSWORD", false, adminId);
+		TestClient admin = loggedInAs("admin@example.com");
 
 		// when the admin deactivates teacher A and the link is then used to set the password "new-password-1"
 		var deactivation = admin.post(deactivate(teacherA));
@@ -128,6 +129,30 @@ class TeacherDeactivationTest extends ApiTest {
 		deactivation.then().statusCode(204);
 		link.then().statusCode(200);
 		newClient().login("student@example.com", "new-password-1").then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R7-S7] Release invalidates the teacher's reset link")
+	void releaseInvalidatesTheTeachersResetLink() {
+		// given teacher A with a student who has the password "old-password-1" and an unused reset link issued by teacher A
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID student = createStudent("student@example.com", "old-password-1");
+		assignStudent(teacherA, student);
+		String token = createToken(student, "RESET_PASSWORD", false, teacherA);
+		TestClient admin = loggedInAdmin();
+
+		// when the admin deactivates teacher A and the link is then used to set the password "new-password-1"
+		var deactivation = admin.post(deactivate(teacherA));
+		var link = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
+		var newLogin = newClient().login("student@example.com", "new-password-1");
+		var oldLogin = newClient().login("student@example.com", "old-password-1");
+
+		// then the deactivation response is 204, the link response is 410 with code LINK_INVALID
+		deactivation.then().statusCode(204);
+		link.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and logging in with "new-password-1" returns 401, and the student logs in with "old-password-1"
+		newLogin.then().statusCode(401);
+		oldLogin.then().statusCode(200);
 	}
 
 	@Test
