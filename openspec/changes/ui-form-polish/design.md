@@ -94,17 +94,21 @@ sentence would be shown twice.
 web-profile R3-S3 to R3-S5 and web-auth R5-S3, R5-S4 and R5-S8 say that a message is
 shown and no request is sent on submit. That stays true; only where the tests look for
 the text may change (a field description, not a status message). The hint is now there
-before the press, so finding the text no longer proves the gate: each of these tests
-presses the real button, then checks that no request was sent and that the hint is still
-shown.
+before the press, so finding the text no longer proves the gate. These tests already
+press the real button and check that no request was sent; each gets one more check,
+that the hint is still shown after the press. Their helpers are not rewritten.
 
 ### D5 Tests
 
 - R13: Playwright, because it is about real layout. Positions come from the bounding
   boxes of the select and the arrow element and from computed styles: `appearance: none`
   for "the browser's arrow is switched off", the paddings and border widths for the
-  gaps and the text area, `scrollWidth <= clientWidth` for "no horizontal scroll". R13-S4
-  holds the save request open with a route handler.
+  gaps and the text area, computed `text-overflow: ellipsis` for "cut off with an
+  ellipsis" (rendered text in a select cannot be measured), `scrollWidth <= clientWidth`
+  for "no horizontal scroll". R13-S4 holds the save request open with a route handler.
+- R13-S3 clicks with `page.mouse.click(x, y)` at the centre of the arrow's box; a locator
+  click on the arrow would time out, because the arrow is never the hit target. The main
+  check is that `document.elementFromPoint(x, y)` is the select; the focus is the second.
 - The Playwright projects are Chromium and the Pixel 7 and iPhone 14 profiles. Firefox
   has no automated check; it is covered by the screenshots below.
 - R14: Vitest with Testing Library. One parameterised test per scenario (`it.each` over

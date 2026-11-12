@@ -14,7 +14,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 - [ ] 2.1 Add `passwordHints` to `src/passwordRules.ts` (design D2), sharing the constants with `passwordProblem`; unit tests for the table of cases (empty, short, 72 and 80 bytes, repeat empty, differs, equal); verify `npm test`
 - [ ] 2.2 Wire the hints into `PasswordForm` and `SetPasswordPage` through the `error` prop of `PasswordInput`, stop copying rule problems into the form message, and clear the form message before the rule check on both forms (design D3); Vitest for web-client/R14-S1 to R14-S11, one parameterised test per scenario over the two forms where the scenario names both, pressing the real button with the required fields filled (design D5); verify `npm test`
-- [ ] 2.3 Adjust the tests of web-profile/R3-S3 to R3-S5 and web-auth/R5-S3, R5-S4 and R5-S8 (design D4): each presses the real button, then checks that no request was sent and the hint is still shown; verify `npm test` and that `i18n/translations.test.tsx` still passes
+- [ ] 2.3 Adjust the tests of web-profile/R3-S3 to R3-S5 and web-auth/R5-S3, R5-S4 and R5-S8 (design D4): keep their helpers and checks, and add a check that the hint is still shown after the press; verify `npm test` and that `i18n/translations.test.tsx` still passes
 
 ## 3. Final checks
 

@@ -25,7 +25,7 @@ the arrow SHALL reach the field, as a click on its text does.
 #### Scenario: web-client/R13-S3 Click on the arrow reaches the select
 - **GIVEN** a logged-in teacher on `/profile`
 - **WHEN** the teacher clicks in the middle of the arrow
-- **THEN** the time zone select has the focus
+- **THEN** the click lands on the time zone select, not on the arrow, and the select has the focus
 
 #### Scenario: web-client/R13-S4 Disabled select keeps the arrow
 - **GIVEN** a logged-in teacher on `/profile`, and the arrow's position is noted
