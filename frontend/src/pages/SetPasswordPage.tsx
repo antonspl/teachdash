@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthProvider'
 import { cabinetPath } from '../auth/guards'
-import { passwordProblem } from '../passwordRules'
+import { passwordHints, passwordProblem } from '../passwordRules'
 import { Button } from '../ui/Button'
 import { Form } from '../ui/Form'
 import { Page } from '../ui/Page'
@@ -41,19 +41,19 @@ export function SetPasswordPage() {
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
 
+  const hints = passwordHints(password, confirm)
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
     if (token === undefined || inFlight.current) {
       return
     }
-    const problem = passwordProblem(password, confirm)
-    if (problem) {
-      setError(t(problem))
+    setError(undefined)
+    if (passwordProblem(password, confirm)) {
       return
     }
     inFlight.current = true
     setSubmitting(true)
-    setError(undefined)
     try {
       const user = await setPasswordWithLink(token, password)
       void navigate(cabinetPath[user.role], { replace: true })
@@ -80,6 +80,7 @@ export function SetPasswordPage() {
             label={t('setPassword.password')}
             autoComplete="new-password"
             required
+            error={hints.password ? t(hints.password) : undefined}
             value={password}
             onChange={setPassword}
           />
@@ -87,6 +88,7 @@ export function SetPasswordPage() {
             label={t('setPassword.confirm')}
             autoComplete="new-password"
             required
+            error={hints.repeat ? t(hints.repeat) : undefined}
             value={confirm}
             onChange={setConfirm}
           />
