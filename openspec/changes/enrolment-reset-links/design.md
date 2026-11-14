@@ -33,12 +33,13 @@ See proposal.md - Why. Current state on main:
 one guarded place that issues reset links; existing approved tests keep passing, apart
 from the changes named in D5 and D7.
 
-**Non-Goals:** exposing the issuer in any API; changing what a password change or a
-reset does to other links; any frontend change.
+**Non-Goals:** exposing the issuer in any API; changing what a password change does to
+other links; any frontend change. (What issuing and using a link do to other links changed
+after the second code review, D8.)
 
 ## Decisions
 
-### D1. `issued_by` column, in two migrations
+### D1. `issued_by` column
 
 `one_time_tokens.issued_by uuid references users (id) on delete cascade`, the account
 whose request issued the link: the admin, or the teacher.
@@ -57,8 +58,9 @@ One nullable column with no second migration was considered. It is simpler, but 
 would stop a later issuing path from forgetting the issuer, and such a link would then
 survive removal. `on delete cascade` matches `user_id`; accounts are not deleted today.
 
-No index is added: invalidation filters by `user_id`, which is already indexed, and a user
-has at most one unused link.
+V8 (D8) later replaced the one-unused-link-per-user index with one per user and issuer,
+which also serves invalidation by issuer. Before D8 no index was added, because
+invalidation filtered by `user_id` and a user had at most one unused link.
 
 ### D2. The issuer is an explicit argument
 
@@ -269,4 +271,4 @@ chose to keep an admin's link alive instead.
 
 ## Migration Plan
 
-Deploy as usual; Flyway runs V6 and V7 on start. Rollback is a new forward migration.
+Deploy as usual; Flyway runs V6, V7 and V8 on start. Rollback is a new forward migration.

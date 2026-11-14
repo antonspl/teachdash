@@ -53,7 +53,10 @@ public class PasswordLinkService {
 				: baseUrl;
 	}
 
-	/** Issues a set-password link and invalidates the account's older unused links. */
+	/**
+	 * Issues a set-password link. A teacher issuer voids only its own older unused links,
+	 * an admin voids all of the account's.
+	 */
 	@Transactional
 	public String issueSetPasswordLink(UUID userId, UUID issuerId) {
 		// Locks the user row first: user before links, see lock order.
@@ -62,8 +65,9 @@ public class PasswordLinkService {
 	}
 
 	/**
-	 * Issues a reset link for an active account and invalidates its older unused links. Nothing
-	 * is stored or invalidated for a missing or deactivated account.
+	 * Issues a reset link for an active account. A teacher issuer voids only its own older
+	 * unused links, an admin voids all. Nothing is stored or invalidated for a missing or
+	 * deactivated account.
 	 */
 	@Transactional
 	public String issueResetLink(UUID userId, UUID issuerId) {
@@ -80,7 +84,7 @@ public class PasswordLinkService {
 		Instant now = clock.instant();
 		boolean adminIssuer = users.findById(issuerId)
 				.map(issuer -> issuer.getRole() == Role.ADMIN)
-				.orElse(false);
+				.orElseThrow(() -> new IllegalStateException("Issuer not found: " + issuerId));
 		if (adminIssuer) {
 			tokens.markUnusedAsUsed(userId, now);
 		} else {
