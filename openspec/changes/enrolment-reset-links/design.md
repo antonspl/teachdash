@@ -163,7 +163,7 @@ the test gate.
 1. Lock the user row with `findByIdForUpdate`; 404 `NOT_FOUND` if there is none.
 2. 409 `TARGET_ACCOUNT_DEACTIVATED` if the account is inactive. Nothing is stored or
    invalidated before this check (accounts R8).
-3. Void the older unused link and insert the new one, through a private method shared
+3. Void the issuer's older unused link (D8) and insert the new one, through a private method shared
    with `issueSetPasswordLink`. The shared method does not lock the row again.
 
 `issueSetPasswordLink` cannot issue a reset link, because it takes no purpose, so a reset
@@ -197,11 +197,46 @@ Approved tests that change, each reviewed by the engineer:
 | `StudentRegistrationFailureTest`, two stubs of `issue` | three matchers instead of two (D2) | pass 2, after the engineer approves |
 | Direct test callers of `createPasswordlessUser`, `createTeacher` or `reactivateTeacher`, if any | pass an issuer (D2) | pass 2, after the engineer approves |
 
+### D8. One unused link per issuer
+
+Added after the second code review (proposal, answer 12). Before, a new link voided every
+unused link of the account, so a teacher's reset voided an admin's link and the teacher's
+removal then voided the teacher's own: the student was left with no working link, against
+the intent of R4-S13 and R7-S5.
+
+- The shared private `store` voids older unused links, then inserts the new link. For a
+  teacher issuer it voids only that teacher's links (`markUnusedIssuedByAsUsed`); for an
+  admin issuer it voids all of them (`markUnusedAsUsed`), so an admin reset still cancels a
+  link a teacher handed out (accounts R8). `store` reads the issuer's role from the issuer
+  row; it takes no lock on it, so the lock order is unchanged.
+- `use` voids the account's other unused links in its transaction, right after it marks
+  the used link (`markUnusedAsUsed`), so an older link from another issuer cannot change
+  the password the holder just set (accounts R7). Lock order is unchanged: user row, then
+  links.
+- V8 makes the database rule match: at most one unused link per account and issuer. The
+  new index also serves `invalidateLinksIssuedBy`, which filters on both columns.
+  Concurrent issues by the same issuer still end in `LINK_CONFLICT` as before.
+
+Accounts R7 changes its rule from "a newer link for the same account" to "a newer link
+from an admin or from the same issuer"; R7-S7 shows links from two issuers side by side.
+R8 states that an admin's link voids all; R8-S6 shows it. R7-S4 keeps its test: its two
+links come from one admin. R1-S18 and R12-S5 flip: the admin's link stays usable until one
+of the links is used. R4-S16 covers the review's sequence.
+
+"Same issuer only" for admins too was considered; the spec critique showed an admin reset
+would then not cancel a link a teacher kept, so admins void all (proposal, answer 12).
+
+Keeping one unused link per account and accepting the gap was considered; the engineer
+chose to keep an admin's link alive instead.
+
 ## Flyway migrations
 
 - `V6__token_issuer.sql`: add nullable `issued_by` (pass 1).
 - `V7__token_issuer_required.sql`: delete links without an issuer, set `issued_by not null`
   (pass 2).
+- `V8__token_one_unused_per_issuer.sql`: replace the unique index
+  `one_time_tokens_one_unused_idx` on `(user_id) where used_at is null` with one on
+  `(user_id, issued_by) where used_at is null` (D8, code review fixes).
 
 ## Risks / Trade-offs
 
@@ -219,6 +254,10 @@ Approved tests that change, each reviewed by the engineer:
   was never used, so assigning it gives nothing away.
 - [Token FK takes a key-share lock on the issuer's row, so two admins resetting each other
   could deadlock] → accepted (proposal, answer 10): only one admin can exist.
+- [A hijacked teacher session issues reset links and keeps the URLs; resetting the teacher
+  does not void them] → accepted (proposal, answer 11); follow-up #93.
+- [A student holds two usable links, one from the admin and one from the teacher] → the
+  first one used voids the other, and a newer admin link voids both (D8).
 - [A teacher uses the reset link themself and keeps the student's password after removal]
   → accepted (proposal, answer 7); an admin can do the same today. The student notices,
   because the old password stops working. Sending the link by email later removes it.

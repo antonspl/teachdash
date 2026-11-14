@@ -19,6 +19,9 @@ part of this change.
 | 8 | The race between a reset and a removal by the same teacher is closed by a teacher-row lock in removal, but no test fails if the lock is forgotten. How is it checked? | By the reviewer, with a code comment at each lock, as in earlier changes. |
 | 9 | Code review (2026-11-14): R1 lets any teacher register a teacherless student who has a password, without the student's consent; with R12 that teacher can then reset the password and log in as the student. Close it how? | R1 returns 409 `STUDENT_EXISTS` for a student with a password, even with no teacher; such a student joins through a join link (R10). R1-S14, R4-S7, R4-S14 and R7-S2 change accordingly. |
 | 10 | Same review: the token FK can deadlock two admins resetting each other; V7 deletes links without an issuer and could race the old container on deploy. | Accepted: only one admin can exist, V6 and V7 ship together, and no real data exists (answer 2). No issues. |
+| 11 | Second code review (2026-11-14): if a teacher's session is hijacked, the attacker can issue reset links and keep them; resetting the teacher's password does not void them. | Accepted: the same attacker can use the links at once (answer 7). Follow-up #93. |
+| 12 | Same review: a teacher's reset voids an admin's link, and the teacher's removal then voids the teacher's own, leaving the student with no working link. | A teacher's new link voids only that teacher's older unused links; an admin's new link voids all of them, so an admin reset still cancels a teacher's link (decided after the spec critique). Using any link voids the others. Accounts R7 and R8 change (new R7-S7, R8-S6); R1-S18 and R12-S5 flip; new R4-S16; migration V8 (design D8). |
+| 13 | Same review: other findings. | Fixed here: `CreatedAccount`, `RegisteredStudent` and `SetPasswordLinkResponse` hide the token in `toString` (constitution §5). The rest goes to #94. |
 
 Assumptions (the engineer may override during review):
 
@@ -26,8 +29,9 @@ Assumptions (the engineer may override during review):
   like the admin's reset link for such an account, so a teacher who lost the set-password
   link can send a new one.
 - The teacher's link has the same rules and effects as an admin's reset link (accounts R7
-  and R8): it voids the student's older unused link, including an admin's, and using it
-  ends the student's other sessions.
+  and R8): it voids the older unused link this teacher issued, and using it ends the
+  student's other sessions. Changed after the second code review: it no longer voids an
+  admin's link (answer 12).
 - Join (R9, R10) issues no password link, so it needs no issuer.
 - Students cannot be deactivated (accounts R6), so the teacher endpoint never returns
   `TARGET_ACCOUNT_DEACTIVATED` and R12 has no scenario for it. The guard still runs on the
@@ -73,6 +77,8 @@ act on), which a client that branches on the code cannot tell apart.
 - **BREAKING** (API): registering the email of a student who has a password returns 409
   `STUDENT_EXISTS` even when the student has no teacher (answer 9). Such a student joins
   through a join link (R10).
+- A teacher's new password link voids only that teacher's older unused links; an admin's
+  voids all of them. Using any link voids the account's other unused links (answer 12).
 - **BREAKING** (API): an admin's reset-link request for a deactivated account returns 409
   `TARGET_ACCOUNT_DEACTIVATED` instead of 409 `ACCOUNT_DEACTIVATED`. The 401
   `ACCOUNT_DEACTIVATED` on login and link use is unchanged.
@@ -90,7 +96,7 @@ None.
 - `student-enrolment`: new requirement R12 (teacher issues a reset link); R1 no longer
   assigns a student who has a password (answer 9); R4 and R7
   invalidate the links the teacher issued instead of set-password links.
-- `accounts`: R8 returns `TARGET_ACCOUNT_DEACTIVATED` for a deactivated target account.
+- `accounts`: R7 voids older links per issuer, and using a link voids the others; R8: an admin's link voids all (answer 12); R8 returns `TARGET_ACCOUNT_DEACTIVATED` for a deactivated target account.
 
 ## Out of scope
 

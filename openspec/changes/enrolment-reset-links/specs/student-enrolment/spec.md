@@ -3,7 +3,8 @@
 ### Requirement: R12 Teacher issues password reset links for own students
 A teacher SHALL be able to issue a password reset link for a student assigned to them,
 with or without a password. The link follows the rules and effects of an admin's reset
-link (accounts R7 and R8): it voids the student's older unused link, and using it
+link (accounts R7 and R8): it voids the older unused link this teacher issued for the
+student, an admin's unused link stays usable until one of them is used, and using it
 replaces the password and ends the student's other sessions. An id that is not a student
 assigned to the teacher MUST return 404, as in R2, and change nothing.
 
@@ -27,10 +28,10 @@ assigned to the teacher MUST return 404, as in R2, and change nothing.
 - **WHEN** teacher A requests a reset link for the student, the set-password link is then used to set the password "old-link-1", and the reset link to set the password "new-password-1"
 - **THEN** the response to the request is 201 with a link, the set-password link response is 410 with code `LINK_INVALID`, and the student logs in with "new-password-1"
 
-#### Scenario: student-enrolment/R12-S5 Teacher's link voids an admin's unused link
+#### Scenario: student-enrolment/R12-S5 Teacher's link keeps an admin's unused link until one is used
 - **GIVEN** a student with a password, assigned to teacher A, with an unused reset link issued by an admin
 - **WHEN** teacher A requests a reset link for the student, the admin's link is then used to set the password "admin-password-1", and the teacher's link to set the password "new-password-1"
-- **THEN** the admin's link response is 410 with code `LINK_INVALID`, and the student logs in with "new-password-1"
+- **THEN** the admin's link response is 200, the teacher's link response is 410 with code `LINK_INVALID`, and the student logs in with "admin-password-1"
 
 #### Scenario: student-enrolment/R12-S6 Students and admins cannot issue through the teacher endpoint
 - **GIVEN** a student assigned to teacher A, a logged-in student and a logged-in admin
@@ -59,7 +60,8 @@ A teacher SHALL be able to register a student by name, email and time zone; emai
 compared case-insensitively. A new email creates a passwordless student account, assigned
 to the teacher, with a single-use set-password link in the response. The email of a student
 with no teacher and no password assigns that account and keeps its details; the response
-carries a new set-password link, which voids its other unused links. Any other existing
+carries a new set-password link, which voids the older unused links this teacher issued
+for it; an admin's unused link stays usable until one of them is used (accounts R7). Any other existing
 email MUST return 409 and change nothing, with the first matching code in this order:
 `EMAIL_TAKEN` for a teacher or admin account; `ALREADY_ENROLLED` for a student assigned to
 this teacher; `STUDENT_EXISTS` for a student assigned to another teacher, or for a student
@@ -150,10 +152,10 @@ with no teacher and a password. Such a student joins a teacher through a join li
 - **WHEN** the teacher registers a student with that email
 - **THEN** the response is 500, and the student is not in the teacher's list
 
-#### Scenario: student-enrolment/R1-S18 New link voids an admin's unused link
+#### Scenario: student-enrolment/R1-S18 New link keeps an admin's unused link until one is used
 - **GIVEN** a student without a password and with no teacher, with an unused reset link issued by an admin
-- **WHEN** teacher A registers a student with that email, the admin's link is then used to set the password "admin-password-1", and the link returned to teacher A is used to set the password "new-password-1"
-- **THEN** the response to registering is 201 with a set-password link, the admin's link response is 410 with code `LINK_INVALID`, and the student logs in with "new-password-1"
+- **WHEN** teacher A registers a student with that email, the admin's link is then used to set the password "admin-password-1", and the link returned to teacher A to set the password "new-password-1"
+- **THEN** the response to registering is 201 with a set-password link, the admin's link response is 200, the teacher's link response is 410 with code `LINK_INVALID`, and the student logs in with "admin-password-1"
 
 ### Requirement: R4 Teacher removes their student
 A teacher SHALL be able to remove a student assigned to them. Removal deletes the
@@ -227,6 +229,11 @@ stays usable. An id that is not a student assigned to the teacher MUST return 40
 - **GIVEN** a student with the password "old-password-1", assigned to teacher A, with an unused reset link issued by teacher A
 - **WHEN** teacher A removes the student and the link is then used to set the password "new-password-1"
 - **THEN** the removal response is 204, the link response is 410 with code `LINK_INVALID`, logging in with "new-password-1" returns 401, and the student logs in with "old-password-1"
+
+#### Scenario: student-enrolment/R4-S16 Removal keeps an admin's link that the teacher's newer link did not void
+- **GIVEN** a student with a password, assigned to teacher A, with an unused reset link issued by an admin
+- **WHEN** teacher A requests a reset link for the student and then removes the student, the teacher's link is then used to set the password "teacher-password-1", and the admin's link to set the password "admin-password-1"
+- **THEN** the removal response is 204, the teacher's link response is 410 with code `LINK_INVALID`, the admin's link response is 200, and the student logs in with "admin-password-1"
 
 ### Requirement: R7 Deactivating a teacher releases their students
 Deactivating a teacher SHALL remove all of that teacher's assignments in the same
