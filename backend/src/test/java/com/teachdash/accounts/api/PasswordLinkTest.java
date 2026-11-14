@@ -143,16 +143,13 @@ class PasswordLinkTest extends ApiTest {
 	@DisplayName("[accounts/R7-S7] Links from different issuers work until one is used")
 	void linksFromDifferentIssuersWorkUntilOneIsUsed() {
 		// given a student with a password, assigned to teacher A, with an unused reset link issued by an admin and a newer unused reset link issued by teacher A
-		// (the newer link goes through the teacher endpoint: V7 allows one unused link per account until V8)
 		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
 		String adminToken = createToken(student, "RESET_PASSWORD", false, adminId);
-		TestClient teacher = loggedInAs("a@example.com");
 		testClock().advance(Duration.ofSeconds(1));
-		var issued = teacher.post("/api/teacher/students/" + student + "/reset-link");
-		String teacherToken = issued.statusCode() == 201 ? tokenFrom(issued.path("link")) : "missing-token";
+		String teacherToken = createToken(student, "RESET_PASSWORD", false, teacherA);
 
 		// when the teacher's link is used with a 7-character password, the admin's link is then used to set the password "admin-password-1", and the teacher's link to set the password "teacher-password-1"
 		var shortPassword = useLink(newClient(), teacherToken, "1234567");
