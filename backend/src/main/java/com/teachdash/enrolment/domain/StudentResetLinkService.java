@@ -30,7 +30,7 @@ public class StudentResetLinkService {
 	}
 
 	@Transactional
-	public String issueResetLink(UUID teacherId, UUID studentId) {
+	public String issueResetLink(UUID studentId, UUID teacherId) {
 		// Removal of this student by the same teacher takes this lock too, so the assignment
 		// checked below cannot disappear before the link is stored. A teacher deactivated
 		// after the session check is not found here and gets 401.

@@ -29,7 +29,7 @@ class TeacherDeactivationListener {
 	void onTeacherDeactivated(TeacherDeactivated event) {
 		joinLinks.delete(event.teacherId());
 		for (var studentId : assignments.deleteAllOfTeacher(event.teacherId())) {
-			links.invalidateLinks(studentId, event.teacherId());
+			links.invalidateLinksIssuedBy(studentId, event.teacherId());
 		}
 	}
 }

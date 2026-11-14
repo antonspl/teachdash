@@ -12,7 +12,6 @@ import com.teachdash.accounts.domain.AccountService;
 import com.teachdash.accounts.domain.CreatedAccount;
 import com.teachdash.accounts.domain.PasswordLinkService;
 import com.teachdash.accounts.domain.Role;
-import com.teachdash.accounts.domain.TokenPurpose;
 import com.teachdash.accounts.domain.User;
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
@@ -68,15 +67,15 @@ public class StudentRegistrationService {
 		if (assignments.hasTeacher(studentId)) {
 			throw new ApiException(HttpStatus.CONFLICT, "STUDENT_EXISTS");
 		}
+		if (student.getPasswordHash() != null) {
+			throw new ApiException(HttpStatus.CONFLICT, "STUDENT_EXISTS");
+		}
 		if (!assignments.insert(teacherId, studentId, clock.instant())) {
 			String code = assignments.exists(teacherId, studentId)
 					? "ALREADY_ENROLLED"
 					: "STUDENT_EXISTS";
 			throw new ApiException(HttpStatus.CONFLICT, code);
 		}
-		String link = student.getPasswordHash() == null
-				? links.issue(studentId, TokenPurpose.SET_PASSWORD, teacherId)
-				: null;
-		return new CreatedAccount(studentId, link);
+		return new CreatedAccount(studentId, links.issueSetPasswordLink(studentId, teacherId));
 	}
 }

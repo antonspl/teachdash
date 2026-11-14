@@ -67,7 +67,7 @@ public class TeacherAdminService {
 			return Optional.empty();
 		}
 		Optional<String> link = teacher.getPasswordHash() == null
-				? Optional.of(links.issue(id, TokenPurpose.SET_PASSWORD, adminId))
+				? Optional.of(links.issueSetPasswordLink(id, adminId))
 				: Optional.empty();
 		users.reactivate(id);
 		return link;

@@ -57,7 +57,7 @@ public class AccountService {
 		} catch (DuplicateKeyException e) {
 			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
 		}
-		return new CreatedAccount(user.getId(), links.issue(user.getId(), TokenPurpose.SET_PASSWORD, issuerId));
+		return new CreatedAccount(user.getId(), links.issueSetPasswordLink(user.getId(), issuerId));
 	}
 
 	/** Creates an account with a ready password hash and no one-time token; joins the caller's transaction. */

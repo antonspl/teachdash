@@ -76,6 +76,6 @@ class TeacherStudentController {
 	@ResponseStatus(HttpStatus.CREATED)
 	LinkResponse issueResetLink(@PathVariable UUID id, Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		return new LinkResponse(resetLinks.issueResetLink(teacherId, id));
+		return new LinkResponse(resetLinks.issueResetLink(id, teacherId));
 	}
 }

@@ -26,11 +26,11 @@
 ## 4. Code review fixes
 
 - [x] 4.1 Change the approved tests for R1-S14, R4-S7, R4-S14 and R7-S2 to the new scenario text (proposal, answer 9); create join links and student sessions directly in GIVEN. Verify each fails at its THEN step only. STOP: engineer approves these test changes in the PR
-- [ ] 4.2 Make `StudentRegistrationService.assignExisting` return 409 `STUDENT_EXISTS` for a student with a password (design, Risks); verify the four tests pass
-- [ ] 4.3 Rename `PasswordLinkService.issue(userId, purpose, issuerId)` to `issueSetPasswordLink(userId, issuerId)` and drop the purpose argument (review #5)
-- [ ] 4.4 Rename `invalidateLinks(userId, issuerId)` to `invalidateLinksIssuedBy` and make `issueResetLink` take arguments in the same order in both services; tighten the mocks so swapped arguments fail (review #6)
-- [ ] 4.5 Use `ApiException.notFound()` in `PasswordLinkService` (review #9)
-- [ ] 4.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; full suite green
+- [x] 4.2 Make `StudentRegistrationService.assignExisting` return 409 `STUDENT_EXISTS` for a student with a password (design, Risks); verify the four tests pass
+- [x] 4.3 Rename `PasswordLinkService.issue(userId, purpose, issuerId)` to `issueSetPasswordLink(userId, issuerId)` and drop the purpose argument (review #5)
+- [x] 4.4 Rename `invalidateLinks(userId, issuerId)` to `invalidateLinksIssuedBy` and make `issueResetLink` take arguments in the same order in both services; tighten the mocks so swapped arguments fail (review #6)
+- [x] 4.5 Use `ApiException.notFound()` in `PasswordLinkService` (review #9)
+- [x] 4.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; full suite green
 
 ## Workflow follow-up
 

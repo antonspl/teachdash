@@ -55,13 +55,10 @@ public class PasswordLinkService {
 
 	/** Issues a set-password link and invalidates the account's older unused links. */
 	@Transactional
-	public String issue(UUID userId, TokenPurpose purpose, UUID issuerId) {
-		if (purpose == TokenPurpose.RESET_PASSWORD) {
-			throw new IllegalArgumentException("Reset links go through issueResetLink");
-		}
+	public String issueSetPasswordLink(UUID userId, UUID issuerId) {
 		// Locks the user row first: user before links, see lock order.
 		users.findByIdForUpdate(userId);
-		return store(userId, purpose, issuerId);
+		return store(userId, TokenPurpose.SET_PASSWORD, issuerId);
 	}
 
 	/**
@@ -71,7 +68,7 @@ public class PasswordLinkService {
 	@Transactional
 	public String issueResetLink(UUID userId, UUID issuerId) {
 		User user = users.findByIdForUpdate(userId)
-				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+				.orElseThrow(() -> ApiException.notFound());
 		if (!user.isActive()) {
 			throw new ApiException(HttpStatus.CONFLICT, "TARGET_ACCOUNT_DEACTIVATED");
 		}
@@ -102,7 +99,7 @@ public class PasswordLinkService {
 	}
 
 	/** Makes the account's unused links that the given account issued unusable. */
-	public void invalidateLinks(UUID userId, UUID issuerId) {
+	public void invalidateLinksIssuedBy(UUID userId, UUID issuerId) {
 		tokens.markUnusedIssuedByAsUsed(userId, issuerId, clock.instant());
 	}
 

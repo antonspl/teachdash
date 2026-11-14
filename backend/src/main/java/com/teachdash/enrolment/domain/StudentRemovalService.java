@@ -39,6 +39,6 @@ public class StudentRemovalService {
 		if (!assignments.delete(teacherId, studentId)) {
 			throw ApiException.notFound();
 		}
-		links.invalidateLinks(studentId, teacherId);
+		links.invalidateLinksIssuedBy(studentId, teacherId);
 	}
 }
