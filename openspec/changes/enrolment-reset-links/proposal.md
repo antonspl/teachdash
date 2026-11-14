@@ -17,6 +17,8 @@ part of this change.
 | 6 | The admin page never offers a reset link for a deactivated teacher, so only a stale list can get the renamed 409. Add an i18n string for it? | No. The change stays backend-only; the UI shows the generic message in that case. |
 | 7 | A teacher can issue a reset link for an own student, use it themself and so know the password; after removal the former teacher keeps that password and session. Voiding unused links does not close this. | Accepted risk. Later the link will be sent to the student by email instead of being shown to the teacher. |
 | 8 | The race between a reset and a removal by the same teacher is closed by a teacher-row lock in removal, but no test fails if the lock is forgotten. How is it checked? | By the reviewer, with a code comment at each lock, as in earlier changes. |
+| 9 | Code review (2026-11-14): R1 lets any teacher register a teacherless student who has a password, without the student's consent; with R12 that teacher can then reset the password and log in as the student. Close it how? | R1 returns 409 `STUDENT_EXISTS` for a student with a password, even with no teacher; such a student joins through a join link (R10). R1-S14, R4-S7, R4-S14 and R7-S2 change accordingly. |
+| 10 | Same review: the token FK can deadlock two admins resetting each other; V7 deletes links without an issuer and could race the old container on deploy. | Accepted: only one admin can exist, V6 and V7 ship together, and no real data exists (answer 2). No issues. |
 
 Assumptions (the engineer may override during review):
 
@@ -68,6 +70,9 @@ act on), which a client that branches on the code cannot tell apart.
 - Removal (R4) and release on deactivation (R7) invalidate the student's unused links
   that this teacher issued, of any kind. Before, they invalidated set-password links only.
   An admin's link still stays usable.
+- **BREAKING** (API): registering the email of a student who has a password returns 409
+  `STUDENT_EXISTS` even when the student has no teacher (answer 9). Such a student joins
+  through a join link (R10).
 - **BREAKING** (API): an admin's reset-link request for a deactivated account returns 409
   `TARGET_ACCOUNT_DEACTIVATED` instead of 409 `ACCOUNT_DEACTIVATED`. The 401
   `ACCOUNT_DEACTIVATED` on login and link use is unchanged.
@@ -82,7 +87,8 @@ None.
 
 ### Modified Capabilities
 
-- `student-enrolment`: new requirement R12 (teacher issues a reset link); R4 and R7
+- `student-enrolment`: new requirement R12 (teacher issues a reset link); R1 no longer
+  assigns a student who has a password (answer 9); R4 and R7
   invalidate the links the teacher issued instead of set-password links.
 - `accounts`: R8 returns `TARGET_ACCOUNT_DEACTIVATED` for a deactivated target account.
 

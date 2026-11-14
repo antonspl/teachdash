@@ -211,6 +211,13 @@ Approved tests that change, each reviewed by the engineer:
 - [V7 deletes pending links in prod] → only test data exists (proposal, answer 2).
 - [A client that keyed on 409 `ACCOUNT_DEACTIVATED` breaks] → the only client is the
   frontend, which does not (proposal, Research).
+- [A teacher registers a teacherless student who has a password, then resets the password]
+  → closed: R1 assigns only students without a password (proposal, answer 9).
+  `StudentRegistrationService.assignExisting` returns 409 `STUDENT_EXISTS` for a student with
+  a password, after the `ALREADY_ENROLLED` and has-a-teacher checks. A passwordless account
+  was never used, so assigning it gives nothing away.
+- [Token FK takes a key-share lock on the issuer's row, so two admins resetting each other
+  could deadlock] → accepted (proposal, answer 10): only one admin can exist.
 - [A teacher uses the reset link themself and keeps the student's password after removal]
   → accepted (proposal, answer 7); an admin can do the same today. The student notices,
   because the old password stops working. Sending the link by email later removes it.
