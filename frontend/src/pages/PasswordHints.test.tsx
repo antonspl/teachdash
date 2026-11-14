@@ -288,6 +288,7 @@ describe('new-password hints', () => {
 it('[web-client/R14-S9] Current password is not checked while typing', async () => {
   // given
   await profile.open()
+  const callsBefore = fetchMock.mock.calls.length
 
   // when
   type(en.profile.currentPassword, 'x')
@@ -301,7 +302,7 @@ it('[web-client/R14-S9] Current password is not checked while typing', async () 
   ]) {
     expect(hintOf(label), label).toBeNull()
   }
-  expect(profile.sent()).toHaveLength(0)
+  expect(fetchMock.mock.calls).toHaveLength(callsBefore)
 })
 
 it('[web-client/R14-S10] No hints after a successful change', async () => {

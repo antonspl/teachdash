@@ -591,7 +591,12 @@ test('[web-profile/R3-S3] New passwords that differ are not sent', async () => {
   // then
   expect(await screen.findByText(en.password.mismatch)).toBeTruthy()
   expect(changes()).toHaveLength(0)
-  expect(screen.getByText(en.password.mismatch)).toBeTruthy()
+  const id = (
+    screen.getByLabelText(en.profile.repeatPassword) as HTMLElement
+  ).getAttribute('aria-describedby')
+  expect(document.getElementById(id ?? '')?.textContent).toBe(
+    en.password.mismatch,
+  )
 })
 
 test('[web-profile/R3-S4] A short new password is not sent', async () => {
@@ -606,7 +611,12 @@ test('[web-profile/R3-S4] A short new password is not sent', async () => {
   // then
   expect(await screen.findByText(en.password.tooShort)).toBeTruthy()
   expect(changes()).toHaveLength(0)
-  expect(screen.getByText(en.password.tooShort)).toBeTruthy()
+  const id = (
+    screen.getByLabelText(en.profile.newPassword) as HTMLElement
+  ).getAttribute('aria-describedby')
+  expect(document.getElementById(id ?? '')?.textContent).toBe(
+    en.password.tooShort,
+  )
 })
 
 test('[web-profile/R3-S5] A new password over 72 bytes is not sent', async () => {
@@ -621,7 +631,12 @@ test('[web-profile/R3-S5] A new password over 72 bytes is not sent', async () =>
   // then
   expect(await screen.findByText(en.password.tooLong)).toBeTruthy()
   expect(changes()).toHaveLength(0)
-  expect(screen.getByText(en.password.tooLong)).toBeTruthy()
+  const id = (
+    screen.getByLabelText(en.profile.newPassword) as HTMLElement
+  ).getAttribute('aria-describedby')
+  expect(document.getElementById(id ?? '')?.textContent).toBe(
+    en.password.tooLong,
+  )
 })
 
 test('[web-profile/R3-S6] Wrong current password', async () => {
