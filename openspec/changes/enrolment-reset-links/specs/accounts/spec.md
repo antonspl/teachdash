@@ -49,10 +49,10 @@ An admin SHALL be able to issue a reset link for any active account except their
 A deactivated account MUST get 409 `TARGET_ACCOUNT_DEACTIVATED` and the admin's own account
 409 `OWN_ACCOUNT`; neither stores a link or invalidates an existing one.
 `TARGET_ACCOUNT_DEACTIVATED` means the account acted on is deactivated; `ACCOUNT_DEACTIVATED`
-(R2, R7) is used only for the caller's own account. An admin's new link SHALL void every older unused link of the account, whoever issued it
-(R7). After a reset, the old password MUST stop
-working and the account's other sessions MUST end. Each account has a session version;
-a session started under an older version MUST NOT work.
+(R2, R7) is used only for the caller's own account. An admin's new link SHALL void every
+older unused link of the account, whoever issued it (R7). After a reset, the old password
+MUST stop working and the account's other sessions MUST end. Each account has a session
+version; a session started under an older version MUST NOT work.
 
 #### Scenario: accounts/R8-S1 Admin issues a reset link
 - **GIVEN** a logged-in admin and a teacher account
