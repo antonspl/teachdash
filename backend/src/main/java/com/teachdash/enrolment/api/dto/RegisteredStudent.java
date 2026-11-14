@@ -10,6 +10,11 @@ public record RegisteredStudent(
 		UUID id,
 		String setPasswordLink) {
 
+	@Override
+	public String toString() {
+		return "RegisteredStudent[id=" + id + "]";
+	}
+
 	public static RegisteredStudent of(CreatedAccount account) {
 		return new RegisteredStudent(account.id(), account.setPasswordLink());
 	}

@@ -35,9 +35,9 @@
 ## 5. Second code review fixes
 
 - [x] 5.1 Write or change the tests for accounts R7-S4 (text only, check it still matches), the new accounts R7-S7 and R8-S6, student-enrolment R1-S18 and R12-S5 (both flipped) and the new R4-S16 (design D8); create links with `createToken` and the issuer each scenario names. Verify R7-S7, R1-S18, R12-S5 and R4-S16 fail at their THEN step only; R8-S6 already holds today and passes, which is expected. Add `V8__token_one_unused_per_issuer.sql` (pass 1: a schema migration), so two unused links from different issuers can be created directly. Run the coverage script. STOP: engineer approves these tests in the PR
-- [ ] 5.2 Make `store` void only the same teacher's unused links for a teacher issuer and all of them for an admin issuer, and `use` void the account's other unused links (design D8; V8 was added in pass 1, task 5.1); verify the tests of 5.1 and all accounts R7 and R8 tests pass
-- [ ] 5.3 Override `toString` in `CreatedAccount`, `RegisteredStudent` and `SetPasswordLinkResponse` so the link is not printed, as `LinkResponse` does (proposal, answer 13)
-- [ ] 5.4 Run `./gradlew :backend:cleanTest :backend:test` and `scripts/check-scenario-coverage.sh`; full suite green
+- [x] 5.2 Make `store` void only the same teacher's unused links for a teacher issuer and all of them for an admin issuer, and `use` void the account's other unused links (design D8; V8 was added in pass 1, task 5.1); verify the tests of 5.1 and all accounts R7 and R8 tests pass
+- [x] 5.3 Override `toString` in `CreatedAccount`, `RegisteredStudent` and `SetPasswordLinkResponse` so the link is not printed, as `LinkResponse` does (proposal, answer 13)
+- [x] 5.4 Run `./gradlew :backend:cleanTest :backend:test` and `scripts/check-scenario-coverage.sh`; full suite green
 
 ## Workflow follow-up
 

@@ -78,7 +78,14 @@ public class PasswordLinkService {
 	private String store(UUID userId, TokenPurpose purpose, UUID issuerId) {
 		String token = TokenGenerator.generate();
 		Instant now = clock.instant();
-		tokens.markUnusedAsUsed(userId, now);
+		boolean adminIssuer = users.findById(issuerId)
+				.map(issuer -> issuer.getRole() == Role.ADMIN)
+				.orElse(false);
+		if (adminIssuer) {
+			tokens.markUnusedAsUsed(userId, now);
+		} else {
+			tokens.markUnusedIssuedByAsUsed(userId, issuerId, now);
+		}
 		try {
 			tokens.save(OneTimeToken.create(
 					hash(token),
@@ -128,6 +135,7 @@ public class PasswordLinkService {
 			if (tokens.markUsed(stored.getId(), now) != 1) {
 				throw invalid();
 			}
+			tokens.markUnusedAsUsed(user.getId(), now);
 			users.updatePasswordHashAndRevokeSessions(user.getId(), passwordHash);
 			return users.findById(user.getId()).orElseThrow(PasswordLinkService::invalid);
 		});
