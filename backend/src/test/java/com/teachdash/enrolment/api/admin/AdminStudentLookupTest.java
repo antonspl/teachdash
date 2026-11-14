@@ -46,7 +46,7 @@ class AdminStudentLookupTest extends ApiTest {
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
 		assignStudent(teacherA, student);
-		createToken(student, "SET_PASSWORD", false);
+		createToken(student, "SET_PASSWORD", false, teacherA);
 		TestClient teacher = loggedInAs("a@example.com");
 		TestClient admin = loggedInAdmin();
 

@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 
 import java.util.Map;
 import java.util.UUID;
@@ -20,6 +19,7 @@ class StudentRemovalTest extends ApiTest {
 
 	private static final String STUDENTS = "/api/teacher/students";
 	private static final String TEACHERS = "/api/student/teachers";
+	private static final String JOIN = "/api/join-links/join";
 
 	private UUID teacher(String name, String email) {
 		return createUser("TEACHER", name, email, "teacher-pass-1", true);
@@ -49,11 +49,11 @@ class StudentRemovalTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R4-S3] Removal keeps the account and invalidates the unused link")
 	void removalKeepsTheAccountAndInvalidatesTheUnusedLink() {
-		// given a student without a password, assigned to teacher A, with an unused set-password link, and a logged-in admin
+		// given a student without a password, assigned to teacher A, with an unused set-password link issued by teacher A, and a logged-in admin
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
 		assignStudent(teacherA, student);
-		String token = createToken(student, "SET_PASSWORD", false);
+		String token = createToken(student, "SET_PASSWORD", false, teacherA);
 		TestClient teacher = loggedInAs("a@example.com");
 		TestClient admin = loggedInAdmin();
 
@@ -73,12 +73,12 @@ class StudentRemovalTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R4-S4] Another teacher's student is not found")
 	void anotherTeachersStudentIsNotFound() {
-		// given a student without a password, assigned only to teacher B, with an unused set-password link
+		// given a student without a password, assigned only to teacher B, with an unused set-password link issued by teacher B
 		teacher("Teacher A", "a@example.com");
 		UUID teacherB = teacher("Teacher B", "b@example.com");
 		UUID student = createUser("STUDENT", "Student", "student@example.com", null, true);
 		assignStudent(teacherB, student);
-		String token = createToken(student, "SET_PASSWORD", false);
+		String token = createToken(student, "SET_PASSWORD", false, teacherB);
 		TestClient a = loggedInAs("a@example.com");
 		TestClient b = loggedInAs("b@example.com");
 
@@ -101,7 +101,8 @@ class StudentRemovalTest extends ApiTest {
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
-		String token = createToken(student, "RESET_PASSWORD", false);
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		String token = createToken(student, "RESET_PASSWORD", false, adminId);
 		TestClient teacher = loggedInAs("a@example.com");
 
 		// when teacher A removes the student and the link is then used to set the password "new-password-1"
@@ -115,22 +116,82 @@ class StudentRemovalTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R4-S14] Same teacher can register a removed student again")
-	void sameTeacherCanRegisterARemovedStudentAgain() {
-		// given a student with a password, assigned to teacher A
+	@DisplayName("[student-enrolment/R4-S15] Removal invalidates the teacher's reset link")
+	void removalInvalidatesTheTeachersResetLink() {
+		// given a student with the password "old-password-1", assigned to teacher A, with an unused reset link issued by teacher A
+		UUID teacherA = teacher("Teacher A", "a@example.com");
+		UUID student = createStudent("student@example.com", "old-password-1");
+		assignStudent(teacherA, student);
+		String token = createToken(student, "RESET_PASSWORD", false, teacherA);
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A removes the student and the link is then used to set the password "new-password-1"
+		var removal = teacher.delete(STUDENTS + "/" + student);
+		var link = newClient().post("/api/password-links", Map.of("token", token, "password", "new-password-1"));
+		var newLogin = newClient().login("student@example.com", "new-password-1");
+		var oldLogin = newClient().login("student@example.com", "old-password-1");
+
+		// then the removal response is 204, the link response is 410 with code LINK_INVALID
+		removal.then().statusCode(204);
+		link.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and logging in with "new-password-1" returns 401, and the student logs in with "old-password-1"
+		newLogin.then().statusCode(401);
+		oldLogin.then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R4-S16] Removal keeps an admin's link that the teacher's newer link did not void")
+	void removalKeepsAnAdminsLinkThatTheTeachersNewerLinkDidNotVoid() {
+		// given a student with a password, assigned to teacher A, with an unused reset link issued by an admin
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		String adminToken = createToken(student, "RESET_PASSWORD", false, adminId);
 		TestClient teacher = loggedInAs("a@example.com");
 
-		// when teacher A removes the student and then registers a student with that email
+		// when teacher A requests a reset link for the student and then removes the student, the teacher's link is then used to set the password "teacher-password-1", and the admin's link to set the password "admin-password-1"
+		var issued = teacher.post(STUDENTS + "/" + student + "/reset-link");
+		var removal = teacher.delete(STUDENTS + "/" + student);
+		String teacherToken = issued.statusCode() == 201 ? tokenFrom(issued.path("link")) : "missing-token";
+		var teacherLink = newClient().post("/api/password-links",
+				Map.of("token", teacherToken, "password", "teacher-password-1"));
+		var adminLink = newClient().post("/api/password-links",
+				Map.of("token", adminToken, "password", "admin-password-1"));
+		var login = newClient().login("student@example.com", "admin-password-1");
+
+		// then the removal response is 204
+		removal.then().statusCode(204);
+		// and the teacher's link response is 410 with code LINK_INVALID
+		teacherLink.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and the admin's link response is 200
+		adminLink.then().statusCode(200);
+		// and the student logs in with "admin-password-1"
+		login.then().statusCode(200);
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R4-S14] Removed student can join the same teacher again")
+	void removedStudentCanJoinTheSameTeacherAgain() {
+		// given a student with a password and a session, assigned to teacher A, and teacher A's join link
+		UUID teacherA = teacher("Teacher A", "a@example.com");
+		UUID student = createStudent("student@example.com", "student-pass-1");
+		assignStudent(teacherA, student);
+		String token = createJoinLink(teacherA);
+		TestClient teacher = loggedInAs("a@example.com");
+		TestClient studentClient = loggedInAs("student@example.com");
+
+		// when teacher A removes the student and then registers a student with that email, and the student then joins through teacher A's link
 		var removal = teacher.delete(STUDENTS + "/" + student);
 		var registration = teacher.post(STUDENTS,
 				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+		var join = studentClient.post(JOIN, Map.of("token", token));
 
-		// then the removal response is 204, the registration response is 201 with no set-password link
+		// then the removal response is 204, the registration response is 409 with code STUDENT_EXISTS
 		removal.then().statusCode(204);
-		registration.then().statusCode(201).body("setPasswordLink", nullValue());
+		registration.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
+		// and the join response is 200
+		join.then().statusCode(200);
 		// and the student is in teacher A's list
 		teacher.get(STUDENTS).then().statusCode(200).body("id", contains(student.toString()));
 	}
@@ -168,27 +229,31 @@ class StudentRemovalTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R4-S7] Removed student can be registered again")
-	void removedStudentCanBeRegisteredAgain() {
-		// given a student with a password, assigned to teacher A, and teacher B
+	@DisplayName("[student-enrolment/R4-S7] Removed student can join another teacher")
+	void removedStudentCanJoinAnotherTeacher() {
+		// given a student with a password and a session, assigned to teacher A, and teacher B with a session and a join link
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID teacherB = teacher("Teacher B", "b@example.com");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
+		String token = createJoinLink(teacherB);
 		TestClient a = loggedInAs("a@example.com");
 		TestClient b = loggedInAs("b@example.com");
 		TestClient studentClient = loggedInAs("student@example.com");
 
-		// when teacher A removes the student, teacher B then registers a student with that email, and teacher A then registers it too
+		// when teacher A removes the student, teacher B registers a student with that email, the student then joins through teacher B's link, and teacher A then registers a student with that email
 		var removal = a.delete(STUDENTS + "/" + student);
 		var byB = b.post(STUDENTS,
 				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+		var join = studentClient.post(JOIN, Map.of("token", token));
 		var byA = a.post(STUDENTS,
 				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
 
-		// then the removal response is 204, teacher B's response is 201, teacher A's response is 409 with code STUDENT_EXISTS
+		// then the removal response is 204, teacher B's registration response is 409 with code STUDENT_EXISTS
 		removal.then().statusCode(204);
-		byB.then().statusCode(201);
+		byB.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
+		// and the join response is 200, teacher A's response is 409 with code STUDENT_EXISTS
+		join.then().statusCode(200);
 		byA.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
 		// and the student is in teacher B's list and not in teacher A's
 		b.get(STUDENTS).then().statusCode(200).body("id", hasItem(student.toString()));

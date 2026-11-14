@@ -202,14 +202,14 @@ public abstract class ApiTest {
 	}
 
 	/** Inserts a token directly (SHA-256 hex hash stored); does not invalidate older tokens. */
-	protected String createToken(UUID userId, String purpose, boolean used) {
+	protected String createToken(UUID userId, String purpose, boolean used, UUID issuerId) {
 		byte[] bytes = new byte[32];
 		RANDOM.nextBytes(bytes);
 		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 		Instant now = Instant.now(clock);
 		jdbc.sql("""
-				insert into one_time_tokens (token_hash, user_id, purpose, expires_at, used_at, created_at)
-				values (:hash, :user, :purpose, :expires, :used, :now)
+				insert into one_time_tokens (token_hash, user_id, purpose, expires_at, used_at, created_at, issued_by)
+				values (:hash, :user, :purpose, :expires, :used, :now, :issuer)
 				""")
 				.param("hash", sha256Hex(token))
 				.param("user", userId)
@@ -217,6 +217,7 @@ public abstract class ApiTest {
 				.param("expires", Timestamp.from(now.plus(Duration.ofDays(7))))
 				.param("used", used ? Timestamp.from(now) : null)
 				.param("now", Timestamp.from(now))
+				.param("issuer", issuerId)
 				.update();
 		return token;
 	}
