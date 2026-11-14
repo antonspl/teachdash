@@ -215,7 +215,8 @@ the intent of R4-S13 and R7-S5.
   links.
 - V8 makes the database rule match: at most one unused link per account and issuer. The
   new index also serves `invalidateLinksIssuedBy`, which filters on both columns.
-  Concurrent issues by the same issuer still end in `LINK_CONFLICT` as before.
+  Every insert runs under the target user's row lock after the same (user, issuer) key is
+  voided, so `LINK_CONFLICT` stays only as a guard.
 
 Accounts R7 changes its rule from "a newer link for the same account" to "a newer link
 from an admin or from the same issuer"; R7-S7 shows links from two issuers side by side.
