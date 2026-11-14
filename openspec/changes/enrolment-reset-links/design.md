@@ -64,8 +64,9 @@ has at most one unused link.
 
 Every issuing method takes the issuer's id (proposal, answer 5):
 
-- `PasswordLinkService.issue(UUID userId, TokenPurpose purpose, UUID issuerId)` replaces
-  the two-argument method. It is used for set-password links only.
+- `PasswordLinkService.issueSetPasswordLink(UUID userId, UUID issuerId)` replaces
+  `issue(userId, purpose)`. It issues set-password links only, so it has no purpose
+  argument (renamed after the code review; tasks 4.3).
 - `PasswordLinkService.issueResetLink(UUID userId, UUID issuerId)` (D6).
 - `AccountService.createPasswordlessUser` gains an `issuerId` argument.
 - `TeacherAdminService.createTeacher` and `reactivateTeacher` gain the acting admin's id,
@@ -137,10 +138,11 @@ teacher-scoped write uses.
 ### D4. Invalidation by issuer
 
 `PasswordLinkService.invalidateLinks(UUID userId, TokenPurpose purpose)` is replaced by
-`invalidateLinks(UUID userId, UUID issuerId)`: mark used the user's unused links where
-`issued_by = issuerId`, through a new query in `OneTimeTokenRepository`. Removal and
-release call it with the teacher's id. The name and arity stay, so the failure tests that
-mock `invalidateLinks(any(), any())` (R7-S4) keep working unchanged.
+`invalidateLinksIssuedBy(UUID userId, UUID issuerId)`: mark used the user's unused links
+where `issued_by = issuerId`, through a new query in `OneTimeTokenRepository`. Removal and
+release call it with the teacher's id. A distinct name, not an overload of
+`invalidateLinks(userId)`, so two swapped UUIDs cannot pick the wrong method (tasks 4.4).
+The failure tests that mock it (R7-S4) changed only by the rename.
 `invalidateLinks(UUID userId)` (password change, deactivation of the teacher's own links)
 is unchanged.
 
@@ -162,19 +164,18 @@ the test gate.
 2. 409 `TARGET_ACCOUNT_DEACTIVATED` if the account is inactive. Nothing is stored or
    invalidated before this check (accounts R8).
 3. Void the older unused link and insert the new one, through a private method shared
-   with `issue`. The shared method does not lock the row again.
+   with `issueSetPasswordLink`. The shared method does not lock the row again.
 
-`issue(userId, RESET_PASSWORD, ...)` is rejected with an `IllegalArgumentException`, so a
-reset link cannot be issued around the guard. `issue` keeps its own row lock for
-set-password links. Two parts of this decision have no scenario, because no API call can
-reach them, and are checked by the reviewer: the rejection of `RESET_PASSWORD` in `issue`,
-and the guard on the teacher path (students cannot be deactivated).
+`issueSetPasswordLink` cannot issue a reset link, because it takes no purpose, so a reset
+link cannot be issued around the guard. It keeps its own row lock. The guard on the
+teacher path has no scenario, because students cannot be deactivated; the reviewer
+checks it.
 
 `TeacherAdminService.issueResetLink` keeps only the own-account check (409 `OWN_ACCOUNT`),
 which needs no row, and then delegates. An unknown id still gets 404, because the admin's
 own id always exists. The teacher path (D3) calls the same method.
 
-Reactivation keeps using `issue` with `SET_PASSWORD`: it runs in the transaction that
+Reactivation uses `issueSetPasswordLink`: it runs in the transaction that
 makes the account active.
 
 Keeping the guard in each caller was considered and rejected: issue #30 (review of #80)
