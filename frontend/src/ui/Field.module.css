@@ -34,6 +34,7 @@
 
 .select {
   width: 100%;
+  -webkit-appearance: none;
   appearance: none;
   text-overflow: ellipsis;
   padding-right: calc(var(--space-1) + var(--arrow-width) + var(--space-1));
@@ -48,6 +49,10 @@
   align-items: center;
   color: var(--color-text);
   pointer-events: none;
+}
+
+.select:disabled + .arrow {
+  opacity: 0.5;
 }
 
 .arrowIcon {

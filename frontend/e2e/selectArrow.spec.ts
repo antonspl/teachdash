@@ -13,7 +13,7 @@ async function box(locator: Locator) {
 /** The arrow element beside the select with the given label. */
 function arrowOf(page: Page, label: string) {
   return page
-    .getByLabel(label)
+    .getByLabel(label, { exact: true })
     .locator('xpath=following-sibling::*[@data-select-arrow]')
 }
 
@@ -34,7 +34,7 @@ function styleOf(select: Locator) {
 }
 
 async function checkInset(page: Page, label: string) {
-  const select = page.getByLabel(label)
+  const select = page.getByLabel(label, { exact: true })
   const arrow = arrowOf(page, label)
   await expect(arrow).toBeVisible()
   const style = await styleOf(select)
@@ -84,13 +84,13 @@ test('[web-client/R13-S2] Long option does not run under the arrow', async ({
   // when /profile is opened
   await page.getByRole('button', { name: en.header.profile }).click()
   await expect(page).toHaveURL(/\/profile$/)
-  const select = page.getByLabel(en.profile.timeZone)
+  const select = page.getByLabel(en.profile.timeZone, { exact: true })
   await expect(select).toHaveValue(LONG_ZONE)
 
   // then the select is as wide as the name field, its text area ends before the arrow
   const style = await styleOf(select)
   const s = await box(select)
-  const n = await box(page.getByLabel(en.profile.name))
+  const n = await box(page.getByLabel(en.profile.name, { exact: true }))
   expect(Math.abs(s.width - n.width)).toBeLessThanOrEqual(1)
   const a = await box(arrowOf(page, en.profile.timeZone))
   const textRight = s.x + s.width - style.borderRight - style.paddingRight
@@ -131,10 +131,12 @@ test('[web-client/R13-S3] Click on the arrow reaches the select', async ({
     [x, y],
   )
   const selectId = await page
-    .getByLabel(en.profile.timeZone)
+    .getByLabel(en.profile.timeZone, { exact: true })
     .evaluate((element) => element.id)
   expect(hit).toBe(selectId)
-  await expect(page.getByLabel(en.profile.timeZone)).toBeFocused()
+  await expect(
+    page.getByLabel(en.profile.timeZone, { exact: true }),
+  ).toBeFocused()
 })
 
 test('[web-client/R13-S4] Disabled select keeps the arrow', async ({
@@ -163,13 +165,18 @@ test('[web-client/R13-S4] Disabled select keeps the arrow', async ({
     await held
     await route.continue()
   })
-  await page.getByRole('button', { name: en.profile.save }).click()
-  await expect(page.getByLabel(en.profile.timeZone)).toBeDisabled()
+  try {
+    await page.getByRole('button', { name: en.profile.save }).click()
+    await expect(
+      page.getByLabel(en.profile.timeZone, { exact: true }),
+    ).toBeDisabled()
 
-  // then the arrow is visible at the same position
-  await expect(arrow).toBeVisible()
-  const after = await box(arrow)
-  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1)
-  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1)
-  release()
+    // then the arrow is visible at the same position
+    await expect(arrow).toBeVisible()
+    const after = await box(arrow)
+    expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1)
+    expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1)
+  } finally {
+    release()
+  }
 })
