@@ -88,6 +88,7 @@ export async function loginAsAdmin(request: APIRequestContext) {
 export async function createTeacher(
   request: APIRequestContext,
   name = 'E2E Teacher',
+  timeZone = 'UTC',
 ) {
   await loginAsAdmin(request)
   // The session id changes at login, so the CSRF token may too.
@@ -95,7 +96,7 @@ export async function createTeacher(
   const email = `e2e-${Date.now()}-${counter++}-${Math.random().toString(36).slice(2, 8)}@example.com`
   const created = await request.post('/api/admin/teachers', {
     headers: afterLogin,
-    data: { name, email, timeZone: 'UTC' },
+    data: { name, email, timeZone },
   })
   expect(created.status(), 'creating a teacher').toBe(201)
   const { setPasswordLink } = (await created.json()) as {
@@ -135,9 +136,10 @@ export async function createTeacherAndLoginInUi(
   baseURL: string | undefined,
   name: string,
   password = 'teacher-pass-1',
+  timeZone = 'UTC',
 ) {
   const admin = await playwright.request.newContext({ baseURL })
-  const teacher = await createTeacher(admin, name)
+  const teacher = await createTeacher(admin, name, timeZone)
   await admin.dispose()
   const token = new URLSearchParams(
     new URL(teacher.setPasswordLink).hash.slice(1),

@@ -27,6 +27,35 @@
   border-radius: var(--radius);
 }
 
+.selectWrap {
+  position: relative;
+  width: 100%;
+}
+
+.select {
+  width: 100%;
+  appearance: none;
+  text-overflow: ellipsis;
+  padding-right: calc(var(--space-1) + var(--arrow-width) + var(--space-1));
+}
+
+.arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(var(--border-width) + var(--space-1));
+  display: flex;
+  align-items: center;
+  color: var(--color-text);
+  pointer-events: none;
+}
+
+.arrowIcon {
+  display: block;
+  width: var(--arrow-width);
+  height: var(--arrow-width);
+}
+
 .invalid {
   border-color: var(--color-danger-text);
 }
