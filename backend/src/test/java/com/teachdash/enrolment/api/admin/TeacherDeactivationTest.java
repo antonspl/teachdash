@@ -63,25 +63,29 @@ class TeacherDeactivationTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R7-S2] Released student can be registered by another teacher")
-	void releasedStudentCanBeRegisteredByAnotherTeacher() {
-		// given teacher A with a student who has a password, and teacher B
+	@DisplayName("[student-enrolment/R7-S2] Released student can join another teacher")
+	void releasedStudentCanJoinAnotherTeacher() {
+		// given teacher A with a student who has a password and a session, and teacher B with a session and a join link
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
+		String token = createJoinLink(teacherB);
 		TestClient admin = loggedInAdmin();
 		TestClient b = loggedInAs("b@example.com");
 		TestClient studentClient = loggedInAs("student@example.com");
 
-		// when the admin deactivates teacher A, and teacher B then registers a student with that email
+		// when the admin deactivates teacher A, teacher B then registers a student with that email, and the student then joins through teacher B's link
 		var deactivation = admin.post(deactivate(teacherA));
 		var registration = b.post(STUDENTS,
 				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+		var join = studentClient.post("/api/join-links/join", Map.of("token", token));
 
-		// then the registration response is 201
+		// then the registration response is 409 with code STUDENT_EXISTS
 		deactivation.then().statusCode(204);
-		registration.then().statusCode(201);
+		registration.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
+		// and the join response is 200
+		join.then().statusCode(200);
 		// and the student is in teacher B's list
 		b.get(STUDENTS).then().statusCode(200).body("id", contains(student.toString()));
 		// and teacher B is the only entry in the student's list of teachers

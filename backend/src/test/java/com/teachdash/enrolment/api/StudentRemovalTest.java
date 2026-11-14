@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 
 import java.util.Map;
 import java.util.UUID;
@@ -20,6 +19,7 @@ class StudentRemovalTest extends ApiTest {
 
 	private static final String STUDENTS = "/api/teacher/students";
 	private static final String TEACHERS = "/api/student/teachers";
+	private static final String JOIN = "/api/join-links/join";
 
 	private UUID teacher(String name, String email) {
 		return createUser("TEACHER", name, email, "teacher-pass-1", true);
@@ -140,22 +140,27 @@ class StudentRemovalTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R4-S14] Same teacher can register a removed student again")
-	void sameTeacherCanRegisterARemovedStudentAgain() {
-		// given a student with a password, assigned to teacher A
+	@DisplayName("[student-enrolment/R4-S14] Removed student can join the same teacher again")
+	void removedStudentCanJoinTheSameTeacherAgain() {
+		// given a student with a password and a session, assigned to teacher A, and teacher A's join link
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
+		String token = createJoinLink(teacherA);
 		TestClient teacher = loggedInAs("a@example.com");
+		TestClient studentClient = loggedInAs("student@example.com");
 
-		// when teacher A removes the student and then registers a student with that email
+		// when teacher A removes the student and then registers a student with that email, and the student then joins through teacher A's link
 		var removal = teacher.delete(STUDENTS + "/" + student);
 		var registration = teacher.post(STUDENTS,
 				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+		var join = studentClient.post(JOIN, Map.of("token", token));
 
-		// then the removal response is 204, the registration response is 201 with no set-password link
+		// then the removal response is 204, the registration response is 409 with code STUDENT_EXISTS
 		removal.then().statusCode(204);
-		registration.then().statusCode(201).body("setPasswordLink", nullValue());
+		registration.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
+		// and the join response is 200
+		join.then().statusCode(200);
 		// and the student is in teacher A's list
 		teacher.get(STUDENTS).then().statusCode(200).body("id", contains(student.toString()));
 	}
@@ -193,27 +198,31 @@ class StudentRemovalTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R4-S7] Removed student can be registered again")
-	void removedStudentCanBeRegisteredAgain() {
-		// given a student with a password, assigned to teacher A, and teacher B
+	@DisplayName("[student-enrolment/R4-S7] Removed student can join another teacher")
+	void removedStudentCanJoinAnotherTeacher() {
+		// given a student with a password and a session, assigned to teacher A, and teacher B with a session and a join link
 		UUID teacherA = teacher("Teacher A", "a@example.com");
 		UUID teacherB = teacher("Teacher B", "b@example.com");
 		UUID student = createStudent("student@example.com", "student-pass-1");
 		assignStudent(teacherA, student);
+		String token = createJoinLink(teacherB);
 		TestClient a = loggedInAs("a@example.com");
 		TestClient b = loggedInAs("b@example.com");
 		TestClient studentClient = loggedInAs("student@example.com");
 
-		// when teacher A removes the student, teacher B then registers a student with that email, and teacher A then registers it too
+		// when teacher A removes the student, teacher B registers a student with that email, the student then joins through teacher B's link, and teacher A then registers a student with that email
 		var removal = a.delete(STUDENTS + "/" + student);
 		var byB = b.post(STUDENTS,
 				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+		var join = studentClient.post(JOIN, Map.of("token", token));
 		var byA = a.post(STUDENTS,
 				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
 
-		// then the removal response is 204, teacher B's response is 201, teacher A's response is 409 with code STUDENT_EXISTS
+		// then the removal response is 204, teacher B's registration response is 409 with code STUDENT_EXISTS
 		removal.then().statusCode(204);
-		byB.then().statusCode(201);
+		byB.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
+		// and the join response is 200, teacher A's response is 409 with code STUDENT_EXISTS
+		join.then().statusCode(200);
 		byA.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
 		// and the student is in teacher B's list and not in teacher A's
 		b.get(STUDENTS).then().statusCode(200).body("id", hasItem(student.toString()));

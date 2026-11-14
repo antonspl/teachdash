@@ -3,6 +3,8 @@ package com.teachdash.enrolment.api;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
@@ -323,39 +325,46 @@ class StudentRegistrationTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R1-S14] Registering a student with no teacher and a password assigns their account")
-	void registeringStudentWithNoTeacherAndPasswordAssignsTheirAccount() {
-		// given a student with no teacher, with a name, time zone and the password "old-password-1"
-		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+	@DisplayName("[student-enrolment/R1-S14] Student with no teacher and a password is not assigned")
+	void studentWithNoTeacherAndPasswordIsNotAssigned() {
+		// given a student with no teacher, with email "anna@example.com", name "Анна", time zone "Europe/Moscow", the password "old-password-1" and an unused reset link issued by an admin
+		createTeacher("a@example.com", "teacher-pass-1");
 		UUID student = createUser("STUDENT", "Анна", "anna@example.com", "old-password-1", true);
 		jdbc.sql("update users set time_zone = 'Europe/Moscow' where id = :id")
 				.param("id", student)
 				.update();
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		String token = createToken(student, "RESET_PASSWORD", false, adminId);
 		TestClient teacher = loggedInAs("a@example.com");
 
 		// when teacher A registers a student with email " ANNA@example.com ", name "Anna" and time zone "Europe/Berlin"
 		var response = teacher.post(STUDENTS,
 				Map.of("name", "Anna", "email", " ANNA@example.com ", "timeZone", "Europe/Berlin"));
 
-		// then the response is 201 with the student's id and no set-password link
-		response.then().statusCode(201)
-				.body("id", equalTo(student.toString()))
+		// then the response is 409 with code STUDENT_EXISTS and no link
+		response.then().statusCode(409)
+				.body("code", equalTo("STUDENT_EXISTS"))
 				.body("setPasswordLink", nullValue());
 		// and there is still exactly one account with that email
 		assertEquals(1, jdbc.sql("select count(*) from users where lower(email) = 'anna@example.com'")
 				.query(Long.class).single());
-		// and the student is in teacher A's list with the old name and time zone
-		teacher.get(STUDENTS).then().statusCode(200)
-				.body("id", contains(student.toString()))
-				.body("name", contains("Анна"))
-				.body("timeZone", contains("Europe/Moscow"));
-		// and teacher A's request for the student's details returns 200
-		teacher.get(STUDENTS + "/" + student).then().statusCode(200);
-		// and teacher A is in the student's list of teachers
-		loggedInAs("anna@example.com").get("/api/student/teachers").then().statusCode(200)
-				.body("id", contains(teacherA.toString()));
+		// and the student is not in teacher A's list, and teacher A's request for the student's details returns 404
+		teacher.get(STUDENTS).then().statusCode(200).body("id", not(hasItem(student.toString())));
+		teacher.get(STUDENTS + "/" + student).then().statusCode(404);
+		// and the student has no teacher, name "Анна" and time zone "Europe/Moscow"
+		assertEquals(0, jdbc.sql("select count(*) from teacher_students where student_id = :id")
+				.param("id", student).query(Long.class).single());
+		var stored = jdbc.sql("select name || '|' || time_zone from users where id = :id")
+				.param("id", student)
+				.query(String.class)
+				.single();
+		assertEquals("Анна|Europe/Moscow", stored);
 		// and the student logs in with "old-password-1"
 		newClient().login("anna@example.com", "old-password-1").then().statusCode(200);
+		// and the admin's link then sets the password "admin-password-1"
+		newClient().post("/api/password-links", Map.of("token", token, "password", "admin-password-1"))
+				.then().statusCode(200);
+		newClient().login("anna@example.com", "admin-password-1").then().statusCode(200);
 	}
 
 	@Test
