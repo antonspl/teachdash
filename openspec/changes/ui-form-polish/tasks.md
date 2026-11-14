@@ -6,9 +6,9 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 1. Select arrow
 
-- [ ] 1.1 Give `ui/Select.tsx` a wrapper with the app's own arrow and style the select as in design D1 (real `aria-hidden` arrow element, `appearance: none`, full width, inset from `--space-1`, right padding, text cut off); sizes from `styles/tokens.css`; verify `npm run lint` (token check) and `npm test`, including the profile and admin teachers tests
-- [ ] 1.2 Playwright tests for web-client/R13-S1 (profile and "Add teacher" dialog), R13-S2 (phone width, long time zone), R13-S3 (click on the arrow) and R13-S4 (disabled while saving), measured as in design D5; verify `npm run test:e2e` against `docker compose up --build --wait`, desktop and phone projects
-- [ ] 1.3 Take screenshots of `/profile` and the "Add teacher" dialog at desktop and 360-pixel width in Chromium, Firefox and WebKit, and check by eye that the arrow is inset like the text and nothing is cramped; record the result in the PR
+- [x] 1.1 Give `ui/Select.tsx` a wrapper with the app's own arrow and style the select as in design D1 (real `aria-hidden` arrow element, `appearance: none`, full width, inset from `--space-1`, right padding, text cut off); sizes from `styles/tokens.css`; verify `npm run lint` (token check) and `npm test`, including the profile and admin teachers tests
+- [x] 1.2 Playwright tests for web-client/R13-S1 (profile and "Add teacher" dialog), R13-S2 (phone width, long time zone), R13-S3 (click on the arrow) and R13-S4 (disabled while saving), measured as in design D5; verify `npm run test:e2e` against `docker compose up --build --wait`, desktop and phone projects
+- [x] 1.3 Take screenshots of `/profile` and the "Add teacher" dialog at desktop and 360-pixel width in Chromium, Firefox and WebKit, and check by eye that the arrow is inset like the text and nothing is cramped; record the result in the PR
 
 ## 2. New-password hints
 
