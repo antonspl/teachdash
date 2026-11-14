@@ -463,8 +463,8 @@ class StudentRegistrationTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R1-S18] New link voids an admin's unused link")
-	void newLinkVoidsAnAdminsUnusedLink() {
+	@DisplayName("[student-enrolment/R1-S18] New link keeps an admin's unused link until one is used")
+	void newLinkKeepsAnAdminsUnusedLinkUntilOneIsUsed() {
 		// given a student without a password and with no teacher, with an unused reset link issued by an admin
 		createTeacher("a@example.com", "teacher-pass-1");
 		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
@@ -472,7 +472,7 @@ class StudentRegistrationTest extends ApiTest {
 		String adminToken = createToken(student, "RESET_PASSWORD", false, adminId);
 		TestClient teacher = loggedInAs("a@example.com");
 
-		// when teacher A registers a student with that email, the admin's link is then used to set the password "admin-password-1", and the link returned to teacher A is used to set the password "new-password-1"
+		// when teacher A registers a student with that email, the admin's link is then used to set the password "admin-password-1", and the link returned to teacher A to set the password "new-password-1"
 		var response = teacher.post(STUDENTS,
 				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
 		var adminLink = newClient().post(
@@ -481,14 +481,16 @@ class StudentRegistrationTest extends ApiTest {
 		var teacherLink = newClient().post(
 				"/api/password-links",
 				Map.of("token", linkToken(response), "password", "new-password-1"));
+		var login = newClient().login("nina@example.com", "admin-password-1");
 
 		// then the response to registering is 201 with a set-password link
 		response.then().statusCode(201).body("setPasswordLink", notNullValue());
-		// and the admin's link response is 410 with code LINK_INVALID
-		adminLink.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
-		// and the student logs in with "new-password-1"
-		teacherLink.then().statusCode(200);
-		newClient().login("nina@example.com", "new-password-1").then().statusCode(200);
+		// and the admin's link response is 200
+		adminLink.then().statusCode(200);
+		// and the teacher's link response is 410 with code LINK_INVALID
+		teacherLink.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and the student logs in with "admin-password-1"
+		login.then().statusCode(200);
 	}
 
 	@Test

@@ -146,8 +146,8 @@ class TeacherResetLinkTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[student-enrolment/R12-S5] Teacher's link voids an admin's unused link")
-	void teachersLinkVoidsAnAdminsUnusedLink() {
+	@DisplayName("[student-enrolment/R12-S5] Teacher's link keeps an admin's unused link until one is used")
+	void teachersLinkKeepsAnAdminsUnusedLinkUntilOneIsUsed() {
 		// given a student with a password, assigned to teacher A, with an unused reset link issued by an admin
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID student = createStudent("student@example.com", "student-pass-1");
@@ -159,12 +159,14 @@ class TeacherResetLinkTest extends ApiTest {
 		// when teacher A requests a reset link for the student, the admin's link is then used to set the password "admin-password-1", and the teacher's link to set the password "new-password-1"
 		var issued = teacher.post(resetLink(student));
 		var adminLink = useLink(adminToken, "admin-password-1");
-		useLink(tokenOf(issued), "new-password-1");
-		var login = newClient().login("student@example.com", "new-password-1");
+		var teacherLink = useLink(tokenOf(issued), "new-password-1");
+		var login = newClient().login("student@example.com", "admin-password-1");
 
-		// then the admin's link response is 410 with code LINK_INVALID
-		adminLink.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
-		// and the student logs in with "new-password-1"
+		// then the admin's link response is 200
+		adminLink.then().statusCode(200);
+		// and the teacher's link response is 410 with code LINK_INVALID
+		teacherLink.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and the student logs in with "admin-password-1"
 		login.then().statusCode(200);
 	}
 

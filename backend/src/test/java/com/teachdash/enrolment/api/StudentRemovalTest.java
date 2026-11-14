@@ -140,6 +140,37 @@ class StudentRemovalTest extends ApiTest {
 	}
 
 	@Test
+	@DisplayName("[student-enrolment/R4-S16] Removal keeps an admin's link that the teacher's newer link did not void")
+	void removalKeepsAnAdminsLinkThatTheTeachersNewerLinkDidNotVoid() {
+		// given a student with a password, assigned to teacher A, with an unused reset link issued by an admin
+		UUID teacherA = teacher("Teacher A", "a@example.com");
+		UUID student = createStudent("student@example.com", "student-pass-1");
+		assignStudent(teacherA, student);
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		String adminToken = createToken(student, "RESET_PASSWORD", false, adminId);
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A requests a reset link for the student and then removes the student, the teacher's link is then used to set the password "teacher-password-1", and the admin's link to set the password "admin-password-1"
+		var issued = teacher.post(STUDENTS + "/" + student + "/reset-link");
+		var removal = teacher.delete(STUDENTS + "/" + student);
+		String teacherToken = issued.statusCode() == 201 ? tokenFrom(issued.path("link")) : "missing-token";
+		var teacherLink = newClient().post("/api/password-links",
+				Map.of("token", teacherToken, "password", "teacher-password-1"));
+		var adminLink = newClient().post("/api/password-links",
+				Map.of("token", adminToken, "password", "admin-password-1"));
+		var login = newClient().login("student@example.com", "admin-password-1");
+
+		// then the removal response is 204
+		removal.then().statusCode(204);
+		// and the teacher's link response is 410 with code LINK_INVALID
+		teacherLink.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and the admin's link response is 200
+		adminLink.then().statusCode(200);
+		// and the student logs in with "admin-password-1"
+		login.then().statusCode(200);
+	}
+
+	@Test
 	@DisplayName("[student-enrolment/R4-S14] Removed student can join the same teacher again")
 	void removedStudentCanJoinTheSameTeacherAgain() {
 		// given a student with a password and a session, assigned to teacher A, and teacher A's join link

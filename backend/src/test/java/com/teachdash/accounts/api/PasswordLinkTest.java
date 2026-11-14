@@ -140,6 +140,37 @@ class PasswordLinkTest extends ApiTest {
 	}
 
 	@Test
+	@DisplayName("[accounts/R7-S7] Links from different issuers work until one is used")
+	void linksFromDifferentIssuersWorkUntilOneIsUsed() {
+		// given a student with a password, assigned to teacher A, with an unused reset link issued by an admin and a newer unused reset link issued by teacher A
+		// (the newer link goes through the teacher endpoint: V7 allows one unused link per account until V8)
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID student = createStudent("student@example.com", "student-pass-1");
+		assignStudent(teacherA, student);
+		String adminToken = createToken(student, "RESET_PASSWORD", false, adminId);
+		TestClient teacher = loggedInAs("a@example.com");
+		testClock().advance(Duration.ofSeconds(1));
+		var issued = teacher.post("/api/teacher/students/" + student + "/reset-link");
+		String teacherToken = issued.statusCode() == 201 ? tokenFrom(issued.path("link")) : "missing-token";
+
+		// when the teacher's link is used with a 7-character password, the admin's link is then used to set the password "admin-password-1", and the teacher's link to set the password "teacher-password-1"
+		var shortPassword = useLink(newClient(), teacherToken, "1234567");
+		var adminLink = useLink(newClient(), adminToken, "admin-password-1");
+		var teacherLink = useLink(newClient(), teacherToken, "teacher-password-1");
+		var login = newClient().login("student@example.com", "admin-password-1");
+
+		// then the first response is 400
+		shortPassword.then().statusCode(400);
+		// and the admin's link response is 200
+		adminLink.then().statusCode(200);
+		// and the teacher's link response is 410 with code LINK_INVALID
+		teacherLink.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and the student logs in with "admin-password-1"
+		login.then().statusCode(200);
+	}
+
+	@Test
 	@DisplayName("[accounts/R8-S1] Admin issues a reset link")
 	void adminIssuesAResetLink() {
 		// given a logged-in admin and a teacher account
@@ -237,5 +268,34 @@ class PasswordLinkTest extends ApiTest {
 		assertEquals(1, countTokens(adminId, false));
 		// and the second response is 201 with a link
 		other.then().statusCode(201).body("link", startsWith(APP_BASE_URL + "/set-password#token="));
+	}
+
+	@Test
+	@DisplayName("[accounts/R8-S6] Admin's reset voids a teacher's link")
+	void adminsResetVoidsATeachersLink() {
+		// given a logged-in admin and a student with a password, assigned to teacher A, with an unused reset link issued by teacher A
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID student = createStudent("student@example.com", "student-pass-1");
+		assignStudent(teacherA, student);
+		String teacherToken = createToken(student, "RESET_PASSWORD", false, teacherA);
+		TestClient admin = loggedInAs("admin@example.com");
+		testClock().advance(Duration.ofSeconds(1));
+
+		// when the admin requests a reset link for the student, the teacher's link is then used to set the password "teacher-password-1", and the admin's link to set the password "admin-password-1"
+		var issued = admin.post("/api/admin/users/" + student + "/reset-link");
+		var teacherLink = useLink(newClient(), teacherToken, "teacher-password-1");
+		String adminToken = issued.statusCode() == 201 ? tokenFrom(issued.path("link")) : "missing-token";
+		var adminLink = useLink(newClient(), adminToken, "admin-password-1");
+		var login = newClient().login("student@example.com", "admin-password-1");
+
+		// then the admin's request returns 201
+		issued.then().statusCode(201);
+		// and the teacher's link response is 410 with code LINK_INVALID
+		teacherLink.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and the admin's link response is 200
+		adminLink.then().statusCode(200);
+		// and the student logs in with "admin-password-1"
+		login.then().statusCode(200);
 	}
 }
