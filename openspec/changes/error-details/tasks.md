@@ -20,9 +20,9 @@
 - [x] 3.3 Build the Jackson path in `handleHttpMessageNotReadable`: `INVALID_FORMAT` for NUL, `INVALID_TYPE` for a mismatch, `MALFORMED_REQUEST` with no `errors` when there is no path. If task 1.1 showed that the NUL error has no path, throw it from the deserializer through the `DeserializationContext` (design D4). Verify R1-S6 to R1-S8 and accounts R2-S6 pass
 - [x] 3.4 Add the optional field list to `ApiException` with the factories `validation(...)` and `field(...)`. Set `errors` in `handle(ApiException)`. Make `JoinLinkController` throw `ApiException.validation(violations)`, validating the token and the visitor together when there is no student session (design D3). Verify R1-S5 and the student-enrolment R9 tests pass
 - [x] 3.5 Use `ApiException.field` at the four `EMAIL_TAKEN` sites (including the duplicate-key path) and the `WRONG_PASSWORD` site (design D3). Verify R2-S1 to R2-S5 pass
-- [ ] 3.6 Override `handleTypeMismatch`, `handleMissingServletRequestParameter` and `handleHandlerMethodValidationException` in `ApiExceptionHandler`, and delete `MalformedIdAdvice` (design D6). Verify R1-S9, R3-S1, R3-S2 and the student-enrolment malformed-id tests (R2-S6, R3-S5, R4-S6, R12) pass
-- [ ] 3.7 Check that no rejected value reaches the logs or the response body on any path you changed (constitution §5)
-- [ ] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`. Verify the full suite is green and the approved tests are unchanged
+- [x] 3.6 Override `handleTypeMismatch`, `handleMissingServletRequestParameter` and `handleHandlerMethodValidationException` in `ApiExceptionHandler`, and delete `MalformedIdAdvice` (design D6). Verify R1-S9, R3-S1, R3-S2 and the student-enrolment malformed-id tests (R2-S6, R3-S5, R4-S6, R12) pass
+- [x] 3.7 Check that no rejected value reaches the logs or the response body on any path you changed (constitution §5)
+- [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`. Verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

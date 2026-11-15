@@ -1,9 +1,12 @@
 package com.teachdash.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -13,10 +16,16 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterErrors;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import jakarta.validation.ConstraintViolation;
@@ -116,6 +125,69 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			return FieldErrorCodes.INVALID_TYPE;
 		}
 		return null;
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleTypeMismatch(
+			TypeMismatchException ex,
+			HttpHeaders headers,
+			HttpStatusCode status,
+			WebRequest request) {
+		if (ex instanceof MethodArgumentTypeMismatchException mismatch) {
+			if (mismatch.getParameter().hasParameterAnnotation(PathVariable.class)) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+			}
+			return validationFailed(status, List.of(new FieldErrorDetail(mismatch.getName(), FieldErrorCodes.INVALID_TYPE)));
+		}
+		return validationFailed(status, List.of(new FieldErrorDetail(String.valueOf(ex.getPropertyName()), FieldErrorCodes.INVALID_TYPE)));
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleMissingServletRequestParameter(
+			MissingServletRequestParameterException ex,
+			HttpHeaders headers,
+			HttpStatusCode status,
+			WebRequest request) {
+		return validationFailed(status, List.of(new FieldErrorDetail(ex.getParameterName(), FieldErrorCodes.REQUIRED)));
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleHandlerMethodValidationException(
+			HandlerMethodValidationException ex,
+			HttpHeaders headers,
+			HttpStatusCode status,
+			WebRequest request) {
+		List<FieldErrorDetail> details = new ArrayList<>();
+		for (ParameterValidationResult result : ex.getParameterValidationResults()) {
+			if (result instanceof ParameterErrors errors) {
+				if (errors.hasGlobalErrors()) {
+					throw new IllegalStateException("Class-level constraints are not supported: " + errors.getObjectName());
+				}
+				errors.getFieldErrors().forEach(error -> details.add(new FieldErrorDetail(error.getField(), codeOf(error))));
+			}
+			else {
+				String field = parameterName(result);
+				for (MessageSourceResolvable error : result.getResolvableErrors()) {
+					ConstraintViolation<?> violation = result.unwrap(error, ConstraintViolation.class);
+					details.add(new FieldErrorDetail(field, FieldErrorCodes.codeOf(violation)));
+				}
+			}
+		}
+		return validationFailed(status, FieldErrorCodes.reduce(details));
+	}
+
+	private static String parameterName(ParameterValidationResult result) {
+		String name = result.getMethodParameter().getParameterName();
+		if (name == null) {
+			throw new IllegalStateException("Parameter names are not available: compile with -parameters");
+		}
+		return name;
+	}
+
+	private static ResponseEntity<Object> validationFailed(HttpStatusCode status, List<FieldErrorDetail> errors) {
+		ProblemDetail problem = problem(status, "VALIDATION_FAILED");
+		problem.setProperty("errors", errors);
+		return ResponseEntity.status(status).body(problem);
 	}
 
 	@Override
