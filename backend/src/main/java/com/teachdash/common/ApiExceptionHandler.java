@@ -54,15 +54,13 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
-		ProblemDetail problem = problem(status, "VALIDATION_FAILED");
-		problem.setProperty("errors", fieldErrors(ex));
-		return ResponseEntity.status(status).body(problem);
+		if (!ex.getBindingResult().getGlobalErrors().isEmpty()) {
+			return globalErrorsNotSupported(ex.getObjectName());
+		}
+		return validationFailed(status, fieldErrors(ex));
 	}
 
 	private static List<FieldErrorDetail> fieldErrors(MethodArgumentNotValidException ex) {
-		if (!ex.getBindingResult().getGlobalErrors().isEmpty()) {
-			throw new IllegalStateException("Class-level constraints are not supported: " + ex.getObjectName());
-		}
 		List<FieldErrorDetail> details = ex.getBindingResult().getFieldErrors().stream()
 				.map(error -> new FieldErrorDetail(error.getField(), codeOf(error)))
 				.toList();
@@ -122,7 +120,9 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		if (containsNul(error)) {
 			return FieldErrorCodes.INVALID_FORMAT;
 		}
-		if (databind instanceof MismatchedInputException && !(databind instanceof UnrecognizedPropertyException)) {
+		boolean wrongType = databind instanceof MismatchedInputException
+				&& !(databind instanceof UnrecognizedPropertyException);
+		if (wrongType) {
 			return FieldErrorCodes.INVALID_TYPE;
 		}
 		return null;
@@ -154,7 +154,8 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
-		return validationFailed(status, List.of(new FieldErrorDetail(ex.getParameterName(), FieldErrorCodes.REQUIRED)));
+		FieldErrorDetail detail = new FieldErrorDetail(ex.getParameterName(), FieldErrorCodes.REQUIRED);
+		return validationFailed(status, List.of(detail));
 	}
 
 	@Override
@@ -163,13 +164,19 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
+		if (ex.isForReturnValue()) {
+			log.error("Return value validation failed in {}", ex.getMethod());
+			return internalError();
+		}
 		List<FieldErrorDetail> details = new ArrayList<>();
 		for (ParameterValidationResult result : ex.getParameterValidationResults()) {
 			if (result instanceof ParameterErrors errors) {
 				if (errors.hasGlobalErrors()) {
-					throw new IllegalStateException("Class-level constraints are not supported: " + errors.getObjectName());
+					return globalErrorsNotSupported(errors.getObjectName());
 				}
-				errors.getFieldErrors().forEach(error -> details.add(new FieldErrorDetail(error.getField(), codeOf(error))));
+				for (FieldError error : errors.getFieldErrors()) {
+					details.add(new FieldErrorDetail(error.getField(), codeOf(error)));
+				}
 			}
 			else {
 				String field = parameterName(result);
@@ -179,7 +186,21 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 				}
 			}
 		}
+		if (details.isEmpty()) {
+			log.error("Validation failed with no field errors in {}", ex.getMethod());
+			return internalError();
+		}
 		return validationFailed(status, FieldErrorCodes.reduce(details));
+	}
+
+	private static ResponseEntity<Object> globalErrorsNotSupported(String objectName) {
+		log.error("Class-level constraints are not supported, object: {}", objectName);
+		return internalError();
+	}
+
+	private static ResponseEntity<Object> internalError() {
+		return ResponseEntity.internalServerError()
+				.body(problem(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR"));
 	}
 
 	private static String parameterName(ParameterValidationResult result) {
