@@ -52,7 +52,7 @@ public class StudentRegistrationService {
 			return created;
 		}
 		if (existing.get().getRole() != Role.STUDENT) {
-			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+			throw ApiException.field(HttpStatus.CONFLICT, "EMAIL_TAKEN", "email");
 		}
 		// Re-read under the lock so the password hash is current.
 		User student = users.findByIdForUpdate(existing.get().getId()).orElseThrow();

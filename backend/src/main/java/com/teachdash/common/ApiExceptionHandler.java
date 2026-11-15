@@ -20,6 +20,10 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import jakarta.validation.ConstraintViolation;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.exc.MismatchedInputException;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 @RestControllerAdvice
 class ApiExceptionHandler extends ResponseEntityExceptionHandler {
@@ -28,7 +32,11 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(ApiException.class)
 	ResponseEntity<ProblemDetail> handle(ApiException e) {
-		return ResponseEntity.status(e.status()).body(problem(e.status(), e.code()));
+		ProblemDetail problem = problem(e.status(), e.code());
+		if (!e.errors().isEmpty()) {
+			problem.setProperty("errors", e.errors());
+		}
+		return ResponseEntity.status(e.status()).body(problem);
 	}
 
 	@Override
@@ -65,8 +73,49 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
-		String code = containsNul(ex) ? "VALIDATION_FAILED" : "MALFORMED_REQUEST";
-		return ResponseEntity.status(status).body(problem(status, code));
+		DatabindException databind = firstWithPath(ex);
+		String fieldCode = databind == null ? null : jsonCodeOf(ex, databind);
+		if (fieldCode == null) {
+			return ResponseEntity.status(status).body(problem(status, "MALFORMED_REQUEST"));
+		}
+		ProblemDetail problem = problem(status, "VALIDATION_FAILED");
+		problem.setProperty("errors", List.of(new FieldErrorDetail(fieldOf(databind), fieldCode)));
+		return ResponseEntity.status(status).body(problem);
+	}
+
+	private static DatabindException firstWithPath(Throwable error) {
+		for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+			if (cause instanceof DatabindException databind && !databind.getPath().isEmpty()) {
+				return databind;
+			}
+		}
+		return null;
+	}
+
+	private static String fieldOf(DatabindException exception) {
+		StringBuilder field = new StringBuilder();
+		for (JacksonException.Reference reference : exception.getPath()) {
+			if (reference.getPropertyName() != null) {
+				if (!field.isEmpty()) {
+					field.append('.');
+				}
+				field.append(reference.getPropertyName());
+			}
+			else if (reference.getIndex() >= 0) {
+				field.append('[').append(reference.getIndex()).append(']');
+			}
+		}
+		return field.toString();
+	}
+
+	private static String jsonCodeOf(Throwable error, DatabindException databind) {
+		if (containsNul(error)) {
+			return FieldErrorCodes.INVALID_FORMAT;
+		}
+		if (databind instanceof MismatchedInputException && !(databind instanceof UnrecognizedPropertyException)) {
+			return FieldErrorCodes.INVALID_TYPE;
+		}
+		return null;
 	}
 
 	@Override

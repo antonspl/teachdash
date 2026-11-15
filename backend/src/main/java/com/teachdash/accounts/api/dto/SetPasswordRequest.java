@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 
 public record SetPasswordRequest(
 		@NotBlank @Size(max = 64) String token,
-		@NotBlank @BcryptPassword String password) {
+		@BcryptPassword String password) {
 
 	@Override
 	public String toString() {

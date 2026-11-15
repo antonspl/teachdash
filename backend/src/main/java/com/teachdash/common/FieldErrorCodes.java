@@ -1,7 +1,6 @@
 package com.teachdash.common;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -20,10 +19,7 @@ final class FieldErrorCodes {
 	static final String TOO_SHORT = "TOO_SHORT";
 	static final String TOO_LONG = "TOO_LONG";
 	static final String INVALID_FORMAT = "INVALID_FORMAT";
-
-	private static final Comparator<FieldErrorDetail> ORDER = Comparator
-			.comparing(FieldErrorDetail::field)
-			.thenComparing(FieldErrorDetail::code);
+	static final String INVALID_TYPE = "INVALID_TYPE";
 
 	private FieldErrorCodes() {
 	}
@@ -53,7 +49,7 @@ final class FieldErrorCodes {
 		for (FieldErrorDetail detail : details) {
 			byField.merge(detail.field(), detail, FieldErrorCodes::higherPriority);
 		}
-		return byField.values().stream().sorted(ORDER).toList();
+		return List.copyOf(byField.values());
 	}
 
 	private static FieldErrorDetail higherPriority(FieldErrorDetail a, FieldErrorDetail b) {

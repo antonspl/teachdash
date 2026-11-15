@@ -14,7 +14,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
 import com.teachdash.common.validation.BcryptPassword;
-import com.teachdash.common.validation.MaxUtf8BytesValidator;
+import com.teachdash.common.validation.Utf8;
 
 @Service
 public class AccountService {
@@ -56,7 +56,7 @@ public class AccountService {
 					timeZone,
 					clock.instant()));
 		} catch (DuplicateKeyException e) {
-			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+			throw ApiException.field(HttpStatus.CONFLICT, "EMAIL_TAKEN", "email");
 		}
 		return new CreatedAccount(user.getId(), links.issueSetPasswordLink(user.getId(), issuerId));
 	}
@@ -73,7 +73,7 @@ public class AccountService {
 					timeZone,
 					clock.instant()));
 		} catch (DuplicateKeyException e) {
-			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+			throw ApiException.field(HttpStatus.CONFLICT, "EMAIL_TAKEN", "email");
 		}
 	}
 
@@ -96,7 +96,7 @@ public class AccountService {
 		boolean currentPasswordMatches = user.getPasswordHash() != null
 				&& matches(currentPassword, user.getPasswordHash());
 		if (!currentPasswordMatches) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
+			throw ApiException.field(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD", "currentPassword");
 		}
 		String newPasswordHash = passwordEncoder.encode(newPassword);
 		int newSessionVersion = transaction.execute(status -> {
@@ -113,7 +113,7 @@ public class AccountService {
 		User user = users.findByEmailIgnoreCase(email).orElse(null);
 		boolean canCheckRealHash = user != null
 				&& user.getPasswordHash() != null
-				&& !MaxUtf8BytesValidator.exceeds(password, BcryptPassword.MAX_BYTES);
+				&& !Utf8.exceeds(password, BcryptPassword.MAX_BYTES);
 		String hashToCheck = canCheckRealHash ? user.getPasswordHash() : dummyHash;
 		boolean passwordMatched = passwordEncoder.matches(password, hashToCheck);
 		// The dummy check's result must never count as a match.
@@ -136,7 +136,7 @@ public class AccountService {
 	}
 
 	private boolean matches(String password, String passwordHash) {
-		return !MaxUtf8BytesValidator.exceeds(password, BcryptPassword.MAX_BYTES)
+		return !Utf8.exceeds(password, BcryptPassword.MAX_BYTES)
 				&& passwordEncoder.matches(password, passwordHash);
 	}
 
