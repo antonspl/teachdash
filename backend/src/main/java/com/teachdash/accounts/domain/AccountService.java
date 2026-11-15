@@ -13,7 +13,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
-import com.teachdash.common.validation.BcryptPasswordValidator;
+import com.teachdash.common.validation.BcryptPassword;
+import com.teachdash.common.validation.MaxUtf8BytesValidator;
 
 @Service
 public class AccountService {
@@ -112,7 +113,7 @@ public class AccountService {
 		User user = users.findByEmailIgnoreCase(email).orElse(null);
 		boolean canCheckRealHash = user != null
 				&& user.getPasswordHash() != null
-				&& !BcryptPasswordValidator.exceedsBcryptLimit(password);
+				&& !MaxUtf8BytesValidator.exceeds(password, BcryptPassword.MAX_BYTES);
 		String hashToCheck = canCheckRealHash ? user.getPasswordHash() : dummyHash;
 		boolean passwordMatched = passwordEncoder.matches(password, hashToCheck);
 		// The dummy check's result must never count as a match.
@@ -135,7 +136,7 @@ public class AccountService {
 	}
 
 	private boolean matches(String password, String passwordHash) {
-		return !BcryptPasswordValidator.exceedsBcryptLimit(password)
+		return !MaxUtf8BytesValidator.exceeds(password, BcryptPassword.MAX_BYTES)
 				&& passwordEncoder.matches(password, passwordHash);
 	}
 

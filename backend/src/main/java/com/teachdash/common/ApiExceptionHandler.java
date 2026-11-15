@@ -1,5 +1,7 @@
 package com.teachdash.common;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -10,11 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import jakarta.validation.ConstraintViolation;
 
 @RestControllerAdvice
 class ApiExceptionHandler extends ResponseEntityExceptionHandler {
@@ -32,7 +37,26 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
-		return ResponseEntity.status(status).body(problem(status, "VALIDATION_FAILED"));
+		ProblemDetail problem = problem(status, "VALIDATION_FAILED");
+		problem.setProperty("errors", fieldErrors(ex));
+		return ResponseEntity.status(status).body(problem);
+	}
+
+	private static List<FieldErrorDetail> fieldErrors(MethodArgumentNotValidException ex) {
+		if (!ex.getBindingResult().getGlobalErrors().isEmpty()) {
+			throw new IllegalStateException("Class-level constraints are not supported: " + ex.getObjectName());
+		}
+		List<FieldErrorDetail> details = ex.getBindingResult().getFieldErrors().stream()
+				.map(error -> new FieldErrorDetail(error.getField(), codeOf(error)))
+				.toList();
+		return FieldErrorCodes.reduce(details);
+	}
+
+	private static String codeOf(FieldError error) {
+		if (error.contains(ConstraintViolation.class)) {
+			return FieldErrorCodes.codeOf(error.unwrap(ConstraintViolation.class));
+		}
+		return FieldErrorCodes.INVALID_FORMAT;
 	}
 
 	@Override
