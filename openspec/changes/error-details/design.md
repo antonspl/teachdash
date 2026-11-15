@@ -56,8 +56,8 @@ composing constraint reports its own violation. Rebuild `@BcryptPassword` as a
 composite: `@NotBlank`, `@Size(min = 8)` and a new `@MaxUtf8Bytes(72)` with its own
 validator, which treats `null` as valid. `BcryptPasswordValidator` goes away; its static
 `exceedsBcryptLimit`, used by `AccountService` for the rule that an over-long password is
-a wrong password (accounts R2, R9), moves to the `MaxUtf8Bytes` validator as a static
-helper. `@TimeZoneId` already reports `NotBlank` and its own violation separately and
+a wrong password (accounts R2, R9), becomes `Utf8.exceeds` in `common/validation`, shared
+by the new validator and `AccountService`. `@TimeZoneId` already reports `NotBlank` and its own violation separately and
 stays as it is: for a blank value the priority below keeps only `REQUIRED`.
 
 A package-private `FieldErrorCodes` in `common` maps one `ConstraintViolation` to a code,
