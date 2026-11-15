@@ -11,13 +11,20 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 /** A new password: not blank, at least 8 characters, at most 72 bytes (bcrypt's limit). */
 @Documented
-@Constraint(validatedBy = BcryptPasswordValidator.class)
+@NotBlank
+@Size(min = 8)
+@MaxUtf8Bytes(BcryptPassword.MAX_BYTES)
+@Constraint(validatedBy = {})
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)
 public @interface BcryptPassword {
+
+	int MAX_BYTES = 72;
 
 	String message() default "invalid password";
 

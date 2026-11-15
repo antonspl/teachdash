@@ -1,7 +1,12 @@
 package com.teachdash.common;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -10,11 +15,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterErrors;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import jakarta.validation.ConstraintViolation;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.exc.MismatchedInputException;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 @RestControllerAdvice
 class ApiExceptionHandler extends ResponseEntityExceptionHandler {
@@ -23,7 +41,11 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(ApiException.class)
 	ResponseEntity<ProblemDetail> handle(ApiException e) {
-		return ResponseEntity.status(e.status()).body(problem(e.status(), e.code()));
+		ProblemDetail problem = problem(e.status(), e.code());
+		if (!e.errors().isEmpty()) {
+			problem.setProperty("errors", e.errors());
+		}
+		return ResponseEntity.status(e.status()).body(problem);
 	}
 
 	@Override
@@ -32,7 +54,29 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
-		return ResponseEntity.status(status).body(problem(status, "VALIDATION_FAILED"));
+		if (!ex.getBindingResult().getGlobalErrors().isEmpty()) {
+			return globalErrorsNotSupported(ex.getObjectName());
+		}
+		List<FieldErrorDetail> details = fieldErrors(ex);
+		if (details.isEmpty()) {
+			log.error("Validation failed with no field errors, object: {}", ex.getObjectName());
+			return internalError();
+		}
+		return validationFailed(status, details);
+	}
+
+	private static List<FieldErrorDetail> fieldErrors(MethodArgumentNotValidException ex) {
+		List<FieldErrorDetail> details = ex.getBindingResult().getFieldErrors().stream()
+				.map(error -> new FieldErrorDetail(error.getField(), codeOf(error)))
+				.toList();
+		return FieldErrorCodes.reduce(details);
+	}
+
+	private static String codeOf(FieldError error) {
+		if (error.contains(ConstraintViolation.class)) {
+			return FieldErrorCodes.codeOf(error.unwrap(ConstraintViolation.class));
+		}
+		return FieldErrorCodes.INVALID_FORMAT;
 	}
 
 	@Override
@@ -41,8 +85,137 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
-		String code = containsNul(ex) ? "VALIDATION_FAILED" : "MALFORMED_REQUEST";
-		return ResponseEntity.status(status).body(problem(status, code));
+		DatabindException databind = firstWithPath(ex);
+		String field = databind == null ? "" : fieldOf(databind);
+		String fieldCode = field.isEmpty() ? null : jsonCodeOf(ex, databind);
+		if (fieldCode == null) {
+			return ResponseEntity.status(status).body(problem(status, "MALFORMED_REQUEST"));
+		}
+		ProblemDetail problem = problem(status, "VALIDATION_FAILED");
+		problem.setProperty("errors", List.of(new FieldErrorDetail(field, fieldCode)));
+		return ResponseEntity.status(status).body(problem);
+	}
+
+	private static DatabindException firstWithPath(Throwable error) {
+		for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+			if (cause instanceof DatabindException databind && !databind.getPath().isEmpty()) {
+				return databind;
+			}
+		}
+		return null;
+	}
+
+	private static String fieldOf(DatabindException exception) {
+		StringBuilder field = new StringBuilder();
+		for (JacksonException.Reference reference : exception.getPath()) {
+			if (reference.getPropertyName() != null) {
+				if (!field.isEmpty()) {
+					field.append('.');
+				}
+				field.append(reference.getPropertyName());
+			}
+			else if (reference.getIndex() >= 0) {
+				field.append('[').append(reference.getIndex()).append(']');
+			}
+		}
+		return field.toString();
+	}
+
+	private static String jsonCodeOf(Throwable error, DatabindException databind) {
+		if (containsNul(error)) {
+			return FieldErrorCodes.INVALID_FORMAT;
+		}
+		boolean wrongType = databind instanceof MismatchedInputException
+				&& !(databind instanceof UnrecognizedPropertyException);
+		if (wrongType) {
+			return FieldErrorCodes.INVALID_TYPE;
+		}
+		return null;
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleTypeMismatch(
+			TypeMismatchException ex,
+			HttpHeaders headers,
+			HttpStatusCode status,
+			WebRequest request) {
+		String field = ex.getPropertyName();
+		if (ex instanceof MethodArgumentTypeMismatchException mismatch) {
+			if (mismatch.getParameter().hasParameterAnnotation(PathVariable.class)) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(problem(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+			}
+			field = mismatch.getName();
+		}
+		if (field == null) {
+			return ResponseEntity.status(status).body(problem(status, "MALFORMED_REQUEST"));
+		}
+		return validationFailed(status, List.of(new FieldErrorDetail(field, FieldErrorCodes.INVALID_TYPE)));
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleMissingServletRequestParameter(
+			MissingServletRequestParameterException ex,
+			HttpHeaders headers,
+			HttpStatusCode status,
+			WebRequest request) {
+		FieldErrorDetail detail = new FieldErrorDetail(ex.getParameterName(), FieldErrorCodes.REQUIRED);
+		return validationFailed(status, List.of(detail));
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleHandlerMethodValidationException(
+			HandlerMethodValidationException ex,
+			HttpHeaders headers,
+			HttpStatusCode status,
+			WebRequest request) {
+		if (ex.isForReturnValue()) {
+			log.error("Return value validation failed in {}", ex.getMethod());
+			return internalError();
+		}
+		List<FieldErrorDetail> details = new ArrayList<>();
+		for (ParameterValidationResult result : ex.getParameterValidationResults()) {
+			if (result instanceof ParameterErrors errors) {
+				if (errors.hasGlobalErrors()) {
+					return globalErrorsNotSupported(errors.getObjectName());
+				}
+				for (FieldError error : errors.getFieldErrors()) {
+					details.add(new FieldErrorDetail(error.getField(), codeOf(error)));
+				}
+			}
+			else {
+				String field = result.getMethodParameter().getParameterName();
+				if (field == null) {
+					log.error("Parameter names are not available in {}, compile with -parameters", ex.getMethod());
+					return internalError();
+				}
+				for (MessageSourceResolvable error : result.getResolvableErrors()) {
+					ConstraintViolation<?> violation = result.unwrap(error, ConstraintViolation.class);
+					details.add(new FieldErrorDetail(field, FieldErrorCodes.codeOf(violation)));
+				}
+			}
+		}
+		if (details.isEmpty()) {
+			log.error("Validation failed with no field errors in {}", ex.getMethod());
+			return internalError();
+		}
+		return validationFailed(status, FieldErrorCodes.reduce(details));
+	}
+
+	private static ResponseEntity<Object> globalErrorsNotSupported(String objectName) {
+		log.error("Class-level constraints are not supported, object: {}", objectName);
+		return internalError();
+	}
+
+	private static ResponseEntity<Object> internalError() {
+		return ResponseEntity.internalServerError()
+				.body(problem(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR"));
+	}
+
+	private static ResponseEntity<Object> validationFailed(HttpStatusCode status, List<FieldErrorDetail> errors) {
+		ProblemDetail problem = problem(status, "VALIDATION_FAILED");
+		problem.setProperty("errors", errors);
+		return ResponseEntity.status(status).body(problem);
 	}
 
 	@Override

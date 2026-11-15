@@ -92,7 +92,7 @@ public class TeacherAdminService {
 	}
 
 	private static ApiException emailTaken() {
-		return new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+		return ApiException.field(HttpStatus.CONFLICT, "EMAIL_TAKEN", "email");
 	}
 
 	private static ApiException notFound() {

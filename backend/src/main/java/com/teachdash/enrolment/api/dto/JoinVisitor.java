@@ -6,13 +6,11 @@ import com.teachdash.common.validation.Normalize;
 import com.teachdash.common.validation.PersonName;
 import com.teachdash.common.validation.TimeZoneId;
 
-import jakarta.validation.constraints.NotBlank;
-
 public record JoinVisitor(
 		@PersonName String name,
 		@EmailAddress String email,
 		@TimeZoneId String timeZone,
-		@NotBlank @BcryptPassword String password) {
+		@BcryptPassword String password) {
 
 	public JoinVisitor {
 		name = Normalize.name(name);

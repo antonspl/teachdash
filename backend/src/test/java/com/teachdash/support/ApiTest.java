@@ -101,6 +101,10 @@ public abstract class ApiTest {
 		return new TestClient(port);
 	}
 
+	protected long countRows(String table) {
+		return jdbc.sql("select count(*) from " + table).query(Long.class).single();
+	}
+
 	protected static String tokenFrom(String link) {
 		return link.substring(link.indexOf("token=") + "token=".length());
 	}
