@@ -2,12 +2,12 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Before writing tests, spike (code not committed): check whether a NUL character in a request field reaches `handleHttpMessageNotReadable` inside a `DatabindException` whose path names the field (design D4). Record the result in design D4. It decides how task 3.3 builds the NUL path
-- [ ] 1.2 Write tests for api-errors R1-S1 to R1-S8 in `com.teachdash.common.ApiErrorsTest`, extending `ApiTest`. Put the scenario ID in `@DisplayName` and use `// given`, `// when`, `// then`. Create accounts, sessions and join links directly with the `ApiTest` helpers. Assert `errors` exactly as each scenario states, and that the body does not contain the values named in R1-S3, R1-S6 and R1-S7 (design D5). Send `null` and missing fields as raw JSON so the difference reaches the server
-- [ ] 1.3 Write tests for api-errors R2-S1 to R2-S5 in `com.teachdash.common.FieldRejectionErrorsTest`, in the same way
-- [ ] 1.4 Add the test-only `QueryParamTestController` under test sources (design D5) and write the test for R1-S9 against it in `ApiErrorsTest`
-- [ ] 1.5 Write tests for api-errors R3-S1 and R3-S2 in `com.teachdash.common.MalformedIdTest`
-- [ ] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`. Verify every new test fails at its THEN step (not in setup), every other test passes, and the coverage script passes. R1-S8, R2-S5 and R3-S2 are guard tests that already pass (proposal, answer 11); report any other new test that passes to the engineer
+- [x] 1.1 Before writing tests, spike (code not committed): check whether a NUL character in a request field reaches `handleHttpMessageNotReadable` inside a `DatabindException` whose path names the field (design D4). Record the result in design D4. It decides how task 3.3 builds the NUL path
+- [x] 1.2 Write tests for api-errors R1-S1 to R1-S8 in `com.teachdash.common.ApiErrorsTest`, extending `ApiTest`. Put the scenario ID in `@DisplayName` and use `// given`, `// when`, `// then`. Create accounts, sessions and join links directly with the `ApiTest` helpers. Assert `errors` exactly as each scenario states, and that the body does not contain the values named in R1-S3, R1-S6 and R1-S7 (design D5). Send `null` and missing fields as raw JSON so the difference reaches the server
+- [x] 1.3 Write tests for api-errors R2-S1 to R2-S5 in `com.teachdash.common.FieldRejectionErrorsTest`, in the same way
+- [x] 1.4 Add the test-only `QueryParamTestController` under test sources (design D5) and write the test for R1-S9 against it in `ApiErrorsTest`
+- [x] 1.5 Write tests for api-errors R3-S1 and R3-S2 in `com.teachdash.common.MalformedIdTest`
+- [x] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`. Verify every new test fails at its THEN step (not in setup), every other test passes, and the coverage script passes. R1-S8, R2-S5 and R3-S2 are guard tests that already pass (proposal, answer 11); report any other new test that passes to the engineer
 
 ## 2. Test review
 
