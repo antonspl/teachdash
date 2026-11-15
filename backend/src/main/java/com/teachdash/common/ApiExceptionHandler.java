@@ -83,12 +83,13 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpStatusCode status,
 			WebRequest request) {
 		DatabindException databind = firstWithPath(ex);
-		String fieldCode = databind == null ? null : jsonCodeOf(ex, databind);
+		String field = databind == null ? "" : fieldOf(databind);
+		String fieldCode = field.isEmpty() ? null : jsonCodeOf(ex, databind);
 		if (fieldCode == null) {
 			return ResponseEntity.status(status).body(problem(status, "MALFORMED_REQUEST"));
 		}
 		ProblemDetail problem = problem(status, "VALIDATION_FAILED");
-		problem.setProperty("errors", List.of(new FieldErrorDetail(fieldOf(databind), fieldCode)));
+		problem.setProperty("errors", List.of(new FieldErrorDetail(field, fieldCode)));
 		return ResponseEntity.status(status).body(problem);
 	}
 

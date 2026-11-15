@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 
 import jakarta.validation.ConstraintViolation;
 
-/** Error with a machine-readable code, rendered as a ProblemDetail (design D7). */
 public class ApiException extends RuntimeException {
 
 	private final HttpStatus status;
