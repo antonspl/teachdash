@@ -27,6 +27,7 @@
 ## 4. Code review fixes
 
 - [x] 4.1 Opus review: a global, cross-parameter or return-value validation error returns 500 `INTERNAL_ERROR` with an ERROR log instead of throwing from the handler; split dense lines in `ApiExceptionHandler`; design Risks note on `Map` properties
+- [x] 4.2 Re-review: missing parameter names and a body validation error with no field entries also return 500 `INTERNAL_ERROR` instead of throwing or returning empty `errors`
 
 ## Workflow follow-up
 
