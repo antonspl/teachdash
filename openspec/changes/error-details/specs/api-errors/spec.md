@@ -9,11 +9,11 @@ show each error next to the field it belongs to.
 
 ### Requirement: R1 Validation errors name each failing field
 A 400 `VALIDATION_FAILED` response SHALL carry `errors`: a non-empty list of
-`{field, code}`, one per failing field, sorted by field then code in string order.
-`field` is the body path, dotted, with `[i]` for list items. A field breaking several
-rules gets the first of `REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`. A NUL
-character is `INVALID_FORMAT`, an unreadable JSON type `INVALID_TYPE`; these stop reading,
-so only that field is listed. Rejected values MUST NOT appear in the response.
+`{field, code}`, one per failing field, sorted by field, then code, as strings. `field`
+is the dotted body path (`[i]` for list items) or the query parameter name. Several
+broken rules give the first of `REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`.
+NUL is `INVALID_FORMAT`, a wrong type `INVALID_TYPE`; in a body these stop reading, so
+only that field is listed. Rejected values MUST NOT be in the response.
 
 #### Scenario: api-errors/R1-S1 Missing and blank fields are required
 - **GIVEN** a logged-in admin
@@ -55,6 +55,11 @@ so only that field is listed. Rejected values MUST NOT appear in the response.
 - **WHEN** the admin creates a teacher with the body `{"name":`, with the body `[]`, and with no body
 - **THEN** each response is 400 with code `MALFORMED_REQUEST` and no `errors` property, and no account is created
 
+#### Scenario: api-errors/R1-S9 Query parameters are named
+- **GIVEN** an endpoint with a required numeric query parameter `page` and an optional text query parameter `q` of at most 10 characters, and a logged-in teacher
+- **WHEN** the teacher calls it with no `page`, with `page=abc`, and with `page=1` and `q` of 11 Cyrillic letters ("Ж")
+- **THEN** each response is 400 with code `VALIDATION_FAILED` and `errors` is exactly `[{field: "page", code: "REQUIRED"}]`, `[{field: "page", code: "INVALID_TYPE"}]` and `[{field: "q", code: "TOO_LONG"}]`, and no body contains "abc" or "Ж"
+
 ### Requirement: R2 Single-field rejections name the field
 An `EMAIL_TAKEN` or `WRONG_PASSWORD` response SHALL keep its status and code and carry
 `errors` with one entry whose code is the response code: field `email` for
@@ -85,3 +90,18 @@ than `VALIDATION_FAILED`, `EMAIL_TAKEN` and `WRONG_PASSWORD` MUST NOT carry `err
 - **GIVEN** teacher A with a student assigned to them, and a logged-in teacher A
 - **WHEN** someone logs in with a wrong password, teacher A registers the assigned student's email again, and teacher A opens `/api/teacher/students/not-a-uuid`
 - **THEN** the responses are 401 `INVALID_CREDENTIALS`, 409 `ALREADY_ENROLLED` and 404 `NOT_FOUND`, and none has an `errors` property
+
+### Requirement: R3 A malformed path id is not found
+On every endpoint, a path id that cannot be read as an id SHALL return 404 with code
+`NOT_FOUND` and no `errors`, the same as an id that does not exist, and MUST change
+nothing.
+
+#### Scenario: api-errors/R3-S1 Malformed id on admin endpoints
+- **GIVEN** a logged-in admin
+- **WHEN** the admin deactivates, reactivates and issues a reset link for the id "not-a-uuid"
+- **THEN** each response is 404 with code `NOT_FOUND` and no `errors` property
+
+#### Scenario: api-errors/R3-S2 Malformed id on enrolment endpoints stays not found
+- **GIVEN** a logged-in teacher and a logged-in admin
+- **WHEN** the teacher requests the details of the id "not-a-uuid", and the admin lists the students of the id "not-a-uuid"
+- **THEN** each response is 404 with code `NOT_FOUND` and no `errors` property

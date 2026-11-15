@@ -14,8 +14,11 @@ Questions asked on 2026-11-15, and the engineer's answers. Scope follows issue #
 | 6 | Name, email and password checks are combined constraints that report one failure, so an empty value cannot be told from a too-long one. When one field breaks several rules, what is returned? | One entry per field, with the first rule that fails in this order: `REQUIRED`, then `TOO_SHORT` or `TOO_LONG`, then `INVALID_FORMAT`. |
 | 7 | The password check has three reasons (blank, under 8 characters, over 72 bytes). Codes? | `REQUIRED`, `TOO_SHORT`, `TOO_LONG`. |
 | 8 | `EMAIL_TAKEN` (409) and `WRONG_PASSWORD` (400) are about one field. Do they carry `errors`? | Yes, with the same code: `[{field: "email", code: "EMAIL_TAKEN"}]` and `[{field: "currentPassword", code: "WRONG_PASSWORD"}]`. Status and top-level code stay. |
-| 9 | A wrong JSON type for a field returns `MALFORMED_REQUEST` today. And path and query parameters? | A wrong type becomes 400 `VALIDATION_FAILED` with code `INVALID_TYPE` for the field. `MALFORMED_REQUEST` stays for broken JSON and a missing body. A malformed path id stays 404 `NOT_FOUND` (student-enrolment R2-S6, R3-S5, R4-S6). No endpoint has query parameters yet, so they are left to a follow-up issue. |
+| 9 | A wrong JSON type for a field returns `MALFORMED_REQUEST` today. And path and query parameters? | A wrong type becomes 400 `VALIDATION_FAILED` with code `INVALID_TYPE` for the field. `MALFORMED_REQUEST` stays for broken JSON and a missing body. A malformed path id stays 404 `NOT_FOUND` (student-enrolment R2-S6, R3-S5, R4-S6). Query parameters: see answer 13. |
 | 10 | When is `errors` present, and in what order? | On every `VALIDATION_FAILED` response, always with at least one entry, and on `EMAIL_TAKEN` and `WRONG_PASSWORD`. No other response has it. Entries are sorted by field, then by code. |
+| 11 | Spec critique: R1-S8 and R2-S5 pass before any code changes, against constitution §1 step 7. Keep them? | Keep them as guard tests: they protect behaviour this change touches. |
+| 12 | Research found that a malformed id on the admin endpoints (`accounts`) probably returns 400 `BAD_REQUEST`, because the 404 rule covers only the enrolment controllers. Follow-up issue or fix here? Where is it specified? | Fix here, as a new requirement `api-errors` R3 (one rule for every endpoint). This extends the R range reserved in #100 from R1-R2 to R1-R3. |
+| 13 | No endpoint has query parameters. Cover them here? | Yes: query parameters are named in `errors` like body fields (R1-S9), tested through a controller that exists only in test sources. |
 
 Assumptions (the engineer may override during review):
 
@@ -60,6 +63,11 @@ the frontend show a translated message next to the field.
   expected) returns 400 `VALIDATION_FAILED` instead of 400 `MALFORMED_REQUEST`. No
   client or spec relies on the old code.
 - `EMAIL_TAKEN` and `WRONG_PASSWORD` responses also carry `errors` naming the field.
+- A query parameter that is missing, of the wrong type or breaks a constraint gives 400
+  `VALIDATION_FAILED` naming the parameter. No endpoint has one yet.
+- **BREAKING** (API): a malformed path id returns 404 `NOT_FOUND` on every endpoint. The
+  admin endpoints for teachers and reset links returned 400 `BAD_REQUEST`; the enrolment
+  endpoints already returned 404.
 - Internal: the composite name, email, time-zone and password constraints report each
   rule separately, so a code can be chosen.
 
@@ -67,7 +75,8 @@ the frontend show a translated message next to the field.
 
 ### New Capabilities
 
-- `api-errors`: the shape of field-level error details in API problem responses.
+- `api-errors`: the shape of field-level error details in API problem responses (R1,
+  R2), and the response to a malformed path id (R3).
 
 ### Modified Capabilities
 
@@ -78,10 +87,7 @@ change; the new requirements apply on top of them.
 
 - Frontend: showing errors next to fields (separate FE issue). The current frontend
   ignores `errors`.
-- Query parameters (follow-up issue, answer 9) and path parameters: a malformed path id
-  stays 404.
-- A malformed id on admin endpoints, which probably returns 400 `BAD_REQUEST` instead of
-  404 (follow-up issue).
+- Constraints on path parameters other than the id type: none exist.
 - Limits or messages in the entries (answers 3 and 5).
 - Errors that are not about one field (`INVALID_CREDENTIALS`, `ALREADY_ENROLLED`,
   `STUDENT_EXISTS`, `LINK_INVALID` and others): no `errors`.
@@ -93,4 +99,7 @@ change; the new requirements apply on top of them.
 - Composite constraints `@PersonName`, `@EmailAddress`, `@TimeZoneId`, `@BcryptPassword`
   (design D2).
 - The four `EMAIL_TAKEN` sites and the `WRONG_PASSWORD` site.
+- `enrolment/api/MalformedIdAdvice` is replaced by one rule in `ApiExceptionHandler`
+  (design D6).
+- A test-only controller with query parameters (design D5).
 - No migrations, no new dependencies, no frontend change.

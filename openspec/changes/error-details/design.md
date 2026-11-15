@@ -32,9 +32,8 @@ See proposal.md for motivation and the engineer's answers. Current state:
 
 **Non-Goals:**
 
-- Method-parameter validation (`HandlerMethodValidationException`), type mismatch on path
-  or query parameters, missing query parameters. No endpoint uses them today
-  (proposal, answer 9). Their hooks stay as they are.
+- Constraints on path parameters: none exist. A constrained path parameter would reach
+  the same hook as a query parameter (D6) and be named like one.
 - Class-level (cross-field) constraints: none exist. See Risks.
 
 ## Decisions
@@ -137,6 +136,35 @@ Tests live in a new `com.teachdash.common.ApiErrorsTest` (R1) and
 `com.teachdash.support` to create accounts, sessions and join links directly. They assert
 `errors` exactly, with RestAssured `body("errors", equalTo(List.of(Map.of(...))))`.
 R1-S8 and R2-S5 assert that `errors` is absent (`body("$", not(hasKey("errors")))`).
+R3 goes into `com.teachdash.common.MalformedIdTest`.
+
+R1-S9 needs an endpoint with query parameters, and none exists. A
+`@RestController` in test sources (`com.teachdash.common.QueryParamTestController`)
+maps `GET /api/teacher/test-query` with `@RequestParam int page` and
+`@RequestParam(required = false) @Size(max = 10) String q`, and returns 200. It sits
+under the teacher path so the existing security rules apply to it without a test-only
+security change. It is picked up only by test component scanning and never ships.
+
+### D6. Path and query parameters in one handler
+
+`enrolment/api/MalformedIdAdvice` covers only the enrolment controllers, so the admin
+endpoints in `accounts` fall through to the generic 400 `BAD_REQUEST`. Delete it and
+override in `ApiExceptionHandler`:
+
+- `handleTypeMismatch`: for a `MethodArgumentTypeMismatchException` on a
+  `@PathVariable`, 404 `NOT_FOUND` with no `errors` (spec R3). Otherwise 400
+  `VALIDATION_FAILED` with `[{field: <parameter name>, code: "INVALID_TYPE"}]`.
+- `handleMissingServletRequestParameter`: 400 `VALIDATION_FAILED` with
+  `[{field: <parameter name>, code: "REQUIRED"}]`.
+- `handleHandlerMethodValidationException`: for each parameter result, map its
+  violations with `FieldErrorCodes` (D2), using the parameter name as field. A
+  `@Valid` bean parameter in the same result contributes its field errors as in D3.
+
+Parameter names come from the `-parameters` compiler flag, which the Spring Boot Gradle
+plugin sets. R1-S9 fails with `arg0` if it is missing.
+
+Alternative considered: make `MalformedIdAdvice` global. Rejected: two advices for the
+same exception with an order between them is harder to follow than one handler.
 
 ## Flyway migrations
 
@@ -158,8 +186,9 @@ None.
   `VALIDATION_FAILED` with no entry, breaking R1. `handleMethodArgumentNotValid` throws
   an `IllegalStateException` for a global error, so the first such constraint fails its
   own tests loudly and forces a decision.
-- [A future query parameter or constrained path parameter falls through to Spring's
-  default handling] → Follow-up issue (proposal, Out of scope).
+- [The query-parameter rule is tested only through a test-only controller] → Accepted
+  (proposal, answer 13). The first real endpoint with a query parameter adds its own
+  scenario.
 - [Jackson stops at the first mapping error] → A body with several wrong types reports
   only the first. That is acceptable: the client sends JSON of the wrong shape, which is a
   bug in the client, not in what the user typed.
@@ -167,9 +196,10 @@ None.
 - [String sort puts `items[10]` before `items[2]`] → Accepted: no request has lists
   today, and the order is still stable. The `[i]` path format is not covered by a
   scenario for the same reason; the reviewer checks the path builder.
-- [R1-S8 and R2-S5 pass before any code changes] → They guard behaviour this change
-  could break (the handler for unreadable JSON and `ApiException`). The engineer decides
-  at the spec gate whether to keep them as guards.
+- [R1-S8, R2-S5 and R3-S2 pass before any code changes] → They guard behaviour this
+  change could break (the handler for unreadable JSON, `ApiException`, and the
+  malformed-id rule moving out of `MalformedIdAdvice`). The engineer agreed to keep
+  them as guards (proposal, answer 11).
 
 ## Migration Plan
 
