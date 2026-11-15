@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import com.teachdash.support.ApiTest;
 import com.teachdash.support.TestClient;
 
-/** R2. */
 class FieldRejectionErrorsTest extends ApiTest {
 
 	private static final String STUDENTS = "/api/teacher/students";
@@ -61,7 +60,6 @@ class FieldRejectionErrorsTest extends ApiTest {
 		response.then().statusCode(409)
 				.body("code", equalTo("EMAIL_TAKEN"))
 				.body("errors", equalTo(List.of(error("email", "EMAIL_TAKEN"))));
-		// and nothing is assigned
 		assertEquals(0, count("teacher_students"));
 	}
 
@@ -87,7 +85,6 @@ class FieldRejectionErrorsTest extends ApiTest {
 		response.then().statusCode(409)
 				.body("code", equalTo("EMAIL_TAKEN"))
 				.body("errors", equalTo(List.of(error("email", "EMAIL_TAKEN"))));
-		// and no account is created
 		assertEquals(usersBefore, count("users"));
 	}
 
@@ -106,7 +103,6 @@ class FieldRejectionErrorsTest extends ApiTest {
 		response.then().statusCode(400)
 				.body("code", equalTo("WRONG_PASSWORD"))
 				.body("errors", equalTo(List.of(error("currentPassword", "WRONG_PASSWORD"))));
-		// and the old password still works
 		newClient().login("teacher@example.com", "пароль-старый-1").then().statusCode(200);
 	}
 

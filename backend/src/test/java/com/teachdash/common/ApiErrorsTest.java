@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import com.teachdash.support.ApiTest;
 import com.teachdash.support.TestClient;
 
-/** R1 and its query parameter case. */
 class ApiErrorsTest extends ApiTest {
 
 	private static final String TEACHERS = "/api/admin/teachers";
@@ -60,7 +59,6 @@ class ApiErrorsTest extends ApiTest {
 		nullEmailBlankZone.then().statusCode(400)
 				.body("code", equalTo("VALIDATION_FAILED"))
 				.body("errors", equalTo(List.of(error("email", "REQUIRED"), error("timeZone", "REQUIRED"))));
-		// and no account is created
 		assertEquals(usersBefore, count("users"));
 	}
 
@@ -88,7 +86,6 @@ class ApiErrorsTest extends ApiTest {
 				.body("errors", equalTo(List.of(error("name", "TOO_LONG"))));
 		loggedIn.then().statusCode(400)
 				.body("errors", equalTo(List.of(error("email", "TOO_LONG"))));
-		// and nothing is created or changed and no session is started
 		assertEquals(usersBefore, count("users"));
 		assertEquals("Teacher", jdbc.sql("select name from users where email = 'teacher@example.com'")
 				.query(String.class).single());
@@ -116,7 +113,6 @@ class ApiErrorsTest extends ApiTest {
 						error("timeZone", "INVALID_FORMAT"))))
 				.body(not(containsString("anna@")))
 				.body(not(containsString("Mars/Olympus")));
-		// and no student is created
 		assertEquals(usersBefore, count("users"));
 	}
 
@@ -145,7 +141,6 @@ class ApiErrorsTest extends ApiTest {
 				.body("errors", equalTo(List.of(error("newPassword", "TOO_LONG"))));
 		blankCurrent.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"))
 				.body("errors", equalTo(List.of(error("currentPassword", "REQUIRED"))));
-		// and the teacher still logs in with the old password
 		newClient().login("teacher@example.com", "old-password-1").then().statusCode(200);
 	}
 
@@ -189,7 +184,6 @@ class ApiErrorsTest extends ApiTest {
 						error("email", "INVALID_FORMAT"),
 						error("timeZone", "REQUIRED"),
 						error("token", "REQUIRED"))));
-		// and no account is created
 		assertEquals(usersBefore, count("users"));
 	}
 
@@ -216,7 +210,6 @@ class ApiErrorsTest extends ApiTest {
 				.body("code", equalTo("VALIDATION_FAILED"))
 				.body("errors", equalTo(List.of(error("name", "INVALID_FORMAT"))))
 				.body(not(containsString("Ан")));
-		// and no session is started and no student is created
 		assertEquals(sessionsBefore, count("spring_session"));
 		assertEquals(usersBefore, count("users"));
 	}
@@ -245,7 +238,6 @@ class ApiErrorsTest extends ApiTest {
 				.body("errors", equalTo(List.of(error("email", "INVALID_TYPE"))))
 				.body(not(containsString("Anna")))
 				.body(not(containsString("anna@example.com")));
-		// and no account is created
 		assertEquals(usersBefore, count("users"));
 	}
 
@@ -271,7 +263,6 @@ class ApiErrorsTest extends ApiTest {
 		noBody.then().statusCode(400)
 				.body("code", equalTo("MALFORMED_REQUEST"))
 				.body("$", not(hasKey("errors")));
-		// and no account is created
 		assertEquals(usersBefore, count("users"));
 	}
 
@@ -297,7 +288,6 @@ class ApiErrorsTest extends ApiTest {
 		tooLong.then().statusCode(400)
 				.body("code", equalTo("VALIDATION_FAILED"))
 				.body("errors", equalTo(List.of(error("q", "TOO_LONG"))));
-		// and no body contains the rejected values
 		for (var response : List.of(noPage, wrongType, tooLong)) {
 			response.then().body(not(containsString("abc"))).body(not(containsString("Ж")));
 		}

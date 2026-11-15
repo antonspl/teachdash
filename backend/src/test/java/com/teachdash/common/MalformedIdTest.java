@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import com.teachdash.support.ApiTest;
 import com.teachdash.support.TestClient;
 
-/** R3. */
 class MalformedIdTest extends ApiTest {
 
 	private long count(String table) {
@@ -40,7 +39,6 @@ class MalformedIdTest extends ApiTest {
 					.body("$", not(hasKey("errors")));
 		}
 		byTeacher.then().statusCode(403);
-		// and nothing changed
 		assertEquals(activeBefore, count("users where active"));
 		assertEquals(0, count("one_time_tokens"));
 	}
