@@ -57,7 +57,12 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		if (!ex.getBindingResult().getGlobalErrors().isEmpty()) {
 			return globalErrorsNotSupported(ex.getObjectName());
 		}
-		return validationFailed(status, fieldErrors(ex));
+		List<FieldErrorDetail> details = fieldErrors(ex);
+		if (details.isEmpty()) {
+			log.error("Validation failed with no field errors, object: {}", ex.getObjectName());
+			return internalError();
+		}
+		return validationFailed(status, details);
 	}
 
 	private static List<FieldErrorDetail> fieldErrors(MethodArgumentNotValidException ex) {
@@ -179,7 +184,11 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 				}
 			}
 			else {
-				String field = parameterName(result);
+				String field = result.getMethodParameter().getParameterName();
+				if (field == null) {
+					log.error("Parameter names are not available in {}, compile with -parameters", ex.getMethod());
+					return internalError();
+				}
 				for (MessageSourceResolvable error : result.getResolvableErrors()) {
 					ConstraintViolation<?> violation = result.unwrap(error, ConstraintViolation.class);
 					details.add(new FieldErrorDetail(field, FieldErrorCodes.codeOf(violation)));
@@ -201,14 +210,6 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	private static ResponseEntity<Object> internalError() {
 		return ResponseEntity.internalServerError()
 				.body(problem(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR"));
-	}
-
-	private static String parameterName(ParameterValidationResult result) {
-		String name = result.getMethodParameter().getParameterName();
-		if (name == null) {
-			throw new IllegalStateException("Parameter names are not available: compile with -parameters");
-		}
-		return name;
 	}
 
 	private static ResponseEntity<Object> validationFailed(HttpStatusCode status, List<FieldErrorDetail> errors) {
