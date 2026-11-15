@@ -129,6 +129,11 @@ test is written and records the result here. Rule: if the handler sees a
 `DeserializationContext` instead, keeping `NulCharacterException` as its cause so the two
 cases stay apart. Every request body is a JSON object, so a NUL always has a path.
 
+Result of task 1.1 (2026-11-15): the assumption holds. The chain is
+`HttpMessageNotReadableException` → `DatabindException` (path
+`CreateTeacherRequest["name"]`, `LoginRequest["email"]`) → `NulCharacterException`. The
+deserializer stays as it is.
+
 ### D5. Tests
 
 Tests live in a new `com.teachdash.common.ApiErrorsTest` (R1) and
