@@ -24,8 +24,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import jakarta.validation.ConstraintViolation;
@@ -134,13 +134,18 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
+		String field = ex.getPropertyName();
 		if (ex instanceof MethodArgumentTypeMismatchException mismatch) {
 			if (mismatch.getParameter().hasParameterAnnotation(PathVariable.class)) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(problem(HttpStatus.NOT_FOUND, "NOT_FOUND"));
 			}
-			return validationFailed(status, List.of(new FieldErrorDetail(mismatch.getName(), FieldErrorCodes.INVALID_TYPE)));
+			field = mismatch.getName();
 		}
-		return validationFailed(status, List.of(new FieldErrorDetail(String.valueOf(ex.getPropertyName()), FieldErrorCodes.INVALID_TYPE)));
+		if (field == null) {
+			return ResponseEntity.status(status).body(problem(status, "MALFORMED_REQUEST"));
+		}
+		return validationFailed(status, List.of(new FieldErrorDetail(field, FieldErrorCodes.INVALID_TYPE)));
 	}
 
 	@Override
