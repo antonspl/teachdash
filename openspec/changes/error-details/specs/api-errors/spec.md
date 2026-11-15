@@ -92,14 +92,15 @@ than `VALIDATION_FAILED`, `EMAIL_TAKEN` and `WRONG_PASSWORD` MUST NOT carry `err
 - **THEN** the responses are 401 `INVALID_CREDENTIALS`, 409 `ALREADY_ENROLLED` and 404 `NOT_FOUND`, and none has an `errors` property
 
 ### Requirement: R3 A malformed path id is not found
-On every endpoint, a path id that cannot be read as an id SHALL return 404 with code
-`NOT_FOUND` and no `errors`, the same as an id that does not exist, and MUST change
-nothing.
+On every endpoint the caller is allowed to use, a path id that cannot be read as an id
+SHALL return 404 with code `NOT_FOUND` and no `errors`, the same as an id that does not
+exist, and MUST change nothing. A caller without access to the endpoint still gets 401
+or 403 first.
 
 #### Scenario: api-errors/R3-S1 Malformed id on admin endpoints
-- **GIVEN** a logged-in admin
-- **WHEN** the admin deactivates, reactivates and issues a reset link for the id "not-a-uuid"
-- **THEN** each response is 404 with code `NOT_FOUND` and no `errors` property
+- **GIVEN** a logged-in admin and a logged-in teacher
+- **WHEN** the admin deactivates, reactivates and issues a reset link for the id "not-a-uuid", and the teacher deactivates the id "not-a-uuid"
+- **THEN** each of the admin's responses is 404 with code `NOT_FOUND` and no `errors` property, and the teacher's response is 403
 
 #### Scenario: api-errors/R3-S2 Malformed id on enrolment endpoints stays not found
 - **GIVEN** a logged-in teacher and a logged-in admin

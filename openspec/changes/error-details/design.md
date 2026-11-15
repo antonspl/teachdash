@@ -160,8 +160,16 @@ override in `ApiExceptionHandler`:
   violations with `FieldErrorCodes` (D2), using the parameter name as field. A
   `@Valid` bean parameter in the same result contributes its field errors as in D3.
 
+Each override builds its own `ProblemDetail` with the `problem(...)` helper and does
+not call `super`: Spring's default `detail` for these exceptions quotes the rejected
+value (e.g. "Failed to convert 'page' with value: 'abc'"), which R1 forbids.
+
 Parameter names come from the `-parameters` compiler flag, which the Spring Boot Gradle
-plugin sets. R1-S9 fails with `arg0` if it is missing.
+plugin sets for every `JavaCompile` task. The test controller gives no explicit names,
+so R1-S9 fails with `arg0` if the flag is ever lost.
+
+Other request-binding failures (a missing header or cookie) still get Spring's default
+400 `BAD_REQUEST`. No endpoint reads headers or cookies as parameters.
 
 Alternative considered: make `MalformedIdAdvice` global. Rejected: two advices for the
 same exception with an order between them is harder to follow than one handler.
