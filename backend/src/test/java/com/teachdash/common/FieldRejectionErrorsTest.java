@@ -23,10 +23,6 @@ class FieldRejectionErrorsTest extends ApiTest {
 		return Map.of("field", field, "code", code);
 	}
 
-	private long count(String table) {
-		return jdbc.sql("select count(*) from " + table).query(Long.class).single();
-	}
-
 	@Test
 	@DisplayName("[api-errors/R2-S1] Taken email at teacher creation")
 	void takenEmailAtTeacherCreation() {
@@ -60,7 +56,7 @@ class FieldRejectionErrorsTest extends ApiTest {
 		response.then().statusCode(409)
 				.body("code", equalTo("EMAIL_TAKEN"))
 				.body("errors", equalTo(List.of(error("email", "EMAIL_TAKEN"))));
-		assertEquals(0, count("teacher_students"));
+		assertEquals(0, countRows("teacher_students"));
 	}
 
 	@Test
@@ -71,7 +67,7 @@ class FieldRejectionErrorsTest extends ApiTest {
 		String token = createJoinLink(teacherA);
 		createTeacher("t@example.com", "teacher-pass-2");
 		TestClient client = newClient();
-		long usersBefore = count("users");
+		long usersBefore = countRows("users");
 
 		// when the client joins through the link with the email "t@example.com"
 		var response = client.post("/api/join-links/join", Map.of(
@@ -85,7 +81,7 @@ class FieldRejectionErrorsTest extends ApiTest {
 		response.then().statusCode(409)
 				.body("code", equalTo("EMAIL_TAKEN"))
 				.body("errors", equalTo(List.of(error("email", "EMAIL_TAKEN"))));
-		assertEquals(usersBefore, count("users"));
+		assertEquals(usersBefore, countRows("users"));
 	}
 
 	@Test

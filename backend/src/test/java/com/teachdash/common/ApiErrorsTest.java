@@ -35,16 +35,12 @@ class ApiErrorsTest extends ApiTest {
 		return Map.of("field", field, "code", code);
 	}
 
-	private long count(String table) {
-		return jdbc.sql("select count(*) from " + table).query(Long.class).single();
-	}
-
 	@Test
 	@DisplayName("[api-errors/R1-S1] Missing and blank fields are required")
 	void missingAndBlankFieldsAreRequired() {
 		// given a logged-in admin
 		TestClient admin = loggedInAdmin();
-		long usersBefore = count("users");
+		long usersBefore = countRows("users");
 
 		// when the admin creates a teacher with a blank name and no email, and once more with a null email and a blank time zone
 		var blankNameNoEmail = admin.post(TEACHERS, json("""
@@ -59,7 +55,7 @@ class ApiErrorsTest extends ApiTest {
 		nullEmailBlankZone.then().statusCode(400)
 				.body("code", equalTo("VALIDATION_FAILED"))
 				.body("errors", equalTo(List.of(error("email", "REQUIRED"), error("timeZone", "REQUIRED"))));
-		assertEquals(usersBefore, count("users"));
+		assertEquals(usersBefore, countRows("users"));
 	}
 
 	@Test
@@ -70,8 +66,8 @@ class ApiErrorsTest extends ApiTest {
 		createTeacher("teacher@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("teacher@example.com");
 		String longEmail = "a".repeat(309) + "@example.com";
-		long usersBefore = count("users");
-		long sessionsBefore = count("spring_session");
+		long usersBefore = countRows("users");
+		long sessionsBefore = countRows("spring_session");
 
 		// when the admin creates a teacher with a long Cyrillic name and a long email, the teacher updates the profile with a long Latin name, and someone logs in with a long email
 		var created = admin.post(TEACHERS,
@@ -86,10 +82,10 @@ class ApiErrorsTest extends ApiTest {
 				.body("errors", equalTo(List.of(error("name", "TOO_LONG"))));
 		loggedIn.then().statusCode(400)
 				.body("errors", equalTo(List.of(error("email", "TOO_LONG"))));
-		assertEquals(usersBefore, count("users"));
+		assertEquals(usersBefore, countRows("users"));
 		assertEquals("Teacher", jdbc.sql("select name from users where email = 'teacher@example.com'")
 				.query(String.class).single());
-		assertEquals(sessionsBefore, count("spring_session"));
+		assertEquals(sessionsBefore, countRows("spring_session"));
 	}
 
 	@Test
@@ -98,7 +94,7 @@ class ApiErrorsTest extends ApiTest {
 		// given a logged-in teacher
 		createTeacher("teacher@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("teacher@example.com");
-		long usersBefore = count("users");
+		long usersBefore = countRows("users");
 
 		// when the teacher registers a student with an invisible name, a broken email and an unknown time zone
 		var response = teacher.post(STUDENTS,
@@ -113,7 +109,7 @@ class ApiErrorsTest extends ApiTest {
 						error("timeZone", "INVALID_FORMAT"))))
 				.body(not(containsString("anna@")))
 				.body(not(containsString("Mars/Olympus")));
-		assertEquals(usersBefore, count("users"));
+		assertEquals(usersBefore, countRows("users"));
 	}
 
 	@Test
@@ -158,7 +154,7 @@ class ApiErrorsTest extends ApiTest {
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		String token = createJoinLink(teacherA);
 		TestClient client = newClient();
-		long usersBefore = count("users");
+		long usersBefore = countRows("users");
 
 		// when the client previews with a blank token, joins with a blank name and a short password, and joins with a blank token, a broken email and no time zone
 		var preview = client.post(PREVIEW, Map.of("token", " "));
@@ -184,7 +180,7 @@ class ApiErrorsTest extends ApiTest {
 						error("email", "INVALID_FORMAT"),
 						error("timeZone", "REQUIRED"),
 						error("token", "REQUIRED"))));
-		assertEquals(usersBefore, count("users"));
+		assertEquals(usersBefore, countRows("users"));
 	}
 
 	@Test
@@ -193,8 +189,8 @@ class ApiErrorsTest extends ApiTest {
 		// given a logged-in teacher
 		createTeacher("teacher@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("teacher@example.com");
-		long usersBefore = count("users");
-		long sessionsBefore = count("spring_session");
+		long usersBefore = countRows("users");
+		long sessionsBefore = countRows("spring_session");
 
 		// when someone logs in with a NUL in the email, and the teacher registers a student with a NUL in the name and a blank email
 		var login = newClient().post(LOGIN, json("""
@@ -210,8 +206,8 @@ class ApiErrorsTest extends ApiTest {
 				.body("code", equalTo("VALIDATION_FAILED"))
 				.body("errors", equalTo(List.of(error("name", "INVALID_FORMAT"))))
 				.body(not(containsString("Ан")));
-		assertEquals(sessionsBefore, count("spring_session"));
-		assertEquals(usersBefore, count("users"));
+		assertEquals(sessionsBefore, countRows("spring_session"));
+		assertEquals(usersBefore, countRows("users"));
 	}
 
 	@Test
@@ -219,7 +215,7 @@ class ApiErrorsTest extends ApiTest {
 	void wrongJsonTypeIsAValidationError() {
 		// given a logged-in admin
 		TestClient admin = loggedInAdmin();
-		long usersBefore = count("users");
+		long usersBefore = countRows("users");
 
 		// when the admin creates a teacher with an array as the name, and once more with an object as the email
 		var arrayName = admin.post(TEACHERS, json("""
@@ -238,7 +234,7 @@ class ApiErrorsTest extends ApiTest {
 				.body("errors", equalTo(List.of(error("email", "INVALID_TYPE"))))
 				.body(not(containsString("Anna")))
 				.body(not(containsString("anna@example.com")));
-		assertEquals(usersBefore, count("users"));
+		assertEquals(usersBefore, countRows("users"));
 	}
 
 	@Test
@@ -246,7 +242,7 @@ class ApiErrorsTest extends ApiTest {
 	void brokenJsonStaysAMalformedRequest() {
 		// given a logged-in admin
 		TestClient admin = loggedInAdmin();
-		long usersBefore = count("users");
+		long usersBefore = countRows("users");
 
 		// when the admin creates a teacher with a truncated body, with an array body, and with no body
 		var truncated = admin.post(TEACHERS, json("{\"name\":"));
@@ -263,7 +259,7 @@ class ApiErrorsTest extends ApiTest {
 		noBody.then().statusCode(400)
 				.body("code", equalTo("MALFORMED_REQUEST"))
 				.body("$", not(hasKey("errors")));
-		assertEquals(usersBefore, count("users"));
+		assertEquals(usersBefore, countRows("users"));
 	}
 
 	@Test

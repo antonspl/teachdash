@@ -13,10 +13,6 @@ import com.teachdash.support.TestClient;
 
 class MalformedIdTest extends ApiTest {
 
-	private long count(String table) {
-		return jdbc.sql("select count(*) from " + table).query(Long.class).single();
-	}
-
 	@Test
 	@DisplayName("[api-errors/R3-S1] Malformed id on admin endpoints")
 	void malformedIdOnAdminEndpoints() {
@@ -24,7 +20,7 @@ class MalformedIdTest extends ApiTest {
 		TestClient admin = loggedInAdmin();
 		createTeacher("teacher@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("teacher@example.com");
-		long activeBefore = count("users where active");
+		long activeBefore = countRows("users where active");
 
 		// when the admin deactivates, reactivates and issues a reset link for "not-a-uuid", and the teacher deactivates it
 		var deactivate = admin.post("/api/admin/teachers/not-a-uuid/deactivate");
@@ -39,8 +35,8 @@ class MalformedIdTest extends ApiTest {
 					.body("$", not(hasKey("errors")));
 		}
 		byTeacher.then().statusCode(403);
-		assertEquals(activeBefore, count("users where active"));
-		assertEquals(0, count("one_time_tokens"));
+		assertEquals(activeBefore, countRows("users where active"));
+		assertEquals(0, countRows("one_time_tokens"));
 	}
 
 	@Test
