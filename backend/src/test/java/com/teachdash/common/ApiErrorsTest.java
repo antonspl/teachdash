@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,10 +26,6 @@ class ApiErrorsTest extends ApiTest {
 	private static final String JOIN = "/api/join-links/join";
 	private static final String TEST_QUERY = "/api/teacher/test-query";
 
-	private static byte[] json(String raw) {
-		return raw.getBytes(StandardCharsets.UTF_8);
-	}
-
 	private static Map<String, String> error(String field, String code) {
 		return Map.of("field", field, "code", code);
 	}
@@ -43,10 +38,10 @@ class ApiErrorsTest extends ApiTest {
 		long usersBefore = countRows("users");
 
 		// when the admin creates a teacher with a blank name and no email, and once more with a null email and a blank time zone
-		var blankNameNoEmail = admin.post(TEACHERS, json("""
-				{"name": "   ", "timeZone": "Europe/Berlin"}"""));
-		var nullEmailBlankZone = admin.post(TEACHERS, json("""
-				{"name": "Anna", "email": null, "timeZone": " "}"""));
+		var blankNameNoEmail = admin.post(TEACHERS, """
+				{"name": "   ", "timeZone": "Europe/Berlin"}""");
+		var nullEmailBlankZone = admin.post(TEACHERS, """
+				{"name": "Anna", "email": null, "timeZone": " "}""");
 
 		// then both responses are 400 VALIDATION_FAILED with the required fields named
 		blankNameNoEmail.then().statusCode(400)
@@ -193,10 +188,10 @@ class ApiErrorsTest extends ApiTest {
 		long sessionsBefore = countRows("spring_session");
 
 		// when someone logs in with a NUL in the email, and the teacher registers a student with a NUL in the name and a blank email
-		var login = newClient().post(LOGIN, json("""
-				{"email": "a\\u0000@example.com", "password": "password-1"}"""));
-		var registration = teacher.post(STUDENTS, json("""
-				{"name": "Ан\\u0000на", "email": " ", "timeZone": "Europe/Moscow"}"""));
+		var login = newClient().post(LOGIN, """
+				{"email": "a\\u0000@example.com", "password": "password-1"}""");
+		var registration = teacher.post(STUDENTS, """
+				{"name": "Ан\\u0000на", "email": " ", "timeZone": "Europe/Moscow"}""");
 
 		// then both responses are 400 VALIDATION_FAILED naming only the field with the NUL
 		login.then().statusCode(400)
@@ -218,10 +213,10 @@ class ApiErrorsTest extends ApiTest {
 		long usersBefore = countRows("users");
 
 		// when the admin creates a teacher with an array as the name, and once more with an object as the email
-		var arrayName = admin.post(TEACHERS, json("""
-				{"name": ["Anna"], "email": "anna@example.com", "timeZone": "Europe/Berlin"}"""));
-		var objectEmail = admin.post(TEACHERS, json("""
-				{"name": "Анна", "email": {"value": "anna@example.com"}, "timeZone": "Europe/Berlin"}"""));
+		var arrayName = admin.post(TEACHERS, """
+				{"name": ["Anna"], "email": "anna@example.com", "timeZone": "Europe/Berlin"}""");
+		var objectEmail = admin.post(TEACHERS, """
+				{"name": "Анна", "email": {"value": "anna@example.com"}, "timeZone": "Europe/Berlin"}""");
 
 		// then both responses are 400 VALIDATION_FAILED with the field named as a wrong type
 		arrayName.then().statusCode(400)
@@ -245,8 +240,8 @@ class ApiErrorsTest extends ApiTest {
 		long usersBefore = countRows("users");
 
 		// when the admin creates a teacher with a truncated body, with an array body, and with no body
-		var truncated = admin.post(TEACHERS, json("{\"name\":"));
-		var array = admin.post(TEACHERS, json("[]"));
+		var truncated = admin.post(TEACHERS, "{\"name\":");
+		var array = admin.post(TEACHERS, "[]");
 		var noBody = admin.post(TEACHERS);
 
 		// then each response is 400 MALFORMED_REQUEST with no errors property
