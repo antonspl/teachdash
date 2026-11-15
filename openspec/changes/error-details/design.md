@@ -55,9 +55,11 @@ engineer: dotted paths and codes, no messages (answers 2 and 5).
 Remove `@ReportAsSingleViolation` from `@PersonName` and `@EmailAddress`, so each
 composing constraint reports its own violation. Rebuild `@BcryptPassword` as a
 composite: `@NotBlank`, `@Size(min = 8)` and a new `@MaxUtf8Bytes(72)` with its own
-validator; delete `BcryptPasswordValidator`. `TimeZoneIdValidator` and `@MaxUtf8Bytes`
-treat `null` and blank as valid, leaving them to `@NotBlank`, so a blank value gives
-only `REQUIRED`.
+validator, which treats `null` as valid. `BcryptPasswordValidator` goes away; its static
+`exceedsBcryptLimit`, used by `AccountService` for the rule that an over-long password is
+a wrong password (accounts R2, R9), moves to the `MaxUtf8Bytes` validator as a static
+helper. `@TimeZoneId` already reports `NotBlank` and its own violation separately and
+stays as it is: for a blank value the priority below keeps only `REQUIRED`.
 
 A package-private `FieldErrorCodes` in `common` maps one `ConstraintViolation` to a code,
 by the constraint's annotation type:
@@ -90,7 +92,11 @@ failed, and messages would become a hidden contract.
 - `ApiException` gets an optional list of `FieldErrorDetail`. A static factory
   `ApiException.validation(Set<ConstraintViolation<?>>)` builds a 400
   `VALIDATION_FAILED` with the mapped list. `JoinLinkController` throws it instead of
-  dropping the violations. A second factory `ApiException.field(status, code, field)`
+  dropping the violations. Without a student session, `join` validates the token and the
+  `JoinVisitor` together and reports both sets of violations in one response (spec
+  R1-S5); `JoinVisitor` uses the request's JSON names, so the paths match. With a student
+  session only the token is checked, as today. The order of checks in
+  student-enrolment R9 does not change: all invalid input is still one 400. A second factory `ApiException.field(status, code, field)`
   builds a single-field error with one entry whose code is the response code (spec R2).
   `handle(ApiException)` sets `errors` when the list is not empty.
 - `EMAIL_TAKEN` (`AccountService` two sites, `TeacherAdminService`,
@@ -105,13 +111,22 @@ In `handleHttpMessageNotReadable`, walk the cause chain to the first
 its references: a property name is joined with `.`, an index as `[i]`. Then:
 
 - a `NulCharacterException` in the chain gives `INVALID_FORMAT`;
-- otherwise (a `MismatchedInputException` or `InvalidFormatException`) gives `INVALID_TYPE`;
-- no such exception, or an empty path (broken JSON, missing body, a top-level array)
-  stays `MALFORMED_REQUEST` with no `errors`.
+- a `MismatchedInputException` (which includes `InvalidFormatException`) gives
+  `INVALID_TYPE`, except `UnrecognizedPropertyException`, which Boot does not raise by
+  default;
+- anything else (broken JSON, a missing body, a top-level array, a
+  `ValueInstantiationException` from a record constructor), or an empty path, stays
+  `MALFORMED_REQUEST` with no `errors`.
+
+Jackson coerces JSON numbers and booleans to `String` by default, so in practice
+`INVALID_TYPE` means an array or an object where a scalar is expected. This change keeps
+that coercion.
 
 Jackson is expected to wrap the deserializer's `RuntimeException` in a
-`DatabindException` with the path. This is not verified. Task 1.1 checks it. If it is
-not wrapped, the deserializer throws a `MismatchedInputException` through the
+`DatabindException` with the path. This is not verified. Task 1.1 checks it before any
+test is written and records the result here. Rule: if the handler sees a
+`DatabindException` whose path names the field and whose cause chain holds the
+`NulCharacterException`, keep the deserializer as it is. If it is not wrapped, the deserializer throws a `MismatchedInputException` through the
 `DeserializationContext` instead, keeping `NulCharacterException` as its cause so the two
 cases stay apart. Every request body is a JSON object, so a NUL always has a path.
 
@@ -149,6 +164,12 @@ None.
   only the first. That is acceptable: the client sends JSON of the wrong shape, which is a
   bug in the client, not in what the user typed.
 - [The NUL deserializer path is unverified] → Task 1.1 (D4).
+- [String sort puts `items[10]` before `items[2]`] → Accepted: no request has lists
+  today, and the order is still stable. The `[i]` path format is not covered by a
+  scenario for the same reason; the reviewer checks the path builder.
+- [R1-S8 and R2-S5 pass before any code changes] → They guard behaviour this change
+  could break (the handler for unreadable JSON and `ApiException`). The engineer decides
+  at the spec gate whether to keep them as guards.
 
 ## Migration Plan
 

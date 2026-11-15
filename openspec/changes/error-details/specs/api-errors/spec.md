@@ -8,22 +8,22 @@ show each error next to the field it belongs to.
 ## ADDED Requirements
 
 ### Requirement: R1 Validation errors name each failing field
-A 400 `VALIDATION_FAILED` response SHALL carry `errors`: a non-empty list with one
-`{field, code}` entry per failing field, sorted by field. `field` is the dotted path in
-the request body (e.g. `lessons[0].title`). If a field breaks several rules, the code is
-the first in this order: `REQUIRED`, `TOO_SHORT` or `TOO_LONG`, `INVALID_FORMAT`. A NUL
-character is `INVALID_FORMAT`; a wrong JSON type is `INVALID_TYPE`. The response MUST NOT
-contain the rejected values.
+A 400 `VALIDATION_FAILED` response SHALL carry `errors`: a non-empty list of
+`{field, code}`, one per failing field, sorted by field then code in string order.
+`field` is the body path, dotted, with `[i]` for list items. A field breaking several
+rules gets the first of `REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`. A NUL
+character is `INVALID_FORMAT`, an unreadable JSON type `INVALID_TYPE`; these stop reading,
+so only that field is listed. Rejected values MUST NOT appear in the response.
 
 #### Scenario: api-errors/R1-S1 Missing and blank fields are required
 - **GIVEN** a logged-in admin
-- **WHEN** the admin creates a teacher with the name "   ", no email and the time zone "Europe/Berlin"
-- **THEN** the response is 400 with code `VALIDATION_FAILED` and `errors` is exactly `[{field: "email", code: "REQUIRED"}, {field: "name", code: "REQUIRED"}]`, and no account is created
+- **WHEN** the admin creates a teacher with the name "   ", no email and the time zone "Europe/Berlin", and once more with the name "Anna", the email `null` and a blank time zone
+- **THEN** both responses are 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "email", code: "REQUIRED"}, {field: "name", code: "REQUIRED"}]` and `[{field: "email", code: "REQUIRED"}, {field: "timeZone", code: "REQUIRED"}]`, and no account is created
 
 #### Scenario: api-errors/R1-S2 Too-long values in Cyrillic and Latin
 - **GIVEN** a logged-in admin and a logged-in teacher
-- **WHEN** the admin creates a teacher with a name of 201 Cyrillic letters ("Я") and an email of 321 characters, and the teacher updates the profile with a name of 201 Latin letters ("a")
-- **THEN** the first response is 400 with `errors` exactly `[{field: "email", code: "TOO_LONG"}, {field: "name", code: "TOO_LONG"}]`, the second is 400 with `errors` exactly `[{field: "name", code: "TOO_LONG"}]`, and nothing is created or changed
+- **WHEN** the admin creates a teacher with a name of 201 Cyrillic letters ("Я") and an email of 321 characters, the teacher updates the profile with a name of 201 Latin letters ("a"), and someone logs in with an email of 321 characters
+- **THEN** the first response is 400 with `errors` exactly `[{field: "email", code: "TOO_LONG"}, {field: "name", code: "TOO_LONG"}]`, the second and third are 400 with `errors` exactly `[{field: "name", code: "TOO_LONG"}]` and `[{field: "email", code: "TOO_LONG"}]`, and nothing is created or changed and no session is started
 
 #### Scenario: api-errors/R1-S3 Invalid formats are reported without the values
 - **GIVEN** a logged-in teacher
@@ -37,18 +37,18 @@ contain the rejected values.
 
 #### Scenario: api-errors/R1-S5 Join-link input names the failing fields
 - **GIVEN** teacher A with a join link, and a client with a CSRF cookie and no session
-- **WHEN** the client previews with a blank token, and joins through the link with the name "", the email "anna@example.com", the time zone "Europe/Moscow" and the password "short"
-- **THEN** the preview response is 400 with `errors` exactly `[{field: "token", code: "REQUIRED"}]`, the join response is 400 with `errors` exactly `[{field: "name", code: "REQUIRED"}, {field: "password", code: "TOO_SHORT"}]`, and no account is created
+- **WHEN** the client previews with a blank token, joins through the link with the name "", the email "anna@example.com", the time zone "Europe/Moscow" and the password "short", and joins with a blank token, the name "Анна", the email "anna@", no time zone and the password "password-1"
+- **THEN** the preview response is 400 with `errors` exactly `[{field: "token", code: "REQUIRED"}]`, the first join response is 400 with `errors` exactly `[{field: "name", code: "REQUIRED"}, {field: "password", code: "TOO_SHORT"}]`, the second is 400 with `errors` exactly `[{field: "email", code: "INVALID_FORMAT"}, {field: "timeZone", code: "REQUIRED"}, {field: "token", code: "REQUIRED"}]`, and no account is created
 
 #### Scenario: api-errors/R1-S6 A NUL character names its field
 - **GIVEN** a logged-in teacher
-- **WHEN** someone logs in with an email containing a NUL character, and the teacher registers a student with the name "Ан\u0000на", the email "anna@example.com" and the time zone "Europe/Moscow"
-- **THEN** both responses are 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "email", code: "INVALID_FORMAT"}]` and `[{field: "name", code: "INVALID_FORMAT"}]`, no session is started and no student is created
+- **WHEN** someone logs in with an email containing a NUL character, and the teacher registers a student with the name "Ан\u0000на", a blank email and the time zone "Europe/Moscow"
+- **THEN** both responses are 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "email", code: "INVALID_FORMAT"}]` and `[{field: "name", code: "INVALID_FORMAT"}]`, the second body does not contain "Ан", no session is started and no student is created
 
 #### Scenario: api-errors/R1-S7 A wrong JSON type is a validation error
 - **GIVEN** a logged-in admin
-- **WHEN** the admin creates a teacher with the name `["Anna"]`, the email "anna@example.com" and the time zone "Europe/Berlin"
-- **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "name", code: "INVALID_TYPE"}]`, and no account is created
+- **WHEN** the admin creates a teacher with the name `["Anna"]`, the email "anna@example.com" and the time zone "Europe/Berlin", and once more with the name "Анна", the email `{"value": "anna@example.com"}` and the time zone "Europe/Berlin"
+- **THEN** both responses are 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "name", code: "INVALID_TYPE"}]` and `[{field: "email", code: "INVALID_TYPE"}]`, neither body contains "Anna" or "anna@example.com", and no account is created
 
 #### Scenario: api-errors/R1-S8 Broken JSON stays a malformed request
 - **GIVEN** a logged-in admin
@@ -58,8 +58,8 @@ contain the rejected values.
 ### Requirement: R2 Single-field rejections name the field
 An `EMAIL_TAKEN` or `WRONG_PASSWORD` response SHALL keep its status and code and carry
 `errors` with one entry whose code is the response code: field `email` for
-`EMAIL_TAKEN`, `currentPassword` for `WRONG_PASSWORD`. Responses with any other code
-MUST NOT carry `errors`.
+`EMAIL_TAKEN`, `currentPassword` for `WRONG_PASSWORD`. Responses with any code other
+than `VALIDATION_FAILED`, `EMAIL_TAKEN` and `WRONG_PASSWORD` MUST NOT carry `errors`.
 
 #### Scenario: api-errors/R2-S1 Taken email at teacher creation
 - **GIVEN** a logged-in admin and a teacher with email "t@example.com"
