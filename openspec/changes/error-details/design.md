@@ -196,9 +196,13 @@ None.
   validation paths (Java names)] → The reviewer checks that request DTOs do not rename
   properties. A rename needs its own change to this design.
 - [A future class-level constraint has no field] → It would produce a
-  `VALIDATION_FAILED` with no entry, breaking R1. `handleMethodArgumentNotValid` throws
-  an `IllegalStateException` for a global error, so the first such constraint fails its
-  own tests loudly and forces a decision.
+  `VALIDATION_FAILED` with no entry, breaking R1. The handler answers a global error, a
+  cross-parameter error or a failed return-value check with 500 `INTERNAL_ERROR` and an
+  ERROR log, so the first such constraint fails its own tests loudly and forces a
+  decision.
+- [A `Map` property in a request DTO would put the user's map key into `field`] → No
+  DTO has one. The reviewer checks request DTOs for `Map` properties, as for
+  `@JsonProperty` renames.
 - [The query-parameter rule is tested only through a test-only controller] → Accepted
   (proposal, answer 13). The first real endpoint with a query parameter adds its own
   scenario.
