@@ -193,7 +193,7 @@ shared test helpers live in `com.teachdash.support`.
   same instruction language and no target language.
 - A course does not record who takes it: students with different native languages
   may take the same course. Every student has a native language, set by their
-  teacher, from a configured list of student languages (ISO 639-1 codes); it is
+  teacher or chosen by the student when joining through a link, from a configured list of student languages (ISO 639-1 codes); it is
   student data (section 8). The supported course languages are a subset of that list.
 - Language features (translation, vocabulary) apply only to courses with a target
   language. Translation goes from the course's target language into the student's
