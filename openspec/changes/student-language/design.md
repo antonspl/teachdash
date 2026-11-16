@@ -81,9 +81,10 @@ CSRF token. The list is static and small; no cache, no rate limit.
 A `ConstraintValidator` in `languages/api` (public) that accepts `null` and otherwise
 requires a row in `languages` (any `content`). The request records strip surrounding
 whitespace with `Normalize.strip` in their compact constructors, as they do for email
-(R13-S1). A non-string value is `INVALID_TYPE` through the existing JSON-reading handler
-(api-errors R1). It is composed with `@NotNull`, so a
-missing or `null` value is `REQUIRED` and anything else not listed is `INVALID_FORMAT`.
+(R13-S1). An array or object is `INVALID_TYPE` through the existing JSON-reading handler
+(api-errors R1); Jackson turns a number or boolean into a string, which is then
+`INVALID_FORMAT`. It is composed with `@NotBlank`, like name, email and time zone, so a
+missing, `null` or blank value is `REQUIRED` and anything else not listed is `INVALID_FORMAT`.
 Used on `RegisterStudentRequest.nativeLanguage`, `JoinVisitor.nativeLanguage` and the new
 `UpdateStudentLanguageRequest.nativeLanguage`. Because it is Bean Validation, it runs with
 the other fields and is reported with them (R13-S3), and on the join path before the link
@@ -109,13 +110,17 @@ carry a valid one (the request is validated before the service decides new vs. e
 
 1. `users.findActiveByIdForUpdate(teacherId)`: the teacher row lock, as removal and reset
    links take it, so a removal or deactivation running at the same time cannot interleave.
+   No active teacher (deactivated after the session check) is 401 `UNAUTHENTICATED`, as in
+   `StudentResetLinkService`.
 2. `assignments.findStudent(teacherId, studentId)` or `ApiException.notFound()`.
 3. `UserRepository.updateNativeLanguage(studentId, code)` (targeted update).
 4. Return the student's `UserSummary`.
 
-A malformed id is already 404 through the api-errors R3 handling. The order in R14
-follows from the layers: role rules and CSRF in the filter chain, the deactivated session
-in `SessionRevocationFilter` (401), `@Valid` before the service (400), then step 2 (404).
+The order in R14 follows from the layers: CSRF and role rules in the filter chain, the
+deactivated session in `SessionRevocationFilter` (401), then argument resolution in
+declaration order: `@PathVariable UUID id` first, as in every existing controller, so a
+malformed id is 404 (api-errors R3) whatever the body (R14-S3); then `@Valid` on the body
+(400); then step 2 (404).
 The lock in step 1 matches reset links; it has no scenario of its own.
 
 ### D6. Showing the language
@@ -139,7 +144,8 @@ The lock in step 1 matches reset links; it has no scenario of its own.
   `JoinLinkRateLimitTest.joinBody`, a new body helper in `StudentRegistrationTest`, and the
   inline bodies in `JoinLinkFailureTest`, `StudentRegistrationFailureTest`,
   `StudentRemovalTest`, `StudentListTest`, `TeacherJoinLinkTest`, `TeacherDeactivationTest`,
-  `common/ApiErrorsTest` (R1-S5) and `common/FieldRejectionErrorsTest` (R2-S2, R2-S3).
+  `common/ApiErrorsTest` (R1-S3, R1-S5) and `common/FieldRejectionErrorsTest` (R2-S2, R2-S3,
+  R2-S5).
   Without it, those exact `errors` lists and 409s would turn into 400s with a new entry. This changes
   approved tests in body only: the extra field is ignored by the current code, so they keep
   passing in pass 1 and keep passing after pass 2. The engineer reviews these edits at the
