@@ -4,11 +4,11 @@
 
 - [ ] 1.1 Add migration `V9__courses.sql` with the `languages` table, its `en`/`ru` seed and the `courses` table with `courses_teacher_title_uq` (design D2). It is a schema migration, which pass 1 may add; the engineer reviews it as production code at the test gate. Exclude `languages` from the `ApiTest` truncation and reset it to `en`/`ru` after the truncate (design D1); verify the app starts and the existing suite still passes
 - [ ] 1.2 Add stubs returning 501, each marked `STUB`, for `GET /api/languages` and `POST /api/teacher/courses` (design D3). Do not touch `SecurityConfig` yet
-- [ ] 1.3 Add `ApiTest` helpers: `createCourse(teacherId, title, instructionLanguage, targetLanguage)` and `countCourses(teacherId)` (direct SQL), and `addLanguage(code)` for tests that need "de" (the reset in 1.1 removes it)
-- [ ] 1.4 Write tests for courses R1-S1 to R1-S4 in `languages/api/LanguagesTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`
+- [ ] 1.3 Add `ApiTest` helpers: `createCourse(teacherId, title, instructionLanguage, targetLanguage)` and `countCourses(teacherId)` (direct SQL)
+- [ ] 1.4 Write tests for courses R1-S1 to R1-S3 in `languages/api/LanguagesTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`
 - [ ] 1.5 Write tests for courses R2-S1 to R2-S14 in `courses/api/CreateCourseTest`. Create existing courses and sessions in GIVEN with the helpers, never through the stubbed endpoint. R2-S11 uses `Parallel.run`. In R2-S13 the anonymous client fetches a CSRF cookie first. The WHEN step only captures responses, so each test fails in THEN
 - [ ] 1.6 Write a test for api-errors R2-S6 next to the other api-errors R2 tests
-- [ ] 1.7 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test fails at its THEN step (not in setup) and every other test passes. Report to the engineer any new test that passes against the stubs. R2-S13 may already pass through the existing security rules (anonymous, admin and student on `/api/teacher/**`; deactivated sessions). R1-S4 must fail: the student gets the stub's 501 until the `SecurityConfig` rule exists
+- [ ] 1.7 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test fails at its THEN step (not in setup) and every other test passes. Report to the engineer any new test that passes against the stubs. R2-S13 may already pass through the existing security rules (anonymous, admin and student on `/api/teacher/**`; deactivated sessions). R1-S3 must fail: the student gets the stub's 501 until the `SecurityConfig` rule exists
 - [ ] 1.8 List the stubs (temporary) and `V9__courses.sql` (permanent) in the PR description
 
 ## 2. Test review

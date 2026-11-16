@@ -9,12 +9,11 @@ supported language and optionally teaching another, and the list of supported la
 
 ### Requirement: R1 Teachers and admins read the supported languages
 `GET /api/languages` SHALL return 200 with the supported languages as a list of
-`{code}` objects, where `code` is a lowercase ISO 639-1 code, sorted by code. The list
-is configured data, initially `en` and `ru`; a language added to it appears without a
-code change. Teachers and admins MAY read it; a student gets 403 and a caller without a
+`{code}` objects, where `code` is a lowercase ISO 639-1 code, sorted by code. The list is
+prefilled by a database migration with `en` and `ru`. Teachers and admins MAY read it; a student gets 403 and a caller without a
 session gets 401.
 
-#### Scenario: courses/R1-S1 A teacher reads the initial list
+#### Scenario: courses/R1-S1 A teacher reads the list prefilled by the DB migration
 - **GIVEN** a logged-in teacher
 - **WHEN** the teacher reads the supported languages
 - **THEN** the response is 200 with the body exactly `[{code: "en"}, {code: "ru"}]`
@@ -24,42 +23,37 @@ session gets 401.
 - **WHEN** the admin reads the supported languages
 - **THEN** the response is 200 with the body exactly `[{code: "en"}, {code: "ru"}]`
 
-#### Scenario: courses/R1-S3 A configured language appears in the list
-- **GIVEN** the language "de" added to the supported languages, and a logged-in teacher
-- **WHEN** the teacher reads the supported languages
-- **THEN** the response is 200 with the body exactly `[{code: "de"}, {code: "en"}, {code: "ru"}]`
-
-#### Scenario: courses/R1-S4 Students and anonymous callers cannot read the list
+#### Scenario: courses/R1-S3 Students and anonymous callers cannot read the list
 - **GIVEN** a logged-in student, and a client with no session
 - **WHEN** each of them reads the supported languages
 - **THEN** the student's response is 403 with code `FORBIDDEN` and the client's response is 401 with code `UNAUTHENTICATED`
 
 ### Requirement: R2 A teacher creates a course
 `POST /api/teacher/courses` SHALL create a course owned by the caller and return 201
-with `{id, title, instructionLanguage, targetLanguage, createdAt}`; the target is optional. The title is normalised
-like a name, MUST have 1–200 characters with a letter or digit, and MUST be unique per
+with `{id, title, instructionLanguage, targetLanguage, createdAt}`; the target is optional. The title is trimmed,
+MUST have 1–200 characters with a letter or digit, may contain punctuation, and MUST be unique per
 teacher ignoring case. Both languages MUST be supported codes and may be equal. A
 teacher has at most 20 courses, checked after input, before title. Languages are fixed.
 
-#### Scenario: courses/R2-S1 Create an English course for Russian speakers
+#### Scenario: courses/R2-S1 Create an English course taught in English
 - **GIVEN** a logged-in teacher A
-- **WHEN** teacher A creates a course with the title "English A1", the instruction language "ru" and the target language "en"
-- **THEN** the response is 201 with a new `id`, the title "English A1", `instructionLanguage` "ru", `targetLanguage` "en" and a `createdAt` time, and the course is stored owned by teacher A
+- **WHEN** teacher A creates a course with the title "English B1", the instruction language "en" and the target language "en"
+- **THEN** the response is 201 with a new `id`, the title "English B1", `instructionLanguage` "en", `targetLanguage` "en" and a `createdAt` time, and the course is stored owned by teacher A
 
 #### Scenario: courses/R2-S2 Create a Russian course without a target language
 - **GIVEN** a logged-in teacher A
 - **WHEN** teacher A creates a course with the title "Литература 9 класс", the instruction language "ru" and no target language, and another with the title "Maths", the instruction language "en" and the target language `null`
 - **THEN** both responses are 201, the first with the title "Литература 9 класс" and `targetLanguage` `null`, the second with `targetLanguage` `null`
 
-#### Scenario: courses/R2-S3 The target language may equal the instruction language
+#### Scenario: courses/R2-S3 A Russian course taught in Russian or in English
 - **GIVEN** a logged-in teacher A
-- **WHEN** teacher A creates a course with the title "Advanced English", the instruction language "en" and the target language "en"
-- **THEN** the response is 201 with `instructionLanguage` "en" and `targetLanguage` "en"
+- **WHEN** teacher A creates a course with the title "Русский A1", the instruction language "ru" and the target language "ru", and another with the title "Russian A1", the instruction language "en" and the target language "ru"
+- **THEN** both responses are 201, the first with `instructionLanguage` "ru" and `targetLanguage` "ru", the second with `instructionLanguage` "en" and `targetLanguage` "ru"
 
-#### Scenario: courses/R2-S4 A configured language is accepted
-- **GIVEN** the language "de" added to the supported languages, and a logged-in teacher A
-- **WHEN** teacher A creates a course with the title "Deutsch", the instruction language "en" and the target language "de"
-- **THEN** the response is 201 with `targetLanguage` "de"
+#### Scenario: courses/R2-S4 A title may contain punctuation
+- **GIVEN** a logged-in teacher A
+- **WHEN** teacher A creates a course with the title "Business Result: Upper-Intermediate. Part 1?!", the instruction language "en" and the target language "en", and another with the title "Говорим по-русски, часть 2!", the instruction language "ru" and the target language "ru"
+- **THEN** both responses are 201 with exactly those titles
 
 #### Scenario: courses/R2-S5 The title is normalised
 - **GIVEN** a logged-in teacher A

@@ -6,12 +6,14 @@
 |---|---|
 | Who can create a course? | Teachers only. |
 | Who can read the language list? | Teachers and admins. Students cannot. |
-| May the target language equal the instruction language? | Yes. Such a course has translation off. |
+| May the target language equal the instruction language? | Yes, e.g. Russian A1 taught in Russian. Translation goes into the student's native language, not the instruction language (#142, #143). |
 | Limits? | Title of 1–200 characters. At most 20 courses per teacher, because we do not know yet how heavy a course will be. |
 | May one teacher have two courses with the same title? | No. Titles are unique per teacher, ignoring case. |
 | Scope? | Create only. Listing, viewing and renaming are #105; deleting is #131. |
 | Where does the language list live? | A database table seeded by Flyway (research angle B). |
 | How is a duplicate title reported? | 409 `TITLE_TAKEN`, naming the `title` field, like `EMAIL_TAKEN`. |
+| Which characters may a title have? | Any punctuation (`: , . ? !`), as textbook names use it; at least one letter or digit. |
+| Do we test adding a language? | No. Reading the list as teacher, admin and student is enough for now. |
 | Lessons without a course? | Not now (angle C). A teacher can keep a "library" course per language pair; its lessons can later join other courses with the same pair (#95). |
 
 ## Research angles

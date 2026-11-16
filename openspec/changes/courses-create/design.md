@@ -46,10 +46,8 @@ settings; that is #127's decision.
 Seeding is data in a migration. ApiTest truncation must keep the seed: add `languages`
 to the tables that `ApiTest` does not truncate, and after the truncate run
 `delete from languages where code not in ('en', 'ru')`. Courses are already gone by then
-(truncating `users` cascades to `courses`), so the foreign key does not block it. Tests
-that need a third language (R1-S3, R2-S4) insert "de" directly; the next test's reset
-removes it, even if the test failed. The test helper names `en` and `ru`; production code
-does not.
+(truncating `users` cascades to `courses`), so the foreign key does not block it. The reset keeps tests independent if a later change inserts
+another language. The test helper names `en` and `ru`; production code does not.
 
 Languages are never removed (a removal would be a migration that must first deal with the
 courses using it). So a language that disappears between validation (D4) and insert is
@@ -112,7 +110,7 @@ uses the same image.
   (R2-S8), in the order api-errors R1 defines. Rejected values are never echoed.
 
 A per-request query of a two-row table is cheap. A cache is not added: it would need
-invalidation for tests that insert "de".
+invalidation when a migration adds a language.
 
 ### D5. Create flow and errors
 
@@ -151,8 +149,8 @@ None added.
 ## Risks / Trade-offs
 
 - **Seed data vs. test truncation.** If `ApiTest` truncates `languages`, every test that
-  creates a course fails with a foreign key error. D1 excludes it; a test that inserts
-  "de" must clean it up.
+  creates a course fails with a foreign key error. D1 excludes it and resets it to the
+  seed before each test.
 - **Collation.** If prod Postgres ever runs with the `C` ctype, `lower()` stops folding
   Cyrillic and "Грамматика"/"ГРАММАТИКА" become distinct. Covered by tests on the same
   image; noted for any database move.
