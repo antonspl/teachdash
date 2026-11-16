@@ -78,7 +78,7 @@ class TeacherDeactivationTest extends ApiTest {
 		// when the admin deactivates teacher A, teacher B then registers a student with that email, and the student then joins through teacher B's link
 		var deactivation = admin.post(deactivate(teacherA));
 		var registration = b.post(STUDENTS,
-				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var join = studentClient.post("/api/join-links/join", Map.of("token", token));
 
 		// then the registration response is 409 with code STUDENT_EXISTS

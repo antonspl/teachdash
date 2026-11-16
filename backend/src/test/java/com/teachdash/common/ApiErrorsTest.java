@@ -93,7 +93,7 @@ class ApiErrorsTest extends ApiTest {
 
 		// when the teacher registers a student with an invisible name, a broken email and an unknown time zone
 		var response = teacher.post(STUDENTS,
-				Map.of("name", "ㅤ", "email", "anna@", "timeZone", "Mars/Olympus"));
+				Map.of("name", "ㅤ", "email", "anna@", "timeZone", "Mars/Olympus", "nativeLanguage", "en"));
 
 		// then the invalid fields are named and the body holds none of the values
 		response.then().statusCode(400)
@@ -158,11 +158,13 @@ class ApiErrorsTest extends ApiTest {
 				"name", "",
 				"email", "anna@example.com",
 				"timeZone", "Europe/Moscow",
+				"nativeLanguage", "en",
 				"password", "short"));
 		var secondJoin = client.post(JOIN, Map.of(
 				"token", " ",
 				"name", "Анна",
 				"email", "anna@",
+				"nativeLanguage", "en",
 				"password", "password-1"));
 
 		// then each response is 400 with the failing fields named
@@ -191,7 +193,7 @@ class ApiErrorsTest extends ApiTest {
 		var login = newClient().post(LOGIN, """
 				{"email": "a\\u0000@example.com", "password": "password-1"}""");
 		var registration = teacher.post(STUDENTS, """
-				{"name": "Ан\\u0000на", "email": " ", "timeZone": "Europe/Moscow"}""");
+				{"name": "Ан\\u0000на", "email": " ", "timeZone": "Europe/Moscow", "nativeLanguage": "en"}""");
 
 		// then both responses are 400 VALIDATION_FAILED naming only the field with the NUL
 		login.then().statusCode(400)

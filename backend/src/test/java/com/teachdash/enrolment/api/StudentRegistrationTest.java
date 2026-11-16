@@ -47,7 +47,7 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when the teacher registers a student with a new email and the returned link sets the password
 		var response = teacher.post(STUDENTS,
-				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "Europe/Berlin"));
+				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "Europe/Berlin", "nativeLanguage", "en"));
 		var passwordSet = newClient().post(
 				"/api/password-links",
 				Map.of("token", tokenFrom(response.path("setPasswordLink")), "password", "new-password-1"));
@@ -81,7 +81,7 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when teacher A registers a student with that email and a different name and time zone
 		var response = teacher.post(STUDENTS,
-				Map.of("name", "Other Name", "email", "student@example.com", "timeZone", "Asia/Tokyo"));
+				Map.of("name", "Other Name", "email", "student@example.com", "timeZone", "Asia/Tokyo", "nativeLanguage", "en"));
 
 		// then the response is 409 with code STUDENT_EXISTS
 		response.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
@@ -117,9 +117,9 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when the other teacher registers a student with each of these emails
 		var withTeacherEmail = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "t@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "t@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var withAdminEmail = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "a@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "a@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then both responses are 409 with code EMAIL_TAKEN
 		withTeacherEmail.then().statusCode(409).body("code", equalTo("EMAIL_TAKEN"));
@@ -140,7 +140,7 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when teacher A registers a student with that email again
 		var response = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 409 with code ALREADY_ENROLLED
 		response.then().statusCode(409).body("code", equalTo("ALREADY_ENROLLED"));
@@ -168,7 +168,7 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when teacher A registers a student with email "STUDENT@example.com"
 		var response = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "STUDENT@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "STUDENT@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 409 with code STUDENT_EXISTS
 		response.then().statusCode(409).body("code", equalTo("STUDENT_EXISTS"));
@@ -188,11 +188,11 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when the teacher registers a student with a blank name, an invalid email and an unknown time zone
 		var blankName = teacher.post(STUDENTS,
-				Map.of("name", " ", "email", "student@example.com", "timeZone", "UTC"));
+				Map.of("name", " ", "email", "student@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var invalidEmail = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "not-an-email", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "not-an-email", "timeZone", "UTC", "nativeLanguage", "en"));
 		var unknownTimeZone = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "student@example.com", "timeZone", "Mars/Base"));
+				Map.of("name", "Student", "email", "student@example.com", "timeZone", "Mars/Base", "nativeLanguage", "en"));
 
 		// then each response is 400 with code VALIDATION_FAILED
 		blankName.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
@@ -213,9 +213,9 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when the teacher registers a student with email "nina\u00A0@example.com", then with email "\u2003@example.com"
 		var noBreakSpace = teacher.post(STUDENTS,
-				Map.of("name", "Nina", "email", "nina\u00A0@example.com", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", "nina\u00A0@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var emSpace = teacher.post(STUDENTS,
-				Map.of("name", "Nina", "email", "\u2003@example.com", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", "\u2003@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then each response is 400 with code VALIDATION_FAILED
 		noBreakSpace.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
@@ -236,17 +236,17 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when the teacher registers a student with each of these invalid values
 		var longName = teacher.post(STUDENTS,
-				Map.of("name", "a".repeat(201), "email", "student@example.com", "timeZone", "UTC"));
+				Map.of("name", "a".repeat(201), "email", "student@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var longEmail = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "a".repeat(309) + "@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "a".repeat(309) + "@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var blankEmail = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", " ", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", " ", "timeZone", "UTC", "nativeLanguage", "en"));
 		var blankTimeZone = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "student@example.com", "timeZone", " "));
+				Map.of("name", "Student", "email", "student@example.com", "timeZone", " ", "nativeLanguage", "en"));
 		var noTimeZone = teacher.post(STUDENTS,
 				Map.of("name", "Student", "email", "student@example.com"));
 		var invisibleName = teacher.post(STUDENTS,
-				Map.of("name", "\u00A0", "email", "student@example.com", "timeZone", "UTC"));
+				Map.of("name", "\u00A0", "email", "student@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then each response is 400 with code VALIDATION_FAILED
 		longName.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
@@ -272,9 +272,9 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when teacher A registers a student with a 199-character name followed by two spaces and email " anna@example.com ", then with email " nina@example.com "
 		var padded = teacher.post(STUDENTS,
-				Map.of("name", name + "  ", "email", " anna@example.com ", "timeZone", "UTC"));
+				Map.of("name", name + "  ", "email", " anna@example.com ", "timeZone", "UTC", "nativeLanguage", "en"));
 		var existing = teacher.post(STUDENTS,
-				Map.of("name", "Nina", "email", " nina@example.com ", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", " nina@example.com ", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the first response is 201 and the account stores the name and email without the whitespace
 		padded.then().statusCode(201);
@@ -296,7 +296,7 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when the teacher registers a student with name "\u0410\u043d\u043d\u0430", email "anna@example.com" and time zone "Europe/Moscow"
 		var created = teacher.post(STUDENTS,
-				Map.of("name", "\u0410\u043d\u043d\u0430", "email", "anna@example.com", "timeZone", "Europe/Moscow"));
+				Map.of("name", "\u0410\u043d\u043d\u0430", "email", "anna@example.com", "timeZone", "Europe/Moscow", "nativeLanguage", "en"));
 
 		// then the student's details return that name, email and time zone
 		created.then().statusCode(201);
@@ -316,7 +316,7 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when the teacher registers a student without a CSRF token
 		var response = teacher.post(STUDENTS,
-				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 403 with code CSRF_INVALID
 		response.then().statusCode(403).body("code", equalTo("CSRF_INVALID"));
@@ -339,7 +339,7 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when teacher A registers a student with email " ANNA@example.com ", name "Anna" and time zone "Europe/Berlin"
 		var response = teacher.post(STUDENTS,
-				Map.of("name", "Anna", "email", " ANNA@example.com ", "timeZone", "Europe/Berlin"));
+				Map.of("name", "Anna", "email", " ANNA@example.com ", "timeZone", "Europe/Berlin", "nativeLanguage", "en"));
 
 		// then the response is 409 with code STUDENT_EXISTS and no link
 		response.then().statusCode(409)
@@ -382,7 +382,7 @@ class StudentRegistrationTest extends ApiTest {
 		// when teacher B removes the student, teacher A then registers a student with email "Nina@Example.com", and the link returned to teacher A is used to set the password "new-password-1"
 		var removal = b.delete(STUDENTS + "/" + student);
 		var response = a.post(STUDENTS,
-				Map.of("name", "Nina", "email", "Nina@Example.com", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", "Nina@Example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var passwordSet = newClient().post(
 				"/api/password-links",
 				Map.of("token", linkToken(response), "password", "new-password-1"));
@@ -426,7 +426,7 @@ class StudentRegistrationTest extends ApiTest {
 					ready.countDown();
 					start.await();
 					return client.post(STUDENTS,
-							Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+							Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 				};
 				responses.add(executor.submit(call));
 			}
@@ -474,7 +474,7 @@ class StudentRegistrationTest extends ApiTest {
 
 		// when teacher A registers a student with that email, the admin's link is then used to set the password "admin-password-1", and the link returned to teacher A to set the password "new-password-1"
 		var response = teacher.post(STUDENTS,
-				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var adminLink = newClient().post(
 				"/api/password-links",
 				Map.of("token", adminToken, "password", "admin-password-1"));
@@ -516,7 +516,7 @@ class StudentRegistrationTest extends ApiTest {
 					ready.countDown();
 					start.await();
 					return client.post(STUDENTS,
-							Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"))
+							Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC", "nativeLanguage", "en"))
 							.statusCode();
 				};
 				statuses.add(executor.submit(call));

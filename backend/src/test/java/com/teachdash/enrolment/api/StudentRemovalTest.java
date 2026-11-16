@@ -184,7 +184,7 @@ class StudentRemovalTest extends ApiTest {
 		// when teacher A removes the student and then registers a student with that email, and the student then joins through teacher A's link
 		var removal = teacher.delete(STUDENTS + "/" + student);
 		var registration = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var join = studentClient.post(JOIN, Map.of("token", token));
 
 		// then the removal response is 204, the registration response is 409 with code STUDENT_EXISTS
@@ -244,10 +244,10 @@ class StudentRemovalTest extends ApiTest {
 		// when teacher A removes the student, teacher B registers a student with that email, the student then joins through teacher B's link, and teacher A then registers a student with that email
 		var removal = a.delete(STUDENTS + "/" + student);
 		var byB = b.post(STUDENTS,
-				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var join = studentClient.post(JOIN, Map.of("token", token));
 		var byA = a.post(STUDENTS,
-				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the removal response is 204, teacher B's registration response is 409 with code STUDENT_EXISTS
 		removal.then().statusCode(204);

@@ -37,6 +37,7 @@ class JoinLinkRateLimitTest extends ApiTest {
 				"name", "Nina",
 				"email", email,
 				"timeZone", "UTC",
+				"nativeLanguage", "en",
 				"password", "new-password-1");
 	}
 

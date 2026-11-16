@@ -31,7 +31,7 @@ class StudentRegistrationFailureTest extends ApiTest {
 
 		// when the teacher registers a student with a new email
 		var response = teacher.post("/api/teacher/students",
-				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 500
 		response.then().statusCode(500);
@@ -51,7 +51,7 @@ class StudentRegistrationFailureTest extends ApiTest {
 
 		// when the teacher registers a student with that email
 		var response = teacher.post("/api/teacher/students",
-				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 500
 		response.then().statusCode(500);
