@@ -13,13 +13,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.teachdash.accounts.api.dto.LinkResponse;
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
 import com.teachdash.enrolment.api.dto.RegisteredStudent;
+import com.teachdash.enrolment.api.dto.UpdateStudentLanguageRequest;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
 import com.teachdash.enrolment.domain.UserSummary;
+import com.teachdash.enrolment.domain.StudentLanguageService;
 import com.teachdash.enrolment.domain.StudentRegistrationService;
 import com.teachdash.enrolment.domain.StudentRemovalService;
 import com.teachdash.enrolment.domain.StudentResetLinkService;
@@ -34,15 +35,19 @@ class TeacherStudentController {
 	private final StudentRemovalService removal;
 	private final StudentResetLinkService resetLinks;
 
+	private final StudentLanguageService languages;
+
 	TeacherStudentController(
 			StudentRegistrationService registration,
 			EnrolmentQueryService queries,
 			StudentRemovalService removal,
-			StudentResetLinkService resetLinks) {
+			StudentResetLinkService resetLinks,
+			StudentLanguageService languages) {
 		this.registration = registration;
 		this.queries = queries;
 		this.removal = removal;
 		this.resetLinks = resetLinks;
+		this.languages = languages;
 	}
 
 	@PostMapping("/api/teacher/students")
@@ -72,10 +77,13 @@ class TeacherStudentController {
 		return queries.studentOfTeacher(teacherId, id);
 	}
 
-	// STUB: replaced in pass 2
 	@PatchMapping("/api/teacher/students/{id}")
-	UserSummary changeLanguage(@PathVariable UUID id) {
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED);
+	UserSummary changeLanguage(
+			@PathVariable UUID id,
+			@Valid @RequestBody UpdateStudentLanguageRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return languages.change(teacherId, id, request.nativeLanguage());
 	}
 
 	@DeleteMapping("/api/teacher/students/{id}")
