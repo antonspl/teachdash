@@ -7,11 +7,13 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.teachdash.accounts.api.dto.LinkResponse;
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
@@ -63,6 +65,12 @@ class TeacherStudentController {
 	UserSummary studentDetails(@PathVariable UUID id, Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		return queries.studentOfTeacher(teacherId, id);
+	}
+
+	// STUB: replaced in pass 2
+	@PatchMapping("/api/teacher/students/{id}")
+	UserSummary changeLanguage(@PathVariable UUID id) {
+		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED);
 	}
 
 	@DeleteMapping("/api/teacher/students/{id}")
