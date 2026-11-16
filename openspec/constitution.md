@@ -198,9 +198,9 @@ shared test helpers live in `com.teachdash.support`.
   course languages are a subset of that list.
 - Language features (translation, vocabulary) apply only to courses with a target
   language. Translation goes from the course's target language into the student's
-  native language; when that language is not supported, into a configured fallback
-  language, initially `en`. A student whose native language is the target language
-  gets no translation.
+  native language, so every language in the list of student languages MUST be
+  supported as a translation target. A student whose native language is the target
+  language gets no translation.
 - Features that handle learning content MUST work for every supported language,
   including Cyrillic text; specs include scenarios for `en` and `ru`.
 - The UI language is separate from course languages. The first release ships the UI
