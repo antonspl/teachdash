@@ -2,7 +2,7 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add migration `V9__student_language.sql` with the relaxed check only (design D1). It is a schema migration, which pass 1 may add; the engineer reviews it as production code at the test gate. Keep `languages` out of the `ApiTest` truncation, make `ApiTest.createUser`/`createStudent` set `native_language` for students (default `en`, overridable) and add `studentLanguage(id)` (design D7). Verify the app starts (including the admin bootstrap) and the existing suite still passes
+- [x] 1.1 Add migration `V9__student_language.sql` with the relaxed check only (design D1). It is a schema migration, which pass 1 may add; the engineer reviews it as production code at the test gate. Keep `languages` out of the `ApiTest` truncation, make `ApiTest.createUser`/`createStudent` set `native_language` for students (default `en`, overridable) and add `studentLanguage(id)` (design D7). Verify the app starts (including the admin bootstrap) and the existing suite still passes
 - [ ] 1.2 Add `nativeLanguage` to the bodies of every existing registration and join test listed in design D7, choosing `en` unless the scenario says otherwise; change bodies only, never assertions. Then grep the test tree for other registration (`/api/teacher/students` POST) and join bodies and add it there too. Verify the existing suite still passes
 - [ ] 1.3 Add stubs returning 501, each marked `STUB`, for `GET /api/languages` and `PATCH /api/teacher/students/{id}`. Do not touch `SecurityConfig` yet
 - [ ] 1.4 Write tests for languages R1-S1 and R1-S2 in `languages/api/LanguagesTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`
