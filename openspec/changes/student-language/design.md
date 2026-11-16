@@ -31,7 +31,7 @@ validation rule for it everywhere; teachers and admins unaffected.
 
 ## Decisions
 
-### D1. Migration `V9__student_language.sql`
+### D1. Migrations `V9__student_language.sql` (pass 1) and `V10__student_language_required.sql` (pass 2)
 
 ```sql
 create table languages (
@@ -43,17 +43,30 @@ insert into languages (code, content) values
     ('pl', false), ('pt', false), ('ru', true),  ('sr', false), ('uk', false);
 
 alter table users add column native_language varchar(2) references languages (code);
-update users set native_language = 'en' where role = 'STUDENT';
-alter table users add constraint users_student_native_language
-    check ((role = 'STUDENT') = (native_language is not null));
+alter table users add constraint users_native_language_students_only
+    check (native_language is null or role = 'STUDENT');
 ```
+
+V10, with the production code in pass 2:
+
+```sql
+update users set native_language = 'en'
+    where role = 'STUDENT' and native_language is null;
+alter table users add constraint users_student_has_native_language
+    check (role <> 'STUDENT' or native_language is not null);
+```
+
+The strict check waits for pass 2 because until then the code inserts students without a
+language; with it in V9 every registration and join would fail with 500 during the test
+gate (same split as V6/V7 in enrolment-reset-links).
 
 - `content` marks course languages (constitution §9: initially `en`, `ru`). courses-create
   (#104) drops its own `languages` table and checks `content = true` in validation; a bare
   foreign key cannot enforce the flag.
 - The backfill is for local data only; there are no real students (proposal).
-- The check keeps the column null for teachers and admins, so teacher creation and the
-  admin bootstrap stay unchanged, and makes a student without a language impossible.
+- The checks keep the column null for teachers and admins, so teacher creation and the
+  admin bootstrap stay unchanged, and (after V10) make a student without a language
+  impossible.
 - A new language is a new migration (reviewed in a PR, deployed by CI).
 
 ### D2. Language list endpoint
@@ -66,7 +79,10 @@ CSRF token. The list is static and small; no cache, no rate limit.
 ### D3. One validation rule: `@NativeLanguage`
 
 A `ConstraintValidator` in `languages/api` (public) that accepts `null` and otherwise
-requires a row in `languages` (any `content`). It is composed with `@NotNull`, so a
+requires a row in `languages` (any `content`). The request records strip surrounding
+whitespace with `Normalize.strip` in their compact constructors, as they do for email
+(R13-S1). A non-string value is `INVALID_TYPE` through the existing JSON-reading handler
+(api-errors R1). It is composed with `@NotNull`, so a
 missing or `null` value is `REQUIRED` and anything else not listed is `INVALID_FORMAT`.
 Used on `RegisterStudentRequest.nativeLanguage`, `JoinVisitor.nativeLanguage` and the new
 `UpdateStudentLanguageRequest.nativeLanguage`. Because it is Bean Validation, it runs with
@@ -97,7 +113,10 @@ carry a valid one (the request is validated before the service decides new vs. e
 3. `UserRepository.updateNativeLanguage(studentId, code)` (targeted update).
 4. Return the student's `UserSummary`.
 
-A malformed id is already 404 through the api-errors R3 handling.
+A malformed id is already 404 through the api-errors R3 handling. The order in R14
+follows from the layers: role rules and CSRF in the filter chain, the deactivated session
+in `SessionRevocationFilter` (401), `@Valid` before the service (400), then step 2 (404).
+The lock in step 1 matches reset links; it has no scenario of its own.
 
 ### D6. Showing the language
 
@@ -106,7 +125,8 @@ A malformed id is already 404 through the api-errors R3 handling.
   teachers; the field is `@JsonInclude(NON_NULL)`, and teachers never have a value
   (D1 check), so it is absent there (R15-S2).
 - `UserResponse` gains `nativeLanguage`, `@JsonInclude(NON_NULL)`: present for students,
-  absent for teachers and admins (R15-S3).
+  absent for teachers and admins (R15-S3). It is also returned by login and by the
+  set-password endpoint, which therefore carry it too.
 - `UpdateProfileRequest` does not get the field, so `PATCH /api/me` ignores it (R15-S3).
 
 ### D7. Tests and helpers
@@ -115,8 +135,12 @@ A malformed id is already 404 through the api-errors R3 handling.
   so no reset is needed.
 - `ApiTest.createUser` / `createStudent` insert `native_language` (default `en` for
   students, overridable) so the D1 check holds. A new `studentLanguage(id)` reads it back.
-- Existing registration and join test bodies get `nativeLanguage` through their helpers
-  (`joinBody`, a new registration-body helper in `StudentRegistrationTest`). This changes
+- Existing registration and join test bodies get `nativeLanguage`: `JoinLinkTest.joinBody`,
+  `JoinLinkRateLimitTest.joinBody`, a new body helper in `StudentRegistrationTest`, and the
+  inline bodies in `JoinLinkFailureTest`, `StudentRegistrationFailureTest`,
+  `StudentRemovalTest`, `StudentListTest`, `TeacherJoinLinkTest`, `TeacherDeactivationTest`,
+  `common/ApiErrorsTest` (R1-S5) and `common/FieldRejectionErrorsTest` (R2-S2, R2-S3).
+  Without it, those exact `errors` lists and 409s would turn into 400s with a new entry. This changes
   approved tests in body only: the extra field is ignored by the current code, so they keep
   passing in pass 1 and keep passing after pass 2. The engineer reviews these edits at the
   test gate.
