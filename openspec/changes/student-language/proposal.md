@@ -5,7 +5,7 @@
 | Question | Engineer's answer |
 |---|---|
 | Which native languages? | Ten: `de`, `en`, `es`, `fr`, `it`, `pl`, `pt`, `ru`, `sr` (Serbian), `uk`. More are added on request. |
-| What does "fall back to English if not supported" mean? | Every listed language is a translation target. The fallback covers only a language that translation (M7) decides it cannot serve; M7 configures it. |
+| Is there a translation fallback? | No. A student can only pick a listed language, and every listed language MUST be a translation target (constitution §9). A teacher whose student's language is not listed picks the one the student understands best; the UI hints at English (#144). |
 | Who reads the language list? | Anyone, including a visitor on the join form: the list is not sensitive. One public endpoint, codes only; the browser shows names in the UI language. |
 | Required at registration? | Yes. There are no real students yet, so any migration is fine. |
 | Join link? | The visitor picks their native language in the join form. |
@@ -39,7 +39,7 @@ Translation goes into the student's native language (constitution §9, #142), an
 
 ## Out of scope
 
-- Translation itself and the fallback setting (M7).
+- Translation itself (M7).
 - Courses (#104), which will reuse `languages`.
 - Frontend: the student form and join form fields (#144).
 - Teachers and admins have no native language.
