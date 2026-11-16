@@ -191,9 +191,16 @@ shared test helpers live in `com.teachdash.support`.
 - A lesson joins or is copied only into a course with the same (instruction,
   target) pair. A course without a target language matches only courses with the
   same instruction language and no target language.
-- Language features (translation, vocabulary) apply only to courses whose target
-  language is set and differs from the instruction language. Translation works
-  between any two supported languages.
+- A course does not record who takes it: students with different native languages
+  may take the same course. Every student has a native language from a configured
+  list of student languages (ISO 639-1 codes), set by their teacher or chosen by the
+  student when joining through a link; it is student data (section 8). The supported
+  course languages are a subset of that list.
+- Language features (translation, vocabulary) apply only to courses with a target
+  language. Translation goes from the course's target language into the student's
+  native language, so every language in the list of student languages MUST be
+  supported as a translation target. A student whose native language is the target
+  language gets no translation.
 - Features that handle learning content MUST work for every supported language,
   including Cyrillic text; specs include scenarios for `en` and `ru`.
 - The UI language is separate from course languages. The first release ships the UI
