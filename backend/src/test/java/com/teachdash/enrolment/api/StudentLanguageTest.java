@@ -116,8 +116,8 @@ class StudentLanguageTest extends ApiTest {
 					.body("errors", equalTo(List.of(error("nativeLanguage", code))));
 		}
 		// and no body contains the rejected values
-		assertFalse(responses.get(5).asString().contains("xx"));
-		assertFalse(responses.get(7).asString().contains("srp"));
+		assertFalse(responses.get(4).asString().contains("xx"));
+		assertFalse(responses.get(6).asString().contains("srp"));
 		// and no account is created
 		assertEquals(1, countRows("users"));
 		assertEquals(0, countRows("teacher_students"));
