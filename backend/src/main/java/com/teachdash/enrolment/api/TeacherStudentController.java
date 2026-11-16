@@ -52,7 +52,12 @@ class TeacherStudentController {
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		return RegisteredStudent.of(
-				registration.register(teacherId, request.name(), request.email(), request.timeZone()));
+				registration.register(
+						teacherId,
+						request.name(),
+						request.email(),
+						request.timeZone(),
+						request.nativeLanguage()));
 	}
 
 	@GetMapping("/api/teacher/students")

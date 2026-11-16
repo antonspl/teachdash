@@ -16,9 +16,9 @@
 
 ## 3. Implementation
 
-- [ ] 3.1 Languages: `LanguageRepository`, the `GET /api/languages` controller replacing its stub, the public `SecurityConfig` rule (design D2); verify languages R1 tests pass
-- [ ] 3.2 `@NativeLanguage` validator (design D3); add `nativeLanguage` to `RegisterStudentRequest`, `JoinLinkJoinRequest` and `JoinVisitor`
-- [ ] 3.3 `User`, `User.create` and the two `AccountService` create methods carry the language; teacher creation and bootstrap pass `null` (design D4). Add `V10__student_language_required.sql` (design D1); verify R13 tests and the bootstrap test pass
+- [x] 3.1 Languages: `LanguageRepository`, the `GET /api/languages` controller replacing its stub, the public `SecurityConfig` rule (design D2); verify languages R1 tests pass
+- [x] 3.2 `@NativeLanguage` validator (design D3); add `nativeLanguage` to `RegisterStudentRequest`, `JoinLinkJoinRequest` and `JoinVisitor`
+- [x] 3.3 `User`, `User.create` and the two `AccountService` create methods carry the language; teacher creation and bootstrap pass `null` (design D4). Add `V10__student_language_required.sql` (design D1); verify R13 tests and the bootstrap test pass
 - [ ] 3.4 `PATCH /api/teacher/students/{id}` with `StudentLanguageService` and `UserRepository.updateNativeLanguage`, replacing its stub (design D5); comment at the teacher-row lock on what it serialises; verify R14 tests pass
 - [ ] 3.5 `nativeLanguage` in `UserSummary` and `UserResponse` with `NON_NULL`, and in the four repository selects (design D6); verify R15 tests pass
 - [ ] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged

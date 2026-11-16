@@ -68,6 +68,7 @@ class JoinLinkController {
 				visitor.name(),
 				visitor.email(),
 				visitor.timeZone(),
+				visitor.nativeLanguage(),
 				visitor.password());
 		sessionStarter.start(student, httpRequest, httpResponse);
 		return ResponseEntity.status(HttpStatus.CREATED).body(new JoinedVisitorResponse(student.getId()));

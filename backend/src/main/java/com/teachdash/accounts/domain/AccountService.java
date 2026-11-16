@@ -45,7 +45,7 @@ public class AccountService {
 	 * transaction. Callers check for an existing email first, so a duplicate here is a lost race.
 	 */
 	@Transactional
-	public CreatedAccount createPasswordlessUser(Role role, String name, String email, String timeZone, UUID issuerId) {
+	public CreatedAccount createPasswordlessUser(Role role, String name, String email, String timeZone, String nativeLanguage, UUID issuerId) {
 		User user;
 		try {
 			user = users.save(User.create(
@@ -54,6 +54,7 @@ public class AccountService {
 					role,
 					null,
 					timeZone,
+					nativeLanguage,
 					clock.instant()));
 		} catch (DuplicateKeyException e) {
 			throw ApiException.field(HttpStatus.CONFLICT, "EMAIL_TAKEN", "email");
@@ -63,7 +64,7 @@ public class AccountService {
 
 	/** Creates an account with a ready password hash and no one-time token; joins the caller's transaction. */
 	@Transactional
-	public User createUserWithPassword(Role role, String name, String email, String timeZone, String passwordHash) {
+	public User createUserWithPassword(Role role, String name, String email, String timeZone, String nativeLanguage, String passwordHash) {
 		try {
 			return users.save(User.create(
 					email,
@@ -71,6 +72,7 @@ public class AccountService {
 					role,
 					passwordHash,
 					timeZone,
+					nativeLanguage,
 					clock.instant()));
 		} catch (DuplicateKeyException e) {
 			throw ApiException.field(HttpStatus.CONFLICT, "EMAIL_TAKEN", "email");
