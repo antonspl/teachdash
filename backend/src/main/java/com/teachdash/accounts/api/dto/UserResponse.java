@@ -2,6 +2,7 @@ package com.teachdash.accounts.api.dto;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.teachdash.accounts.domain.Role;
 import com.teachdash.accounts.domain.User;
 
@@ -10,7 +11,8 @@ public record UserResponse(
 		String name,
 		String email,
 		Role role,
-		String timeZone) {
+		String timeZone,
+		@JsonInclude(JsonInclude.Include.NON_NULL) String nativeLanguage) {
 
 	public static UserResponse of(User user) {
 		return new UserResponse(
@@ -18,6 +20,7 @@ public record UserResponse(
 				user.getName(),
 				user.getEmail(),
 				user.getRole(),
-				user.getTimeZone());
+				user.getTimeZone(),
+				user.getNativeLanguage());
 	}
 }
