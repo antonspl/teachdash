@@ -18,8 +18,8 @@ import com.teachdash.accounts.api.dto.LinkResponse;
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
 import com.teachdash.enrolment.api.dto.RegisteredStudent;
 import com.teachdash.enrolment.api.dto.UpdateStudentLanguageRequest;
+import com.teachdash.enrolment.api.dto.UserSummaryResponse;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
-import com.teachdash.enrolment.domain.UserSummary;
 import com.teachdash.enrolment.domain.StudentLanguageService;
 import com.teachdash.enrolment.domain.StudentRegistrationService;
 import com.teachdash.enrolment.domain.StudentRemovalService;
@@ -34,7 +34,6 @@ class TeacherStudentController {
 	private final EnrolmentQueryService queries;
 	private final StudentRemovalService removal;
 	private final StudentResetLinkService resetLinks;
-
 	private final StudentLanguageService languages;
 
 	TeacherStudentController(
@@ -66,24 +65,24 @@ class TeacherStudentController {
 	}
 
 	@GetMapping("/api/teacher/students")
-	List<UserSummary> listStudents(Principal principal) {
+	List<UserSummaryResponse> listStudents(Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		return queries.studentsOfTeacher(teacherId);
+		return UserSummaryResponse.from(queries.studentsOfTeacher(teacherId));
 	}
 
 	@GetMapping("/api/teacher/students/{id}")
-	UserSummary studentDetails(@PathVariable UUID id, Principal principal) {
+	UserSummaryResponse studentDetails(@PathVariable UUID id, Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		return queries.studentOfTeacher(teacherId, id);
+		return UserSummaryResponse.from(queries.studentOfTeacher(teacherId, id));
 	}
 
 	@PatchMapping("/api/teacher/students/{id}")
-	UserSummary changeLanguage(
+	UserSummaryResponse changeLanguage(
 			@PathVariable UUID id,
 			@Valid @RequestBody UpdateStudentLanguageRequest request,
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		return languages.change(teacherId, id, request.nativeLanguage());
+		return UserSummaryResponse.from(languages.change(teacherId, id, request.nativeLanguage()));
 	}
 
 	@DeleteMapping("/api/teacher/students/{id}")

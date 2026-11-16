@@ -26,7 +26,11 @@ public record JoinVisitor(
 	}
 
 	public static JoinVisitor of(JoinLinkJoinRequest request) {
-		return new JoinVisitor(request.name(), request.email(), request.timeZone(),
-				request.nativeLanguage(), request.password());
+		return new JoinVisitor(
+				request.name(),
+				request.email(),
+				request.timeZone(),
+				request.nativeLanguage(),
+				request.password());
 	}
 }

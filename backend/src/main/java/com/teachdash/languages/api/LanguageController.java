@@ -19,6 +19,8 @@ class LanguageController {
 
 	@GetMapping("/api/languages")
 	List<LanguageResponse> languages() {
-		return languages.findAll();
+		return languages.findAll().stream()
+				.map(language -> new LanguageResponse(language.code(), language.content()))
+				.toList();
 	}
 }

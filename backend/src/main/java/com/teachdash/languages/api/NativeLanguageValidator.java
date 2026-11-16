@@ -15,6 +15,6 @@ public class NativeLanguageValidator implements ConstraintValidator<NativeLangua
 
 	@Override
 	public boolean isValid(String code, ConstraintValidatorContext context) {
-		return code == null || languages.exists(code);
+		return code == null || (code.length() == 2 && languages.exists(code));
 	}
 }
