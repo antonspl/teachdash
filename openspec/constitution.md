@@ -14,10 +14,11 @@ Roles:
 - **Code owner** — a team member listed in `.github/CODEOWNERS`. A code owner other
   than the engineer gives the final approval.
 - **Owner** — the project owner. The only one who may merge into `main` without an
-  approval. Changes to this file, `openspec/config.yaml` and `.github/CODEOWNERS`
-  need the owner's approval. Any engineer may improve the rest of the workflow
-  (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/`, `.claude/settings.json`,
-  `opencode.json`, `.codex/`, the PR template) through a normal PR.
+  approval. Changes to this file, `openspec/config.yaml`, `.github/CODEOWNERS` and the
+  permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) need
+  the owner's approval. Any engineer may improve the rest of the workflow
+  (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/`, the PR template) through
+  a normal PR.
 
 One change = one branch = one pull request. The PR goes through three review gates
 approved by the engineer, then a code owner other than the engineer approves the

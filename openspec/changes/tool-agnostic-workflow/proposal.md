@@ -15,6 +15,7 @@ Questions asked before this proposal, and the engineer's answers (2026-11-17):
 9. **Is a fifth role for the code-gate review acceptable, and may skills move out of `.claude/`?** To be confirmed by the engineer at the spec gate (design D2, D5).
 10. **May the constitution be edited here?** Yes, approved by the owner (2026-11-17). The wording changes in design D8, done after the spec gate.
 11. **Is Codex proven by a live run?** No. Nobody on the team uses Codex yet. Its files are generated but not tried in Codex; problems are fixed when someone starts using it, without a follow-up issue.
+12. **Code-gate review fixes.** The owner approved on 2026-11-17: `config.yaml` says to read the constitution by section, the permission files are owner-only in CODEOWNERS, and `AGENTS.md` has a rule not to change workflow files without need (design D7, D8).
 
 ## Research
 

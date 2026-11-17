@@ -152,6 +152,8 @@ These are committed. They allow each flow script and `scripts/setup-agents` by e
 - `opencode.json`: the current `permissions` list with `action: shell` rules. The last matching rule wins, so the deny rules come last. The older `permission.bash` format is deprecated.
 - `.codex/rules/flow.rules`: `prefix_rule` with `decision="allow"` for the scripts, and `"forbidden"` for the pushes. Prefix rules cannot see a flag after other arguments, so `git push origin x --force` is not blocked in Codex. The `AGENTS.md` rule still applies.
 
+The permission files are owner-only in CODEOWNERS. `AGENTS.md` tells agents not to change them, or the flow scripts and roles, unless the task requires it, and the reviewers check this. The owner approved this on 2026-11-17.
+
 `pr-draft`, `pr-ready` and `gate-request` push or post under the engineer's GitHub account. They run only when the main agent reaches the matching step, which `AGENTS.md` defines.
 
 ### D8. Constitution and docs wording
@@ -160,11 +162,11 @@ These are committed. They allow each flow script and `scripts/setup-agents` by e
   - "what Claude produced" becomes "what the agent produced";
   - "the Opus review" becomes "the code-gate review", so the name does not clash with step 12, "Final review";
   - "Claude stops" becomes "the agent stops";
-  - the list of workflow files becomes `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/`, `.claude/settings.json`, `opencode.json`, `.codex/` and the PR template.
+  - the open workflow files become `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/` and the PR template. The permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) are owner-only, like CODEOWNERS says.
 
   No rule changes meaning. The owner approved the edit (proposal, clarification 10).
 - **`CONTRIBUTING.md`.** It gets the per-tool setup, the model map, the Codex trust step, and when to rerun `setup-agents`. Every "Claude" line becomes "the agent". The OpenSpec steps are named per tool: `/openspec-propose` in Claude Code and opencode, and `$openspec-propose` in Codex.
-- **`.github/CODEOWNERS`.** The "open to any code owner" comment lists the same workflow files as the constitution. The owner-only paths do not change.
+- **`.github/CODEOWNERS`.** The owner-only paths now include the three permission files, and the comment lists the same files as the constitution.
 
 ### D9. CI checks
 

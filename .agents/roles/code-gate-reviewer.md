@@ -20,6 +20,8 @@ Check:
 - Constitution rules: per-teacher data scoping, Flyway-only schema changes, no
   secrets in code or logs, no unjustified dependencies.
 - Correctness bugs, security issues, missing error cases.
+- No unrequested changes to `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/` or the
+  permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`).
 
 Report findings most severe first, each with file:line, the problem and a concrete
 failure scenario. Say plainly if you found nothing. At most 25 lines.

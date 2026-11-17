@@ -90,6 +90,9 @@ Agents' reports are not shown to the engineer: relay what matters in a few lines
   `change-start` (branch and new change), `pr-draft` (push and open the draft PR),
   `gate-request` (post the commit range), `gate-status` (check approvals),
   `pr-ready` (mark ready). They print a few lines only.
+- Do not change `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/` or the permission
+  files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) unless the task
+  requires it. The reviewer checks this.
 
 ## Per-tool notes
 
