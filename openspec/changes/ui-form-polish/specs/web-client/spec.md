@@ -19,7 +19,7 @@ the arrow SHALL reach the field, as a click on its text does.
 #### Scenario: web-client/R13-S2 Long option does not run under the arrow
 - **GIVEN** a logged-in teacher with time zone "America/Argentina/ComodRivadavia" and a 360-pixel-wide screen
 - **WHEN** `/profile` is opened
-- **THEN** the select is as wide as the name field, its text area ends before the arrow's left edge, and text that does not fit is cut off with an ellipsis
+- **THEN** the select is as wide as the name field, its text area ends before the arrow's left edge, the whole time zone name fits in the text area, and text that does not fit would be cut off with an ellipsis
 - **AND** the page has no horizontal scroll
 
 #### Scenario: web-client/R13-S3 Click on the arrow reaches the select
