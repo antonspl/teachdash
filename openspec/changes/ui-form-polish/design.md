@@ -42,6 +42,11 @@ to the full width of the field, as the select does today. Inside it:
   inner edge of the right border, vertically centred, with `pointer-events: none` so a
   click on it reaches the select.
 
+When the select is disabled, its text and the arrow are both dimmed to the opacity that
+disabled buttons use (0.6), so the field looks disabled as one piece. Before this change
+the browser drew the disabled select; with `appearance: none` and an explicit text colour
+it no longer dims it on its own.
+
 Why this shape:
 
 - The chevron's stroke is `currentColor` from the text colour token, so it follows the
@@ -81,6 +86,13 @@ Both forms compute the hints on every render from their state and pass them to
 On submit with a broken rule the form no longer copies the problem into its
 `StatusMessage`; the hint under the field is the message. `StatusMessage` keeps showing
 success and backend errors, so web-profile R3-S2, R3-S6 to R3-S10 are untouched.
+
+So that a screen-reader user hears why the press did nothing, the submit handler then
+moves the focus to the first field with a hint, in form order (new password, then
+repeat). The field already has the hint as its description (R14-S8), so focusing it
+reads the hint (R14-S12). Added after the Opus review: before this change the problem
+went into `StatusMessage` (`role="status"`) and was announced, so without the focus move
+the press would make no sound.
 
 Both forms clear their form message before the rule check. `PasswordForm` already does;
 `SetPasswordPage` clears it only after the check today, which would leave an old backend
@@ -141,7 +153,8 @@ No new dependencies. No Flyway migrations.
   seven keystrokes] → The engineer's choice (proposal, Clarifications). The hint is one
   short line under the field and the layout below moves by one line only.
 - [Hints are not announced by screen readers while typing] → They are linked to the field
-  and read when the field is focused; a live region is #73, item 3.
+  and read when the field is focused, and a blocked submit focuses the first field with a
+  hint (D3); a live region is #73, item 3.
 - [`appearance: none` differs between browsers] → Checked by eye in three engines (D5);
   the Playwright projects cover Chromium and the phone profiles.
 - [The layout jumps when a hint appears] → Accepted; reserving an empty line under every

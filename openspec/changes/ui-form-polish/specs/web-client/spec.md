@@ -39,7 +39,7 @@ set-password page) SHALL show a translated hint under the field while the user t
 least 8 characters" or "password is too long" under the new password, "passwords do not
 match" under the repeat. A hint SHALL go away as soon as its rule is met. An empty field
 SHALL show no hint. The submit button SHALL stay enabled; submitting with a broken rule
-sends nothing.
+sends nothing and moves the focus to the first field that shows a hint.
 
 #### Scenario: web-client/R14-S1 Short new password
 - **GIVEN** the profile password form, and in a second run the set-password page, with empty fields
@@ -98,3 +98,9 @@ sends nothing.
 - **GIVEN** the set-password page shows the translated message for `LINK_CONFLICT` after a submit
 - **WHEN** the user changes the repeat field so that it differs and presses the button
 - **THEN** the "passwords do not match" hint is shown, the `LINK_CONFLICT` message is gone and no second request is sent
+
+#### Scenario: web-client/R14-S12 Submitting with a hint moves the focus to it
+- **GIVEN** the profile password form with a current password entered, and in a second run the set-password page, each with "abc" as the new password and "abd" as the repeat, and the focus on the submit button
+- **WHEN** the user presses the button
+- **THEN** in both runs no request is sent and the focus is on the new password field, the first field that shows a hint, so assistive technology reads its hint
+- **AND** after the user fixes the new password to "teacher-pass-2" and presses the button again, the focus is on the repeat field, the only field that still shows a hint

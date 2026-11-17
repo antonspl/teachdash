@@ -20,6 +20,12 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 - [x] 3.1 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (desktop and phone projects); all pass, and every web-client R13 and R14 scenario has a test
 
+## 4. Code review fixes
+
+- [ ] 4.1 On a submit blocked by a broken rule, `PasswordForm` and `SetPasswordPage` move the focus to the first field with a hint, new password before repeat (design D3); Vitest for web-client/R14-S12, one parameterised test over the two forms, pressing the real button; verify `npm test`
+- [ ] 4.2 Dim a disabled select's text and arrow together to the disabled-button opacity (design D1); keep R13-S4 passing; take screenshots of `/profile` while a save is running, desktop and 360 pixels, and check by eye
+- [ ] 4.3 Run the commands of 3.1 again; all pass, and every web-client R13 and R14 scenario has a test
+
 ## Workflow follow-up
 
 - Sonnet review after each slice, Opus review of the whole PR, then ask for the code gate
