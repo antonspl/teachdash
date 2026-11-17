@@ -107,8 +107,8 @@ that the hint is still shown after the press. Their helpers are not rewritten.
   ellipsis" (a cut-off in a select cannot be observed), `scrollWidth <= clientWidth`
   for "no horizontal scroll". For "the whole name fits" in R13-S2, the selected
   option's text is measured with a canvas in the select's computed font and must be no
-  wider than the text area: the longest IANA names fit at 360 pixels, so no real time
-  zone is cut off at phone width. R13-S4 holds the save request open with a route handler.
+  wider than the text area: the long name the test uses fits at 360 pixels with about
+  30 pixels to spare. R13-S4 holds the save request open with a route handler.
 - R13-S3 clicks with `page.mouse.click(x, y)` at the centre of the arrow's box; a locator
   click on the arrow would time out, because the arrow is never the hit target. The main
   check is that `document.elementFromPoint(x, y)` is the select; the focus is the second.
