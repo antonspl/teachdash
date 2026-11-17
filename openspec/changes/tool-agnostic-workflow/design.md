@@ -42,7 +42,7 @@ It also holds a constitution summary of about 30 lines: the gates, the roles, an
 
 `CLAUDE.md` contains only `@AGENTS.md`.
 
-The file stays well under Codex's 32 KiB cap. Codex has no imports, so the constitution is not inlined. The agent reads it by section.
+The file stays well under Codex's 32 KiB cap. Codex has no imports, so the constitution is not inlined. The agent reads it by section. This replaces the old rule "Read `openspec/constitution.md` before any work": `AGENTS.md` has a table of which section to read for which step, and §1 is read for any step.
 
 - Alternative: symlink `CLAUDE.md` to `AGENTS.md`. Rejected. The import is enough.
 

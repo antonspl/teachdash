@@ -50,13 +50,14 @@ code together and approves the PR. Then anyone on the team merges it.
 | Explore (optional, for a big or unclear feature; skip when the issue already has it) | `/openspec-explore` (Codex: `$openspec-explore`) |
 | Clarify, Research | the agent restates the task and asks only what the issue does not answer; you answer and agree the research angles (or none) |
 | Propose + spec critique | `/openspec-propose` (Codex: `$openspec-propose`); the agent runs the spec-critic, then stops for "spec approved" |
-| Tests, then code | `/openspec-apply-change` (Codex: `$openspec-apply-change`). Backend: pass 1 writes failing tests and stops for "tests approved"; pass 2 writes the code. Frontend-only: tests and code in one pass. the agent runs the code-gate review, then stops for "code approved" |
+| Tests, then code | `/openspec-apply-change` (Codex: `$openspec-apply-change`). Backend: pass 1 writes failing tests and stops for "tests approved"; pass 2 writes the code. Frontend-only: tests and code in one pass. The agent runs the code-gate review, then stops for "code approved" |
 | Archive | `/openspec-archive-change` (Codex: `$openspec-archive-change`), then mark the PR ready |
 | Final review | another code owner approves; then anyone merges |
 
 The author answers the clarifying questions and decides trade-offs for their change.
-Anyone can improve the workflow (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/`,
-`.claude/settings.json`, `opencode.json`, `.codex/`, the PR template) through a normal PR. Changes to the constitution, `openspec/config.yaml` and
+Anyone can improve the workflow (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`,
+`.agents/`, `.claude/settings.json`, `opencode.json`, `.codex/`, the PR template)
+through a normal PR. Changes to the constitution, `openspec/config.yaml` and
 `.github/CODEOWNERS` need the owner's approval.
 
 At each gate the agent stops and posts the commit range of that phase
