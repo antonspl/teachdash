@@ -13,7 +13,7 @@ MAP=.agents/models.local
 STAMP=.agents/.setup-stamp
 
 die() {
-  echo "setup-agents: $*" >&2
+  printf 'setup-agents: %s\n' "$*" >&2
   exit 1
 }
 
@@ -33,9 +33,19 @@ body() {
 # Prints the map value for a tool and class, or nothing.
 mapped() {
   [ -f "$MAP" ] || return 0
-  awk -F'=' -v key="$1.$2" '
-    { k = $1; gsub(/[ \t]/, "", k) }
-    k == key { v = $2; sub(/^[ \t]+/, "", v); sub(/[ \t]+$/, "", v); print v; exit }
+  awk -v key="$1.$2" '
+    {
+      i = index($0, "=")
+      if (i == 0) next
+      k = substr($0, 1, i - 1)
+      gsub(/[ \t]/, "", k)
+      if (k != key) next
+      v = substr($0, i + 1)
+      sub(/^[ \t]+/, "", v)
+      sub(/[ \t]+$/, "", v)
+      print v
+      exit
+    }
   ' "$MAP"
 }
 
@@ -53,7 +63,7 @@ warn_bad_map_lines() {
 sources_hash() {
   {
     find "$ROLES" "$SKILLS" -type f 2>/dev/null | LC_ALL=C sort | while read -r f; do
-      echo "$f"
+      printf '%s\n' "$f"
       cat "$f"
     done
     [ -f "$MAP" ] && cat "$MAP"
@@ -63,12 +73,18 @@ sources_hash() {
 validate_roles() {
   ls "$ROLES"/*.md >/dev/null 2>&1 || die "no roles in $ROLES"
   for f in "$ROLES"/*.md; do
+    grep -q "$(printf '\r')" "$f" && die "$f: CRLF line endings are not supported"
+    grep -q "'''" "$f" && die "$f: must not contain three single quotes (breaks the Codex TOML string)"
     for key in name description class access web; do
       [ -n "$(field "$f" "$key")" ] || die "$f: missing field '$key'"
     done
     case "$(field "$f" class)" in strong | medium) ;; *) die "$f: class must be strong or medium" ;; esac
     case "$(field "$f" access)" in read | write) ;; *) die "$f: access must be read or write" ;; esac
     case "$(field "$f" web)" in true | false) ;; *) die "$f: web must be true or false" ;; esac
+    description=$(field "$f" description)
+    case "$description" in
+      *": "* | *" #"* | \"* | "'"* | "#"*) die "$f: description must not contain ': ' or ' #', or start with a quote or '#'" ;;
+    esac
     [ "$(field "$f" name)" = "$(basename "$f" .md)" ] || die "$f: name must match the file name"
   done
 }
@@ -78,13 +94,13 @@ claude_agent() {
   model=$(mapped claude "$(field "$1" class)" | awk '{print $1}')
   {
     echo "---"
-    echo "name: $name"
-    echo "description: $(field "$1" description)"
-    [ -z "$model" ] || echo "model: $model"
+    printf '%s\n' "name: $name"
+    printf '%s\n' "description: $(field "$1" description)"
+    [ -z "$model" ] || printf '%s\n' "model: $model"
     if [ "$(field "$1" access)" = read ]; then
       tools="Read, Grep, Glob, Bash"
       [ "$(field "$1" web)" = true ] && tools="$tools, WebSearch, WebFetch"
-      echo "tools: $tools"
+      printf '%s\n' "tools: $tools"
     fi
     echo "---"
     body "$1"
@@ -96,9 +112,9 @@ opencode_agent() {
   model=$(mapped opencode "$(field "$1" class)" | awk '{print $1}')
   {
     echo "---"
-    echo "description: $(field "$1" description)"
+    printf '%s\n' "description: $(field "$1" description)"
     echo "mode: subagent"
-    [ -z "$model" ] || echo "model: $model"
+    [ -z "$model" ] || printf '%s\n' "model: $model"
     if [ "$(field "$1" access)" = read ] || [ "$(field "$1" web)" = false ]; then
       echo "permission:"
       [ "$(field "$1" access)" = read ] && echo "  edit: deny"
@@ -115,14 +131,14 @@ opencode_agent() {
 codex_agent() {
   name=$(field "$1" name)
   value=$(mapped codex "$(field "$1" class)")
-  model=$(echo "$value" | awk '{print $1}')
-  effort=$(echo "$value" | awk '{print $2}')
+  model=$(printf '%s\n' "$value" | awk '{print $1}')
+  effort=$(printf '%s\n' "$value" | awk '{print $2}')
   description=$(field "$1" description | sed 's/\\/\\\\/g; s/"/\\"/g')
   {
-    echo "name = \"$name\""
-    echo "description = \"$description\""
-    [ -z "$model" ] || echo "model = \"$model\""
-    [ -z "$effort" ] || echo "model_reasoning_effort = \"$effort\""
+    printf '%s\n' "name = \"$name\""
+    printf '%s\n' "description = \"$description\""
+    [ -z "$model" ] || printf '%s\n' "model = \"$model\""
+    [ -z "$effort" ] || printf '%s\n' "model_reasoning_effort = \"$effort\""
     echo "developer_instructions = '''"
     body "$1"
     # Codex has no per-agent sandbox, so access limits are instructions only.
@@ -137,9 +153,16 @@ codex_agent() {
   } >".codex/agents/$name.toml"
 }
 
+outputs_exist() {
+  for f in "$ROLES"/*.md; do
+    name=$(basename "$f" .md)
+    [ -f ".claude/agents/$name.md" ] && [ -f ".opencode/agents/$name.md" ] &&
+      [ -f ".codex/agents/$name.toml" ] || return 1
+  done
+}
+
 check() {
-  if [ -f "$STAMP" ] && [ -d .claude/agents ] && [ -d .opencode/agents ] && [ -d .codex/agents ] &&
-    [ "$(cat "$STAMP")" = "$(sources_hash)" ]; then
+  if [ -f "$STAMP" ] && outputs_exist && [ "$(cat "$STAMP")" = "$(sources_hash)" ]; then
     echo ok
   else
     echo stale
@@ -166,7 +189,7 @@ generate() {
   fi
 
   sources_hash >"$STAMP"
-  echo "setup-agents: generated $(ls "$ROLES"/*.md | wc -l | tr -d ' ') agents for claude, opencode, codex"
+  printf '%s\n' "setup-agents: generated $(ls "$ROLES"/*.md | wc -l | tr -d ' ') agents for claude, opencode, codex"
 }
 
 case "${1:-}" in
