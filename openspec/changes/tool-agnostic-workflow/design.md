@@ -180,6 +180,8 @@ A step in an existing CI job does three things:
 - [Codex ignores `.codex/` in an untrusted project] → `CONTRIBUTING.md` says how to trust the project.
 - [A model ID in the map is wrong or unavailable] → It affects only that developer's sessions.
 - [A tool changes its file format] → Only the generator changes.
+- [A push rule is bypassed with `git -C <dir> push`, an env prefix or a wrapper script] → The deny rules are prefix patterns and cannot catch every form. The `AGENTS.md` rule still applies, and `main` is protected on GitHub.
+- [opencode allows every shell command by default] → `opencode.json` sets `git push *` to `ask` before the deny rules, so `--force-with-lease` and normal pushes ask the engineer, as in Claude Code.
 - [A Codex read-only role edits files] → The role text forbids it, the reviewer checks `git status`, and the Codex rules forbid force push and pushes to `main`.
 
 ## Migration Plan

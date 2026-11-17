@@ -25,8 +25,8 @@ Tasks 2.2 and 2.3 need the tool installed and signed in on the engineer's machin
   - `wc -c AGENTS.md` is under 32768;
   - a checklist in the PR maps every rule in the old `CLAUDE.md` to its line in `AGENTS.md`, including the three reviewer triggers, the "never merge, push to `main` or force-push a shared branch" rule, and the no-ticking and no-approval rule;
   - `grep -iE "claude|sonnet|opus" AGENTS.md` finds only the per-tool notes.
-- [ ] 2.2 Live run in Claude Code: a new session lists the 5 project agents and loads the `AGENTS.md` rules, and the researcher starts. Verify: record the agent list in the PR.
-- [ ] 2.3 Live run in opencode. Check that:
+- [x] 2.2 Live run in Claude Code: a new session lists the 5 project agents and loads the `AGENTS.md` rules, and the researcher starts. Verify: record the agent list in the PR.
+- [x] 2.3 Live run in opencode. Check that:
   - the 5 agents appear as subagents, not as primary agents;
   - each OpenSpec skill appears once;
   - a role with no map entry runs on the session model.
@@ -45,7 +45,7 @@ Codex has no live run: nobody on the team uses it yet (proposal, clarification 1
   - `scripts/flow/test` passes for every fixture case;
   - on this PR, `gate-request` posts the spec gate range and changes only its own line in "Review ranges", with the boxes untouched;
   - `gate-status` reports no approval before the engineer's comment, and the spec gate after it.
-- [ ] 3.3 Add `.claude/settings.json`, the `opencode.json` permissions and `.codex/rules/flow.rules` (design D7). Verify in Claude Code and opencode:
+- [x] 3.3 Add `.claude/settings.json`, the `opencode.json` permissions and `.codex/rules/flow.rules` (design D7). Verify in Claude Code and opencode:
   - a flow script runs without a prompt;
   - `git push --force` is refused, and `git push --force-with-lease` asks for confirmation.
 
