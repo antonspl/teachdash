@@ -1,0 +1,176 @@
+#!/bin/sh
+# Generates the agent files and skills copy for Claude Code, opencode and Codex
+# from .agents/roles, .agents/skills and the personal map .agents/models.local.
+#
+# Usage: scripts/setup-agents [--check]
+set -eu
+
+cd "$(dirname "$0")/.."
+
+ROLES=.agents/roles
+SKILLS=.agents/skills
+MAP=.agents/models.local
+STAMP=.agents/.setup-stamp
+
+die() {
+  echo "setup-agents: $*" >&2
+  exit 1
+}
+
+# Prints the value of a frontmatter key.
+field() {
+  awk -v key="$2" '
+    NR == 1 && $0 != "---" { exit }
+    /^---$/ { n++; if (n == 2) exit; next }
+    n == 1 && index($0, key ":") == 1 { sub(/^[^:]*:[ ]*/, ""); print; exit }
+  ' "$1"
+}
+
+body() {
+  awk '/^---$/ && n < 2 { n++; next } n >= 2' "$1"
+}
+
+# Prints the map value for a tool and class, or nothing.
+mapped() {
+  [ -f "$MAP" ] || return 0
+  awk -F'=' -v key="$1.$2" '
+    { k = $1; gsub(/[ \t]/, "", k) }
+    k == key { v = $2; sub(/^[ \t]+/, "", v); sub(/[ \t]+$/, "", v); print v; exit }
+  ' "$MAP"
+}
+
+warn_bad_map_lines() {
+  [ -f "$MAP" ] || return 0
+  awk '
+    /^[ \t]*(#|$)/ { next }
+    $0 !~ /^[ \t]*(claude|opencode|codex)\.(strong|medium)[ \t]*=[ \t]*[^ \t]+([ \t]+[^ \t]+)?[ \t]*$/ {
+      printf "setup-agents: warning: ignoring malformed line %d in .agents/models.local\n", NR > "/dev/stderr"
+    }
+  ' "$MAP"
+}
+
+# Hash of everything the generated files depend on.
+sources_hash() {
+  {
+    find "$ROLES" "$SKILLS" -type f 2>/dev/null | LC_ALL=C sort | while read -r f; do
+      echo "$f"
+      cat "$f"
+    done
+    [ -f "$MAP" ] && cat "$MAP"
+  } | cksum
+}
+
+validate_roles() {
+  ls "$ROLES"/*.md >/dev/null 2>&1 || die "no roles in $ROLES"
+  for f in "$ROLES"/*.md; do
+    for key in name description class access web; do
+      [ -n "$(field "$f" "$key")" ] || die "$f: missing field '$key'"
+    done
+    case "$(field "$f" class)" in strong | medium) ;; *) die "$f: class must be strong or medium" ;; esac
+    case "$(field "$f" access)" in read | write) ;; *) die "$f: access must be read or write" ;; esac
+    case "$(field "$f" web)" in true | false) ;; *) die "$f: web must be true or false" ;; esac
+    [ "$(field "$f" name)" = "$(basename "$f" .md)" ] || die "$f: name must match the file name"
+  done
+}
+
+claude_agent() {
+  name=$(field "$1" name)
+  model=$(mapped claude "$(field "$1" class)" | awk '{print $1}')
+  {
+    echo "---"
+    echo "name: $name"
+    echo "description: $(field "$1" description)"
+    [ -z "$model" ] || echo "model: $model"
+    if [ "$(field "$1" access)" = read ]; then
+      tools="Read, Grep, Glob, Bash"
+      [ "$(field "$1" web)" = true ] && tools="$tools, WebSearch, WebFetch"
+      echo "tools: $tools"
+    fi
+    echo "---"
+    body "$1"
+  } >".claude/agents/$name.md"
+}
+
+opencode_agent() {
+  name=$(field "$1" name)
+  model=$(mapped opencode "$(field "$1" class)" | awk '{print $1}')
+  {
+    echo "---"
+    echo "description: $(field "$1" description)"
+    echo "mode: subagent"
+    [ -z "$model" ] || echo "model: $model"
+    if [ "$(field "$1" access)" = read ] || [ "$(field "$1" web)" = false ]; then
+      echo "permission:"
+      [ "$(field "$1" access)" = read ] && echo "  edit: deny"
+      if [ "$(field "$1" web)" = false ]; then
+        echo "  webfetch: deny"
+        echo "  websearch: deny"
+      fi
+    fi
+    echo "---"
+    body "$1"
+  } >".opencode/agents/$name.md"
+}
+
+codex_agent() {
+  name=$(field "$1" name)
+  value=$(mapped codex "$(field "$1" class)")
+  model=$(echo "$value" | awk '{print $1}')
+  effort=$(echo "$value" | awk '{print $2}')
+  description=$(field "$1" description | sed 's/\\/\\\\/g; s/"/\\"/g')
+  {
+    echo "name = \"$name\""
+    echo "description = \"$description\""
+    [ -z "$model" ] || echo "model = \"$model\""
+    [ -z "$effort" ] || echo "model_reasoning_effort = \"$effort\""
+    echo "developer_instructions = '''"
+    body "$1"
+    # Codex has no per-agent sandbox, so access limits are instructions only.
+    if [ "$(field "$1" access)" = read ]; then
+      echo
+      echo "You are read-only. Do not edit, create or delete files, and do not run commands that change anything."
+    fi
+    if [ "$(field "$1" web)" = false ]; then
+      echo "Do not search the web or fetch web pages."
+    fi
+    echo "'''"
+  } >".codex/agents/$name.toml"
+}
+
+check() {
+  if [ -f "$STAMP" ] && [ -d .claude/agents ] && [ -d .opencode/agents ] && [ -d .codex/agents ] &&
+    [ "$(cat "$STAMP")" = "$(sources_hash)" ]; then
+    echo ok
+  else
+    echo stale
+    exit 1
+  fi
+}
+
+generate() {
+  validate_roles
+  warn_bad_map_lines
+
+  rm -rf .claude/agents .opencode/agents .codex/agents
+  mkdir -p .claude/agents .opencode/agents .codex/agents
+  for f in "$ROLES"/*.md; do
+    claude_agent "$f"
+    opencode_agent "$f"
+    codex_agent "$f"
+  done
+
+  if [ -d "$SKILLS" ]; then
+    rm -rf .claude/skills
+    mkdir -p .claude
+    cp -R "$SKILLS" .claude/skills
+  fi
+
+  sources_hash >"$STAMP"
+  echo "setup-agents: generated $(ls "$ROLES"/*.md | wc -l | tr -d ' ') agents for claude, opencode, codex"
+}
+
+case "${1:-}" in
+  --check) check ;;
+  "") generate ;;
+  *) die "usage: scripts/setup-agents [--check]" ;;
+esac
