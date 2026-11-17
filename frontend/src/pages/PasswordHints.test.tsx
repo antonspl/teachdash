@@ -269,6 +269,35 @@ describe('new-password hints', () => {
   )
 
   it.each(forms)(
+    '[web-client/R14-S12] Submitting with a hint moves the focus to it ($name)',
+    async (form) => {
+      // given
+      await form.open()
+      form.fillOthers()
+      type(form.password, 'abc')
+      type(form.repeat, 'abd')
+      const button = screen.getByRole('button', { name: form.button })
+      button.focus()
+      expect(document.activeElement).toBe(button)
+
+      // when
+      press(form)
+
+      // then
+      expect(form.sent()).toHaveLength(0)
+      expect(document.activeElement).toBe(field(form.password))
+
+      // when
+      type(form.password, 'teacher-pass-2')
+      press(form)
+
+      // then
+      expect(form.sent()).toHaveLength(0)
+      expect(document.activeElement).toBe(field(form.repeat))
+    },
+  )
+
+  it.each(forms)(
     '[web-client/R14-S8] Hint belongs to its field ($name)',
     async (form) => {
       // given

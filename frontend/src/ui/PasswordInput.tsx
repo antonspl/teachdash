@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type Ref } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './Field.module.css'
 import { TextInput } from './TextInput'
@@ -11,6 +11,7 @@ export function PasswordInput({
   error,
   required,
   disabled,
+  inputRef,
 }: {
   label: string
   value: string
@@ -19,6 +20,7 @@ export function PasswordInput({
   error?: string
   required?: boolean
   disabled?: boolean
+  inputRef?: Ref<HTMLInputElement>
 }) {
   const { t } = useTranslation()
   const [shown, setShown] = useState(false)
@@ -31,6 +33,7 @@ export function PasswordInput({
       error={error}
       required={required}
       disabled={disabled}
+      inputRef={inputRef}
       type={shown ? 'text' : 'password'}
       adornment={
         <button

@@ -40,6 +40,8 @@ export function SetPasswordPage() {
   const [error, setError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
+  const passwordInput = useRef<HTMLInputElement>(null)
+  const confirmInput = useRef<HTMLInputElement>(null)
 
   const hints = passwordHints(password, confirm)
 
@@ -50,6 +52,8 @@ export function SetPasswordPage() {
     }
     setError(undefined)
     if (passwordProblem(password, confirm)) {
+      // The hint is the message: focusing its field makes assistive technology read it.
+      ;(hints.password ? passwordInput : confirmInput).current?.focus()
       return
     }
     inFlight.current = true
@@ -80,6 +84,7 @@ export function SetPasswordPage() {
             label={t('setPassword.password')}
             autoComplete="new-password"
             required
+            inputRef={passwordInput}
             error={hints.password ? t(hints.password) : undefined}
             value={password}
             onChange={setPassword}
@@ -88,6 +93,7 @@ export function SetPasswordPage() {
             label={t('setPassword.confirm')}
             autoComplete="new-password"
             required
+            inputRef={confirmInput}
             error={hints.repeat ? t(hints.repeat) : undefined}
             value={confirm}
             onChange={setConfirm}

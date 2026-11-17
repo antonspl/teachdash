@@ -28,6 +28,8 @@ export function PasswordForm({
   // Changes on success: the new inputs start with the password hidden again.
   const [round, setRound] = useState(0)
   const inFlight = useRef(false)
+  const nextInput = useRef<HTMLInputElement>(null)
+  const repeatInput = useRef<HTMLInputElement>(null)
 
   // Editing a field removes the form's own message.
   function edit(set: (value: string) => void) {
@@ -47,6 +49,8 @@ export function PasswordForm({
     setMessage(undefined)
     const problem = passwordProblem(next, repeat)
     if (problem) {
+      // The hint is the message: focusing its field makes assistive technology read it.
+      ;(hints.password ? nextInput : repeatInput).current?.focus()
       return
     }
     inFlight.current = true
@@ -101,6 +105,7 @@ export function PasswordForm({
         autoComplete="new-password"
         required
         disabled={submitting}
+        inputRef={nextInput}
         error={hints.password ? t(hints.password) : undefined}
         value={next}
         onChange={edit(setNext)}
@@ -111,6 +116,7 @@ export function PasswordForm({
         autoComplete="new-password"
         required
         disabled={submitting}
+        inputRef={repeatInput}
         error={hints.repeat ? t(hints.repeat) : undefined}
         value={repeat}
         onChange={edit(setRepeat)}
