@@ -98,6 +98,7 @@ clone=$work/clone
 git clone -q "$origin" "$clone" 2>/dev/null
 git -C "$clone" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
 git -C "$clone" push -q origin main 2>/dev/null
+# shellcheck disable=SC2016  # $3 must expand in the fake openspec, not here
 printf '%s\n' '#!/bin/sh' 'mkdir -p "openspec/changes/$3"' 'exit 1' >"$work/fakebin/openspec"
 chmod +x "$work/fakebin/openspec"
 
