@@ -37,11 +37,11 @@ Codex has no live run: nobody on the team uses it yet (proposal, clarification 1
 
 ## 3. Flow scripts and permissions
 
-- [ ] 3.1 Write `scripts/flow/issue-brief`, `change-start`, `pr-draft` and `pr-ready` (design D6). Verify on a throwaway issue and branch, then close and delete them:
+- [x] 3.1 Write `scripts/flow/issue-brief`, `change-start`, `pr-draft` and `pr-ready` (design D6). Verify on a throwaway issue and branch, then close and delete them:
   - each script prints only a few lines;
   - each writing script refuses on `main` and on a detached HEAD;
   - `pr-draft` fails visibly when the push is rejected.
-- [ ] 3.2 Write `scripts/flow/gate-request`, `gate-status` and `test`, with the fixtures (design D6). Verify:
+- [x] 3.2 Write `scripts/flow/gate-request`, `gate-status` and `test`, with the fixtures (design D6). Verify:
   - `scripts/flow/test` passes for every fixture case;
   - on this PR, `gate-request` posts the spec gate range and changes only its own line in "Review ranges", with the boxes untouched;
   - `gate-status` reports no approval before the engineer's comment, and the spec gate after it.

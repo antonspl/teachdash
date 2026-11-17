@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Posts a gate review request and sets that gate's line under "## Review ranges"
+# in the PR description. Never touches the gate boxes.
+# Usage: scripts/flow/gate-request <spec|tests|code> <from..to>
+set -euo pipefail
+# shellcheck source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+[ $# -eq 2 ] || die "usage: gate-request <spec|tests|code> <from..to>"
+label=$(gate_label "$1")
+range=$2
+[[ $range =~ ^[0-9a-f]{7,40}\.\.[0-9a-f]{7,40}$ ]] || die "range must look like abc1234..def5678"
+
+guard_branch >/dev/null
+
+pr=$(gh pr view --json number --jq .number)
+body=$(gh pr view "$pr" --json body --jq .body)
+new=$(printf '%s\n' "$body" | set_range_line "$label" "$range")
+gh pr edit "$pr" --body "$new" >/dev/null
+gh pr comment "$pr" --body "$MARKER $label gate: please review \`$range\`" >/dev/null
+echo "PR #$pr: $label gate requested for $range"

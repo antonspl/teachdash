@@ -1,0 +1,33 @@
+# Flow scripts run without asking. Force pushes and pushes to main are refused.
+# `git push --force-with-lease` matches no rule, so Codex asks the engineer.
+
+prefix_rule(pattern = ["scripts/setup-agents"], decision = "allow")
+prefix_rule(pattern = ["scripts/flow/issue-brief"], decision = "allow")
+prefix_rule(pattern = ["scripts/flow/change-start"], decision = "allow")
+prefix_rule(pattern = ["scripts/flow/pr-draft"], decision = "allow")
+prefix_rule(pattern = ["scripts/flow/pr-ready"], decision = "allow")
+prefix_rule(pattern = ["scripts/flow/gate-request"], decision = "allow")
+prefix_rule(pattern = ["scripts/flow/gate-status"], decision = "allow")
+prefix_rule(pattern = ["scripts/flow/test"], decision = "allow")
+
+prefix_rule(
+    pattern = ["git", "push", ["--force", "-f"]],
+    decision = "forbidden",
+    justification = "Never force-push; after a rebase use --force-with-lease and ask the engineer",
+    match = ["git push --force", "git push -f origin x"],
+    not_match = ["git push --force-with-lease origin x"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin", "main"],
+    decision = "forbidden",
+    justification = "Never push to main",
+    match = ["git push origin main"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "-u", "origin", "main"],
+    decision = "forbidden",
+    justification = "Never push to main",
+    match = ["git push -u origin main"],
+)

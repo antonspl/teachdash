@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Marks the current branch's PR ready for review.
+# Usage: scripts/flow/pr-ready
+set -euo pipefail
+# shellcheck source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+guard_branch >/dev/null
+gh pr ready

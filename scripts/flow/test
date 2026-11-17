@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Tests for the flow scripts: gate-status on fixtures, the PR description
+# editing, and the branch guard. Needs no network and no gh login.
+# Usage: scripts/flow/test
+set -uo pipefail
+
+here=$(cd "$(dirname "$0")" && pwd)
+# shellcheck source=lib.sh
+. "$here/lib.sh"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+failed=0
+passed=0
+
+check() {
+  if [ "$2" = "$3" ]; then
+    passed=$((passed + 1))
+  else
+    failed=$((failed + 1))
+    printf 'FAIL %s\n--- expected\n%s\n--- actual\n%s\n' "$1" "$2" "$3"
+  fi
+}
+
+for fixture in "$here"/fixtures/*.tsv; do
+  name=$(basename "$fixture" .tsv)
+  actual=$(FLOW_GH_FIXTURE=$fixture "$here/gate-status" 2>&1)
+  check "gate-status $name" "$(cat "${fixture%.tsv}.expected")" "$actual"
+done
+
+# set_range_line: replace, add, other lines untouched, missing heading.
+description=$'Closes #1\n\n## Review ranges\n\n- Spec: aaaaaaa..bbbbbbb\n\n## Gates\n\n- [x] Spec approved by @\n- [ ] Code approved by @'
+actual=$(printf '%s\n' "$description" | set_range_line Spec ccccccc..ddddddd)
+expected=${description/aaaaaaa..bbbbbbb/ccccccc..ddddddd}
+check "set_range_line replaces its own line only" "$expected" "$actual"
+
+placeholder=$'## Review ranges\n\n<!-- Commit range per phase,\n     e.g. Tests: abc123..def456 -->\n\n## Gates\n\n- [ ] Tests approved by @'
+actual=$(printf '%s\n' "$placeholder" | set_range_line Tests 1111111..2222222)
+expected=$'## Review ranges\n\n<!-- Commit range per phase,\n     e.g. Tests: abc123..def456 -->\n- Tests: 1111111..2222222\n\n## Gates\n\n- [ ] Tests approved by @'
+check "set_range_line adds a missing line" "$expected" "$actual"
+
+actual=$(printf '%s\n' "$description" | set_range_line Code 3333333..4444444)
+expected=$'Closes #1\n\n## Review ranges\n\n- Spec: aaaaaaa..bbbbbbb\n- Code: 3333333..4444444\n\n## Gates\n\n- [x] Spec approved by @\n- [ ] Code approved by @'
+check "set_range_line keeps other gate lines" "$expected" "$actual"
+
+(printf 'no heading here\n' | set_range_line Spec 1111111..2222222) >/dev/null 2>&1
+check "set_range_line fails without the heading" 1 $?
+
+# Branch guard: writing scripts refuse on main and on a detached HEAD,
+# before any gh call.
+repo=$work/repo
+git init -q -b main "$repo"
+git -C "$repo" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
+mkdir -p "$repo/.github"
+touch "$repo/.github/pull_request_template.md"
+refuse() {
+  local label=$1
+  shift
+  (cd "$repo" && "$@") >/dev/null 2>"$work/err"
+  local code=$? nonzero
+  nonzero=0
+  if [ "$code" -ne 0 ]; then nonzero=1; fi
+  check "$label exits non-zero" 1 "$nonzero"
+  check "$label says why" 1 "$(grep -cE 'on main|detached HEAD' "$work/err")"
+}
+refuse "pr-draft on main" "$here/pr-draft" main 1
+refuse "gate-request on main" "$here/gate-request" spec abc1234..def5678
+refuse "pr-ready on main" "$here/pr-ready"
+git -C "$repo" checkout -q --detach
+refuse "pr-draft on detached HEAD" "$here/pr-draft" main 1
+refuse "gate-request on detached HEAD" "$here/gate-request" spec abc1234..def5678
+refuse "pr-ready on detached HEAD" "$here/pr-ready"
+refuse "change-start on detached HEAD" "$here/change-start" some-name 1
+
+# Argument validation.
+(cd "$repo" && "$here/gate-request" design abc1234..def5678) >/dev/null 2>&1
+check "gate-request rejects an unknown gate" 1 $?
+(cd "$repo" && "$here/gate-request" spec notarange) >/dev/null 2>&1
+check "gate-request rejects a bad range" 1 $?
+
+echo "flow tests: $passed passed, $failed failed"
+[ "$failed" -eq 0 ]

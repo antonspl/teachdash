@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Reports, for each gate, the latest approving comment, the box and staleness.
+# Only reports; the engineer decides. Never ticks or approves anything.
+# Usage: scripts/flow/gate-status [pr]
+# With FLOW_GH_FIXTURE=<file>, reads the extracted PR lines from the file
+# instead of calling gh (see scripts/flow/test).
+#
+# Extracted format, one line per item, tab separated:
+#   B <gate> <x|space>         gate box from the description
+#   C <login> <createdAt> <first line of the comment>
+set -euo pipefail
+# shellcheck source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+extract() {
+  if [ -n "${FLOW_GH_FIXTURE:-}" ]; then
+    cat "$FLOW_GH_FIXTURE"
+    return
+  fi
+  gh pr view ${1:+"$1"} --json body,comments --jq '
+    (.body | split("\n")[]
+      | capture("^- \\[(?<box>[ xX])\\] (?<gate>Spec|Tests|Code) approved")?
+      | "B\t" + (.gate | ascii_downcase) + "\t" + (if .box == " " then "space" else "x" end)),
+    (.comments[]
+      | "C\t" + .author.login + "\t" + .createdAt + "\t"
+        + (.body | split("\n")[0] | rtrimstr("\r") | gsub("\t"; " ")))'
+}
+
+extract "${1:-}" | awk -F'\t' -v marker="$MARKER" '
+  BEGIN { n = split("spec tests code", gates, " ") }
+  $1 == "B" { box[$2] = ($3 == "x") }
+  $1 == "C" {
+    text = tolower($4)
+    is_flow = (index($4, marker) == 1)
+    for (i = 1; i <= n; i++) {
+      g = gates[i]
+      if (is_flow) {
+        if (text ~ ("^" tolower(marker) " " g " gate")) requested[g] = $3
+      } else if (text ~ ("^[ ]*" g " approved")) {
+        who[g] = $2
+        when[g] = $3
+      }
+    }
+  }
+  END {
+    for (i = 1; i <= n; i++) {
+      g = gates[i]
+      line = sprintf("%-6s", g ":")
+      if (who[g] != "") line = line " approved by " who[g] " at " when[g]
+      else line = line " no approving comment"
+      line = line "; box " (box[g] ? "ticked" : "not ticked")
+      if (who[g] != "" && requested[g] != "" && requested[g] > when[g]) line = line "; STALE, approval is older than the latest request"
+      else if (who[g] == "" && box[g]) line = line "; box ticked without a comment"
+      else if (who[g] != "" && !box[g]) line = line "; comment without a ticked box"
+      print line
+    }
+  }'

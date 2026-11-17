@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Prints an issue's title, labels, body and comments.
+# Usage: scripts/flow/issue-brief <issue>
+set -euo pipefail
+# shellcheck source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+[ $# -eq 1 ] || die "usage: issue-brief <issue>"
+[[ $1 =~ ^[0-9]+$ ]] || die "issue must be a number"
+
+gh issue view "$1" --json title,labels,body,comments --jq '
+  "# " + .title,
+  "Labels: " + ([.labels[].name] | join(", ")),
+  "",
+  .body,
+  (.comments[] | "", "--- " + .author.login + " " + .createdAt, .body)'
