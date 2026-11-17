@@ -35,11 +35,11 @@ the arrow SHALL reach the field, as a click on its text does.
 ### Requirement: R14 New-password hints while typing
 
 Every form that asks for a new password twice (the profile password form and the
-set-password page) SHALL show a translated hint under the field while the user types: "at
-least 8 characters" or "password is too long" under the new password, "passwords do not
-match" under the repeat. A hint SHALL go away as soon as its rule is met. An empty field
-SHALL show no hint. The submit button SHALL stay enabled; submitting with a broken rule
-sends nothing and moves the focus to the first field that shows a hint.
+set-password page) SHALL show a translated hint under the field while the user types:
+"at least 8 characters" or "password is too long" under the new password, "passwords do
+not match" under the repeat. A hint SHALL go away once its rule is met; an empty field
+SHALL show no hint. The button SHALL stay enabled; a submit with a broken rule sends
+nothing and focuses the first field with a hint.
 
 #### Scenario: web-client/R14-S1 Short new password
 - **GIVEN** the profile password form, and in a second run the set-password page, with empty fields
