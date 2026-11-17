@@ -80,7 +80,9 @@ Agents' reports are not shown to the engineer: relay what matters in a few lines
   phase. When asking for a gate review, post the commit range of that phase.
 - When the change is archived and all gates are approved, mark the PR ready for the
   final review by a code owner other than the engineer.
-- Never merge PRs, never push to `main`, never force-push.
+- Never merge PRs, never push to `main`, never force-push a shared branch. After a
+  rebase of the change's own branch, push with `--force-with-lease`; the tool asks
+  the engineer first.
 - Never tick a gate box in the PR description and never write an approval comment
   ("spec approved" and so on). Only the engineer approves. Show the engineer what
   `scripts/flow/gate-status` reports and let them decide.

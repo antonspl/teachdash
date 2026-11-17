@@ -35,7 +35,7 @@ See `proposal.md` for motivation, the engineer's decisions and the research.
 
 - the orchestrator role and the agent rules;
 - the three reviewer triggers: after every pass 2 slice, on implementer doubt, and the code-gate review once per PR;
-- the git flow, including "never merge, never push to `main`, never force-push";
+- the git flow, including "never merge, never push to `main`, never force-push a shared branch" (engineer's choice on 2026-11-17: after a rebase, the change's own branch may be pushed with `--force-with-lease`, which always asks the engineer);
 - that the agent never ticks a gate box and never writes an approval comment.
 
 It also holds a constitution summary of about 30 lines: the gates, the roles, and which section to read before which step. Its first rule says: if the tool's agent folder is missing, or `scripts/setup-agents --check` reports it stale, run `scripts/setup-agents` and restart the session.
@@ -146,7 +146,7 @@ There is no commit or push wrapper. That output is already small (research angle
 
 ### D7. Permission rules
 
-These are committed. They allow each flow script and `scripts/setup-agents` by exact path, not by folder wildcard, so a new script needs a deliberate rule. They forbid `git push --force`, `git push -f` and any push to `main` in all three tools:
+These are committed. They allow each flow script and `scripts/setup-agents` by exact path, not by folder wildcard, so a new script needs a deliberate rule. They forbid `git push --force`, `git push -f` and any push to `main` in all three tools. `git push --force-with-lease` is neither allowed nor forbidden, so the tool asks the engineer each time:
 
 - `.claude/settings.json`: `permissions.allow` and `permissions.deny`. `settings.local.json` stays personal.
 - `opencode.json`: `permission.bash` rules with `allow` and `deny`.

@@ -23,7 +23,7 @@ Tasks 2.2 and 2.3 need the tool installed and signed in on the engineer's machin
 
 - [x] 2.1 Write `AGENTS.md` (design D1) and reduce `CLAUDE.md` to `@AGENTS.md`. Verify:
   - `wc -c AGENTS.md` is under 32768;
-  - a checklist in the PR maps every rule in the old `CLAUDE.md` to its line in `AGENTS.md`, including the three reviewer triggers, the "never merge, push to `main` or force-push" rule, and the no-ticking and no-approval rule;
+  - a checklist in the PR maps every rule in the old `CLAUDE.md` to its line in `AGENTS.md`, including the three reviewer triggers, the "never merge, push to `main` or force-push a shared branch" rule, and the no-ticking and no-approval rule;
   - `grep -iE "claude|sonnet|opus" AGENTS.md` finds only the per-tool notes.
 - [ ] 2.2 Live run in Claude Code: a new session lists the 5 project agents and loads the `AGENTS.md` rules, and the researcher starts. Verify: record the agent list in the PR.
 - [ ] 2.3 Live run in opencode. Check that:
@@ -47,7 +47,7 @@ Codex has no live run: nobody on the team uses it yet (proposal, clarification 1
   - `gate-status` reports no approval before the engineer's comment, and the spec gate after it.
 - [ ] 3.3 Add `.claude/settings.json`, the `opencode.json` permissions and `.codex/rules/flow.rules` (design D7). Verify in Claude Code and opencode:
   - a flow script runs without a prompt;
-  - `git push --force` is refused or asks for confirmation.
+  - `git push --force` is refused, and `git push --force-with-lease` asks for confirmation.
 
 ## 4. Documentation and CI
 
