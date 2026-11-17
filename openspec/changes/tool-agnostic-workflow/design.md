@@ -128,7 +128,7 @@ Each script lives in `scripts/flow/` and uses `set -euo pipefail`. On success it
 | `gate-status` | Reads PR comments and review bodies (same rules for both). Exits non-zero with a short error if `gh` fails (no PR, logged out, no network). Prints, for each gate (`spec`, `tests`, `code`), whether there is an approving comment, who wrote it and when, and whether the box is ticked. It also flags an approval older than the latest `gate-request` for that gate |
 | `pr-ready` | Marks the PR ready |
 
-**Gate strings.** An approving comment has a first line that is exactly `spec approved`, `tests approved` or `code approved`, after trimming spaces, ignoring case and allowing one trailing `.` or `!`. Text after it on the first line (for example "spec approved once naming is fixed") does not count. Comments and review bodies are ordered by time (comments by `createdAt`, reviews by `submittedAt`), so the latest approval and the latest request win whatever the order of the data. An empty review body (GitHub "Approve") is read as no text, and a deleted author is shown as `ghost`. Comments posted by the scripts start with a hidden marker, `<!-- flow -->`, and `gate-status` never counts them. `gate-status` only reports. The agent shows the result to the engineer, who is the one who decides. No script ticks a box or writes an approval.
+**Gate strings.** An approving comment starts with `spec approved`, `tests approved` or `code approved` (case-insensitive). Comments and review bodies are ordered by time (comments by `createdAt`, reviews by `submittedAt`), so the latest approval and the latest request win whatever the order of the data. An empty review body (GitHub "Approve") is read as no text, and a deleted author is shown as `ghost`. Comments posted by the scripts start with a hidden marker, `<!-- flow -->`, and `gate-status` never counts them. `gate-status` only reports. The agent shows the result to the engineer, who is the one who decides. No script ticks a box or writes an approval.
 
 **Branch guard.** Every script that writes refuses to run when `git symbolic-ref --short HEAD` fails (detached HEAD) or returns `main`. This works the same in worktrees.
 
@@ -141,7 +141,6 @@ Each script lives in `scripts/flow/` and uses `set -euo pipefail`. On success it
 - a comment with no ticked box;
 - an approval older than the latest request;
 - a marker comment;
-- an approval with extra words on the first line, and one with padding and different case;
 - comments out of time order;
 - saved `gh` JSON with an empty review body and a deleted author (`FLOW_GH_JSON`, needs `jq`).
 

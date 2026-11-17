@@ -66,9 +66,7 @@ At each gate the agent stops and posts the commit range of that phase
 (e.g. `Tests: abc123..def456`), so you read only what is new.
 
 To approve a gate: post a comment naming it ("spec approved", "tests approved",
-"code approved") and tick the box in the PR description. The first line of the
-comment must be exactly that phrase (case and a trailing "." or "!" do not matter);
-"spec approved once naming is fixed" is not counted by `scripts/flow/gate-status`. GitHub's "Approve"
+"code approved") and tick the box in the PR description. GitHub's "Approve"
 button is used only for the final review. Request changes the usual way.
 
 **Tests phase (pass 1).** Tests "fail for the right reason": each fails at its

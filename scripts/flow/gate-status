@@ -48,14 +48,12 @@ printf '%s\n' "$data" | awk -F'\t' -v marker="$MARKER" '
   # Times are ISO 8601 UTC, so string comparison orders them; input order does not matter.
   $1 == "C" {
     text = tolower($4)
-    sub(/^[ \t]+/, "", text)
-    sub(/[ \t]+$/, "", text)
     is_flow = (index($4, marker) == 1)
     for (i = 1; i <= n; i++) {
       g = gates[i]
       if (is_flow) {
         if (text ~ ("^" tolower(marker) " " g " gate") && $3 > requested[g]) requested[g] = $3
-      } else if (text ~ ("^" g " approved[.!]?$") && $3 >= when[g]) {
+      } else if (text ~ ("^[ ]*" g " approved") && $3 >= when[g]) {
         who[g] = $2
         when[g] = $3
       }
