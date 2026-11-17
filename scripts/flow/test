@@ -98,7 +98,7 @@ clone=$work/clone
 git clone -q "$origin" "$clone" 2>/dev/null
 git -C "$clone" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
 git -C "$clone" push -q origin main 2>/dev/null
-printf '#!/bin/sh\nexit 1\n' >"$work/fakebin/openspec"
+printf '%s\n' '#!/bin/sh' 'mkdir -p "openspec/changes/$3"' 'exit 1' >"$work/fakebin/openspec"
 chmod +x "$work/fakebin/openspec"
 
 touch "$clone/untracked.txt"
@@ -109,6 +109,7 @@ rm "$clone/untracked.txt"
 (cd "$clone" && PATH="$work/fakebin:$PATH" "$here/change-start" some-name 1) >/dev/null 2>"$work/err"
 check "change-start fails when openspec fails" 1 "$(grep -c 'openspec new change failed' "$work/err")"
 check "change-start goes back to the start branch" main "$(git -C "$clone" symbolic-ref --short HEAD)"
+check "change-start removes the partial change folder" 0 "$(find "$clone/openspec/changes" -name some-name 2>/dev/null | wc -l | tr -d ' ')"
 check "change-start removes the new branch" 0 "$(git -C "$clone" branch --list some-name | wc -l | tr -d ' ')"
 
 echo "flow tests: $passed passed, $failed failed"

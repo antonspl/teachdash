@@ -218,6 +218,12 @@ generate() {
   trap 'rm -f "$new_list"' EXIT
   generated_paths >"$new_list"
   remove_stale "$new_list"
+  # Track every path before writing it, so a run that dies midway loses nothing.
+  cp "$new_list" "$MANIFEST"
+  # Never write through a developer's symlink: replace it with a plain file.
+  while read -r path; do
+    [ -L "$path" ] && rm -f -- "$path"
+  done <"$new_list"
 
   mkdir -p .claude/agents .opencode/agents .codex/agents
   for f in "$ROLES"/*.md; do
@@ -237,7 +243,6 @@ generate() {
     done <"$new_list"
   fi
 
-  cp "$new_list" "$MANIFEST"
   sources_hash >"$STAMP"
   printf '%s\n' "setup-agents: generated $(find "$ROLES" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ') agents for claude, opencode, codex"
 }

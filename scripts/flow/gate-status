@@ -29,6 +29,7 @@ extract() {
       | "C\t" + .author.login + "\t" + .createdAt + "\t"
         + (.body | split("\n")[0] | rtrimstr("\r") | gsub("\t"; " "))),
     (.reviews[]
+      | select(.state != "PENDING" and .state != "DISMISSED" and .submittedAt != null)
       | "C\t" + .author.login + "\t" + .submittedAt + "\t"
         + (.body | split("\n")[0] | rtrimstr("\r") | gsub("\t"; " ")))'
 }

@@ -21,8 +21,10 @@ fi
 
 git fetch --quiet origin main
 start=$(git symbolic-ref --short HEAD)
+[ -e "openspec/changes/$name" ] && had_dir=1 || had_dir=0
 git switch --quiet --no-track -c "$name" origin/main
 if ! openspec new change "$name" >/dev/null; then
+  [ "$had_dir" = 0 ] && rm -rf "openspec/changes/$name"
   git switch --quiet "$start"
   git branch --quiet -D "$name"
   die "openspec new change failed; went back to $start and removed branch $name"
