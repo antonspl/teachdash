@@ -29,13 +29,34 @@ FILTER='
     | "C\t" + ((.author.login // "") | if . == "" then "ghost" else . end) + "\t" + .submittedAt + "\t"
       + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " ")))'
 
+# Live mode reads head, comments and reviews separately (REST field names).
+FILTER_HEAD='
+  "A\t" + ((.author.login // "") | if . == "" then "ghost" else . end),
+  (.body // "" | split("\n")[]
+    | capture("^- \\[(?<box>[ xX])\\] (?<gate>Spec|Tests|Code) approved")?
+    | "B\t" + (.gate | ascii_downcase) + "\t" + (if .box == " " then "space" else "x" end))'
+
+FILTER_COMMENTS='.[]
+  | "C\t" + ((.user.login // "") | if . == "" then "ghost" else . end) + "\t" + .created_at + "\t"
+    + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " "))'
+
+FILTER_REVIEWS='.[]
+  | select(.state != "PENDING" and .state != "DISMISSED" and .submitted_at != null)
+  | "C\t" + ((.user.login // "") | if . == "" then "ghost" else . end) + "\t" + .submitted_at + "\t"
+    + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " "))'
+
 extract() {
   if [ -n "${FLOW_GH_FIXTURE:-}" ]; then
     cat "$FLOW_GH_FIXTURE"
   elif [ -n "${FLOW_GH_JSON:-}" ]; then
     jq -r "$FILTER" "$FLOW_GH_JSON"
   else
-    gh pr view ${1:+"$1"} --json author,body,comments,reviews --jq "$FILTER"
+    local number
+    number=$(gh pr view ${1:+"$1"} --json number --jq .number) || return 1
+    # The REST endpoints are paginated; `gh pr view` returns only the first page.
+    gh pr view "$number" --json author,body --jq "$FILTER_HEAD" &&
+      gh api --paginate "repos/{owner}/{repo}/issues/$number/comments" --jq "$FILTER_COMMENTS" &&
+      gh api --paginate "repos/{owner}/{repo}/pulls/$number/reviews" --jq "$FILTER_REVIEWS"
   fi
 }
 

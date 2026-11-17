@@ -102,6 +102,25 @@ code=$?
 check "gate-status fails when gh fails" 1 "$code"
 check "gate-status says it could not read the PR" 1 "$(printf '%s\n' "$actual" | grep -c 'could not read the pull request')"
 
+# gate-status reads comments and reviews through the paginated REST API, and a
+# failure in either call fails the script.
+cat >"$work/fakebin/gh" <<'SH'
+#!/bin/sh
+case "$*" in
+  "pr view"*"--json number"*) echo 7 ;;
+  "pr view"*) echo "A	alice" ;;
+  "api --paginate repos/{owner}/{repo}/issues/7/comments"*) echo "C	bob	2026-11-17T10:00:00Z	Spec approved" ;;
+  "api --paginate repos/{owner}/{repo}/pulls/7/reviews"*) [ -n "$FAIL_REVIEWS" ] && exit 1; echo "C	bob	2026-11-17T11:00:00Z	Tests approved" ;;
+  *) exit 1 ;;
+esac
+SH
+actual=$(PATH="$work/fakebin:$PATH" "$here/gate-status" 7 2>&1)
+check "gate-status reads paginated comments and reviews" "spec:  approved by bob (not the PR author) at 2026-11-17T10:00:00Z; box not ticked; comment without a ticked box
+tests: approved by bob (not the PR author) at 2026-11-17T11:00:00Z; box not ticked; comment without a ticked box
+code:  no approving comment; box not ticked" "$actual"
+FAIL_REVIEWS=1 PATH="$work/fakebin:$PATH" "$here/gate-status" 7 >/dev/null 2>&1
+check "gate-status fails when the reviews call fails" 1 $?
+
 # change-start: refuses a dirty tree, and removes its branch when openspec fails.
 origin=$work/origin.git
 git init -q --bare -b main "$origin"

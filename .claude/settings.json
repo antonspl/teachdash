@@ -18,6 +18,14 @@
       "Bash(scripts/flow/test *)",
       "Bash(./scripts/flow/test *)"
     ],
+    "ask": [
+      "Edit(/scripts/flow/**)",
+      "Edit(/scripts/setup-agents)",
+      "Edit(/.agents/roles/**)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/opencode.json)",
+      "Edit(/.codex/rules/**)"
+    ],
     "deny": [
       "Bash(git push --force)",
       "Bash(git push --force *)",

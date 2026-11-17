@@ -6,7 +6,7 @@ set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
 [ $# -eq 1 ] || die "usage: issue-brief <issue>"
-[[ $1 =~ ^[0-9]+$ ]] || die "issue must be a number"
+require_number "$1" "issue"
 
 gh issue view "$1" --json title,labels,body,comments --jq '
   "# " + .title,

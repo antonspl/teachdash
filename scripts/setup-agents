@@ -104,6 +104,8 @@ claude_agent() {
       tools="Read, Grep, Glob, Bash"
       [ "$(field "$1" web)" = true ] && tools="$tools, WebSearch, WebFetch"
       printf '%s\n' "tools: $tools"
+    elif [ "$(field "$1" web)" = false ]; then
+      printf '%s\n' "disallowedTools: WebSearch, WebFetch"
     fi
     echo "---"
     body "$1"

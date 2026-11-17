@@ -56,11 +56,11 @@ code together and approves the PR. Then anyone on the team merges it.
 
 The author answers the clarifying questions and decides trade-offs for their change.
 Anyone can improve the workflow (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`,
-`.agents/`, the PR template) through a normal PR. Changes to the constitution,
+the other files in `.agents/`, the PR template) through a normal PR. Changes to the constitution,
 `openspec/config.yaml`, `.github/CODEOWNERS`, the permission files
 (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) and the scripts they
-allow without asking (`scripts/flow/`, `scripts/setup-agents`) need the owner's
-approval.
+allow without asking (`scripts/flow/`, `scripts/setup-agents`) and the role
+definitions (`.agents/roles/`) need the owner's approval.
 
 At each gate the agent stops and posts the commit range of that phase
 (e.g. `Tests: abc123..def456`), so you read only what is new.

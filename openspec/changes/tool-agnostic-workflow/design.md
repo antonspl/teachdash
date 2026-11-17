@@ -92,7 +92,7 @@ It is written in POSIX shell with `awk`, and needs no new dependency (constituti
 
 | Tool | Path | Mapping |
 |---|---|---|
-| Claude Code | `.claude/agents/<name>.md` | `model` from the map. `access: read` gives `tools: Read, Grep, Glob, Bash`, plus `WebSearch, WebFetch` when `web: true`. `access: write` with `web: true` gives no `tools` field, which means full access, as today |
+| Claude Code | `.claude/agents/<name>.md` | `model` from the map. `access: read` gives `tools: Read, Grep, Glob, Bash`, plus `WebSearch, WebFetch` when `web: true`. `access: write` with `web: true` gives no `tools` field, which means full access, as today; `access: write` with `web: false` gives `disallowedTools: WebSearch, WebFetch` |
 | opencode | `.opencode/agents/<name>.md` | `mode: subagent` and `model` from the map. A `permissions` list (the current format; the `permission` map is deprecated) denies `edit` for `access: read`, and denies `webfetch` and `websearch` for `web: false` |
 | Codex | `.codex/agents/<name>.toml` | `name`, `description` and `developer_instructions` (the body), plus `model` and `model_reasoning_effort` from the map. `access: read` and `web: false` become instruction lines, because Codex has no per-agent sandbox |
 
@@ -154,7 +154,9 @@ These are committed. They allow each flow script and `scripts/setup-agents` by e
 - `opencode.json`: the current `permissions` list with `action: shell` rules. The last matching rule wins, so the deny rules come last. The older `permission.bash` format is deprecated.
 - `.codex/rules/flow.rules`: `prefix_rule` with `decision="allow"` for the scripts, and `"forbidden"` for the pushes. Prefix rules cannot see a flag after other arguments, so `git push origin x --force` is not blocked in Codex. The `AGENTS.md` rule still applies.
 
-The permission files, `scripts/flow/` and `scripts/setup-agents` are owner-only in CODEOWNERS, because the rules run those scripts without asking. Both `scripts/x` and `./scripts/x` forms are allowed. `AGENTS.md` tells agents not to change them, or the flow scripts and roles, unless the task requires it, and the reviewers check this. The owner approved this on 2026-11-17.
+The permission files, `scripts/flow/`, `scripts/setup-agents` and `.agents/roles/` are owner-only in CODEOWNERS, because the rules run those scripts without asking. Both `scripts/x` and `./scripts/x` forms are allowed. `AGENTS.md` tells agents not to change them, or the flow scripts and roles, unless the task requires it, and the reviewers check this. The owner approved this on 2026-11-17.
+
+The allow rules would let an agent edit an allowed script and then run it without a prompt. So Claude Code and opencode also ask before any edit of `scripts/flow/**`, `scripts/setup-agents`, `.agents/roles/**`, `.claude/settings.json`, `opencode.json` and `.codex/rules/**`: `Edit(...)` rules in `permissions.ask` (Claude Code applies them to Write too; the paths start with `/` to anchor at the project root), and `edit` rules with `ask` in `opencode.json`. A bare `git push` also asks in opencode, like `git push *`. Codex has no per-path edit rule, so it relies on the `AGENTS.md` instruction and CODEOWNERS.
 
 `pr-draft`, `pr-ready` and `gate-request` push or post under the engineer's GitHub account. They run only when the main agent reaches the matching step, which `AGENTS.md` defines.
 
@@ -164,11 +166,11 @@ The permission files, `scripts/flow/` and `scripts/setup-agents` are owner-only 
   - "what Claude produced" becomes "what the agent produced";
   - "the Opus review" becomes "the code-gate review", so the name does not clash with step 12, "Final review";
   - "Claude stops" becomes "the agent stops";
-  - the open workflow files become `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/` and the PR template. The permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) and the scripts they allow (`scripts/flow/`, `scripts/setup-agents`) are owner-only, like CODEOWNERS says.
+  - the open workflow files become `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/` and the PR template. The permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`), the scripts they allow (`scripts/flow/`, `scripts/setup-agents`) and the role definitions (`.agents/roles/`) are owner-only, like CODEOWNERS says.
 
   No rule changes meaning. The owner approved the edit (proposal, clarification 10).
 - **`CONTRIBUTING.md`.** It gets the per-tool setup, the model map, the Codex trust step, and when to rerun `setup-agents`. Every "Claude" line becomes "the agent". The OpenSpec steps are named per tool: `/openspec-propose` in Claude Code and opencode, and `$openspec-propose` in Codex.
-- **`.github/CODEOWNERS`.** The owner-only paths now include the three permission files, `scripts/flow/` and `scripts/setup-agents`, and the comment lists the same files as the constitution.
+- **`.github/CODEOWNERS`.** The owner-only paths now include the three permission files, `scripts/flow/`, `scripts/setup-agents` and `.agents/roles/`, and the comment lists the same files as the constitution.
 
 ### D9. CI checks
 

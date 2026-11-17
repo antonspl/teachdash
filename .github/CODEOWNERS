@@ -4,10 +4,11 @@
 * @antonspl @andreilebedevops
 
 # The constitution, the OpenSpec config, this file, the permission files
-# (.claude/settings.json, opencode.json, .codex/rules/) and the scripts they
-# allow without asking (scripts/flow/, scripts/setup-agents) need the owner's
-# approval. The rest of the workflow (AGENTS.md, CLAUDE.md, CONTRIBUTING.md,
-# .agents/, the PR template) is open to any code owner.
+# (.claude/settings.json, opencode.json, .codex/rules/), the scripts they
+# allow without asking (scripts/flow/, scripts/setup-agents) and the role
+# definitions (.agents/roles/) need the owner's approval. The rest of the
+# workflow (AGENTS.md, CLAUDE.md, CONTRIBUTING.md, the other files in .agents/,
+# the PR template) is open to any code owner.
 /openspec/constitution.md @antonspl
 /openspec/config.yaml @antonspl
 /.github/CODEOWNERS @antonspl
@@ -16,3 +17,4 @@
 /.codex/rules/ @antonspl
 /scripts/flow/ @antonspl
 /scripts/setup-agents @antonspl
+/.agents/roles/ @antonspl

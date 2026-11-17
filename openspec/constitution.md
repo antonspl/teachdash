@@ -17,9 +17,10 @@ Roles:
   approval. Changes to this file, `openspec/config.yaml`, `.github/CODEOWNERS`, the
   permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) and
   the scripts they allow without asking (`scripts/flow/`, `scripts/setup-agents`)
-  need the owner's approval. Any engineer may improve the rest of the workflow
-  (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/`, the PR template) through
-  a normal PR.
+  and the role definitions (`.agents/roles/`) need the owner's approval. Any
+  engineer may improve the rest of the workflow (`AGENTS.md`, `CLAUDE.md`,
+  `CONTRIBUTING.md`, the other files in `.agents/`, the PR template) through a
+  normal PR.
 
 One change = one branch = one pull request. The PR goes through three review gates
 approved by the engineer, then a code owner other than the engineer approves the
