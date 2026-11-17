@@ -4,16 +4,16 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 
 ## 1. Sources and generator
 
-- [ ] 1.1 Add `.agents/roles/` with the five roles (design D2), copying the four prompts from `.claude/agents/`, reworded without tool names. The reviewer description must not say "the main agent asks for Opus". Verify: `grep -riE "claude|sonnet|opus|haiku" .agents/roles` finds nothing.
-- [ ] 1.2 Add `.agents/models.example` and gitignore entries for `.agents/models.local` and every generated path (design D3, D4). Verify: `git check-ignore` matches each generated path.
-- [ ] 1.3 Write `scripts/setup-agents` (design D4), including `--check`. Verify, and record the output in the PR:
+- [x] 1.1 Add `.agents/roles/` with the five roles (design D2), copying the four prompts from `.claude/agents/`, reworded without tool names. The reviewer description must not say "the main agent asks for Opus". Verify: `grep -riE "claude|sonnet|opus|haiku" .agents/roles` finds nothing.
+- [x] 1.2 Add `.agents/models.example` and gitignore entries for `.agents/models.local` and every generated path (design D3, D4). Verify: `git check-ignore` matches each generated path.
+- [x] 1.3 Write `scripts/setup-agents` (design D4), including `--check`. Verify, and record the output in the PR:
   - with no map, each tool gets 5 agents with no model field;
   - with a sample map, the models appear as mapped, and Codex has both `model` and `model_reasoning_effort`;
   - Claude spec-critic, reviewer and code-gate-reviewer get no web tools, researcher gets them, and implementer has no `tools` field; the opencode files deny the same;
   - a removed role disappears on the next run;
   - a broken role file makes the script exit non-zero;
   - `--check` prints `stale` after a role edit and `ok` after a rerun.
-- [ ] 1.4 In one commit, move `.claude/skills/` to `.agents/skills/`, remove `.claude/agents/` from git, and run `setup-agents` (design D5, Migration Plan). Verify:
+- [x] 1.4 In one commit, move `.claude/skills/` to `.agents/skills/`, remove `.claude/agents/` from git, and run `setup-agents` (design D5, Migration Plan). Verify:
   - right after the commit, Claude Code still lists the agents and the skills;
   - `openspec update --force` on a fresh clone writes only under `.agents/skills/`.
 
