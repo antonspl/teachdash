@@ -132,7 +132,7 @@ Each script lives in `scripts/flow/` and uses `set -euo pipefail`. On success it
 
 **Branch guard.** Every script that writes refuses to run when `git symbolic-ref --short HEAD` fails (detached HEAD) or returns `main`. This works the same in worktrees.
 
-**Testing.** When `FLOW_GH_FIXTURE` points to a JSON file, `gate-status` reads the PR from that file instead of calling `gh`. `scripts/flow/test` runs `gate-status` on fixtures that cover these cases:
+**Testing.** When `FLOW_GH_FIXTURE` points to a file, `gate-status` reads the PR data from it instead of calling `gh`. The file holds the lines `gh --jq` would extract (gate boxes, then comment author, time and first line), so the fixtures test the parsing after the `gh` call, not the `gh` query itself. `scripts/flow/test` runs `gate-status` on fixtures that cover these cases:
 
 - no comments;
 - a correct approval;
@@ -149,8 +149,8 @@ There is no commit or push wrapper. That output is already small (research angle
 These are committed. They allow each flow script and `scripts/setup-agents` by exact path, not by folder wildcard, so a new script needs a deliberate rule. They forbid `git push --force`, `git push -f` and any push to `main` in all three tools. `git push --force-with-lease` is neither allowed nor forbidden, so the tool asks the engineer each time:
 
 - `.claude/settings.json`: `permissions.allow` and `permissions.deny`. `settings.local.json` stays personal.
-- `opencode.json`: `permission.bash` rules with `allow` and `deny`.
-- `.codex/rules/flow.rules`: `prefix_rule` with `decision="allow"` for the scripts, and `"forbidden"` for the pushes.
+- `opencode.json`: the current `permissions` list with `action: shell` rules. The last matching rule wins, so the deny rules come last. The older `permission.bash` format is deprecated.
+- `.codex/rules/flow.rules`: `prefix_rule` with `decision="allow"` for the scripts, and `"forbidden"` for the pushes. Prefix rules cannot see a flag after other arguments, so `git push origin x --force` is not blocked in Codex. The `AGENTS.md` rule still applies.
 
 `pr-ready` and `gate-request` post under the engineer's GitHub account. They run only when the main agent reaches the matching step, which `AGENTS.md` defines.
 
