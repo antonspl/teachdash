@@ -32,31 +32,32 @@ gate_label() {
 # non-blank line. Fails if the heading is missing.
 set_range_line() {
   awk -v label="$1" -v range="$2" '
-    { sub(/\r$/, "") }
+    BEGIN { line = "- " label ": " range }
     function flush_pending() {
       for (i = 1; i <= nblank; i++) print ""
       nblank = 0
     }
+    { sub(/\r$/, "") }
     /^## / {
-      if (insec && !done) { print line; done = 1; flush_pending() }
+      if (insec && !done) { print line; done = 1 }
+      flush_pending()
       insec = ($0 == "## Review ranges")
       if (insec) found = 1
-      flush_pending()
       print
       next
     }
     insec {
-      if ($0 ~ "^- " label ":") { flush_pending(); print "- " label ": " range; done = 1; next }
+      if ($0 ~ "^- " label ":") { flush_pending(); print line; done = 1; next }
       if ($0 == "") { nblank++; next }
       flush_pending()
       print
       next
     }
     { print }
-    BEGIN { line = "- " label ": " range }
     END {
       if (!found) exit 3
       if (insec && !done) print line
+      flush_pending()
     }
   ' || die "no '## Review ranges' heading in the PR description"
 }

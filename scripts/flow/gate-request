@@ -16,6 +16,8 @@ guard_branch >/dev/null
 pr=$(gh pr view --json number --jq .number)
 body=$(gh pr view "$pr" --json body --jq .body)
 new=$(printf '%s\n' "$body" | set_range_line "$label" "$range")
+again=$(gh pr view "$pr" --json body --jq .body)
+[ "$again" = "$body" ] || die "the PR description changed while editing, nothing written; run again"
 gh pr edit "$pr" --body "$new" >/dev/null
 gh pr comment "$pr" --body "$MARKER $label gate: please review \`$range\`" >/dev/null
 echo "PR #$pr: $label gate requested for $range"

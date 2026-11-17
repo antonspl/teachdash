@@ -8,6 +8,7 @@ set -euo pipefail
 [ $# -eq 2 ] || die "usage: pr-draft <name> <issue>"
 name=$1
 issue=$2
+[[ $name =~ ^[a-z0-9][a-z0-9-]*$ ]] || die "name must be kebab-case"
 [[ $issue =~ ^[0-9]+$ ]] || die "issue must be a number"
 
 branch=$(guard_branch)

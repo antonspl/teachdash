@@ -1,5 +1,8 @@
 # Flow scripts run without asking. Force pushes and pushes to main are refused.
-# `git push --force-with-lease` matches no rule, so Codex asks the engineer.
+# `git push --force-with-lease` to another branch matches no forbidden rule, so
+# Codex asks the engineer. Rules match command prefixes only: a flag placed after
+# other arguments (for example `git push origin x --force`) is not caught, and
+# neither is `git -C <dir> push`.
 
 prefix_rule(pattern = ["scripts/setup-agents"], decision = "allow")
 prefix_rule(pattern = ["scripts/flow/issue-brief"], decision = "allow")
@@ -10,6 +13,7 @@ prefix_rule(pattern = ["scripts/flow/gate-request"], decision = "allow")
 prefix_rule(pattern = ["scripts/flow/gate-status"], decision = "allow")
 prefix_rule(pattern = ["scripts/flow/test"], decision = "allow")
 
+# Force flag right after "push" or after the remote.
 prefix_rule(
     pattern = ["git", "push", ["--force", "-f"]],
     decision = "forbidden",
@@ -19,15 +23,33 @@ prefix_rule(
 )
 
 prefix_rule(
-    pattern = ["git", "push", "origin", "main"],
+    pattern = ["git", "push", ["origin"], ["--force", "-f"]],
+    decision = "forbidden",
+    justification = "Never force-push",
+    match = ["git push origin --force x", "git push origin -f x"],
+    not_match = ["git push origin --force-with-lease x"],
+)
+
+# Pushes to main, with or without a flag before the remote.
+prefix_rule(
+    pattern = ["git", "push", ["origin"], ["main", "HEAD:main", "+main", "+HEAD:main", "refs/heads/main", "HEAD:refs/heads/main", "+refs/heads/main"]],
     decision = "forbidden",
     justification = "Never push to main",
-    match = ["git push origin main"],
+    match = ["git push origin main", "git push origin HEAD:main", "git push origin +main", "git push origin refs/heads/main"],
+    not_match = ["git push origin feature-main"],
 )
 
 prefix_rule(
-    pattern = ["git", "push", "-u", "origin", "main"],
+    pattern = ["git", "push", ["-u", "--set-upstream"], ["origin"], ["main", "HEAD:main", "+main", "refs/heads/main"]],
     decision = "forbidden",
     justification = "Never push to main",
-    match = ["git push -u origin main"],
+    match = ["git push -u origin main", "git push --set-upstream origin HEAD:main"],
+)
+
+# Force-with-lease to main is refused too.
+prefix_rule(
+    pattern = ["git", "push", "--force-with-lease", ["origin"], ["main", "HEAD:main", "refs/heads/main"]],
+    decision = "forbidden",
+    justification = "Never push to main",
+    match = ["git push --force-with-lease origin main"],
 )

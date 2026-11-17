@@ -189,7 +189,7 @@ generate() {
   fi
 
   sources_hash >"$STAMP"
-  printf '%s\n' "setup-agents: generated $(ls "$ROLES"/*.md | wc -l | tr -d ' ') agents for claude, opencode, codex"
+  printf '%s\n' "setup-agents: generated $(find "$ROLES" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ') agents for claude, opencode, codex"
 }
 
 case "${1:-}" in

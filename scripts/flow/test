@@ -42,6 +42,11 @@ actual=$(printf '%s\n' "$description" | set_range_line Code 3333333..4444444)
 expected=$'Closes #1\n\n## Review ranges\n\n- Spec: aaaaaaa..bbbbbbb\n- Code: 3333333..4444444\n\n## Gates\n\n- [x] Spec approved by @\n- [ ] Code approved by @'
 check "set_range_line keeps other gate lines" "$expected" "$actual"
 
+trailing=$'## Review ranges\n\n- Spec: aaaaaaa..bbbbbbb\n\n\n'
+actual=$(printf '%s' "$trailing" | set_range_line Code 3333333..4444444; echo x)
+expected=$'## Review ranges\n\n- Spec: aaaaaaa..bbbbbbb\n- Code: 3333333..4444444\n\n\nx'
+check "set_range_line keeps trailing blank lines at the end" "$expected" "$actual"
+
 (printf 'no heading here\n' | set_range_line Spec 1111111..2222222) >/dev/null 2>&1
 check "set_range_line fails without the heading" 1 $?
 

@@ -93,10 +93,11 @@ jobs:
       - run: scripts/check-scenario-coverage.sh
       - name: Workflow scripts
         run: |
-          shellcheck -x scripts/setup-agents $(find scripts/flow -maxdepth 1 -type f)
+          find scripts/flow -maxdepth 1 -type f -print0 | sort -z \
+            | xargs -0 shellcheck -x -P SCRIPTDIR scripts/setup-agents
           scripts/setup-agents
           for dir in .claude/agents .opencode/agents .codex/agents; do
-            count=$(find "$dir" -type f | wc -l)
+            count=$(find "$dir" -type f 2>/dev/null | wc -l)
             echo "$dir: $count agents"
             [ "$count" -eq 5 ] || { echo "Expected 5 agents in $dir."; exit 1; }
           done
