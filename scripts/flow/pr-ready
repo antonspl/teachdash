@@ -7,5 +7,3 @@ set -euo pipefail
 
 guard_branch >/dev/null
 gh pr ready
-tmp_var="a b"
-echo $tmp_var
