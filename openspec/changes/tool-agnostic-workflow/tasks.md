@@ -55,7 +55,7 @@ Codex has no live run: nobody on the team uses it yet (proposal, clarification 1
   - `grep -nE "Claude|Opus|Sonnet" openspec/constitution.md` finds nothing;
   - the diff changes wording only.
 - [x] 4.2 Update `CONTRIBUTING.md` and the `.github/CODEOWNERS` comment (design D8). Verify: `grep -n "Claude" CONTRIBUTING.md` finds only per-tool notes.
-- [ ] 4.3 Add the CI step (design D9). Verify:
+- [x] 4.3 Add the CI step (design D9). Verify:
   - the step is green on the PR;
   - a temporary broken role file, and then a temporary shellcheck error, each make it red;
   - both temporary changes are reverted with new commits.
