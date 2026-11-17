@@ -93,12 +93,12 @@ It is written in POSIX shell with `awk`, and needs no new dependency (constituti
 | Tool | Path | Mapping |
 |---|---|---|
 | Claude Code | `.claude/agents/<name>.md` | `model` from the map. `access: read` gives `tools: Read, Grep, Glob, Bash`, plus `WebSearch, WebFetch` when `web: true`. `access: write` with `web: true` gives no `tools` field, which means full access, as today |
-| opencode | `.opencode/agents/<name>.md` | `mode: subagent` and `model` from the map. The permission block denies `edit` for `access: read`, and denies `webfetch` and `websearch` for `web: false` |
+| opencode | `.opencode/agents/<name>.md` | `mode: subagent` and `model` from the map. A `permissions` list (the current format; the `permission` map is deprecated) denies `edit` for `access: read`, and denies `webfetch` and `websearch` for `web: false` |
 | Codex | `.codex/agents/<name>.toml` | `name`, `description` and `developer_instructions` (the body), plus `model` and `model_reasoning_effort` from the map. `access: read` and `web: false` become instruction lines, because Codex has no per-agent sandbox |
 
 It copies `.agents/skills/` to `.claude/skills/`. It deletes old generated files first, so a removed role does not linger. Every output path is gitignored.
 
-It also writes a stamp holding a hash of `.agents/roles/`, `.agents/skills/` and the map. `--check` compares that stamp with the sources and prints `stale` or `ok`. It writes nothing.
+It also writes a stamp holding a hash of `.agents/roles/`, `.agents/skills/`, the map and the generator itself. `--check` compares that stamp with the sources and prints `stale` or `ok`. It writes nothing.
 
 A missing or malformed map line gives a one-line warning, and the agent gets no model. A broken role file (missing field, unknown value) makes it exit non-zero.
 
@@ -106,7 +106,7 @@ A missing or malformed map line gives a one-line warning, and the agent gets no 
 
 ### D5. Skills live in `.agents/skills/`
 
-Codex and opencode read `.agents/skills/` natively, and `openspec update` refreshes whatever skills folders exist (see Context). With only `.agents/skills/` in git, an update on a fresh clone writes only there. On a machine that also has the generated `.claude/skills/`, the update writes the same content into both. That is harmless, because the copy is gitignored and `setup-agents` overwrites it. No OpenSpec setting changes.
+Codex and opencode read `.agents/skills/` natively, and `openspec update` refreshes whatever skills folders exist (see Context). With only `.agents/skills/` in git, an update on a fresh clone writes only there. On a machine that also has the generated `.claude/skills/`, the update writes the same content into both. That is harmless, because the copy is gitignored and `setup-agents` overwrites it. No OpenSpec setting changes. OpenSpec records its choice of target in `.agents/skills/.openspec-target`, which is committed so a fresh clone behaves the same.
 
 Risk: opencode reads both `.claude/skills/` and `.agents/skills/`, so it may list each skill twice. Task 2.3 checks this in a real opencode run. If the skills do appear twice, the fix is one of:
 
@@ -152,7 +152,7 @@ These are committed. They allow each flow script and `scripts/setup-agents` by e
 - `opencode.json`: the current `permissions` list with `action: shell` rules. The last matching rule wins, so the deny rules come last. The older `permission.bash` format is deprecated.
 - `.codex/rules/flow.rules`: `prefix_rule` with `decision="allow"` for the scripts, and `"forbidden"` for the pushes. Prefix rules cannot see a flag after other arguments, so `git push origin x --force` is not blocked in Codex. The `AGENTS.md` rule still applies.
 
-`pr-ready` and `gate-request` post under the engineer's GitHub account. They run only when the main agent reaches the matching step, which `AGENTS.md` defines.
+`pr-draft`, `pr-ready` and `gate-request` push or post under the engineer's GitHub account. They run only when the main agent reaches the matching step, which `AGENTS.md` defines.
 
 ### D8. Constitution and docs wording
 

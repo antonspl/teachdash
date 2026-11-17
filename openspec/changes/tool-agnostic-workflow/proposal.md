@@ -67,4 +67,4 @@ None. This is tooling, with no product behaviour change, so `.openspec.yaml` set
 - **Removed from git:** `.claude/agents/` and `.claude/skills/`, which become generated output.
 - **Process:** after cloning, and after any role or skill change, each developer runs `scripts/setup-agents`. If they don't, the tool runs with stale or missing agents.
 - **OpenSpec updates:** `openspec update` refreshes every skills folder it finds. With only `.agents/skills/` in git, that is the folder that changes. Then `setup-agents` refreshes the Claude copy.
-- **Live runs** in tasks 2.2 to 2.4 need each tool installed and signed in on the engineer's machine.
+- **Live runs** in tasks 2.2 and 2.3 need each tool installed and signed in on the engineer's machine.
