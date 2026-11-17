@@ -111,10 +111,10 @@ test('[web-client/R13-S2] Long option does not run under the arrow', async ({
     context.font = getComputedStyle(el).font
     return context.measureText(el.selectedOptions[0].text).width
   })
-  console.log(
-    `R13-S2 text ${textWidth.toFixed(1)} px, text area ${textArea.toFixed(1)} px`,
-  )
-  expect(textWidth).toBeLessThanOrEqual(textArea)
+  expect(
+    textWidth,
+    `text ${textWidth.toFixed(1)} px, text area ${textArea.toFixed(1)} px`,
+  ).toBeLessThanOrEqual(textArea)
 
   // and the page has no horizontal scroll
   const fits = await page.evaluate(
@@ -195,6 +195,17 @@ test('[web-client/R13-S4] Disabled select keeps the arrow', async ({
     expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1)
     expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1)
   } finally {
+    // let the held save finish so no handler runs after the page closes
+    const saved = page
+      .waitForResponse(
+        (response) =>
+          response.url().includes('/api/me') &&
+          response.request().method() !== 'GET',
+        { timeout: 10_000 },
+      )
+      .catch(() => undefined)
     release()
+    await saved
+    await page.unrouteAll({ behavior: 'ignoreErrors' })
   }
 })
