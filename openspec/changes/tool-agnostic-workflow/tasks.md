@@ -21,7 +21,7 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 
 Tasks 2.2 and 2.3 need the tool installed and signed in on the engineer's machine.
 
-- [ ] 2.1 Write `AGENTS.md` (design D1) and reduce `CLAUDE.md` to `@AGENTS.md`. Verify:
+- [x] 2.1 Write `AGENTS.md` (design D1) and reduce `CLAUDE.md` to `@AGENTS.md`. Verify:
   - `wc -c AGENTS.md` is under 32768;
   - a checklist in the PR maps every rule in the old `CLAUDE.md` to its line in `AGENTS.md`, including the three reviewer triggers, the "never merge, push to `main` or force-push" rule, and the no-ticking and no-approval rule;
   - `grep -iE "claude|sonnet|opus" AGENTS.md` finds only the per-tool notes.
@@ -51,10 +51,10 @@ Codex has no live run: nobody on the team uses it yet (proposal, clarification 1
 
 ## 4. Documentation and CI
 
-- [ ] 4.1 Reword constitution §1 as in design D8 (approved by the owner, proposal clarification 10). Verify:
+- [x] 4.1 Reword constitution §1 as in design D8 (approved by the owner, proposal clarification 10). Verify:
   - `grep -nE "Claude|Opus|Sonnet" openspec/constitution.md` finds nothing;
   - the diff changes wording only.
-- [ ] 4.2 Update `CONTRIBUTING.md` and the `.github/CODEOWNERS` comment (design D8). Verify: `grep -n "Claude" CONTRIBUTING.md` finds only per-tool notes.
+- [x] 4.2 Update `CONTRIBUTING.md` and the `.github/CODEOWNERS` comment (design D8). Verify: `grep -n "Claude" CONTRIBUTING.md` finds only per-tool notes.
 - [ ] 4.3 Add the CI step (design D9). Verify:
   - the step is green on the PR;
   - a temporary broken role file, and then a temporary shellcheck error, each make it red;

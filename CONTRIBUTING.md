@@ -10,12 +10,28 @@ Labels: `area:backend`, `area:frontend`, `area:devops`, `type:task`, `type:bug`,
 2. Issues labelled `needs-spec` have no OpenSpec change yet — the spec comes first.
 3. Bugs: reproduce, write a failing test, fix.
 
+## Agent setup
+
+The workflow runs in Claude Code, opencode or Codex. Agent files are generated, not
+in git. After cloning:
+
+1. Run `scripts/setup-agents`.
+2. Copy `.agents/models.example` to `.agents/models.local` and set a model for each
+   tool and class (`strong`, `medium`) you use. Without an entry, a role runs on the
+   session's model.
+3. Codex only: trust the project, or Codex ignores `.codex/`.
+
+Rerun `scripts/setup-agents` after you pull a change to `.agents/` (roles or
+skills), after `openspec update`, and after you edit `.agents/models.local`.
+`scripts/setup-agents --check` prints `ok` or `stale`. The agent runs it for you at
+the start of a session and restarts if needed.
+
 ## How a change is done
 
 Read `openspec/constitution.md` first (section 1 is the workflow).
 
 **One change = one branch = one PR.** The PR passes three review gates. You, the
-engineer who took the task, approve each one after checking what Claude produced:
+engineer who took the task, approve each one after checking what the agent produced:
 
 | Phase | Author does | Gate |
 |---|---|---|
@@ -31,19 +47,19 @@ code together and approves the PR. Then anyone on the team merges it.
 
 | Step | How |
 |---|---|
-| Explore (optional, for a big or unclear feature; skip when the issue already has it) | `/openspec-explore` |
-| Clarify, Research | Claude restates the task and asks only what the issue does not answer; you answer and agree the research angles (or none) |
-| Propose + spec critique | `/openspec-propose`; Claude runs the spec-critic, then stops for "spec approved" |
-| Tests, then code | `/openspec-apply-change`. Backend: pass 1 writes failing tests and stops for "tests approved"; pass 2 writes the code. Frontend-only: tests and code in one pass. Claude runs the Opus review, then stops for "code approved" |
-| Archive | `/openspec-archive-change`, then mark the PR ready |
+| Explore (optional, for a big or unclear feature; skip when the issue already has it) | `/openspec-explore` (Codex: `$openspec-explore`) |
+| Clarify, Research | the agent restates the task and asks only what the issue does not answer; you answer and agree the research angles (or none) |
+| Propose + spec critique | `/openspec-propose` (Codex: `$openspec-propose`); the agent runs the spec-critic, then stops for "spec approved" |
+| Tests, then code | `/openspec-apply-change` (Codex: `$openspec-apply-change`). Backend: pass 1 writes failing tests and stops for "tests approved"; pass 2 writes the code. Frontend-only: tests and code in one pass. the agent runs the code-gate review, then stops for "code approved" |
+| Archive | `/openspec-archive-change` (Codex: `$openspec-archive-change`), then mark the PR ready |
 | Final review | another code owner approves; then anyone merges |
 
 The author answers the clarifying questions and decides trade-offs for their change.
-Anyone can improve the workflow (`CLAUDE.md`, `CONTRIBUTING.md`, `.claude/`, the PR
-template) through a normal PR. Changes to the constitution, `openspec/config.yaml` and
+Anyone can improve the workflow (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/`,
+`.claude/settings.json`, `opencode.json`, `.codex/`, the PR template) through a normal PR. Changes to the constitution, `openspec/config.yaml` and
 `.github/CODEOWNERS` need the owner's approval.
 
-At each gate Claude stops and posts the commit range of that phase
+At each gate the agent stops and posts the commit range of that phase
 (e.g. `Tests: abc123..def456`), so you read only what is new.
 
 To approve a gate: post a comment naming it ("spec approved", "tests approved",

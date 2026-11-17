@@ -9,14 +9,15 @@ Roles:
 
 - **Engineer** — the team member who took the task. The engineer answers the
   clarifying questions, agrees the research angles, decides trade-offs and approves
-  the gates: at each gate the engineer checks what Claude produced, helped by the
-  spec-critic (spec gate) and the Opus review (code gate).
+  the gates: at each gate the engineer checks what the agent produced, helped by the
+  spec-critic (spec gate) and the code-gate review (code gate).
 - **Code owner** — a team member listed in `.github/CODEOWNERS`. A code owner other
   than the engineer gives the final approval.
 - **Owner** — the project owner. The only one who may merge into `main` without an
   approval. Changes to this file, `openspec/config.yaml` and `.github/CODEOWNERS`
   need the owner's approval. Any engineer may improve the rest of the workflow
-  (`CLAUDE.md`, `CONTRIBUTING.md`, `.claude/`, the PR template) through a normal PR.
+  (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/`, `.claude/settings.json`,
+  `opencode.json`, `.codex/`, the PR template) through a normal PR.
 
 One change = one branch = one pull request. The PR goes through three review gates
 approved by the engineer, then a code owner other than the engineer approves the
@@ -55,7 +56,7 @@ with its own issue, spec and PR.
    production code until approved.
 9. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
    if a test looks wrong, stop and ask the engineer.
-10. **Code review** — the Opus review runs, then the engineer approves the code in the PR. Security problems,
+10. **Code review** — the code-gate review runs, then the engineer approves the code in the PR. Security problems,
    data loss and spec violations are fixed in the PR. Every other finding becomes
    an issue, so rare edge cases do not add more review rounds.
 11. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
@@ -71,7 +72,7 @@ matching box ticked in the PR description. A GitHub review "Approve" is used onl
 for the final review: it does not say which gate it is for, and it stays on
 the PR when the next phase is pushed.
 
-At each gate Claude stops and posts the commit range of that phase
+At each gate the agent stops and posts the commit range of that phase
 (e.g. `abc123..def456`), so the engineer reads only what is new.
 
 All artifacts, code, comments and commit messages are in English.
