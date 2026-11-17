@@ -96,7 +96,7 @@ It is written in POSIX shell with `awk`, and needs no new dependency (constituti
 | opencode | `.opencode/agents/<name>.md` | `mode: subagent` and `model` from the map. A `permissions` list (the current format; the `permission` map is deprecated) denies `edit` for `access: read`, and denies `webfetch` and `websearch` for `web: false` |
 | Codex | `.codex/agents/<name>.toml` | `name`, `description` and `developer_instructions` (the body), plus `model` and `model_reasoning_effort` from the map. `access: read` and `web: false` become instruction lines, because Codex has no per-agent sandbox |
 
-It copies `.agents/skills/` to `.claude/skills/`. It deletes old generated files first, so a removed role does not linger. Every output path is gitignored.
+It copies `.agents/skills/` to `.claude/skills/`. It keeps a gitignored manifest, `.agents/.generated`, listing the paths it wrote. On the next run it deletes only listed paths that are no longer generated, so a removed role does not linger and a developer's own files in those folders stay. With no manifest (first run) it overwrites same-named files and deletes nothing. Every output path is gitignored.
 
 It also writes a stamp holding a hash of `.agents/roles/`, `.agents/skills/`, the map and the generator itself. `--check` compares that stamp with the sources and prints `stale` or `ok`. It writes nothing.
 
@@ -122,10 +122,10 @@ Each script lives in `scripts/flow/` and uses `set -euo pipefail`. On success it
 | Script | Does |
 |---|---|
 | `issue-brief <n>` | Prints the issue's title, labels, body and comments, without the constitution or the config |
-| `change-start <name> <issue>` | Runs `setup-agents --check`, creates the branch from an updated `main`, then runs `openspec new change` |
+| `change-start <name> <issue>` | Refuses when the working tree has uncommitted changes (untracked files included). Runs `setup-agents --check`, creates the branch from an updated `main`, then runs `openspec new change`. If that fails, it switches back and deletes the new branch, so a retry works |
 | `pr-draft <name> <issue>` | Pushes, opens a draft PR from the template with `Closes #<issue>` and the change path, and prints the URL |
-| `gate-request <gate> <range>` | Posts a comment with the range, and replaces only the line for that gate in the description's "Review ranges" section. It fails if the heading is missing. Other lines and the gate boxes stay as they are |
-| `gate-status` | Prints, for each gate (`spec`, `tests`, `code`), whether there is an approving comment, who wrote it and when, and whether the box is ticked. It also flags an approval older than the latest `gate-request` for that gate |
+| `gate-request <gate> <range>` | Posts a comment with the range, and replaces only the line for that gate in the description's "Review ranges" section. It reads the description once, re-reads it just before the edit and aborts if it changed. It fails if the heading is missing. Other lines and the gate boxes stay as they are |
+| `gate-status` | Reads PR comments and review bodies (same rules for both). Exits non-zero with a short error if `gh` fails (no PR, logged out, no network). Prints, for each gate (`spec`, `tests`, `code`), whether there is an approving comment, who wrote it and when, and whether the box is ticked. It also flags an approval older than the latest `gate-request` for that gate |
 | `pr-ready` | Marks the PR ready |
 
 **Gate strings.** An approving comment starts with `spec approved`, `tests approved` or `code approved` (case-insensitive). Comments posted by the scripts start with a hidden marker, `<!-- flow -->`, and `gate-status` never counts them. `gate-status` only reports. The agent shows the result to the engineer, who is the one who decides. No script ticks a box or writes an approval.
@@ -152,7 +152,7 @@ These are committed. They allow each flow script and `scripts/setup-agents` by e
 - `opencode.json`: the current `permissions` list with `action: shell` rules. The last matching rule wins, so the deny rules come last. The older `permission.bash` format is deprecated.
 - `.codex/rules/flow.rules`: `prefix_rule` with `decision="allow"` for the scripts, and `"forbidden"` for the pushes. Prefix rules cannot see a flag after other arguments, so `git push origin x --force` is not blocked in Codex. The `AGENTS.md` rule still applies.
 
-The permission files are owner-only in CODEOWNERS. `AGENTS.md` tells agents not to change them, or the flow scripts and roles, unless the task requires it, and the reviewers check this. The owner approved this on 2026-11-17.
+The permission files, `scripts/flow/` and `scripts/setup-agents` are owner-only in CODEOWNERS, because the rules run those scripts without asking. Both `scripts/x` and `./scripts/x` forms are allowed. `AGENTS.md` tells agents not to change them, or the flow scripts and roles, unless the task requires it, and the reviewers check this. The owner approved this on 2026-11-17.
 
 `pr-draft`, `pr-ready` and `gate-request` push or post under the engineer's GitHub account. They run only when the main agent reaches the matching step, which `AGENTS.md` defines.
 
@@ -162,18 +162,18 @@ The permission files are owner-only in CODEOWNERS. `AGENTS.md` tells agents not 
   - "what Claude produced" becomes "what the agent produced";
   - "the Opus review" becomes "the code-gate review", so the name does not clash with step 12, "Final review";
   - "Claude stops" becomes "the agent stops";
-  - the open workflow files become `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/` and the PR template. The permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) are owner-only, like CODEOWNERS says.
+  - the open workflow files become `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `.agents/` and the PR template. The permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) and the scripts they allow (`scripts/flow/`, `scripts/setup-agents`) are owner-only, like CODEOWNERS says.
 
   No rule changes meaning. The owner approved the edit (proposal, clarification 10).
 - **`CONTRIBUTING.md`.** It gets the per-tool setup, the model map, the Codex trust step, and when to rerun `setup-agents`. Every "Claude" line becomes "the agent". The OpenSpec steps are named per tool: `/openspec-propose` in Claude Code and opencode, and `$openspec-propose` in Codex.
-- **`.github/CODEOWNERS`.** The owner-only paths now include the three permission files, and the comment lists the same files as the constitution.
+- **`.github/CODEOWNERS`.** The owner-only paths now include the three permission files, `scripts/flow/` and `scripts/setup-agents`, and the comment lists the same files as the constitution.
 
 ### D9. CI checks
 
 A step in an existing CI job does three things:
 
 - runs `shellcheck` on `scripts/setup-agents` and `scripts/flow/*` (shellcheck is preinstalled on GitHub's Ubuntu runners);
-- runs `scripts/setup-agents` with no map and checks that it writes 5 agents for each tool;
+- runs `scripts/setup-agents` with no map and checks that it writes one agent per file in `.agents/roles/` for each tool;
 - runs `scripts/flow/test`.
 
 ## Risks / Trade-offs
@@ -184,6 +184,9 @@ A step in an existing CI job does three things:
 - [A tool changes its file format] → Only the generator changes.
 - [A push rule is bypassed with `git -C <dir> push`, an env prefix or a wrapper script] → The deny rules are prefix patterns and cannot catch every form. The `AGENTS.md` rule still applies, and `main` is protected on GitHub.
 - [opencode allows every shell command by default] → `opencode.json` sets `git push *` to `ask` before the deny rules, so `--force-with-lease` and normal pushes ask the engineer, as in Claude Code.
+- [`gate-request` loses a description edit made in the instant between its last read and its write] → GitHub has no conditional edit, so the window is only minimised (one read, one re-read, then the write), not closed.
+- [A bare `git push` from a `main` checkout] → No code change. GitHub rulesets block it: `protect-main` (no deletion, no non-fast-forward, pull request required; the only bypass is the repository role in pull-request mode, so a PR merge) and `require-ci` (required status checks, no bypass).
+- [The allowed scripts are changed to do more than the rules intended] → `scripts/flow/` and `scripts/setup-agents` are owner-only in CODEOWNERS and the constitution, like the permission files.
 - [A Codex read-only role edits files] → The role text forbids it, the reviewer checks `git status`, and the Codex rules forbid force push and pushes to `main`.
 
 ## Migration Plan

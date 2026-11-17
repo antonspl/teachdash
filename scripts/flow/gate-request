@@ -13,8 +13,12 @@ range=$2
 
 guard_branch >/dev/null
 
-pr=$(gh pr view --json number --jq .number)
-body=$(gh pr view "$pr" --json body --jq .body)
+# One read of number and body. The body is re-read once, just before the edit.
+# GitHub has no conditional edit, so a change in that last instant can still be lost.
+info=$(gh pr view --json number,body --jq '.number, .body')
+pr=${info%%$'\n'*}
+body=
+case $info in *$'\n'*) body=${info#*$'\n'} ;; esac
 new=$(printf '%s\n' "$body" | set_range_line "$label" "$range")
 again=$(gh pr view "$pr" --json body --jq .body)
 [ "$again" = "$body" ] || die "the PR description changed while editing, nothing written; run again"

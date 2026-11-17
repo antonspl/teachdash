@@ -5,13 +5,53 @@
 # neither is `git -C <dir> push`.
 
 prefix_rule(pattern = ["scripts/setup-agents"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/setup-agents"],
+    decision = "allow",
+    match = ["./scripts/setup-agents"],
+)
 prefix_rule(pattern = ["scripts/flow/issue-brief"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/issue-brief"],
+    decision = "allow",
+    match = ["./scripts/flow/issue-brief"],
+)
 prefix_rule(pattern = ["scripts/flow/change-start"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/change-start"],
+    decision = "allow",
+    match = ["./scripts/flow/change-start"],
+)
 prefix_rule(pattern = ["scripts/flow/pr-draft"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/pr-draft"],
+    decision = "allow",
+    match = ["./scripts/flow/pr-draft"],
+)
 prefix_rule(pattern = ["scripts/flow/pr-ready"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/pr-ready"],
+    decision = "allow",
+    match = ["./scripts/flow/pr-ready"],
+)
 prefix_rule(pattern = ["scripts/flow/gate-request"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/gate-request"],
+    decision = "allow",
+    match = ["./scripts/flow/gate-request"],
+)
 prefix_rule(pattern = ["scripts/flow/gate-status"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/gate-status"],
+    decision = "allow",
+    match = ["./scripts/flow/gate-status"],
+)
 prefix_rule(pattern = ["scripts/flow/test"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/test"],
+    decision = "allow",
+    match = ["./scripts/flow/test"],
+)
 
 # Force flag right after "push" or after the remote.
 prefix_rule(

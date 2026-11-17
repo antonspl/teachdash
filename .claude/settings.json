@@ -2,13 +2,21 @@
   "permissions": {
     "allow": [
       "Bash(scripts/setup-agents *)",
+      "Bash(./scripts/setup-agents *)",
       "Bash(scripts/flow/issue-brief *)",
+      "Bash(./scripts/flow/issue-brief *)",
       "Bash(scripts/flow/change-start *)",
+      "Bash(./scripts/flow/change-start *)",
       "Bash(scripts/flow/pr-draft *)",
+      "Bash(./scripts/flow/pr-draft *)",
       "Bash(scripts/flow/pr-ready *)",
+      "Bash(./scripts/flow/pr-ready *)",
       "Bash(scripts/flow/gate-request *)",
+      "Bash(./scripts/flow/gate-request *)",
       "Bash(scripts/flow/gate-status *)",
-      "Bash(scripts/flow/test *)"
+      "Bash(./scripts/flow/gate-status *)",
+      "Bash(scripts/flow/test *)",
+      "Bash(./scripts/flow/test *)"
     ],
     "deny": [
       "Bash(git push --force)",

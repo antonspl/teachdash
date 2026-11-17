@@ -8,6 +8,7 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 - [x] 1.2 Add `.agents/models.example` and gitignore entries for `.agents/models.local` and every generated path (design D3, D4). Verify: `git check-ignore` matches each generated path.
 - [x] 1.3 Write `scripts/setup-agents` (design D4), including `--check`. Verify, and record the output in the PR:
   - with no map, each tool gets 5 agents with no model field;
+  - a personal file in a generated folder survives a rerun, and a removed role's generated files disappear (manifest `.agents/.generated`);
   - with a sample map, the models appear as mapped, and Codex has both `model` and `model_reasoning_effort`;
   - Claude spec-critic, reviewer and code-gate-reviewer get no web tools, researcher gets them, and implementer has no `tools` field; the opencode files deny the same;
   - a removed role disappears on the next run;

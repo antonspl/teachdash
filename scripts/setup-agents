@@ -11,6 +11,8 @@ ROLES=.agents/roles
 SKILLS=.agents/skills
 MAP=.agents/models.local
 STAMP=.agents/.setup-stamp
+# Paths this script generated last time, one per line. Only these are ever deleted.
+MANIFEST=.agents/.generated
 
 die() {
   printf 'setup-agents: %s\n' "$*" >&2
@@ -175,11 +177,48 @@ check() {
   fi
 }
 
+# Prints every path generate() writes, one per line.
+generated_paths() {
+  for f in "$ROLES"/*.md; do
+    name=$(basename "$f" .md)
+    printf '%s\n' ".claude/agents/$name.md" ".opencode/agents/$name.md" ".codex/agents/$name.toml"
+  done
+  if [ -d "$SKILLS" ]; then
+    (cd "$SKILLS" && find . -type f | sed 's|^\./||' | LC_ALL=C sort) | while read -r rel; do
+      printf '%s\n' ".claude/skills/$rel"
+    done
+  fi
+}
+
+# Deletes files listed in the old manifest that are no longer generated, then
+# empty parent folders. Nothing outside the generated folders is touched.
+remove_stale() {
+  [ -f "$MANIFEST" ] || return 0
+  while read -r path; do
+    case "$path" in
+      *..* | "") continue ;;
+      .claude/agents/* | .opencode/agents/* | .codex/agents/* | .claude/skills/*) ;;
+      *) continue ;;
+    esac
+    grep -qxF -- "$path" "$1" && continue
+    rm -f -- "$path"
+    dir=$(dirname "$path")
+    while [ "$dir" != . ] && [ "$dir" != .claude ] && [ "$dir" != .opencode ] && [ "$dir" != .codex ] &&
+      rmdir "$dir" 2>/dev/null; do
+      dir=$(dirname "$dir")
+    done
+  done <"$MANIFEST"
+}
+
 generate() {
   validate_roles
   warn_bad_map_lines
 
-  rm -rf .claude/agents .opencode/agents .codex/agents
+  new_list=$(mktemp)
+  trap 'rm -f "$new_list"' EXIT
+  generated_paths >"$new_list"
+  remove_stale "$new_list"
+
   mkdir -p .claude/agents .opencode/agents .codex/agents
   for f in "$ROLES"/*.md; do
     claude_agent "$f"
@@ -188,11 +227,17 @@ generate() {
   done
 
   if [ -d "$SKILLS" ]; then
-    rm -rf .claude/skills
-    mkdir -p .claude
-    cp -R "$SKILLS" .claude/skills
+    while read -r path; do
+      case "$path" in
+        .claude/skills/*)
+          mkdir -p "$(dirname "$path")"
+          cp "$SKILLS/${path#.claude/skills/}" "$path"
+          ;;
+      esac
+    done <"$new_list"
   fi
 
+  cp "$new_list" "$MANIFEST"
   sources_hash >"$STAMP"
   printf '%s\n' "setup-agents: generated $(find "$ROLES" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ') agents for claude, opencode, codex"
 }

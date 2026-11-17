@@ -12,6 +12,7 @@ name=$1
 [[ $2 =~ ^[0-9]+$ ]] || die "issue must be a number"
 
 git symbolic-ref -q HEAD >/dev/null || die "detached HEAD, check out a branch first"
+[ -z "$(git status --porcelain --untracked-files=normal)" ] || die "uncommitted changes, commit or stash them first"
 git show-ref --verify --quiet "refs/heads/$name" && die "branch $name already exists"
 
 if ! "$(dirname "$0")/../setup-agents" --check >/dev/null; then
@@ -19,6 +20,11 @@ if ! "$(dirname "$0")/../setup-agents" --check >/dev/null; then
 fi
 
 git fetch --quiet origin main
+start=$(git symbolic-ref --short HEAD)
 git switch --quiet --no-track -c "$name" origin/main
-openspec new change "$name" >/dev/null
+if ! openspec new change "$name" >/dev/null; then
+  git switch --quiet "$start"
+  git branch --quiet -D "$name"
+  die "openspec new change failed; went back to $start and removed branch $name"
+fi
 echo "branch $name from origin/main, change openspec/changes/$name/ (issue #$2)"
