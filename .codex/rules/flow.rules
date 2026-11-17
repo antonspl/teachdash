@@ -40,7 +40,7 @@ prefix_rule(
 )
 
 prefix_rule(
-    pattern = ["git", "push", ["-u", "--set-upstream"], ["origin"], ["main", "HEAD:main", "+main", "refs/heads/main"]],
+    pattern = ["git", "push", ["-u", "--set-upstream"], ["origin"], ["main", "HEAD:main", "+main", "+HEAD:main", "refs/heads/main", "HEAD:refs/heads/main", "+refs/heads/main"]],
     decision = "forbidden",
     justification = "Never push to main",
     match = ["git push -u origin main", "git push --set-upstream origin HEAD:main"],

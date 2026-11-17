@@ -30,7 +30,7 @@ step.
 | Code (pass 2), code review, code gate | §1 steps 9-10, §3 Architecture |
 | Archive, final review | §1 steps 11-12 |
 | Changes touching data, logs, deploy | §4 Secrets, §5 Observability, §6 Deployment |
-| Changes touching teacher data or languages | §8 Multiple teachers, §9 Languages |
+| Changes touching teacher data or languages | §8 Multiple teachers, §9 Subjects and languages |
 | Adding a dependency | §7 Simplicity |
 | External services, hosting | §10 Access from Russia and the EU |
 

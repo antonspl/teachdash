@@ -67,6 +67,7 @@ sources_hash() {
       cat "$f"
     done
     [ -f "$MAP" ] && cat "$MAP"
+    cat scripts/setup-agents
   } | cksum
 }
 
@@ -107,6 +108,10 @@ claude_agent() {
   } >".claude/agents/$name.md"
 }
 
+opencode_deny() {
+  printf '  - action: %s\n    resource: "*"\n    effect: deny\n' "$1"
+}
+
 opencode_agent() {
   name=$(field "$1" name)
   model=$(mapped opencode "$(field "$1" class)" | awk '{print $1}')
@@ -116,11 +121,11 @@ opencode_agent() {
     echo "mode: subagent"
     [ -z "$model" ] || printf '%s\n' "model: $model"
     if [ "$(field "$1" access)" = read ] || [ "$(field "$1" web)" = false ]; then
-      echo "permission:"
-      [ "$(field "$1" access)" = read ] && echo "  edit: deny"
+      echo "permissions:"
+      [ "$(field "$1" access)" = read ] && opencode_deny edit
       if [ "$(field "$1" web)" = false ]; then
-        echo "  webfetch: deny"
-        echo "  websearch: deny"
+        opencode_deny webfetch
+        opencode_deny websearch
       fi
     fi
     echo "---"

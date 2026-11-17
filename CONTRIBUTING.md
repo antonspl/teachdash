@@ -15,10 +15,10 @@ Labels: `area:backend`, `area:frontend`, `area:devops`, `type:task`, `type:bug`,
 The workflow runs in Claude Code, opencode or Codex. Agent files are generated, not
 in git. After cloning:
 
-1. Run `scripts/setup-agents`.
-2. Copy `.agents/models.example` to `.agents/models.local` and set a model for each
+1. Copy `.agents/models.example` to `.agents/models.local` and set a model for each
    tool and class (`strong`, `medium`) you use. Without an entry, a role runs on the
    session's model.
+2. Run `scripts/setup-agents`.
 3. Codex only: trust the project, or Codex ignores `.codex/`.
 
 Rerun `scripts/setup-agents` after you pull a change to `.agents/` (roles or
