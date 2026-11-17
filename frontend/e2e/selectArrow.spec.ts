@@ -98,6 +98,24 @@ test('[web-client/R13-S2] Long option does not run under the arrow', async ({
   expect(style.textOverflow).toBe('ellipsis')
   expect(style.scrollWidth).toBeLessThanOrEqual(style.clientWidth)
 
+  // and the whole time zone name fits in the text area
+  const textArea =
+    s.width -
+    style.borderLeft -
+    style.borderRight -
+    style.paddingLeft -
+    style.paddingRight
+  const textWidth = await select.evaluate((element) => {
+    const el = element as HTMLSelectElement
+    const context = document.createElement('canvas').getContext('2d')!
+    context.font = getComputedStyle(el).font
+    return context.measureText(el.selectedOptions[0].text).width
+  })
+  console.log(
+    `R13-S2 text ${textWidth.toFixed(1)} px, text area ${textArea.toFixed(1)} px`,
+  )
+  expect(textWidth).toBeLessThanOrEqual(textArea)
+
   // and the page has no horizontal scroll
   const fits = await page.evaluate(
     () =>
