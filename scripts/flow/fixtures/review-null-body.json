@@ -7,4 +7,5 @@
   {"author":{"login":"bob"},"state":"APPROVED","submittedAt":"2026-11-17T11:00:00Z","body":""},
   {"author":{"login":"bob"},"state":"APPROVED","submittedAt":"2026-11-17T11:30:00Z","body":null},
   {"author":null,"state":"COMMENTED","submittedAt":"2026-11-17T12:00:00Z","body":"Spec approved\nthanks"},
+  {"author":{"login":""},"state":"COMMENTED","submittedAt":"2026-11-17T13:00:00Z","body":"Spec approved"},
   {"author":{"login":"carol"},"state":"PENDING","submittedAt":null,"body":"Code approved"}]}

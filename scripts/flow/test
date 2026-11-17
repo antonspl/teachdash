@@ -124,7 +124,26 @@ check "change-start goes back to the start branch" main "$(git -C "$clone" symbo
 check "change-start removes the partial change folder" 0 "$(find "$clone/openspec/changes" -name some-name 2>/dev/null | wc -l | tr -d ' ')"
 check "change-start removes the new branch" 0 "$(git -C "$clone" branch --list some-name | wc -l | tr -d ' ')"
 
-# change-start rollback also removes a folder created on the new branch only.
+# change-start rollback must not delete a folder that already exists on origin/main.
+# A second clone pushes the folder, so the clone's start branch lacks it: computing
+# had_dir before the switch would give 0 and run rm -rf. A spy rm records that.
+other=$work/other
+git clone -q "$origin" "$other" 2>/dev/null
+mkdir -p "$other/openspec/changes/kept-name"
+touch "$other/openspec/changes/kept-name/proposal.md"
+git -C "$other" add -A
+git -C "$other" -c user.name=t -c user.email=t@t commit -q -m "add kept-name"
+git -C "$other" push -q origin main 2>/dev/null
+real_rm=$(command -v rm)
+mkdir -p "$work/spybin"
+# shellcheck disable=SC2016  # $* and $RM_LOG must expand in the spy, not here
+printf '%s\n' '#!/bin/sh' 'echo "$*" >>"$RM_LOG"' "exec $real_rm \"\$@\"" >"$work/spybin/rm"
+chmod +x "$work/spybin/rm"
+: >"$work/rmlog"
+(cd "$clone" && RM_LOG=$work/rmlog PATH="$work/spybin:$work/fakebin:$PATH" "$here/change-start" kept-name 1) >/dev/null 2>"$work/err"
+check "change-start fails when openspec fails on an existing change" 1 "$(grep -c 'openspec new change failed' "$work/err")"
+check "change-start does not delete a change folder that exists on origin/main" 0 "$(grep -c 'kept-name' "$work/rmlog")"
+check "change-start keeps the folder on origin/main" 1 "$(git -C "$clone" ls-tree -r --name-only origin/main | grep -c 'kept-name/proposal.md')"
 check "change-start leaves the clone clean" "" "$(git -C "$clone" status --porcelain)"
 
 # gate-request: the comment is posted before the edit, and a failed edit says so.

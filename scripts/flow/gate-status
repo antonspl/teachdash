@@ -17,16 +17,16 @@ set -euo pipefail
 [ $# -eq 0 ] || require_number "$1" "pr number"
 
 FILTER='
-  "A\t" + (.author.login // "ghost"),
+  "A\t" + ((.author.login // "") | if . == "" then "ghost" else . end),
   (.body // "" | split("\n")[]
     | capture("^- \\[(?<box>[ xX])\\] (?<gate>Spec|Tests|Code) approved")?
     | "B\t" + (.gate | ascii_downcase) + "\t" + (if .box == " " then "space" else "x" end)),
   (.comments[]
-    | "C\t" + (.author.login // "ghost") + "\t" + .createdAt + "\t"
+    | "C\t" + ((.author.login // "") | if . == "" then "ghost" else . end) + "\t" + .createdAt + "\t"
       + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " "))),
   (.reviews[]
     | select(.state != "PENDING" and .state != "DISMISSED" and .submittedAt != null)
-    | "C\t" + (.author.login // "ghost") + "\t" + .submittedAt + "\t"
+    | "C\t" + ((.author.login // "") | if . == "" then "ghost" else . end) + "\t" + .submittedAt + "\t"
       + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " ")))'
 
 extract() {
