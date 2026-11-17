@@ -1,7 +1,6 @@
 ---
 name: reviewer
 description: Independent reviewer. Reviews a diff or artifact against the specs and constitution after a pass 2 slice, or when the main agent has a concern. Read-only.
-class: medium
 access: read
 web: false
 ---
