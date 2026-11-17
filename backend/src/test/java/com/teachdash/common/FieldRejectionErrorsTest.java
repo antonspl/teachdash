@@ -50,7 +50,7 @@ class FieldRejectionErrorsTest extends ApiTest {
 
 		// when teacher B registers a student with the email "a@example.com"
 		var response = teacherB.post(STUDENTS,
-				Map.of("name", "Анна", "email", "a@example.com", "timeZone", "Europe/Moscow"));
+				Map.of("name", "Анна", "email", "a@example.com", "timeZone", "Europe/Moscow", "nativeLanguage", "en"));
 
 		// then the response is 409 EMAIL_TAKEN naming the email field
 		response.then().statusCode(409)
@@ -75,6 +75,7 @@ class FieldRejectionErrorsTest extends ApiTest {
 				"name", "Anna",
 				"email", "t@example.com",
 				"timeZone", "Europe/Berlin",
+				"nativeLanguage", "en",
 				"password", "password-1"));
 
 		// then the response is 409 EMAIL_TAKEN naming the email field
@@ -114,7 +115,7 @@ class FieldRejectionErrorsTest extends ApiTest {
 		// when someone logs in with a wrong password, teacher A registers the assigned student's email again, and teacher A opens a malformed student id
 		var login = newClient().login("student@example.com", "wrong-password-1");
 		var registration = teacher.post(STUDENTS,
-				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC"));
+				Map.of("name", "Student", "email", "student@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var malformedId = teacher.get(STUDENTS + "/not-a-uuid");
 
 		// then the responses are 401 INVALID_CREDENTIALS, 409 ALREADY_ENROLLED and 404 NOT_FOUND, none with errors

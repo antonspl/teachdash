@@ -139,6 +139,7 @@ class TeacherJoinLinkTest extends ApiTest {
 				"name", "Nina",
 				"email", "nina@example.com",
 				"timeZone", "UTC",
+				"nativeLanguage", "en",
 				"password", "new-password-1"));
 
 		// then the two links differ
@@ -274,6 +275,7 @@ class TeacherJoinLinkTest extends ApiTest {
 				"name", "Nina",
 				"email", "nina@example.com",
 				"timeZone", "UTC",
+				"nativeLanguage", "en",
 				"password", "new-password-1");
 		var visitorJoin = visitor.post(JOIN, joinBody);
 		// and the student joins through L1, teacher A views the link, and teacher A then generates a link L2

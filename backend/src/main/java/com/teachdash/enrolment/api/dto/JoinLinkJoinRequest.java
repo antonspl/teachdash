@@ -9,6 +9,7 @@ public record JoinLinkJoinRequest(
 		String name,
 		String email,
 		String timeZone,
+		String nativeLanguage,
 		String password) {
 
 	@Override

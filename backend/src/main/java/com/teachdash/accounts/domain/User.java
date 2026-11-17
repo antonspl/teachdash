@@ -19,6 +19,7 @@ public class User implements Persistable<UUID> {
 	private final Role role;
 	private final String passwordHash;
 	private final String timeZone;
+	private final String nativeLanguage;
 	private final boolean active;
 	private final int sessionVersion;
 	private final Instant createdAt;
@@ -34,6 +35,7 @@ public class User implements Persistable<UUID> {
 			Role role,
 			String passwordHash,
 			String timeZone,
+			String nativeLanguage,
 			boolean active,
 			int sessionVersion,
 			Instant createdAt) {
@@ -43,6 +45,7 @@ public class User implements Persistable<UUID> {
 		this.role = role;
 		this.passwordHash = passwordHash;
 		this.timeZone = timeZone;
+		this.nativeLanguage = nativeLanguage;
 		this.active = active;
 		this.sessionVersion = sessionVersion;
 		this.createdAt = createdAt;
@@ -54,8 +57,9 @@ public class User implements Persistable<UUID> {
 			Role role,
 			String passwordHash,
 			String timeZone,
+			String nativeLanguage,
 			Instant now) {
-		User user = new User(UUID.randomUUID(), email, name, role, passwordHash, timeZone, true, 0, now);
+		User user = new User(UUID.randomUUID(), email, name, role, passwordHash, timeZone, nativeLanguage, true, 0, now);
 		user.newEntity = true;
 		return user;
 	}
@@ -88,6 +92,10 @@ public class User implements Persistable<UUID> {
 
 	public String getTimeZone() {
 		return timeZone;
+	}
+
+	public String getNativeLanguage() {
+		return nativeLanguage;
 	}
 
 	public boolean isActive() {

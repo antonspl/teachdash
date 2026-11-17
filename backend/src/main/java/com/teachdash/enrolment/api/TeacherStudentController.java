@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,8 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.teachdash.accounts.api.dto.LinkResponse;
 import com.teachdash.enrolment.api.dto.RegisterStudentRequest;
 import com.teachdash.enrolment.api.dto.RegisteredStudent;
+import com.teachdash.enrolment.api.dto.UpdateStudentLanguageRequest;
+import com.teachdash.enrolment.api.dto.UserSummaryResponse;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
-import com.teachdash.enrolment.domain.UserSummary;
+import com.teachdash.enrolment.domain.StudentLanguageService;
 import com.teachdash.enrolment.domain.StudentRegistrationService;
 import com.teachdash.enrolment.domain.StudentRemovalService;
 import com.teachdash.enrolment.domain.StudentResetLinkService;
@@ -31,16 +34,19 @@ class TeacherStudentController {
 	private final EnrolmentQueryService queries;
 	private final StudentRemovalService removal;
 	private final StudentResetLinkService resetLinks;
+	private final StudentLanguageService languages;
 
 	TeacherStudentController(
 			StudentRegistrationService registration,
 			EnrolmentQueryService queries,
 			StudentRemovalService removal,
-			StudentResetLinkService resetLinks) {
+			StudentResetLinkService resetLinks,
+			StudentLanguageService languages) {
 		this.registration = registration;
 		this.queries = queries;
 		this.removal = removal;
 		this.resetLinks = resetLinks;
+		this.languages = languages;
 	}
 
 	@PostMapping("/api/teacher/students")
@@ -50,19 +56,33 @@ class TeacherStudentController {
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		return RegisteredStudent.of(
-				registration.register(teacherId, request.name(), request.email(), request.timeZone()));
+				registration.register(
+						teacherId,
+						request.name(),
+						request.email(),
+						request.timeZone(),
+						request.nativeLanguage()));
 	}
 
 	@GetMapping("/api/teacher/students")
-	List<UserSummary> listStudents(Principal principal) {
+	List<UserSummaryResponse> listStudents(Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		return queries.studentsOfTeacher(teacherId);
+		return UserSummaryResponse.from(queries.studentsOfTeacher(teacherId));
 	}
 
 	@GetMapping("/api/teacher/students/{id}")
-	UserSummary studentDetails(@PathVariable UUID id, Principal principal) {
+	UserSummaryResponse studentDetails(@PathVariable UUID id, Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		return queries.studentOfTeacher(teacherId, id);
+		return UserSummaryResponse.from(queries.studentOfTeacher(teacherId, id));
+	}
+
+	@PatchMapping("/api/teacher/students/{id}")
+	UserSummaryResponse changeLanguage(
+			@PathVariable UUID id,
+			@Valid @RequestBody UpdateStudentLanguageRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return UserSummaryResponse.from(languages.change(teacherId, id, request.nativeLanguage()));
 	}
 
 	@DeleteMapping("/api/teacher/students/{id}")

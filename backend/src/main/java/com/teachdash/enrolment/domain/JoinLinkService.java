@@ -52,11 +52,18 @@ public class JoinLinkService {
 	}
 
 	/** Bcrypt runs before the transaction starts, so no database connection is held while hashing. */
-	public User joinAsVisitor(String token, String name, String email, String timeZone, String password) {
+	public User joinAsVisitor(
+			String token,
+			String name,
+			String email,
+			String timeZone,
+			String nativeLanguage,
+			String password) {
 		String passwordHash = accounts.hashPassword(password);
 		return transaction.execute(status -> {
 			UUID teacherId = lockTeacher(token);
-			User student = accounts.createUserWithPassword(Role.STUDENT, name, email, timeZone, passwordHash);
+			User student = accounts.createUserWithPassword(
+					Role.STUDENT, name, email, timeZone, nativeLanguage, passwordHash);
 			if (!assignments.insert(teacherId, student.getId(), clock.instant())) {
 				throw new IllegalStateException("New student already has a teacher");
 			}
