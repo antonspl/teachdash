@@ -160,14 +160,6 @@ codex_agent() {
   } >".codex/agents/$name.toml"
 }
 
-outputs_exist() {
-  for f in "$ROLES"/*.md; do
-    name=$(basename "$f" .md)
-    [ -f ".claude/agents/$name.md" ] && [ -f ".opencode/agents/$name.md" ] &&
-      [ -f ".codex/agents/$name.toml" ] || return 1
-  done
-}
-
 check() {
   if [ -f "$STAMP" ] && outputs_exist && [ "$(cat "$STAMP")" = "$(sources_hash)" ]; then
     echo ok
@@ -188,6 +180,13 @@ generated_paths() {
       printf '%s\n' ".claude/skills/$rel"
     done
   fi
+}
+
+outputs_exist() {
+  missing=$(generated_paths | while read -r path; do
+    [ -f "$path" ] || echo "$path"
+  done)
+  [ -z "$missing" ]
 }
 
 # Deletes files listed in the old manifest that are no longer generated, then

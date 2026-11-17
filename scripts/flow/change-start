@@ -8,8 +8,8 @@ set -euo pipefail
 
 [ $# -eq 2 ] || die "usage: change-start <name> <issue>"
 name=$1
-[[ $name =~ ^[a-z0-9][a-z0-9-]*$ ]] || die "name must be kebab-case"
-[[ $2 =~ ^[0-9]+$ ]] || die "issue must be a number"
+require_name "$name"
+require_number "$2" issue
 
 git symbolic-ref -q HEAD >/dev/null || die "detached HEAD, check out a branch first"
 [ -z "$(git status --porcelain --untracked-files=normal)" ] || die "uncommitted changes, commit or stash them first"
@@ -21,11 +21,11 @@ fi
 
 git fetch --quiet origin main
 start=$(git symbolic-ref --short HEAD)
-[ -e "openspec/changes/$name" ] && had_dir=1 || had_dir=0
 git switch --quiet --no-track -c "$name" origin/main
+[ -e "openspec/changes/$name" ] && had_dir=1 || had_dir=0
 if ! openspec new change "$name" >/dev/null; then
   [ "$had_dir" = 0 ] && rm -rf "openspec/changes/$name"
-  git switch --quiet "$start"
+  git switch --quiet --force "$start"
   git branch --quiet -D "$name"
   die "openspec new change failed; went back to $start and removed branch $name"
 fi

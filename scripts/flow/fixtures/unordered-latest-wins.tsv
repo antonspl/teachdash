@@ -1,0 +1,5 @@
+A	alice
+B	spec	x
+C	bob	2026-11-17T12:00:00Z	Spec approved
+C	alice	2026-11-17T10:00:00Z	spec approved.
+C	carol	2026-11-17T09:00:00Z	<!-- flow --> Spec gate: please review `abc1234..def5678`

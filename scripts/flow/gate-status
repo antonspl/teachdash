@@ -3,7 +3,8 @@
 # Only reports; the engineer decides. Never ticks or approves anything.
 # Usage: scripts/flow/gate-status [pr]
 # With FLOW_GH_FIXTURE=<file>, reads the extracted PR lines from the file
-# instead of calling gh (see scripts/flow/test).
+# instead of calling gh; with FLOW_GH_JSON=<file>, runs the same filter on a
+# saved `gh pr view --json` result (needs jq). See scripts/flow/test.
 #
 # Extracted format, one line per item, tab separated:
 #   A <login>                  the PR author
@@ -13,25 +14,29 @@ set -euo pipefail
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 
-[[ -z ${1:-} || $1 =~ ^[0-9]+$ ]] || die "usage: gate-status [pr-number]"
+[ $# -eq 0 ] || require_number "$1" "pr number"
+
+FILTER='
+  "A\t" + (.author.login // "ghost"),
+  (.body // "" | split("\n")[]
+    | capture("^- \\[(?<box>[ xX])\\] (?<gate>Spec|Tests|Code) approved")?
+    | "B\t" + (.gate | ascii_downcase) + "\t" + (if .box == " " then "space" else "x" end)),
+  (.comments[]
+    | "C\t" + (.author.login // "ghost") + "\t" + .createdAt + "\t"
+      + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " "))),
+  (.reviews[]
+    | select(.state != "PENDING" and .state != "DISMISSED" and .submittedAt != null)
+    | "C\t" + (.author.login // "ghost") + "\t" + .submittedAt + "\t"
+      + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " ")))'
 
 extract() {
   if [ -n "${FLOW_GH_FIXTURE:-}" ]; then
     cat "$FLOW_GH_FIXTURE"
-    return
+  elif [ -n "${FLOW_GH_JSON:-}" ]; then
+    jq -r "$FILTER" "$FLOW_GH_JSON"
+  else
+    gh pr view ${1:+"$1"} --json author,body,comments,reviews --jq "$FILTER"
   fi
-  gh pr view ${1:+"$1"} --json author,body,comments,reviews --jq '
-    "A\t" + .author.login,
-    (.body | split("\n")[]
-      | capture("^- \\[(?<box>[ xX])\\] (?<gate>Spec|Tests|Code) approved")?
-      | "B\t" + (.gate | ascii_downcase) + "\t" + (if .box == " " then "space" else "x" end)),
-    (.comments[]
-      | "C\t" + .author.login + "\t" + .createdAt + "\t"
-        + (.body | split("\n")[0] | rtrimstr("\r") | gsub("\t"; " "))),
-    (.reviews[]
-      | select(.state != "PENDING" and .state != "DISMISSED" and .submittedAt != null)
-      | "C\t" + .author.login + "\t" + .submittedAt + "\t"
-        + (.body | split("\n")[0] | rtrimstr("\r") | gsub("\t"; " ")))'
 }
 
 data=$(extract "${1:-}") || die "could not read the pull request from GitHub (no PR, gh logged out or no network)"
@@ -40,14 +45,17 @@ printf '%s\n' "$data" | awk -F'\t' -v marker="$MARKER" '
   BEGIN { n = split("spec tests code", gates, " ") }
   $1 == "A" { author = $2 }
   $1 == "B" { box[$2] = ($3 == "x") }
+  # Times are ISO 8601 UTC, so string comparison orders them; input order does not matter.
   $1 == "C" {
     text = tolower($4)
+    sub(/^[ \t]+/, "", text)
+    sub(/[ \t]+$/, "", text)
     is_flow = (index($4, marker) == 1)
     for (i = 1; i <= n; i++) {
       g = gates[i]
       if (is_flow) {
-        if (text ~ ("^" tolower(marker) " " g " gate")) requested[g] = $3
-      } else if (text ~ ("^[ ]*" g " approved")) {
+        if (text ~ ("^" tolower(marker) " " g " gate") && $3 > requested[g]) requested[g] = $3
+      } else if (text ~ ("^" g " approved[.!]?$") && $3 >= when[g]) {
         who[g] = $2
         when[g] = $3
       }

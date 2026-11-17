@@ -9,6 +9,16 @@ die() {
   exit 1
 }
 
+# Validates a change name (kebab-case).
+require_name() {
+  [[ $1 =~ ^[a-z0-9][a-z0-9-]*$ ]] || die "name must be kebab-case"
+}
+
+# Validates a number argument; $2 names it in the error.
+require_number() {
+  [[ $1 =~ ^[0-9]+$ ]] || die "$2 must be a number"
+}
+
 # Refuses to run on a detached HEAD or on main.
 guard_branch() {
   local branch

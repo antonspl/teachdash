@@ -22,6 +22,8 @@ case $info in *$'\n'*) body=${info#*$'\n'} ;; esac
 new=$(printf '%s\n' "$body" | set_range_line "$label" "$range")
 again=$(gh pr view "$pr" --json body --jq .body)
 [ "$again" = "$body" ] || die "the PR description changed while editing, nothing written; run again"
-gh pr edit "$pr" --body "$new" >/dev/null
+# The comment goes first: if the edit fails, the request marker still exists.
 gh pr comment "$pr" --body "$MARKER $label gate: please review \`$range\`" >/dev/null
+gh pr edit "$pr" --body "$new" >/dev/null ||
+  die "PR #$pr: the request comment was posted but the range line was not updated"
 echo "PR #$pr: $label gate requested for $range"

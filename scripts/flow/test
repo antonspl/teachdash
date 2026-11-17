@@ -27,6 +27,17 @@ for fixture in "$here"/fixtures/*.tsv; do
   check "gate-status $name" "$(cat "${fixture%.tsv}.expected")" "$actual"
 done
 
+# Same filter on saved gh JSON (null review bodies, deleted users).
+if command -v jq >/dev/null; then
+  for fixture in "$here"/fixtures/*.json; do
+    name=$(basename "$fixture" .json)
+    actual=$(FLOW_GH_JSON=$fixture "$here/gate-status" 2>&1)
+    check "gate-status json $name" "$(cat "${fixture%.json}.expected")" "$actual"
+  done
+else
+  echo "skipping json fixtures: jq not installed"
+fi
+
 # set_range_line: replace, add, other lines untouched, missing heading.
 description=$'Closes #1\n\n## Review ranges\n\n- Spec: aaaaaaa..bbbbbbb\n\n## Gates\n\n- [x] Spec approved by @\n- [ ] Code approved by @'
 actual=$(printf '%s\n' "$description" | set_range_line Spec ccccccc..ddddddd)
@@ -112,6 +123,30 @@ check "change-start fails when openspec fails" 1 "$(grep -c 'openspec new change
 check "change-start goes back to the start branch" main "$(git -C "$clone" symbolic-ref --short HEAD)"
 check "change-start removes the partial change folder" 0 "$(find "$clone/openspec/changes" -name some-name 2>/dev/null | wc -l | tr -d ' ')"
 check "change-start removes the new branch" 0 "$(git -C "$clone" branch --list some-name | wc -l | tr -d ' ')"
+
+# change-start rollback also removes a folder created on the new branch only.
+check "change-start leaves the clone clean" "" "$(git -C "$clone" status --porcelain)"
+
+# gate-request: the comment is posted before the edit, and a failed edit says so.
+cat >"$work/fakebin/gh" <<'SH'
+#!/bin/sh
+case "$2" in
+  view) [ "$3" = "--json" ] && printf '7\n## Review ranges\n' || printf '## Review ranges\n' ;;
+  comment) echo comment >>"$GH_LOG" ;;
+  edit) echo edit >>"$GH_LOG"; exit 1 ;;
+esac
+SH
+chmod +x "$work/fakebin/gh"
+git -C "$repo" checkout -q -b some-change
+: >"$work/ghlog"
+(cd "$repo" && GH_LOG=$work/ghlog PATH="$work/fakebin:$PATH" "$here/gate-request" spec abc1234..def5678) >/dev/null 2>"$work/err"
+check "gate-request posts the comment before the edit" "comment edit" "$(tr '\n' ' ' <"$work/ghlog" | sed 's/ $//')"
+check "gate-request says the range line was not updated" 1 "$(grep -c 'comment was posted but the range line was not updated' "$work/err")"
+
+# pr-draft validates the issue before pushing.
+printf '#!/bin/sh\nexit 1\n' >"$work/fakebin/gh"
+(cd "$repo" && PATH="$work/fakebin:$PATH" "$here/pr-draft" some-change 9) >/dev/null 2>"$work/err"
+check "pr-draft stops on an unreadable issue before pushing" 1 "$(grep -c 'nothing pushed' "$work/err")"
 
 echo "flow tests: $passed passed, $failed failed"
 [ "$failed" -eq 0 ]
