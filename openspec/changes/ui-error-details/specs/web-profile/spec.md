@@ -36,12 +36,12 @@ is sending, the other's button SHALL be disabled.
 - **THEN** a translated "password is too long" message is shown and no request is sent
 
 #### Scenario: web-profile/R3-S6 Wrong current password
-- **GIVEN** the backend answers with status 400 and code `WRONG_PASSWORD`
+- **GIVEN** the backend answers with status 400, code `WRONG_PASSWORD` and no `errors` (web-client R17)
 - **WHEN** the form is submitted
 - **THEN** the translated message for `WRONG_PASSWORD` is shown, the fields keep their values, and the form can be submitted again
 
 #### Scenario: web-profile/R3-S7 New password the backend rejects
-- **GIVEN** the backend answers with status 400 and code `VALIDATION_FAILED`
+- **GIVEN** the backend answers with status 400, code `VALIDATION_FAILED` and no `errors` (web-client R17)
 - **WHEN** the form is submitted
 - **THEN** a translated message asks to check the passwords, without saying which one, and the form can be submitted again
 
@@ -56,10 +56,10 @@ is sending, the other's button SHALL be disabled.
 - **THEN** only one request is sent
 
 #### Scenario: web-profile/R3-S10 The two forms do not affect each other
-- **GIVEN** the password form shows the `WRONG_PASSWORD` message, under the current password field or as its form-level message (web-client R17), and holds typed passwords
+- **GIVEN** the backend answered the password change with status 400, code `WRONG_PASSWORD` and `errors` `[{field: "currentPassword", code: "WRONG_PASSWORD"}]`, so the password form shows the `WRONG_PASSWORD` message under the current password field, and the form holds typed passwords
 - **WHEN** the teacher changes the name and presses "Save"
 - **THEN** the save request carries only the name and the time zone, the profile form shows its success message, and the password form keeps its message and its values
-- **AND** editing the current password field afterwards removes the `WRONG_PASSWORD` message, wherever it is shown, and leaves the profile form's success message
+- **AND** editing the new password field afterwards keeps the `WRONG_PASSWORD` message, editing the current password field removes it, and both leave the profile form's success message
 
 #### Scenario: web-profile/R3-S11 One form waits while the other is sending
 - **GIVEN** a password change request is still running

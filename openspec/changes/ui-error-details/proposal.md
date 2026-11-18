@@ -32,9 +32,10 @@ Answered by the engineer:
   others) stay as the fallback.
 - **Select.** The shared select gets the same error slot as the text input, so a
   `timeZone` error is shown under it.
-- **Requirement numbers.** `web-client` R5 is modified; the new requirements are R17
-  and R18 (R17 alone was split in two, because the text was too long for one), because #102 reserves R13-R14 and #103 reserves R15-R16. R13 and R14 are already taken
-  by `ui-form-polish`; the owner is told about the clash with #102.
+- **Requirement numbers.** `web-client` R5 is modified. The engineer agreed on one new
+  requirement, R17; it became R17 and R18, because one requirement's text was too long.
+  R15-R16 are reserved for #103. #102 reserves R13-R14, which `ui-form-polish` already
+  uses; the owner is told about that clash.
 
 Research angles agreed with the engineer:
 
@@ -70,6 +71,7 @@ stays while the user fixes the fields (#89).
   `web-client` R18).
 - The password form's scenario about editing after `WRONG_PASSWORD` names the current
   password field, because that message now sits under it (`web-profile` R3-S10).
+  `web-profile` R3-S6 and R3-S7 say they describe a response without `errors`.
 
 Out of scope:
 
@@ -90,7 +92,8 @@ None.
 - `web-client`: R5 "Translated API errors" modified (field errors reach the caller);
   R17 "Backend errors under their fields" and R18 "Backend field errors go away on
   edit" added.
-- `web-profile`: R3 "Change password" modified (R3-S10 names the current password field).
+- `web-profile`: R3 "Change password" modified (R3-S6 and R3-S7 name a response without
+  `errors`; R3-S10 names the current password field).
 
 ## Impact
 

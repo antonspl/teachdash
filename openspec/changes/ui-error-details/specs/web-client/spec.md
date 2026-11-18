@@ -48,17 +48,17 @@ string; a response with no such entry gives the caller no field errors.
 
 ### Requirement: R17 Backend errors under their fields
 
-The login page, the set-password page, the "Add teacher" dialog, the profile form and
-the password form SHALL show the field errors of a failed request (R5) under their
-fields when every entry names a field the form shows and a code with a field message:
-each field is marked invalid with its message as the description, the focus moves to
-the first such field in form order, and no form-level message is shown. Otherwise the
-form SHALL show its form-level message as before.
+The login, set-password, "Add teacher", profile and password forms SHALL show a failed
+request's field errors (R5) under their fields when every entry names a shown field and
+a code with a field message: the first entry per field counts, each field is marked
+invalid with its message as the description, the focus moves to the topmost such field,
+and no form-level message is shown. Otherwise the form SHALL show its form-level
+message as before; other specs' form-level messages describe this case.
 
 #### Scenario: web-client/R17-S1 Errors are shown under their fields
-- **GIVEN** the backend answers the "Add teacher" request with status 400, code `VALIDATION_FAILED` and `errors` `[{field: "email", code: "INVALID_FORMAT"}, {field: "name", code: "TOO_LONG"}]`
+- **GIVEN** the backend answers the "Add teacher" request with status 400, code `VALIDATION_FAILED` and `errors` `[{field: "email", code: "INVALID_FORMAT"}, {field: "name", code: "TOO_LONG"}, {field: "name", code: "INVALID_FORMAT"}]`
 - **WHEN** the admin submits the dialog with a name, an email and a time zone
-- **THEN** the translated "too long" message is shown under the name and the translated "check the format" message under the email, both fields are marked invalid with their message as the description, and the time zone is not marked invalid
+- **THEN** the translated "too long" message, and not the "check the format" one, is shown under the name, and the translated "check the format" message under the email; both fields are marked invalid with their message as the description, and the time zone is not marked invalid
 - **AND** no form-level message is shown, the dialog stays open and the entered values stay
 
 #### Scenario: web-client/R17-S2 Every form places its own fields
@@ -69,7 +69,7 @@ form SHALL show its form-level message as before.
 #### Scenario: web-client/R17-S3 Focus moves to the first field with an error
 - **GIVEN** the backend answers the "Add teacher" request with `errors` `[{field: "email", code: "INVALID_FORMAT"}, {field: "name", code: "REQUIRED"}]`, and the focus is on the submit button
 - **WHEN** the admin presses it
-- **THEN** the focus is on the name field, the first field of the dialog with an error, although the backend lists the email first
+- **THEN** the focus is on the name field, the topmost field of the dialog with an error, although the backend lists the email first
 
 #### Scenario: web-client/R17-S4 Errors the form cannot place keep the form-level message
 - **GIVEN** one run per case: the set-password page and the backend answering with `errors` `[{field: "password", code: "TOO_SHORT"}, {field: "token", code: "TOO_LONG"}]`; the profile form and the backend answering with `errors` `[{field: "name", code: "SOMETHING_NEW"}]`; the "Add teacher" dialog and the backend answering with code `VALIDATION_FAILED` and no `errors`
@@ -91,6 +91,11 @@ form SHALL show its form-level message as before.
 - **WHEN** the teacher enters a name of 201 Cyrillic letters ("Я") and presses "Save"
 - **THEN** the translated "too long" message is shown under the name field, no form-level message is shown, the field keeps the typed name and the header keeps the old name
 
+#### Scenario: web-client/R17-S8 Focus in the password form
+- **GIVEN** the backend answers the password change with status 400, code `VALIDATION_FAILED` and `errors` `[{field: "newPassword", code: "TOO_LONG"}, {field: "currentPassword", code: "REQUIRED"}]`
+- **WHEN** the form is submitted with a current password and a valid new password entered twice
+- **THEN** both messages are shown under their fields and the focus is on the current password field, the topmost one
+
 ### Requirement: R18 Backend field errors go away on edit
 
 In the forms of R17, editing a field SHALL remove that field's backend error and keep
@@ -99,12 +104,12 @@ that shows a client-side hint (R14) SHALL show the hint instead of a backend err
 the set-password page, editing a field SHALL also remove the form-level message.
 
 #### Scenario: web-client/R18-S1 Editing a field removes only its error
-- **GIVEN** the "Add teacher" dialog shows backend errors under the name and the email
-- **WHEN** the admin types in the email field
+- **GIVEN** the "Add teacher" dialog shows backend errors under the name and the email, and the backend holds its answer to the next request
+- **WHEN** the admin changes the value of the email field
 - **THEN** the email's error is gone and the email is no longer marked invalid, while the name still shows its error
-- **AND** when the admin submits again, the name's error is gone before the backend answers
+- **AND** when the admin submits again, the name's error is gone while the request is still waiting for its answer
 
 #### Scenario: web-client/R18-S2 Editing on the set-password page removes the form-level message
 - **GIVEN** the set-password page shows the translated message for `LINK_CONFLICT` after a submit
-- **WHEN** the user types in the new password field, and in a second run in the repeat field
-- **THEN** in both runs the message is gone and no request is sent
+- **WHEN** the user changes the value of the new password field, and in a second run of the repeat field
+- **THEN** in both runs the `LINK_CONFLICT` message is gone and the fields keep the typed values

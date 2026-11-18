@@ -92,12 +92,14 @@ invalid with the message as its description.
 
 ### D7 Tests
 
-- Unit (Vitest): R5-S5, R5-S6 in `client.test.ts`; R17-S1 to R17-S4 and R18-S1, R18-S2 in the pages' tests
+- Unit (Vitest): R5-S5, R5-S6 in `client.test.ts`; R17-S1 to R17-S4, R17-S8, R18-S1 and R18-S2 in the pages' tests
   with mocked `fetch` responses that carry `errors`, pressing the real button.
   R17-S2 is one parameterised test over the five forms.
-- E2E (Playwright, real backend): R17-S5, R17-S6, R17-S7.
+- E2E (Playwright, real backend): R17-S5, R17-S6, R17-S7. All other scenarios use mocked
+  responses.
 - Existing tests follow the fallback path, because none of their fixtures carries
-  `errors`. Only the web-profile R3-S10 test changes, to follow its modified scenario.
+  `errors`; web-profile R3-S6 and R3-S7 now say so in their GIVEN, and their tests stay
+  as they are. Only the web-profile R3-S10 test changes, to follow its modified scenario.
 
 ## Risks / Trade-offs
 
