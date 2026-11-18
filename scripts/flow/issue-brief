@@ -12,5 +12,5 @@ gh issue view "$1" --json title,labels,body,comments --jq '
   "# " + .title,
   "Labels: " + ([.labels[].name] | join(", ")),
   "",
-  .body,
-  (.comments[] | "", "--- " + .author.login + " " + .createdAt, .body)'
+  (.body // ""),
+  (.comments[] | "", "--- " + (.author.login // "ghost") + " " + .createdAt, (.body // ""))'

@@ -21,21 +21,19 @@ check() {
   fi
 }
 
-for fixture in "$here"/fixtures/*.tsv; do
-  name=$(basename "$fixture" .tsv)
-  actual=$(FLOW_GH_FIXTURE=$fixture "$here/gate-status" 2>&1)
-  check "gate-status $name" "$(cat "${fixture%.tsv}.expected")" "$actual"
-done
+have_jq=0
+command -v jq >/dev/null && have_jq=1
 
-# Same filter on saved gh JSON (null review bodies, deleted users).
-if command -v jq >/dev/null; then
+# gate-status runs the live jq filters on saved PR, comment and review JSON in
+# the shapes gh returns (null bodies, deleted users, pending reviews).
+if [ "$have_jq" = 1 ]; then
   for fixture in "$here"/fixtures/*.json; do
     name=$(basename "$fixture" .json)
     actual=$(FLOW_GH_JSON=$fixture "$here/gate-status" 2>&1)
-    check "gate-status json $name" "$(cat "${fixture%.json}.expected")" "$actual"
+    check "gate-status $name" "$(cat "${fixture%.json}.expected")" "$actual"
   done
 else
-  echo "skipping json fixtures: jq not installed"
+  echo "skipping gate-status tests: jq not installed"
 fi
 
 # set_range_line: replace, add, other lines untouched, missing heading.
@@ -87,11 +85,12 @@ refuse "gate-request on detached HEAD" "$here/gate-request" spec abc1234..def567
 refuse "pr-ready on detached HEAD" "$here/pr-ready"
 refuse "change-start on detached HEAD" "$here/change-start" some-name 1
 
-# Argument validation.
-(cd "$repo" && "$here/gate-request" design abc1234..def5678) >/dev/null 2>&1
-check "gate-request rejects an unknown gate" 1 $?
-(cd "$repo" && "$here/gate-request" spec notarange) >/dev/null 2>&1
-check "gate-request rejects a bad range" 1 $?
+# Argument validation, on a real branch so the branch guard cannot be the reason.
+git -C "$repo" checkout -q -b some-change
+(cd "$repo" && "$here/gate-request" design abc1234..def5678) >/dev/null 2>"$work/err"
+check "gate-request rejects an unknown gate" 1 "$(grep -c "unknown gate 'design'" "$work/err")"
+(cd "$repo" && "$here/gate-request" spec notarange) >/dev/null 2>"$work/err"
+check "gate-request rejects a bad range" 1 "$(grep -c 'range must look like' "$work/err")"
 
 # gate-status exits non-zero with a short error when gh fails.
 mkdir -p "$work/fakebin"
@@ -102,24 +101,45 @@ code=$?
 check "gate-status fails when gh fails" 1 "$code"
 check "gate-status says it could not read the PR" 1 "$(printf '%s\n' "$actual" | grep -c 'could not read the pull request')"
 
-# gate-status reads comments and reviews through the paginated REST API, and a
-# failure in either call fails the script.
-cat >"$work/fakebin/gh" <<'SH'
+# gate-status in live mode: one `gh pr view` call, then the paginated REST calls
+# for comments and reviews, all through the real --jq filters (the fake gh applies
+# them with jq to saved JSON). A failure in any call fails the script.
+if [ "$have_jq" = 1 ]; then
+  mkdir -p "$work/ghfix"
+  cat >"$work/ghfix/pr.json" <<'JSON'
+{"number":7,"author":{"login":"alice"},"body":"- [x] Spec approved by @alice\n- [ ] Tests approved by @"}
+JSON
+  cat >"$work/ghfix/comments.json" <<'JSON'
+[{"user":{"login":"bob"},"created_at":"2026-11-17T10:00:00Z","body":"Spec approved"}]
+JSON
+  cat >"$work/ghfix/reviews.json" <<'JSON'
+[{"user":{"login":"bob"},"state":"APPROVED","submitted_at":"2026-11-17T11:00:00Z","body":"Tests approved"}]
+JSON
+  cat >"$work/fakebin/gh" <<'SH'
 #!/bin/sh
+echo "$*" >>"$GH_LOG"
+filter=
+prev=
+for arg in "$@"; do
+  [ "$prev" = --jq ] && filter=$arg
+  prev=$arg
+done
 case "$*" in
-  "pr view"*"--json number"*) echo 7 ;;
-  "pr view"*) echo "A	alice" ;;
-  "api --paginate repos/{owner}/{repo}/issues/7/comments"*) echo "C	bob	2026-11-17T10:00:00Z	Spec approved" ;;
-  "api --paginate repos/{owner}/{repo}/pulls/7/reviews"*) [ -n "$FAIL_REVIEWS" ] && exit 1; echo "C	bob	2026-11-17T11:00:00Z	Tests approved" ;;
+  "pr view"*) jq -r "$filter" "$GH_FIX/pr.json" ;;
+  "api --paginate repos/{owner}/{repo}/issues/7/comments"*) jq -r "$filter" "$GH_FIX/comments.json" ;;
+  "api --paginate repos/{owner}/{repo}/pulls/7/reviews"*) [ -n "${FAIL_REVIEWS:-}" ] && exit 1; jq -r "$filter" "$GH_FIX/reviews.json" ;;
   *) exit 1 ;;
 esac
 SH
-actual=$(PATH="$work/fakebin:$PATH" "$here/gate-status" 7 2>&1)
-check "gate-status reads paginated comments and reviews" "spec:  approved by bob (not the PR author) at 2026-11-17T10:00:00Z; box not ticked; comment without a ticked box
+  : >"$work/ghlog"
+  actual=$(GH_LOG=$work/ghlog GH_FIX=$work/ghfix PATH="$work/fakebin:$PATH" "$here/gate-status" 7 2>&1)
+  check "gate-status reads paginated comments and reviews" "spec:  approved by bob (not the PR author) at 2026-11-17T10:00:00Z; box ticked
 tests: approved by bob (not the PR author) at 2026-11-17T11:00:00Z; box not ticked; comment without a ticked box
 code:  no approving comment; box not ticked" "$actual"
-FAIL_REVIEWS=1 PATH="$work/fakebin:$PATH" "$here/gate-status" 7 >/dev/null 2>&1
-check "gate-status fails when the reviews call fails" 1 $?
+  check "gate-status makes one gh pr view call" 1 "$(grep -c '^pr view' "$work/ghlog")"
+  FAIL_REVIEWS=1 GH_LOG=$work/ghlog GH_FIX=$work/ghfix PATH="$work/fakebin:$PATH" "$here/gate-status" 7 >/dev/null 2>&1
+  check "gate-status fails when the reviews call fails" 1 $?
+fi
 
 # change-start: refuses a dirty tree, and removes its branch when openspec fails.
 origin=$work/origin.git
@@ -165,6 +185,24 @@ check "change-start does not delete a change folder that exists on origin/main" 
 check "change-start keeps the folder on origin/main" 1 "$(git -C "$clone" ls-tree -r --name-only origin/main | grep -c 'kept-name/proposal.md')"
 check "change-start leaves the clone clean" "" "$(git -C "$clone" status --porcelain)"
 
+# Files openspec wrote into an existing change folder before failing are removed,
+# tracked files stay, and nothing outside the folder is touched.
+git -C "$other" pull -q origin main 2>/dev/null
+mkdir -p "$other/openspec/changes/half-name"
+touch "$other/openspec/changes/half-name/proposal.md"
+git -C "$other" add -A
+git -C "$other" -c user.name=t -c user.email=t@t commit -q -m "add half-name"
+git -C "$other" push -q origin main 2>/dev/null
+mkdir -p "$work/halfbin"
+# shellcheck disable=SC2016  # $3 must expand in the fake openspec, not here
+printf '%s\n' '#!/bin/sh' 'mkdir -p "openspec/changes/$3/specs"' 'touch "openspec/changes/$3/.openspec.yaml" "openspec/changes/$3/specs/new.md"' 'exit 1' >"$work/halfbin/openspec"
+chmod +x "$work/halfbin/openspec"
+(cd "$clone" && PATH="$work/halfbin:$PATH" "$here/change-start" half-name 1) >/dev/null 2>"$work/err"
+check "change-start fails when openspec writes files then fails" 1 "$(grep -c 'openspec new change failed' "$work/err")"
+check "change-start removes files openspec created in an existing folder" "" "$(git -C "$clone" status --porcelain --untracked-files=all)"
+check "change-start leaves no new files on disk" 0 "$(find "$clone/openspec/changes" -path '*half-name*' 2>/dev/null | wc -l | tr -d ' ')"
+check "change-start keeps the tracked file on origin/main" 1 "$(git -C "$clone" ls-tree -r --name-only origin/main | grep -c 'half-name/proposal.md')"
+
 # gate-request: the comment is posted before the edit, and a failed edit says so.
 cat >"$work/fakebin/gh" <<'SH'
 #!/bin/sh
@@ -175,7 +213,6 @@ case "$2" in
 esac
 SH
 chmod +x "$work/fakebin/gh"
-git -C "$repo" checkout -q -b some-change
 : >"$work/ghlog"
 (cd "$repo" && GH_LOG=$work/ghlog PATH="$work/fakebin:$PATH" "$here/gate-request" spec abc1234..def5678) >/dev/null 2>"$work/err"
 check "gate-request posts the comment before the edit" "comment edit" "$(tr '\n' ' ' <"$work/ghlog" | sed 's/ $//')"
@@ -185,6 +222,18 @@ check "gate-request says the range line was not updated" 1 "$(grep -c 'comment w
 printf '#!/bin/sh\nexit 1\n' >"$work/fakebin/gh"
 (cd "$repo" && PATH="$work/fakebin:$PATH" "$here/pr-draft" some-change 9) >/dev/null 2>"$work/err"
 check "pr-draft stops on an unreadable issue before pushing" 1 "$(grep -c 'nothing pushed' "$work/err")"
+
+# setup-agents quotes the description in the Claude and opencode frontmatter.
+sa=$work/sa
+mkdir -p "$sa/scripts" "$sa/.agents/roles"
+cp "$here/../setup-agents" "$sa/scripts/setup-agents"
+desc='[*-&!{>|%@`] say "hi": a \ b #c'
+printf '%s\n' '---' 'name: odd' "description: $desc" 'class: medium' 'access: read' 'web: false' '---' 'Body.' >"$sa/.agents/roles/odd.md"
+(cd "$sa" && scripts/setup-agents) >/dev/null 2>"$work/err"
+check "setup-agents accepts a description with YAML special characters" 0 "$(wc -c <"$work/err" | tr -d ' ')"
+quoted='"[*-&!{>|%@`] say \"hi\": a \\ b #c"'
+check "setup-agents quotes the description for Claude" "description: $quoted" "$(grep '^description:' "$sa/.claude/agents/odd.md")"
+check "setup-agents quotes the description for opencode" "description: $quoted" "$(grep '^description:' "$sa/.opencode/agents/odd.md")"
 
 echo "flow tests: $passed passed, $failed failed"
 [ "$failed" -eq 0 ]

@@ -1,11 +1,11 @@
-{"author":{"login":"alice"},
- "body":"- [x] Spec approved by @alice\n- [ ] Tests approved by @",
+{"pr":{"number":7,"author":{"login":"alice"},
+ "body":"- [x] Spec approved by @alice\n- [ ] Tests approved by @"},
  "comments":[
-  {"author":null,"createdAt":"2026-11-17T09:00:00Z","body":"hello\r\nsecond line"},
-  {"author":{"login":"alice"},"createdAt":"2026-11-17T10:00:00Z","body":null}],
+  {"user":null,"created_at":"2026-11-17T09:00:00Z","body":"hello\r\nsecond line"},
+  {"user":{"login":"alice"},"created_at":"2026-11-17T10:00:00Z","body":null}],
  "reviews":[
-  {"author":{"login":"bob"},"state":"APPROVED","submittedAt":"2026-11-17T11:00:00Z","body":""},
-  {"author":{"login":"bob"},"state":"APPROVED","submittedAt":"2026-11-17T11:30:00Z","body":null},
-  {"author":null,"state":"COMMENTED","submittedAt":"2026-11-17T12:00:00Z","body":"Spec approved\nthanks"},
-  {"author":{"login":""},"state":"COMMENTED","submittedAt":"2026-11-17T13:00:00Z","body":"Spec approved"},
-  {"author":{"login":"carol"},"state":"PENDING","submittedAt":null,"body":"Code approved"}]}
+  {"user":{"login":"bob"},"state":"APPROVED","submitted_at":"2026-11-17T11:00:00Z","body":""},
+  {"user":{"login":"bob"},"state":"APPROVED","submitted_at":"2026-11-17T11:30:00Z","body":null},
+  {"user":null,"state":"COMMENTED","submitted_at":"2026-11-17T12:00:00Z","body":"Spec approved\nthanks"},
+  {"user":{"login":""},"state":"COMMENTED","submitted_at":"2026-11-17T13:00:00Z","body":"Spec approved"},
+  {"user":{"login":"carol"},"state":"PENDING","submitted_at":null,"body":"Code approved"}]}

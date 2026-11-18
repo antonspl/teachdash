@@ -1,6 +1,0 @@
-B	spec	x
-B	tests	space
-B	code	space
-C	bot	2026-11-17T09:00:00Z	<!-- flow --> Spec gate: please review `abc1234..def5678`
-C	alice	2026-11-17T10:00:00Z	Spec approved
-C	bot	2026-11-17T11:00:00Z	<!-- flow --> Spec gate: please review `abc1234..fed8765`

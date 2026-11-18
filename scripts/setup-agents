@@ -84,12 +84,14 @@ validate_roles() {
     case "$(field "$f" class)" in strong | medium) ;; *) die "$f: class must be strong or medium" ;; esac
     case "$(field "$f" access)" in read | write) ;; *) die "$f: access must be read or write" ;; esac
     case "$(field "$f" web)" in true | false) ;; *) die "$f: web must be true or false" ;; esac
-    description=$(field "$f" description)
-    case "$description" in
-      *": "* | *" #"* | \"* | "'"* | "#"*) die "$f: description must not contain ': ' or ' #', or start with a quote or '#'" ;;
-    esac
     [ "$(field "$f" name)" = "$(basename "$f" .md)" ] || die "$f: name must match the file name"
   done
+}
+
+# Prints a role's description as a double-quoted YAML scalar, so characters
+# such as ': ', ' #', a leading '[' or '*' stay plain text.
+yaml_description() {
+  printf '"%s"\n' "$(field "$1" description | sed 's/\\/\\\\/g; s/"/\\"/g')"
 }
 
 claude_agent() {
@@ -98,7 +100,7 @@ claude_agent() {
   {
     echo "---"
     printf '%s\n' "name: $name"
-    printf '%s\n' "description: $(field "$1" description)"
+    printf '%s\n' "description: $(yaml_description "$1")"
     [ -z "$model" ] || printf '%s\n' "model: $model"
     if [ "$(field "$1" access)" = read ]; then
       tools="Read, Grep, Glob, Bash"
@@ -121,7 +123,7 @@ opencode_agent() {
   model=$(mapped opencode "$(field "$1" class)" | awk '{print $1}')
   {
     echo "---"
-    printf '%s\n' "description: $(field "$1" description)"
+    printf '%s\n' "description: $(yaml_description "$1")"
     echo "mode: subagent"
     [ -z "$model" ] || printf '%s\n' "model: $model"
     if [ "$(field "$1" access)" = read ] || [ "$(field "$1" web)" = false ]; then

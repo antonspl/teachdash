@@ -11,20 +11,35 @@ name=$1
 require_name "$name"
 require_number "$2" issue
 
+here=$(cd "$(dirname "$0")" && pwd)
+cd "$(git rev-parse --show-toplevel)"
+
 git symbolic-ref -q HEAD >/dev/null || die "detached HEAD, check out a branch first"
 [ -z "$(git status --porcelain --untracked-files=normal)" ] || die "uncommitted changes, commit or stash them first"
 git show-ref --verify --quiet "refs/heads/$name" && die "branch $name already exists"
 
-if ! "$(dirname "$0")/../setup-agents" --check >/dev/null; then
-  echo "warning: agent files are stale, run scripts/setup-agents and restart the session" >&2
-fi
-
 git fetch --quiet origin main
 start=$(git symbolic-ref --short HEAD)
 git switch --quiet --no-track -c "$name" origin/main
-[ -e "openspec/changes/$name" ] && had_dir=1 || had_dir=0
+
+if ! "$here/../setup-agents" --check >/dev/null; then
+  echo "warning: agent files are stale, run scripts/setup-agents and restart the session" >&2
+fi
+
+dir=openspec/changes/$name
+[ -e "$dir" ] && had_dir=1 || had_dir=0
+before=$(git ls-files --others --exclude-standard -- "$dir" | LC_ALL=C sort)
 if ! openspec new change "$name" >/dev/null; then
-  [ "$had_dir" = 0 ] && rm -rf "openspec/changes/$name"
+  if [ "$had_dir" = 0 ]; then
+    rm -rf "$dir"
+  else
+    # The folder is on origin/main: remove only the untracked files openspec added.
+    after=$(git ls-files --others --exclude-standard -- "$dir" | LC_ALL=C sort)
+    comm -13 <(printf '%s\n' "$before") <(printf '%s\n' "$after") | while IFS= read -r path; do
+      [ -z "$path" ] || rm -f -- "$path"
+    done
+    find "$dir" -mindepth 1 -type d -empty -delete
+  fi
   git switch --quiet --force "$start"
   git branch --quiet -D "$name"
   die "openspec new change failed; went back to $start and removed branch $name"

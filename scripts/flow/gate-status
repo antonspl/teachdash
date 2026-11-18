@@ -2,11 +2,11 @@
 # Reports, for each gate, the latest approving comment, the box and staleness.
 # Only reports; the engineer decides. Never ticks or approves anything.
 # Usage: scripts/flow/gate-status [pr]
-# With FLOW_GH_FIXTURE=<file>, reads the extracted PR lines from the file
-# instead of calling gh; with FLOW_GH_JSON=<file>, runs the same filter on a
-# saved `gh pr view --json` result (needs jq). See scripts/flow/test.
+# With FLOW_GH_JSON=<file> (needs jq), runs the same filters as live mode on a
+# saved {"pr", "comments", "reviews"} file. See scripts/flow/test.
 #
 # Extracted format, one line per item, tab separated:
+#   N <number>                 the PR number
 #   A <login>                  the PR author
 #   B <gate> <x|space>         gate box from the description
 #   C <login> <time> <first line of a comment or review body>
@@ -16,21 +16,10 @@ set -euo pipefail
 
 [ $# -eq 0 ] || require_number "$1" "pr number"
 
-FILTER='
-  "A\t" + ((.author.login // "") | if . == "" then "ghost" else . end),
-  (.body // "" | split("\n")[]
-    | capture("^- \\[(?<box>[ xX])\\] (?<gate>Spec|Tests|Code) approved")?
-    | "B\t" + (.gate | ascii_downcase) + "\t" + (if .box == " " then "space" else "x" end)),
-  (.comments[]
-    | "C\t" + ((.author.login // "") | if . == "" then "ghost" else . end) + "\t" + .createdAt + "\t"
-      + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " "))),
-  (.reviews[]
-    | select(.state != "PENDING" and .state != "DISMISSED" and .submittedAt != null)
-    | "C\t" + ((.author.login // "") | if . == "" then "ghost" else . end) + "\t" + .submittedAt + "\t"
-      + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " ")))'
-
-# Live mode reads head, comments and reviews separately (REST field names).
+# The same filters run live and on the fixtures: head uses the field names of
+# `gh pr view --json`, comments and reviews those of the REST API.
 FILTER_HEAD='
+  "N\t" + (.number | tostring),
   "A\t" + ((.author.login // "") | if . == "" then "ghost" else . end),
   (.body // "" | split("\n")[]
     | capture("^- \\[(?<box>[ xX])\\] (?<gate>Spec|Tests|Code) approved")?
@@ -46,16 +35,17 @@ FILTER_REVIEWS='.[]
     + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " "))'
 
 extract() {
-  if [ -n "${FLOW_GH_FIXTURE:-}" ]; then
-    cat "$FLOW_GH_FIXTURE"
-  elif [ -n "${FLOW_GH_JSON:-}" ]; then
-    jq -r "$FILTER" "$FLOW_GH_JSON"
+  if [ -n "${FLOW_GH_JSON:-}" ]; then
+    jq -r ".pr | $FILTER_HEAD" "$FLOW_GH_JSON" &&
+      jq -r ".comments | $FILTER_COMMENTS" "$FLOW_GH_JSON" &&
+      jq -r ".reviews | $FILTER_REVIEWS" "$FLOW_GH_JSON"
   else
-    local number
-    number=$(gh pr view ${1:+"$1"} --json number --jq .number) || return 1
+    local head number
+    head=$(gh pr view ${1:+"$1"} --json number,author,body --jq "$FILTER_HEAD") || return 1
+    number=$(printf '%s\n' "$head" | awk -F'\t' '$1 == "N" { print $2 }')
+    printf '%s\n' "$head"
     # The REST endpoints are paginated; `gh pr view` returns only the first page.
-    gh pr view "$number" --json author,body --jq "$FILTER_HEAD" &&
-      gh api --paginate "repos/{owner}/{repo}/issues/$number/comments" --jq "$FILTER_COMMENTS" &&
+    gh api --paginate "repos/{owner}/{repo}/issues/$number/comments" --jq "$FILTER_COMMENTS" &&
       gh api --paginate "repos/{owner}/{repo}/pulls/$number/reviews" --jq "$FILTER_REVIEWS"
   fi
 }
