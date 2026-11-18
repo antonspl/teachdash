@@ -495,3 +495,63 @@ test('onUnauthorized is not called for other failures', async () => {
   setUnauthorizedHandler(undefined)
   expect(handler).not.toHaveBeenCalled()
 })
+
+function problemWithBody(body: unknown) {
+  return new Response(JSON.stringify(body), {
+    status: 400,
+    headers: { 'Content-Type': 'application/problem+json' },
+  })
+}
+
+test('[web-client/R5-S5] Field errors reach the caller', async () => {
+  // given
+  fetchMock.mockResolvedValue(
+    problemWithBody({
+      status: 400,
+      code: 'VALIDATION_FAILED',
+      errors: [
+        { field: 'email', code: 'INVALID_FORMAT' },
+        { field: 'name', code: 'TOO_LONG' },
+      ],
+    }),
+  )
+
+  // when
+  const error = await failureOf(apiRequest('teachers', { method: 'POST' }))
+
+  // then
+  expect(error.message).toBe(en.errors.VALIDATION_FAILED)
+  expect(error.fieldErrors).toEqual([
+    { field: 'email', code: 'INVALID_FORMAT' },
+    { field: 'name', code: 'TOO_LONG' },
+  ])
+})
+
+test('[web-client/R5-S6] Broken field errors are left out', async () => {
+  const cases: [unknown, { field: string; code: string }[]][] = [
+    [undefined, []],
+    ['x', []],
+    [[], []],
+    [
+      [
+        { field: 1, code: 'REQUIRED' },
+        { field: 'name' },
+        { field: 'email', code: 'REQUIRED' },
+      ],
+      [{ field: 'email', code: 'REQUIRED' }],
+    ],
+  ]
+  for (const [errors, expected] of cases) {
+    // given
+    fetchMock.mockResolvedValue(
+      problemWithBody({ status: 400, code: 'VALIDATION_FAILED', errors }),
+    )
+
+    // when
+    const error = await failureOf(apiRequest('teachers', { method: 'POST' }))
+
+    // then
+    expect(error.message).toBe(en.errors.VALIDATION_FAILED)
+    expect(error.fieldErrors).toEqual(expected)
+  }
+})

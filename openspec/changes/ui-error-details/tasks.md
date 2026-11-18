@@ -7,7 +7,7 @@ existing test that changes is web-profile R3-S10 (task 3.2).
 
 ## 1. API client
 
-- [ ] 1.1 Add `fieldErrors` to `ApiError` and replace `parseProblemCode` with `parseProblem` (design D1); Vitest for web-client/R5-S5 and R5-S6 in `client.test.ts`; verify `npm test`
+- [x] 1.1 Add `fieldErrors` to `ApiError` and replace `parseProblemCode` with `parseProblem` (design D1); Vitest for web-client/R5-S5 and R5-S6 in `client.test.ts`; verify `npm test`
 
 ## 2. Shared pieces
 
