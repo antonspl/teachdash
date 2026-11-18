@@ -26,12 +26,12 @@ class StudentRegistrationFailureTest extends ApiTest {
 		// given a logged-in teacher and a failure while the set-password link is issued
 		createTeacher("teacher@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("teacher@example.com");
-		doThrow(new IllegalStateException("link failure")).when(links).issue(any(), any());
+		doThrow(new IllegalStateException("link failure")).when(links).issueSetPasswordLink(any(), any());
 		long usersBefore = jdbc.sql("select count(*) from users").query(Long.class).single();
 
 		// when the teacher registers a student with a new email
 		var response = teacher.post("/api/teacher/students",
-				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 500
 		response.then().statusCode(500);
@@ -47,11 +47,11 @@ class StudentRegistrationFailureTest extends ApiTest {
 		createTeacher("teacher@example.com", "teacher-pass-1");
 		createUser("STUDENT", "Nina", "nina@example.com", null, true);
 		TestClient teacher = loggedInAs("teacher@example.com");
-		doThrow(new IllegalStateException("link failure")).when(links).issue(any(), any());
+		doThrow(new IllegalStateException("link failure")).when(links).issueSetPasswordLink(any(), any());
 
 		// when the teacher registers a student with that email
 		var response = teacher.post("/api/teacher/students",
-				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC"));
+				Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 500
 		response.then().statusCode(500);

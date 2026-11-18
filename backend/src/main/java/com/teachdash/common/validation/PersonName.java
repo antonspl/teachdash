@@ -11,7 +11,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
-import jakarta.validation.ReportAsSingleViolation;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -22,7 +21,6 @@ import jakarta.validation.constraints.Size;
 @Pattern(
 		regexp = "(?!.*[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}])(?=.*[\\p{L}\\p{Nd}&&[^\\u3164\\uFFA0\\u115F\\u1160]]).*",
 		flags = Pattern.Flag.DOTALL)
-@ReportAsSingleViolation
 @Constraint(validatedBy = {})
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)

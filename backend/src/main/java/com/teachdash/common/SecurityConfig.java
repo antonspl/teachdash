@@ -55,6 +55,7 @@ class SecurityConfig {
 						.requestMatchers("/api/student/**").hasRole("STUDENT")
 						.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/password-links",
 								"/api/join-links/preview", "/api/join-links/join").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/languages").permitAll()
 						.requestMatchers("/actuator/health", "/actuator/health/**", "/error").permitAll()
 						.anyRequest().authenticated())
 				.csrf(csrf -> csrf

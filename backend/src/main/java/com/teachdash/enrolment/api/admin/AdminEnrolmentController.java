@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.teachdash.enrolment.api.dto.StudentLookupRequest;
+import com.teachdash.enrolment.api.dto.UserSummaryResponse;
 import com.teachdash.enrolment.domain.EnrolmentQueryService;
-import com.teachdash.enrolment.domain.UserSummary;
 
 import jakarta.validation.Valid;
 
@@ -25,17 +25,17 @@ class AdminEnrolmentController {
 	}
 
 	@GetMapping("/api/admin/teachers/{id}/students")
-	List<UserSummary> teacherStudents(@PathVariable UUID id) {
-		return queries.studentsOfTeacherForAdmin(id);
+	List<UserSummaryResponse> teacherStudents(@PathVariable UUID id) {
+		return UserSummaryResponse.from(queries.studentsOfTeacherForAdmin(id));
 	}
 
 	@GetMapping("/api/admin/students/{id}/teachers")
-	List<UserSummary> studentTeachers(@PathVariable UUID id) {
-		return queries.teachersOfStudent(id);
+	List<UserSummaryResponse> studentTeachers(@PathVariable UUID id) {
+		return UserSummaryResponse.from(queries.teachersOfStudent(id));
 	}
 
 	@PostMapping("/api/admin/students/lookup")
-	UserSummary lookupStudent(@Valid @RequestBody StudentLookupRequest request) {
-		return queries.studentByEmail(request.email());
+	UserSummaryResponse lookupStudent(@Valid @RequestBody StudentLookupRequest request) {
+		return UserSummaryResponse.from(queries.studentByEmail(request.email()));
 	}
 }

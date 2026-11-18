@@ -37,6 +37,7 @@ class JoinLinkTest extends ApiTest {
 		body.put("name", "Nina");
 		body.put("email", email);
 		body.put("timeZone", "UTC");
+		body.put("nativeLanguage", "en");
 		body.put("password", "new-password-1");
 		return body;
 	}

@@ -7,5 +7,6 @@ public record UserSummary(
 		String name,
 		String email,
 		String timeZone,
-		boolean active) {
+		boolean active,
+		String nativeLanguage) {
 }

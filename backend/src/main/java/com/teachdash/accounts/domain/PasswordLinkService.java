@@ -53,18 +53,48 @@ public class PasswordLinkService {
 				: baseUrl;
 	}
 
-	/** Issues a link for the account and invalidates its older unused links. */
+	/**
+	 * Issues a set-password link. A teacher issuer voids only its own older unused links,
+	 * an admin voids all of the account's.
+	 */
 	@Transactional
-	public String issue(UUID userId, TokenPurpose purpose) {
-		String token = TokenGenerator.generate();
-		Instant now = clock.instant();
+	public String issueSetPasswordLink(UUID userId, UUID issuerId) {
 		// Locks the user row first: user before links, see lock order.
 		users.findByIdForUpdate(userId);
-		tokens.markUnusedAsUsed(userId, now);
+		return store(userId, TokenPurpose.SET_PASSWORD, issuerId);
+	}
+
+	/**
+	 * Issues a reset link for an active account. A teacher issuer voids only its own older
+	 * unused links, an admin voids all. Nothing is stored or invalidated for a missing or
+	 * deactivated account.
+	 */
+	@Transactional
+	public String issueResetLink(UUID userId, UUID issuerId) {
+		User user = users.findByIdForUpdate(userId)
+				.orElseThrow(() -> ApiException.notFound());
+		if (!user.isActive()) {
+			throw new ApiException(HttpStatus.CONFLICT, "TARGET_ACCOUNT_DEACTIVATED");
+		}
+		return store(userId, TokenPurpose.RESET_PASSWORD, issuerId);
+	}
+
+	private String store(UUID userId, TokenPurpose purpose, UUID issuerId) {
+		String token = TokenGenerator.generate();
+		Instant now = clock.instant();
+		boolean adminIssuer = users.findById(issuerId)
+				.map(issuer -> issuer.getRole() == Role.ADMIN)
+				.orElseThrow(() -> new IllegalStateException("Issuer not found: " + issuerId));
+		if (adminIssuer) {
+			tokens.markUnusedAsUsed(userId, now);
+		} else {
+			tokens.markUnusedIssuedByAsUsed(userId, issuerId, now);
+		}
 		try {
 			tokens.save(OneTimeToken.create(
 					hash(token),
 					userId,
+					issuerId,
 					purpose,
 					now,
 					now.plus(VALIDITY)));
@@ -79,9 +109,9 @@ public class PasswordLinkService {
 		tokens.markUnusedAsUsed(userId, clock.instant());
 	}
 
-	/** Makes the account's unused links of one purpose unusable. */
-	public void invalidateLinks(UUID userId, TokenPurpose purpose) {
-		tokens.markUnusedAsUsed(userId, purpose.name(), clock.instant());
+	/** Makes the account's unused links that the given account issued unusable. */
+	public void invalidateLinksIssuedBy(UUID userId, UUID issuerId) {
+		tokens.markUnusedIssuedByAsUsed(userId, issuerId, clock.instant());
 	}
 
 	/**
@@ -109,6 +139,7 @@ public class PasswordLinkService {
 			if (tokens.markUsed(stored.getId(), now) != 1) {
 				throw invalid();
 			}
+			tokens.markUnusedAsUsed(user.getId(), now);
 			users.updatePasswordHashAndRevokeSessions(user.getId(), passwordHash);
 			return users.findById(user.getId()).orElseThrow(PasswordLinkService::invalid);
 		});

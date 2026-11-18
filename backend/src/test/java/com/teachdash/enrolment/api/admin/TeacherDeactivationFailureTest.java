@@ -29,7 +29,7 @@ class TeacherDeactivationFailureTest extends ApiTest {
 		assignStudent(teacherA, student);
 		TestClient admin = loggedInAdmin();
 		TestClient teacher = loggedInAs("a@example.com");
-		doThrow(new IllegalStateException("release failure")).when(links).invalidateLinks(any(), any());
+		doThrow(new IllegalStateException("release failure")).when(links).invalidateLinksIssuedBy(any(), any());
 
 		// when the admin deactivates teacher A
 		var response = admin.post("/api/admin/teachers/" + teacherA + "/deactivate");

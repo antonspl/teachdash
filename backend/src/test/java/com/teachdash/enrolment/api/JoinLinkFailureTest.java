@@ -41,6 +41,7 @@ class JoinLinkFailureTest extends ApiTest {
 				"name", "Nina",
 				"email", "nina@example.com",
 				"timeZone", "UTC",
+				"nativeLanguage", "en",
 				"password", "new-password-1"));
 
 		// then the response is 500

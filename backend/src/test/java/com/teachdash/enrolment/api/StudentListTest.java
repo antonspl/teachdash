@@ -133,7 +133,7 @@ class StudentListTest extends ApiTest {
 		TestClient student = loggedInAs("student@example.com");
 		TestClient admin = loggedInAdmin();
 		long usersBefore = jdbc.sql("select count(*) from users").query(Long.class).single();
-		Map<String, String> body = Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC");
+		Map<String, String> body = Map.of("name", "Nina", "email", "nina@example.com", "timeZone", "UTC", "nativeLanguage", "en");
 
 		// when each registers a student and requests a student's details
 		var studentRegisters = student.post(STUDENTS, body);

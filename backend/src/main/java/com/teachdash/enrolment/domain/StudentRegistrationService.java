@@ -12,7 +12,6 @@ import com.teachdash.accounts.domain.AccountService;
 import com.teachdash.accounts.domain.CreatedAccount;
 import com.teachdash.accounts.domain.PasswordLinkService;
 import com.teachdash.accounts.domain.Role;
-import com.teachdash.accounts.domain.TokenPurpose;
 import com.teachdash.accounts.domain.User;
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
@@ -41,19 +40,25 @@ public class StudentRegistrationService {
 	}
 
 	@Transactional
-	public CreatedAccount register(UUID teacherId, String name, String email, String timeZone) {
+	public CreatedAccount register(
+			UUID teacherId,
+			String name,
+			String email,
+			String timeZone,
+			String nativeLanguage) {
 		// A parallel deactivation updates this row, so it either finishes first (401 here)
 		// or waits until this registration commits and then releases the new student too.
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 		Optional<User> existing = users.findByEmailIgnoreCase(email);
 		if (existing.isEmpty()) {
-			CreatedAccount created = accounts.createPasswordlessUser(Role.STUDENT, name, email, timeZone);
+			CreatedAccount created = accounts.createPasswordlessUser(
+					Role.STUDENT, name, email, timeZone, nativeLanguage, teacherId);
 			assignments.insert(teacherId, created.id(), clock.instant());
 			return created;
 		}
 		if (existing.get().getRole() != Role.STUDENT) {
-			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+			throw ApiException.field(HttpStatus.CONFLICT, "EMAIL_TAKEN", "email");
 		}
 		// Re-read under the lock so the password hash is current.
 		User student = users.findByIdForUpdate(existing.get().getId()).orElseThrow();
@@ -68,15 +73,15 @@ public class StudentRegistrationService {
 		if (assignments.hasTeacher(studentId)) {
 			throw new ApiException(HttpStatus.CONFLICT, "STUDENT_EXISTS");
 		}
+		if (student.getPasswordHash() != null) {
+			throw new ApiException(HttpStatus.CONFLICT, "STUDENT_EXISTS");
+		}
 		if (!assignments.insert(teacherId, studentId, clock.instant())) {
 			String code = assignments.exists(teacherId, studentId)
 					? "ALREADY_ENROLLED"
 					: "STUDENT_EXISTS";
 			throw new ApiException(HttpStatus.CONFLICT, code);
 		}
-		String link = student.getPasswordHash() == null
-				? links.issue(studentId, TokenPurpose.SET_PASSWORD)
-				: null;
-		return new CreatedAccount(studentId, link);
+		return new CreatedAccount(studentId, links.issueSetPasswordLink(studentId, teacherId));
 	}
 }
