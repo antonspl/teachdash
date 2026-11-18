@@ -11,8 +11,8 @@ existing test that changes is web-profile R3-S10 (task 3.2).
 
 ## 2. Shared pieces
 
-- [ ] 2.1 Add the `error` prop to `ui/Select.tsx` with the markup and styles of `TextInput` (design D5); verify `npm run lint` (token check) and `npm test`
-- [ ] 2.2 Add `ui/useFieldErrors.ts` (design D2, D3) and the `fieldErrors.*` strings to `i18n/en.json`; unit tests of the hook (unknown field, unknown code, empty list, first entry per field wins, focus order, clear, clearAll); verify `npm test` and `i18n/translations.test.tsx`
+- [x] 2.1 Add the `error` prop to `ui/Select.tsx` with the markup and styles of `TextInput` (design D5); verify `npm run lint` (token check) and `npm test`
+- [x] 2.2 Add `ui/useFieldErrors.ts` (design D2, D3) and the `fieldErrors.*` strings to `i18n/en.json`; unit tests of the hook (unknown field, unknown code, empty list, first entry per field wins, focus order, clear, clearAll); verify `npm test` and `i18n/translations.test.tsx`
 
 ## 3. Forms
 
