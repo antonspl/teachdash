@@ -62,9 +62,10 @@ message as before; other specs' form-level messages describe this case.
 - **AND** no form-level message is shown, the dialog stays open and the entered values stay
 
 #### Scenario: web-client/R17-S2 Every form places its own fields
-- **GIVEN** one run per form, the backend answering the request with status 400, code `VALIDATION_FAILED` and the `errors` given: the login page with `email` `TOO_LONG`; the set-password page with `password` `TOO_SHORT`; the profile form with `timeZone` `INVALID_FORMAT`; the password form with `currentPassword` `REQUIRED`, and in another run `newPassword` `TOO_LONG`
+- **GIVEN** one run per form, the backend answering the request with status 400, code `VALIDATION_FAILED` and the `errors` given: the login page with `email` `TOO_LONG`, and in another run `password` `REQUIRED`; the set-password page with `password` `TOO_SHORT`; the profile form with `timeZone` `INVALID_FORMAT`; the password form with `currentPassword` `REQUIRED`, and in another run `newPassword` `TOO_LONG`
 - **WHEN** the form is submitted with values that pass its own checks
-- **THEN** in every run the translated message for the code is shown under the named field (the email, the new password, the time zone select, the current password, the new password), that field is marked invalid, and no form-level message is shown
+- **THEN** in every run the translated message for the code is shown under the named field (the email, the password, the new password, the time zone select, the current password, the new password), that field is marked invalid, and no form-level message is shown
+- **AND** in the login password run the password field is empty, as after every failed login
 
 #### Scenario: web-client/R17-S3 Focus moves to the first field with an error
 - **GIVEN** the backend answers the "Add teacher" request with `errors` `[{field: "email", code: "INVALID_FORMAT"}, {field: "name", code: "REQUIRED"}]`, and the focus is on the submit button
@@ -99,9 +100,8 @@ message as before; other specs' form-level messages describe this case.
 ### Requirement: R18 Backend field errors go away on edit
 
 In the forms of R17, editing a field SHALL remove that field's backend error and keep
-the others, and a new submit SHALL remove them all before the request is sent. A field
-that shows a client-side hint (R14) SHALL show the hint instead of a backend error. On
-the set-password page, editing a field SHALL also remove the form-level message.
+the others, and a new submit SHALL remove them all before the request is sent. On the
+set-password page, editing a field SHALL also remove the form-level message.
 
 #### Scenario: web-client/R18-S1 Editing a field removes only its error
 - **GIVEN** the "Add teacher" dialog shows backend errors under the name and the email, and the backend holds its answer to the next request

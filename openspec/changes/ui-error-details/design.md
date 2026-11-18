@@ -75,7 +75,8 @@ can unmount in between.
 
 ### D4 Client hint before backend error
 
-For the password fields the `error` prop gets `hint ?? backendError`. In practice the
+Not in the spec, because it cannot be reached through the UI (engineer's decision after
+the spec critique). For the password fields the `error` prop gets `hint ?? backendError`. In practice the
 two never meet: a submit with a hint sends nothing, and editing a field removes its
 backend error before a hint for it can appear. The repeat field has no backend name.
 
@@ -107,8 +108,8 @@ invalid with the message as its description.
   form-level message (R17-S4).
 - [A real backend with `errors` makes the old form-level texts rare] → they stay for
   old or unexpected responses; removing them is a later clean-up.
-- [Login clears the password on failure] → a `password` error is still shown under the
-  now empty field; the user retypes it anyway.
+- [Login clears the password on failure] → kept (engineer's decision); a `password`
+  error is shown under the now empty field (R17-S2), and the user retypes it anyway.
 - [Stacked on two open PRs] → re-base to `main` after #84 and #88 are merged.
 
 ## Migration Plan
