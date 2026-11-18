@@ -14,8 +14,12 @@ import en from '../i18n/en.json'
 
 const fetchMock = vi.fn()
 
-function problem(status: number, code: string) {
-  return new Response(JSON.stringify({ status, code }), {
+function problem(
+  status: number,
+  code: string,
+  errors?: Array<{ field: string; code: string }>,
+) {
+  return new Response(JSON.stringify({ status, code, errors }), {
     status,
     headers: { 'Content-Type': 'application/problem+json' },
   })
@@ -209,3 +213,86 @@ test('[web-auth/R5-S9] A link used at the same moment elsewhere', async () => {
   fireEvent.click(button)
   await waitFor(() => expect(linkCalls()).toHaveLength(2))
 })
+
+test('[web-client/R17-S2] The set-password page places a password error under the new password', async () => {
+  // given
+  backend(() =>
+    problem(400, 'VALIDATION_FAILED', [
+      { field: 'password', code: 'TOO_SHORT' },
+    ]),
+  )
+  open('#token=abc')
+
+  // when
+  await submit('long-enough-1')
+
+  // then
+  expect(await screen.findByText(en.fieldErrors.TOO_SHORT)).toBeTruthy()
+  const field = screen.getByLabelText(en.setPassword.password)
+  expect(field.getAttribute('aria-invalid')).toBe('true')
+  expect(
+    document.getElementById(field.getAttribute('aria-describedby') ?? '')
+      ?.textContent,
+  ).toBe(en.fieldErrors.TOO_SHORT)
+  expect(
+    screen.getByLabelText(en.setPassword.confirm).getAttribute('aria-invalid'),
+  ).not.toBe('true')
+  await waitFor(() => expect(document.activeElement).toBe(field))
+})
+
+test('[web-client/R17-S4] The set-password page keeps its form-level message when the token has an error', async () => {
+  // given
+  backend(() =>
+    problem(400, 'VALIDATION_FAILED', [
+      { field: 'password', code: 'TOO_SHORT' },
+      { field: 'token', code: 'TOO_LONG' },
+    ]),
+  )
+  open('#token=abc')
+
+  // when
+  await submit('long-enough-1')
+
+  // then
+  expect(await screen.findByText(en.errors.VALIDATION_FAILED)).toBeTruthy()
+  expect(screen.queryByText(en.fieldErrors.TOO_SHORT)).toBeNull()
+  expect(
+    screen.getByLabelText(en.setPassword.password).getAttribute('aria-invalid'),
+  ).not.toBe('true')
+})
+
+test.each([
+  ['new password', en.setPassword.password],
+  ['repeat', en.setPassword.confirm],
+])(
+  '[web-client/R18-S2] Editing the %s field removes the set-password form-level message',
+  async (_name, label) => {
+    // given
+    backend(() => problem(409, 'LINK_CONFLICT'))
+    open('#token=abc')
+    await submit('long-enough-1')
+    expect(await screen.findByText(en.errors.LINK_CONFLICT)).toBeTruthy()
+
+    // when
+    fireEvent.change(screen.getByLabelText(label), {
+      target: { value: 'long-enough-2' },
+    })
+
+    // then
+    expect(screen.queryByText(en.errors.LINK_CONFLICT)).toBeNull()
+    for (const [field, value] of [
+      [
+        en.setPassword.password,
+        label === en.setPassword.password ? 'long-enough-2' : 'long-enough-1',
+      ],
+      [
+        en.setPassword.confirm,
+        label === en.setPassword.confirm ? 'long-enough-2' : 'long-enough-1',
+      ],
+    ]) {
+      expect((screen.getByLabelText(field) as HTMLInputElement).value).toBe(
+        value,
+      )
+    }
+  },
+)

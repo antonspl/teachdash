@@ -36,8 +36,12 @@ function userResponse(role: string, name = 'Anna Smith') {
   )
 }
 
-function problem(status: number, code: string) {
-  return new Response(JSON.stringify({ status, code }), {
+function problem(
+  status: number,
+  code: string,
+  errors?: Array<{ field: string; code: string }>,
+) {
+  return new Response(JSON.stringify({ status, code, errors }), {
     status,
     headers: { 'Content-Type': 'application/problem+json' },
   })
@@ -353,4 +357,46 @@ test('[web-auth/R4-S3] Logout that fails for another reason', async () => {
     expect(screen.getByText(en.cabinet.student), name).toBeTruthy()
     view.unmount()
   }
+})
+
+test('[web-client/R17-S2] The login form places an email error under the email field', async () => {
+  // given
+  backend({
+    'auth/login': () =>
+      problem(400, 'VALIDATION_FAILED', [{ field: 'email', code: 'TOO_LONG' }]),
+  })
+  open('/login')
+
+  // when
+  await submitLogin()
+
+  // then
+  expect(await screen.findByText(en.fieldErrors.TOO_LONG)).toBeTruthy()
+  const email = screen.getByLabelText(en.login.email)
+  expect(email.getAttribute('aria-invalid')).toBe('true')
+  expect(
+    document.getElementById(email.getAttribute('aria-describedby') ?? '')
+      ?.textContent,
+  ).toBe(en.fieldErrors.TOO_LONG)
+})
+
+test('[web-client/R17-S2] The login form places a password error under the emptied password field', async () => {
+  // given
+  backend({
+    'auth/login': () =>
+      problem(400, 'VALIDATION_FAILED', [
+        { field: 'password', code: 'REQUIRED' },
+      ]),
+  })
+  open('/login')
+
+  // when
+  await submitLogin()
+
+  // then
+  expect(await screen.findByText(en.fieldErrors.REQUIRED)).toBeTruthy()
+  const password = screen.getByLabelText(en.login.password)
+  expect(password.getAttribute('aria-invalid')).toBe('true')
+  expect((password as HTMLInputElement).value).toBe('')
+  await waitFor(() => expect(document.activeElement).toBe(password))
 })
