@@ -900,6 +900,11 @@ test('[web-client/R17-S2] The password form places a current password error', as
   )
   expect(describedBy(en.profile.currentPassword)).toBe(en.fieldErrors.REQUIRED)
   expect(screen.queryByText(en.profile.passwordValidationFailed)).toBeNull()
+  expect(
+    field(en.profile.currentPassword)
+      .closest('form')
+      ?.querySelector('[role="status"]'),
+  ).toBeNull()
 })
 
 test('[web-client/R17-S2] The password form places a new password error', async () => {
@@ -924,6 +929,11 @@ test('[web-client/R17-S2] The password form places a new password error', async 
   )
   expect(describedBy(en.profile.newPassword)).toBe(en.fieldErrors.TOO_LONG)
   expect(screen.queryByText(en.profile.passwordValidationFailed)).toBeNull()
+  expect(
+    field(en.profile.newPassword)
+      .closest('form')
+      ?.querySelector('[role="status"]'),
+  ).toBeNull()
 })
 
 test('[web-client/R17-S8] Focus goes to the current password field', async () => {

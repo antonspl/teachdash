@@ -378,6 +378,7 @@ test('[web-client/R17-S2] The login form places an email error under the email f
     document.getElementById(email.getAttribute('aria-describedby') ?? '')
       ?.textContent,
   ).toBe(en.fieldErrors.TOO_LONG)
+  expect(email.closest('form')?.querySelector('[role="status"]')).toBeNull()
 })
 
 test('[web-client/R17-S2] The login form places a password error under the emptied password field', async () => {
@@ -399,4 +400,5 @@ test('[web-client/R17-S2] The login form places a password error under the empti
   expect(password.getAttribute('aria-invalid')).toBe('true')
   expect((password as HTMLInputElement).value).toBe('')
   await waitFor(() => expect(document.activeElement).toBe(password))
+  expect(password.closest('form')?.querySelector('[role="status"]')).toBeNull()
 })

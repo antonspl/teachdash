@@ -238,6 +238,7 @@ test('[web-client/R17-S2] The set-password page places a password error under th
     screen.getByLabelText(en.setPassword.confirm).getAttribute('aria-invalid'),
   ).not.toBe('true')
   await waitFor(() => expect(document.activeElement).toBe(field))
+  expect(field.closest('form')?.querySelector('[role="status"]')).toBeNull()
 })
 
 test('[web-client/R17-S4] The set-password page keeps its form-level message when the token has an error', async () => {
