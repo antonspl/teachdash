@@ -112,6 +112,7 @@ public class AdminBootstrap implements ApplicationRunner {
 				Role.ADMIN,
 				passwordEncoder.encode(password),
 				"UTC",
+				null,
 				clock.instant()));
 		log.info("Admin created");
 	}

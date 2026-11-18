@@ -89,7 +89,7 @@ public abstract class ApiTest {
 		List<String> tables = jdbc.sql("""
 				select table_name from information_schema.tables
 				where table_schema = 'public' and table_type = 'BASE TABLE'
-				  and table_name <> 'flyway_schema_history'
+				  and table_name not in ('flyway_schema_history', 'languages')
 				""").query(String.class).list();
 		if (!tables.isEmpty()) {
 			jdbc.sql("truncate table " + String.join(", ", tables) + " restart identity cascade")
@@ -99,6 +99,10 @@ public abstract class ApiTest {
 
 	protected TestClient newClient() {
 		return new TestClient(port);
+	}
+
+	protected long countRows(String table) {
+		return jdbc.sql("select count(*) from " + table).query(Long.class).single();
 	}
 
 	protected static String tokenFrom(String link) {
@@ -112,11 +116,23 @@ public abstract class ApiTest {
 			String email,
 			String password,
 			boolean active) {
+		return createUser(role, name, email, password, active, "en");
+	}
+
+	/** The language is stored for students only; other roles must not have one. */
+	protected UUID createUser(
+			String role,
+			String name,
+			String email,
+			String password,
+			boolean active,
+			String nativeLanguage) {
 		UUID id = UUID.randomUUID();
 		jdbc.sql("""
-				insert into users (id, email, name, role, password_hash, time_zone, active, created_at)
-				values (:id, :email, :name, :role, :hash, 'UTC', :active, :now)
+				insert into users (id, email, name, role, password_hash, time_zone, active, created_at, native_language)
+				values (:id, :email, :name, :role, :hash, 'UTC', :active, :now, :language)
 				""")
+				.param("language", "STUDENT".equals(role) ? nativeLanguage : null)
 				.param("id", id)
 				.param("email", email)
 				.param("name", name)
@@ -138,6 +154,17 @@ public abstract class ApiTest {
 
 	protected UUID createStudent(String email, String password) {
 		return createUser("STUDENT", "Student", email, password, true);
+	}
+
+	protected UUID createStudent(String email, String password, String nativeLanguage) {
+		return createUser("STUDENT", "Student", email, password, true, nativeLanguage);
+	}
+
+	protected String studentLanguage(UUID id) {
+		return jdbc.sql("select native_language from users where id = :id")
+				.param("id", id)
+				.query(String.class)
+				.single();
 	}
 
 	protected void assignStudent(UUID teacherId, UUID studentId) {
@@ -202,14 +229,14 @@ public abstract class ApiTest {
 	}
 
 	/** Inserts a token directly (SHA-256 hex hash stored); does not invalidate older tokens. */
-	protected String createToken(UUID userId, String purpose, boolean used) {
+	protected String createToken(UUID userId, String purpose, boolean used, UUID issuerId) {
 		byte[] bytes = new byte[32];
 		RANDOM.nextBytes(bytes);
 		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 		Instant now = Instant.now(clock);
 		jdbc.sql("""
-				insert into one_time_tokens (token_hash, user_id, purpose, expires_at, used_at, created_at)
-				values (:hash, :user, :purpose, :expires, :used, :now)
+				insert into one_time_tokens (token_hash, user_id, purpose, expires_at, used_at, created_at, issued_by)
+				values (:hash, :user, :purpose, :expires, :used, :now, :issuer)
 				""")
 				.param("hash", sha256Hex(token))
 				.param("user", userId)
@@ -217,6 +244,7 @@ public abstract class ApiTest {
 				.param("expires", Timestamp.from(now.plus(Duration.ofDays(7))))
 				.param("used", used ? Timestamp.from(now) : null)
 				.param("now", Timestamp.from(now))
+				.param("issuer", issuerId)
 				.update();
 		return token;
 	}

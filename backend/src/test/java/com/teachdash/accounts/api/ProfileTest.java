@@ -89,7 +89,8 @@ class ProfileTest extends ApiTest {
 		// given a logged-in teacher with an unused reset link
 		UUID teacherId = createTeacher("teacher@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("teacher@example.com");
-		String token = createToken(teacherId, "RESET_PASSWORD", false);
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		String token = createToken(teacherId, "RESET_PASSWORD", false, adminId);
 
 		// when the teacher changes the password, and the link is then used
 		var change = teacher.post("/api/me/password",

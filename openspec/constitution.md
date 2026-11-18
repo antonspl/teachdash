@@ -102,8 +102,10 @@ openspec/   specs and changes
 - **Frontend** is static files served by Caddy. One domain: `/api/*` and `/ws/*`
   are proxied to the backend — no CORS.
 - **Whiteboard:** Excalidraw on the frontend, Spring WebSocket relay on the backend.
+- **Terms:** a *lesson* is content inside a course. A *class* is a scheduled call
+  with a student. "Lesson" never means a class.
 - **Video:** external provider (LiveKit Cloud); no custom WebRTC. Until it is built,
-  a lesson card holds a meeting link.
+  a class holds a meeting link.
 - **Roles:** admin, teacher, student. Authorization is checked on the backend for
   every endpoint; the frontend only hides UI.
 
@@ -137,6 +139,8 @@ shared test helpers live in `com.teachdash.support`.
 
 - Backend logs structured JSON to stdout (Spring Boot structured logging). No log
   files. Never log secrets, passwords, tokens or full personal data.
+- Never put text a user selects, students' answers, or LLM prompts and replies into
+  logs, traces or metrics. Record IDs, sizes and outcomes instead.
 - Metrics: Actuator + Micrometer (Prometheus format). Traces: OpenTelemetry Java agent.
 - Grafana Alloy on the server ships logs, metrics and traces to Grafana Cloud.
 
@@ -147,7 +151,7 @@ shared test helpers live in `com.teachdash.support`.
   server → `docker compose pull && docker compose up -d`.
 - Flyway runs on application start.
 - Nightly `pg_dump` to off-server storage; restore is tested before real users join.
-- Environments: local and prod. Add staging when real students use the platform.
+- Environments: local and prod. No staging for now.
 
 ## 7. Simplicity
 
@@ -157,36 +161,50 @@ shared test helpers live in `com.teachdash.support`.
 ## 8. Multiple teachers
 
 - The platform serves several teachers from day one (about 1000 teachers).
-- One shared database. Teacher-owned data (students' enrolments, lessons, exercises,
-  homework, materials) carries an owning `teacher_id`.
-- A teacher changes only their own data. Every backend query on teacher-owned
-  data is scoped by the current teacher; tests cover access to another teacher's
-  data.
-- Exception: lessons and exercises are visible to all teachers for copying. A copy
-  is an independent record owned by the copying teacher; later edits to the
-  original or the copy do not affect the other. Student data, homework results and
-  progress stay private to the teacher.
-- Lessons and exercises (own or copied) can be copied into homework the same way.
+- One shared database. Teacher-owned data (students' enrolments, courses, lessons
+  and their content, classes, share links, materials) carries an owning `teacher_id`.
+- A teacher sees and changes only their own data. Every backend query on
+  teacher-owned data is scoped by the current teacher; tests cover access to
+  another teacher's data.
+- Exception: sharing by link. A teacher may create a link to their own course or
+  lesson. Another teacher who opens it gets a read-only preview and may copy it.
+  Without a link, other teachers see nothing. A copy is an independent record owned
+  by the copying teacher; later edits to the original or the copy do not affect the
+  other.
+- Student data, answers, homework results and progress are never shared and stay
+  private to the teacher.
 - A student has at most one teacher.
-- Admin manages teacher accounts and can see all data.
+- Admin manages accounts and can read all data, including any teacher's courses
+  and lessons, except what students produce (answers, homework results).
 
 ## 9. Subjects and languages
 
-- **Initial scope: only the English–Russian pair.** Courses teach English or Russian,
-  and translation works between English and Russian. Other languages and other
-  subjects are not built until there is a request.
-- The core (courses, lessons, exercises, schedule) MUST NOT depend on the subject,
-  so other subjects can be added later.
-- A course MAY have a target language, stored as an ISO 639-1 code. Supported
-  languages are a configured list, initially `en` and `ru`. Code MUST NOT hard-code
-  specific languages; language-specific behaviour (answer normalisation, LLM
-  prompts) comes from per-language settings.
-- Language features (translation, vocabulary) apply to courses with a target
-  language. Translation works between any two supported languages.
+- A course may teach any subject. The core (courses, lessons, classes) MUST NOT
+  depend on the subject.
+- Every course has an instruction language (the language it is taught in). A course
+  MAY also have a target language (the language it teaches). Both are ISO 639-1
+  codes from a configured list of supported languages, initially `en` and `ru`;
+  other languages are added on request. Code MUST NOT hard-code specific languages;
+  language-specific behaviour (answer normalisation, LLM prompts) comes from
+  per-language settings.
+- A course's languages never change after it is created.
+- A lesson joins or is copied only into a course with the same (instruction,
+  target) pair. A course without a target language matches only courses with the
+  same instruction language and no target language.
+- A course does not record who takes it: students with different native languages
+  may take the same course. Every student has a native language from a configured
+  list of student languages (ISO 639-1 codes), set by their teacher or chosen by the
+  student when joining through a link; it is student data (section 8). The supported
+  course languages are a subset of that list.
+- Language features (translation, vocabulary) apply only to courses with a target
+  language. Translation goes from the course's target language into the student's
+  native language, so every language in the list of student languages MUST be
+  supported as a translation target. A student whose native language is the target
+  language gets no translation.
 - Features that handle learning content MUST work for every supported language,
   including Cyrillic text; specs include scenarios for `en` and `ru`.
-- The UI language is separate from the target language. UI is English for now and
-  every UI string goes through i18n.
+- The UI language is separate from course languages. The first release ships the UI
+  in English and Russian; every UI string goes through i18n.
 
 ## 10. Access from Russia and the EU
 
@@ -197,4 +215,9 @@ shared test helpers live in `com.teachdash.support`.
   blocked in Russia.
 - Any other external service the browser must reach, such as video, is checked for
   access from both places before it is chosen.
+- Exception: YouTube videos. A teacher may add a YouTube video to a lesson; the
+  browser loads it directly from YouTube in an embedded player. YouTube is throttled
+  in Russia, so a teacher who chooses it accepts that students there may not be able
+  to watch. YouTube is the only embedded video host; any other video URL is shown
+  as a plain link.
 - A hosting provider is tested from inside Russia before it is chosen.

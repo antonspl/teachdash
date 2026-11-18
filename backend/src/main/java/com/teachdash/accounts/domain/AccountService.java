@@ -13,7 +13,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
-import com.teachdash.common.validation.BcryptPasswordValidator;
+import com.teachdash.common.validation.BcryptPassword;
+import com.teachdash.common.validation.Utf8;
 
 @Service
 public class AccountService {
@@ -44,7 +45,7 @@ public class AccountService {
 	 * transaction. Callers check for an existing email first, so a duplicate here is a lost race.
 	 */
 	@Transactional
-	public CreatedAccount createPasswordlessUser(Role role, String name, String email, String timeZone) {
+	public CreatedAccount createPasswordlessUser(Role role, String name, String email, String timeZone, String nativeLanguage, UUID issuerId) {
 		User user;
 		try {
 			user = users.save(User.create(
@@ -53,16 +54,17 @@ public class AccountService {
 					role,
 					null,
 					timeZone,
+					nativeLanguage,
 					clock.instant()));
 		} catch (DuplicateKeyException e) {
-			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+			throw ApiException.field(HttpStatus.CONFLICT, "EMAIL_TAKEN", "email");
 		}
-		return new CreatedAccount(user.getId(), links.issue(user.getId(), TokenPurpose.SET_PASSWORD));
+		return new CreatedAccount(user.getId(), links.issueSetPasswordLink(user.getId(), issuerId));
 	}
 
 	/** Creates an account with a ready password hash and no one-time token; joins the caller's transaction. */
 	@Transactional
-	public User createUserWithPassword(Role role, String name, String email, String timeZone, String passwordHash) {
+	public User createUserWithPassword(Role role, String name, String email, String timeZone, String nativeLanguage, String passwordHash) {
 		try {
 			return users.save(User.create(
 					email,
@@ -70,9 +72,10 @@ public class AccountService {
 					role,
 					passwordHash,
 					timeZone,
+					nativeLanguage,
 					clock.instant()));
 		} catch (DuplicateKeyException e) {
-			throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN");
+			throw ApiException.field(HttpStatus.CONFLICT, "EMAIL_TAKEN", "email");
 		}
 	}
 
@@ -95,7 +98,7 @@ public class AccountService {
 		boolean currentPasswordMatches = user.getPasswordHash() != null
 				&& matches(currentPassword, user.getPasswordHash());
 		if (!currentPasswordMatches) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD");
+			throw ApiException.field(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD", "currentPassword");
 		}
 		String newPasswordHash = passwordEncoder.encode(newPassword);
 		int newSessionVersion = transaction.execute(status -> {
@@ -112,7 +115,7 @@ public class AccountService {
 		User user = users.findByEmailIgnoreCase(email).orElse(null);
 		boolean canCheckRealHash = user != null
 				&& user.getPasswordHash() != null
-				&& !BcryptPasswordValidator.exceedsBcryptLimit(password);
+				&& !Utf8.exceeds(password, BcryptPassword.MAX_BYTES);
 		String hashToCheck = canCheckRealHash ? user.getPasswordHash() : dummyHash;
 		boolean passwordMatched = passwordEncoder.matches(password, hashToCheck);
 		// The dummy check's result must never count as a match.
@@ -135,7 +138,7 @@ public class AccountService {
 	}
 
 	private boolean matches(String password, String passwordHash) {
-		return !BcryptPasswordValidator.exceedsBcryptLimit(password)
+		return !Utf8.exceeds(password, BcryptPassword.MAX_BYTES)
 				&& passwordEncoder.matches(password, passwordHash);
 	}
 

@@ -21,7 +21,8 @@ public class TeacherStudentRepository {
 			rs.getString("name"),
 			rs.getString("email"),
 			rs.getString("time_zone"),
-			rs.getBoolean("active"));
+			rs.getBoolean("active"),
+			rs.getString("native_language"));
 
 	private final JdbcClient jdbc;
 
@@ -86,7 +87,7 @@ public class TeacherStudentRepository {
 
 	public List<UserSummary> findStudents(UUID teacherId) {
 		return jdbc.sql("""
-				select u.id, u.name, u.email, u.time_zone, u.active
+				select u.id, u.name, u.email, u.time_zone, u.active, u.native_language
 				from teacher_students ts
 				join users u on u.id = ts.student_id
 				where ts.teacher_id = :teacherId
@@ -99,7 +100,7 @@ public class TeacherStudentRepository {
 
 	public Optional<UserSummary> findStudent(UUID teacherId, UUID studentId) {
 		return jdbc.sql("""
-				select u.id, u.name, u.email, u.time_zone, u.active
+				select u.id, u.name, u.email, u.time_zone, u.active, u.native_language
 				from teacher_students ts
 				join users u on u.id = ts.student_id
 				where ts.teacher_id = :teacherId and ts.student_id = :studentId
@@ -112,7 +113,7 @@ public class TeacherStudentRepository {
 
 	public List<UserSummary> findTeachers(UUID studentId) {
 		return jdbc.sql("""
-				select u.id, u.name, u.email, u.time_zone, u.active
+				select u.id, u.name, u.email, u.time_zone, u.active, u.native_language
 				from teacher_students ts
 				join users u on u.id = ts.teacher_id
 				where ts.student_id = :studentId
@@ -125,7 +126,7 @@ public class TeacherStudentRepository {
 
 	public Optional<UserSummary> findStudentByEmail(String email) {
 		return jdbc.sql("""
-				select u.id, u.name, u.email, u.time_zone, u.active
+				select u.id, u.name, u.email, u.time_zone, u.active, u.native_language
 				from users u
 				where u.role = 'STUDENT' and lower(u.email) = lower(:email)
 				""")

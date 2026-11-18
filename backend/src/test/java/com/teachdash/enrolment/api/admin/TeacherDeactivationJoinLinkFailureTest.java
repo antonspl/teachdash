@@ -31,7 +31,7 @@ class TeacherDeactivationJoinLinkFailureTest extends ApiTest {
 		String token = createJoinLink(teacherA);
 		TestClient admin = loggedInAdmin();
 		TestClient teacher = loggedInAs("a@example.com");
-		doThrow(new IllegalStateException("release failure")).when(links).invalidateLinks(any(), any());
+		doThrow(new IllegalStateException("release failure")).when(links).invalidateLinksIssuedBy(any(), any());
 
 		// when the admin deactivates teacher A, and the preview of L1 is requested
 		var deactivation = admin.post("/api/admin/teachers/" + teacherA + "/deactivate");

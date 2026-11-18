@@ -1,5 +1,7 @@
 package com.teachdash.enrolment.api;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import com.teachdash.enrolment.domain.JoinLinkService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 
 /** Check order: role 403, validation 400, link 410, email 409. */
@@ -53,26 +56,31 @@ class JoinLinkController {
 			HttpServletRequest httpRequest,
 			HttpServletResponse httpResponse) {
 		rejectTeacherAndAdmin(authentication);
-		validate(request);
 		if (hasRole(authentication, "ROLE_STUDENT")) {
+			validate(request);
 			UUID studentId = UUID.fromString(authentication.getName());
 			return ResponseEntity.ok(new JoinedStudentResponse(service.joinAsStudent(request.token(), studentId)));
 		}
 		JoinVisitor visitor = JoinVisitor.of(request);
-		validate(visitor);
+		validate(request, visitor);
 		User student = service.joinAsVisitor(
 				request.token(),
 				visitor.name(),
 				visitor.email(),
 				visitor.timeZone(),
+				visitor.nativeLanguage(),
 				visitor.password());
 		sessionStarter.start(student, httpRequest, httpResponse);
 		return ResponseEntity.status(HttpStatus.CREATED).body(new JoinedVisitorResponse(student.getId()));
 	}
 
-	private void validate(Object request) {
-		if (!validator.validate(request).isEmpty()) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED");
+	private void validate(Object... requests) {
+		Set<ConstraintViolation<?>> violations = new HashSet<>();
+		for (Object request : requests) {
+			violations.addAll(validator.validate(request));
+		}
+		if (!violations.isEmpty()) {
+			throw ApiException.validation(violations);
 		}
 	}
 

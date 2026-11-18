@@ -1,0 +1,46 @@
+# Tasks
+
+## 1. Failing tests
+
+- [x] 1.1 Add migration `V6__token_issuer.sql` with a nullable `issued_by` (design D1). It is a schema migration, which pass 1 may add; the engineer reviews it as production code at the test gate. Verify the app starts and the existing suite still passes
+- [x] 1.2 Add a stub returning 501, marked `STUB`, for `POST /api/teacher/students/{id}/reset-link` (design D3)
+- [x] 1.3 Give `ApiTest.createToken` an `issuerId` argument and pass in every existing caller the issuer its scenario describes (design D5); also state the issuer in the setup of R4-S3, R4-S4 and R7-S1 as the delta spec now does. Verify the existing suite still passes
+- [x] 1.4 Change the test for accounts R8-S4 in `PasswordLinkTest` to expect code `TARGET_ACCOUNT_DEACTIVATED` (design D7); verify it now fails at that assertion only
+- [x] 1.5 Write tests for student-enrolment R12-S1 to R12-S9, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; create links and sessions in the GIVEN step directly, never through the stubbed endpoint. The WHEN step only captures responses and asserts nothing; where a later call needs the token from the stub's response, read it without failing (use a made-up token when the response has none), so the test fails in THEN and not in WHEN
+- [x] 1.6 Write tests for student-enrolment R4-S15 and R7-S7, creating the teacher's reset link with `createToken` and teacher A as issuer
+- [x] 1.7 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new or changed test fails at its THEN step (not in setup), every other test passes, and the coverage script passes. Check in particular that R12-S1, S4, S5 and S9 fail on a THEN assertion and not on reading the token. Report any new test that passes anyway to the engineer (R12-S6, R12-S7 and R12-S8 are rejected before the controller and may pass against the stub)
+
+## 2. Test review
+
+- [x] 2.1 Engineer approves tests in the PR. HARD STOP: no production code before approval
+
+## 3. Implementation
+
+- [x] 3.1 Add the issuer argument to `PasswordLinkService.issue`, `OneTimeToken`, `AccountService.createPasswordlessUser`, `TeacherAdminService.createTeacher` and `reactivateTeacher`, and pass the acting user's id from `AdminController` and the registration path (design D2). STOP and ask the engineer before changing the two `issue` stubs in `StudentRegistrationFailureTest` and any direct test caller of the three changed service methods (design D7). Add `V7__token_issuer_required.sql` (design D1); verify the accounts and enrolment tests that passed before still pass
+- [x] 3.2 Add the guarded `PasswordLinkService.issueResetLink(userId, issuerId)` with the shared private insert path and code `TARGET_ACCOUNT_DEACTIVATED`; make `issue` reject `RESET_PASSWORD` (later replaced by `issueSetPasswordLink`, task 4.3); reduce `TeacherAdminService.issueResetLink` to the own-account check plus delegation (design D6); verify all accounts R8 tests pass
+- [x] 3.3 Replace `invalidateLinks(userId, purpose)` with `invalidateLinks(userId, issuerId)` and use it in removal and release (design D4); make removal lock the teacher row first, with a comment explaining the race (design D3); verify all R4 and R7 tests pass
+- [x] 3.4 Implement the teacher reset endpoint with the lock order of design D3 and a comment at the teacher-row lock; verify all R12 tests pass
+- [x] 3.5 Check that no token appears in logs or in `toString` on the new endpoint (constitution §5); fix any that does
+- [x] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged except for those the engineer approved in 3.1
+
+## 4. Code review fixes
+
+- [x] 4.1 Change the approved tests for R1-S14, R4-S7, R4-S14 and R7-S2 to the new scenario text (proposal, answer 9); create join links and student sessions directly in GIVEN. Verify each fails at its THEN step only. STOP: engineer approves these test changes in the PR
+- [x] 4.2 Make `StudentRegistrationService.assignExisting` return 409 `STUDENT_EXISTS` for a student with a password (design, Risks); verify the four tests pass
+- [x] 4.3 Rename `PasswordLinkService.issue(userId, purpose, issuerId)` to `issueSetPasswordLink(userId, issuerId)` and drop the purpose argument (review #5)
+- [x] 4.4 Rename `invalidateLinks(userId, issuerId)` to `invalidateLinksIssuedBy` and make `issueResetLink` take arguments in the same order in all three services (review #6); the distinct name removes the overload trap, and approved mocks change only by the rename
+- [x] 4.5 Use `ApiException.notFound()` in `PasswordLinkService` (review #9)
+- [x] 4.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; full suite green
+
+## 5. Second code review fixes
+
+- [x] 5.1 Write or change the tests for accounts R7-S4 (text only, check it still matches), the new accounts R7-S7 and R8-S6, student-enrolment R1-S18 and R12-S5 (both flipped) and the new R4-S16 (design D8); create links with `createToken` and the issuer each scenario names. Verify R7-S7, R1-S18, R12-S5 and R4-S16 fail at their THEN step only; R8-S6 already holds today and passes, which is expected. Add `V8__token_one_unused_per_issuer.sql` (pass 1: a schema migration), so two unused links from different issuers can be created directly. Run the coverage script. STOP: engineer approves these tests in the PR
+- [x] 5.2 Make `store` void only the same teacher's unused links for a teacher issuer and all of them for an admin issuer, and `use` void the account's other unused links (design D8; V8 was added in pass 1, task 5.1); verify the tests of 5.1 and all accounts R7 and R8 tests pass
+- [x] 5.3 Override `toString` in `CreatedAccount`, `RegisteredStudent` and `SetPasswordLinkResponse` so the link is not printed, as `LinkResponse` does (proposal, answer 13)
+- [x] 5.4 Run `./gradlew :backend:cleanTest :backend:test` and `scripts/check-scenario-coverage.sh`; full suite green
+
+## Workflow follow-up
+
+- Code review gate: the Opus review runs, then the engineer approves the code in the PR.
+- Archive in the same PR, after confirming every scenario ID has a matching test. At archive, add a sentence about reset links to the Purpose of `openspec/specs/student-enrolment/spec.md`.
+- Mark the PR ready for the final review by a code owner other than the engineer.

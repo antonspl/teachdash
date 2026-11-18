@@ -41,8 +41,12 @@ class AdminController {
 
 	@PostMapping("/teachers")
 	@ResponseStatus(HttpStatus.CREATED)
-	CreatedAccount createTeacher(@Valid @RequestBody CreateTeacherRequest request) {
-		return teachers.createTeacher(request.name(), request.email(), request.timeZone());
+	CreatedAccount createTeacher(@Valid @RequestBody CreateTeacherRequest request, Principal principal) {
+		return teachers.createTeacher(
+				request.name(),
+				request.email(),
+				request.timeZone(),
+				UUID.fromString(principal.getName()));
 	}
 
 	@PostMapping("/teachers/{id}/deactivate")
@@ -53,8 +57,8 @@ class AdminController {
 
 	/** 200 with a new set-password link if the teacher never set a password, otherwise 204. */
 	@PostMapping("/teachers/{id}/reactivate")
-	ResponseEntity<SetPasswordLinkResponse> reactivate(@PathVariable UUID id) {
-		return teachers.reactivateTeacher(id)
+	ResponseEntity<SetPasswordLinkResponse> reactivate(@PathVariable UUID id, Principal principal) {
+		return teachers.reactivateTeacher(id, UUID.fromString(principal.getName()))
 				.map(link -> ResponseEntity.ok(new SetPasswordLinkResponse(link)))
 				.orElseGet(() -> ResponseEntity.noContent().build());
 	}

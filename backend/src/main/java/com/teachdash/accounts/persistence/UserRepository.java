@@ -64,4 +64,8 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 	@Modifying
 	@Query("update users set active = true where id = :id")
 	void reactivate(@Param("id") UUID id);
+
+	@Modifying
+	@Query("update users set native_language = :nativeLanguage where id = :id")
+	void updateNativeLanguage(@Param("id") UUID id, @Param("nativeLanguage") String nativeLanguage);
 }
