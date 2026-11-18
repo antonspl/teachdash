@@ -1145,3 +1145,154 @@ test('Focus is not stolen by a late reload after a deactivation', async () => {
   await screen.findByText('Deactivated')
   expect(document.activeElement).toBe(add)
 })
+
+function validationFailed(errors: { field: string; code: string }[]) {
+  return new Response(
+    JSON.stringify({ status: 400, code: 'VALIDATION_FAILED', errors }),
+    { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+  )
+}
+
+test('[web-client/R17-S1] Errors are shown under their fields in the Add teacher dialog', async () => {
+  // given
+  backend({
+    list: () => json([]),
+    create: () =>
+      validationFailed([
+        { field: 'email', code: 'INVALID_FORMAT' },
+        { field: 'name', code: 'TOO_LONG' },
+        { field: 'name', code: 'INVALID_FORMAT' },
+      ]),
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+
+  // when
+  fireEvent.click(submitButton())
+
+  // then
+  const tooLong = await screen.findByText(en.fieldErrors.TOO_LONG)
+  const format = screen.getByText(en.fieldErrors.INVALID_FORMAT)
+  const nameInput = screen.getByLabelText<HTMLInputElement>(
+    en.adminTeachers.create.name,
+  )
+  const emailInput = screen.getByLabelText<HTMLInputElement>(
+    en.adminTeachers.create.email,
+  )
+  const zone = screen.getByLabelText<HTMLSelectElement>(
+    en.adminTeachers.create.timeZone,
+  )
+  expect(nameInput.getAttribute('aria-invalid')).toBe('true')
+  expect(nameInput.getAttribute('aria-describedby')).toBe(tooLong.id)
+  expect(emailInput.getAttribute('aria-invalid')).toBe('true')
+  expect(emailInput.getAttribute('aria-describedby')).toBe(format.id)
+  expect(zone.getAttribute('aria-invalid')).toBeNull()
+  expect(screen.getAllByText(en.fieldErrors.INVALID_FORMAT)).toHaveLength(1)
+  expect(
+    screen.queryByText(en.adminTeachers.create.validationFailed),
+  ).toBeNull()
+  expect(screen.getByRole('dialog')).toBeTruthy()
+  expect(nameInput.value).toBe('Anna Smith')
+  expect(emailInput.value).toBe('anna@example.com')
+})
+
+test('[web-client/R17-S3] Focus moves to the first field with an error in the Add teacher dialog', async () => {
+  // given
+  backend({
+    list: () => json([]),
+    create: () =>
+      validationFailed([
+        { field: 'email', code: 'INVALID_FORMAT' },
+        { field: 'name', code: 'REQUIRED' },
+      ]),
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+  submitButton().focus()
+  expect(document.activeElement).toBe(submitButton())
+
+  // when
+  fireEvent.click(submitButton())
+
+  // then
+  await screen.findByText(en.fieldErrors.REQUIRED)
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByLabelText(en.adminTeachers.create.name),
+    ),
+  )
+})
+
+test('[web-client/R17-S4] The Add teacher dialog keeps its form-level message without field errors', async () => {
+  // given
+  backend({
+    list: () => json([]),
+    create: () => problem(400, 'VALIDATION_FAILED'),
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+
+  // when
+  fireEvent.click(submitButton())
+
+  // then
+  expect(
+    await screen.findByText(en.adminTeachers.create.validationFailed),
+  ).toBeTruthy()
+  for (const label of [
+    en.adminTeachers.create.name,
+    en.adminTeachers.create.email,
+    en.adminTeachers.create.timeZone,
+  ]) {
+    expect(screen.getByLabelText(label).getAttribute('aria-invalid')).toBeNull()
+  }
+})
+
+test('[web-client/R18-S1] Editing a field removes only its error in the Add teacher dialog', async () => {
+  // given
+  let release: (response: Response) => void = () => {}
+  let attempt = 0
+  backend({
+    list: () => json([]),
+    create: () => {
+      attempt += 1
+      if (attempt === 1) {
+        return validationFailed([
+          { field: 'name', code: 'REQUIRED' },
+          { field: 'email', code: 'INVALID_FORMAT' },
+        ])
+      }
+      return new Promise<Response>((resolve) => {
+        release = resolve
+      })
+    },
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+  fireEvent.click(submitButton())
+  await screen.findByText(en.fieldErrors.REQUIRED)
+  const nameInput = screen.getByLabelText<HTMLInputElement>(
+    en.adminTeachers.create.name,
+  )
+  const emailInput = screen.getByLabelText<HTMLInputElement>(
+    en.adminTeachers.create.email,
+  )
+
+  // when
+  fireEvent.change(emailInput, { target: { value: 'anna@example.org' } })
+
+  // then
+  expect(screen.queryByText(en.fieldErrors.INVALID_FORMAT)).toBeNull()
+  expect(emailInput.getAttribute('aria-invalid')).toBeNull()
+  expect(screen.getByText(en.fieldErrors.REQUIRED)).toBeTruthy()
+  expect(nameInput.getAttribute('aria-invalid')).toBe('true')
+
+  // and when
+  fireEvent.click(submitButton())
+
+  // then
+  await waitFor(() => expect(calls('POST')).toHaveLength(2))
+  expect(screen.queryByText(en.fieldErrors.REQUIRED)).toBeNull()
+  expect(nameInput.getAttribute('aria-invalid')).toBeNull()
+  release(json({ id: '5', link: 'http://x/y' }, 201))
+})
