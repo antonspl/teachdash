@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type Ref } from 'react'
 import styles from './Field.module.css'
 
 export function Select({
@@ -9,6 +9,7 @@ export function Select({
   error,
   required,
   disabled,
+  inputRef,
 }: {
   label: string
   value: string
@@ -17,6 +18,8 @@ export function Select({
   error?: string
   required?: boolean
   disabled?: boolean
+  // Lets a form move the focus to the select.
+  inputRef?: Ref<HTMLSelectElement>
 }) {
   const id = useId()
   const errorId = `${id}-error`
@@ -27,6 +30,7 @@ export function Select({
       </label>
       <div className={styles.selectWrap}>
         <select
+          ref={inputRef}
           id={id}
           className={`${styles.input} ${styles.select} ${error ? styles.invalid : ''}`}
           value={value}

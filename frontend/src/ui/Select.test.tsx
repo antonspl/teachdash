@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
+import { createRef } from 'react'
 import { afterEach, expect, test } from 'vitest'
 import { Select } from './Select'
 
@@ -30,4 +31,18 @@ test('without an error the select is not marked invalid', () => {
   const select = renderSelect()
   expect(select.getAttribute('aria-invalid')).toBeNull()
   expect(select.getAttribute('aria-describedby')).toBeNull()
+})
+
+test('inputRef points at the select element', () => {
+  const ref = createRef<HTMLSelectElement>()
+  render(
+    <Select
+      label="Time zone"
+      value="UTC"
+      onChange={() => {}}
+      options={['UTC']}
+      inputRef={ref}
+    />,
+  )
+  expect(ref.current).toBe(screen.getByLabelText('Time zone'))
 })

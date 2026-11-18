@@ -26,20 +26,37 @@ export function useFieldErrors<K extends string>(
 ) {
   const { t } = useTranslation()
   const [errors, setErrors] = useState<Partial<Record<K, string>>>({})
-  // The field to focus once it is enabled. A ref, because only the effect reads it;
-  // `place` also sets `errors`, which renders the form.
-  const pendingFocus = useRef<K | null>(null)
+  // The focus requested by the last successful `place`. `active` is the element that
+  // had the focus at that moment (usually the submit button). A ref, because only the
+  // effect reads it; `place` also sets `errors`, which renders the form.
+  const pendingFocus = useRef<{ key: K; active: Element | null } | null>(null)
 
-  // Runs after every render while a focus is pending: inputs are disabled while a
-  // request runs and `focus()` does nothing on them, so wait for an enabled one.
+  // Runs after every render while a focus is pending. Inputs are disabled while a
+  // request runs and `focus()` does nothing on them, so wait for an enabled one. Drop
+  // the request when there is nothing to focus (no element), and do not take the focus
+  // from an element the user moved it to meanwhile: only move it when it is on the page
+  // body or still on the element that had it when `place` ran.
   useEffect(() => {
-    const key = pendingFocus.current
-    if (key === null) {
+    const pending = pendingFocus.current
+    if (pending === null) {
       return
     }
-    const element = fields.find((field) => field.key === key)?.ref.current
-    if (element && !element.matches(':disabled')) {
+    const element = fields.find((field) => field.key === pending.key)?.ref
+      .current
+    if (!element) {
       pendingFocus.current = null
+      return
+    }
+    if (element.matches(':disabled')) {
+      return
+    }
+    pendingFocus.current = null
+    const active = document.activeElement
+    if (
+      active === null ||
+      active === document.body ||
+      active === pending.active
+    ) {
       element.focus()
     }
   })
@@ -53,7 +70,10 @@ export function useFieldErrors<K extends string>(
     return key ? t(key) : undefined
   }
 
+  // A call that returns false keeps the errors already shown (clear them with
+  // `clearAll` first) but cancels any pending focus.
   function place(error: ApiError): boolean {
+    pendingFocus.current = null
     if (error.fieldErrors.length === 0) {
       return false
     }
@@ -70,13 +90,18 @@ export function useFieldErrors<K extends string>(
         placed[field.key] = message
       }
     }
-    pendingFocus.current =
-      fields.find((field) => placed[field.key] !== undefined)?.key ?? null
+    const first = fields.find((field) => placed[field.key] !== undefined)
+    pendingFocus.current = first
+      ? { key: first.key, active: document.activeElement }
+      : null
     setErrors(placed)
     return true
   }
 
   function clear(key: K) {
+    if (pendingFocus.current?.key === key) {
+      pendingFocus.current = null
+    }
     setErrors((current) => {
       if (current[key] === undefined) {
         return current
