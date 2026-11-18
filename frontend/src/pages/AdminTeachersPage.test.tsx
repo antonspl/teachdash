@@ -1191,6 +1191,7 @@ test('[web-client/R17-S1] Errors are shown under their fields in the Add teacher
   expect(
     screen.queryByText(en.adminTeachers.create.validationFailed),
   ).toBeNull()
+  expect(nameInput.closest('form')?.querySelector('[role="status"]')).toBeNull()
   expect(screen.getByRole('dialog')).toBeTruthy()
   expect(nameInput.value).toBe('Anna Smith')
   expect(emailInput.value).toBe('anna@example.com')

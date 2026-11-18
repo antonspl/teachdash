@@ -873,6 +873,7 @@ test('[web-client/R17-S2] The profile form places a time zone error under the se
   expect(select.getAttribute('aria-invalid')).toBe('true')
   expect(describedBy(en.profile.timeZone)).toBe(en.fieldErrors.INVALID_FORMAT)
   expect(screen.queryByText(en.profile.validationFailed)).toBeNull()
+  expect(select.closest('form')?.querySelector('[role="status"]')).toBeNull()
   expect(field(en.profile.name).value).toBe('Anna Typed')
   expect(headerHas('Anna Smith')).toBe(true)
   await waitFor(() => expect(document.activeElement).toBe(select))
