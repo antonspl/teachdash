@@ -63,6 +63,16 @@ Codex has no live run: nobody on the team uses it yet (proposal, clarification 1
 
   Record the run links.
 
+## 5. Code owner review fixes (PR comment, 2026-11-18)
+
+- [ ] 5.1 `opencode.json` and `.codex/rules/flow.rules` ask before `gh pr comment`, `gh pr edit`, `gh pr review`, `gh pr merge` and `gh api` (design D7). Verify: the Codex rule `match` examples pass, and a live opencode run asks for `gh pr comment --help` and runs a flow script without a prompt.
+- [ ] 5.2 Live check that the edit-ask rules match: in Claude Code and opencode, an edit of `scripts/flow/test` asks. Verify: record the result in the PR.
+- [x] 5.3 `gate-status` ignores questions, `CHANGES_REQUESTED` reviews and box lines in HTML comments or code fences, flags an approval as stale when it is not newer than the latest request, and notes the commits after a code approval (design D6). Verify: `scripts/flow/test` has a fixture for each case and passes.
+- [x] 5.4 `scripts/flow/test` fails instead of skipping when `CI` is set and `jq` is missing (design D6). Verify: run it with `CI=1` and `jq` hidden from `PATH`.
+- [x] 5.5 `setup-agents` rejects malformed map lines, warns when a tool has no `strong` entry, and `--check` reports `stale` after a generated file is hand-edited (design D4). Verify: run each case and record the output.
+- [x] 5.6 `change-start` falls back to `npx -y @fission-ai/openspec@1.15.0` when `openspec` is not on `PATH` (design D6). Verify: run it with `openspec` hidden from `PATH` on a throwaway branch, then delete the branch.
+- [x] 5.7 `AGENTS.md`: after a rebase, re-post the gate range with `gate-request`; the Propose row also points to §8 and §9 when the change touches teacher data or languages. Verify: `wc -c AGENTS.md` is under 32768.
+
 ## Workflow follow-up
 
 - Code review gate: per-slice reviews, then the code-gate review on the strong class. This is the first real use of the `code-gate-reviewer` role.

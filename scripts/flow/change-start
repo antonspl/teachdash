@@ -29,7 +29,12 @@ fi
 dir=openspec/changes/$name
 [ -e "$dir" ] && had_dir=1 || had_dir=0
 before=$(git ls-files --others --exclude-standard -- "$dir" | LC_ALL=C sort)
-if ! openspec new change "$name" >/dev/null; then
+if command -v openspec >/dev/null 2>&1; then
+  openspec_cmd=(openspec)
+else
+  openspec_cmd=(npx -y @fission-ai/openspec@1.15.0)
+fi
+if ! "${openspec_cmd[@]}" new change "$name" >/dev/null; then
   if [ "$had_dir" = 0 ]; then
     rm -rf "$dir"
   else

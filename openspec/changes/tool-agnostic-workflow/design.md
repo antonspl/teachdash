@@ -98,9 +98,9 @@ It is written in POSIX shell with `awk`, and needs no new dependency (constituti
 
 It copies `.agents/skills/` to `.claude/skills/`. It keeps a gitignored manifest, `.agents/.generated`, listing the paths it wrote. On the next run it deletes only listed paths that are no longer generated, so a removed role does not linger and a developer's own files in those folders stay. With no manifest (first run) it overwrites same-named files and deletes nothing. Every output path is gitignored. A symlinked generated folder (`.claude/agents`, `.claude/skills` and so on) is not supported; a symlinked generated file is replaced by a plain file, never written through. A hand-edited manifest can only delete files inside the four generated folders.
 
-It also writes a stamp holding a hash of `.agents/roles/`, `.agents/skills/`, the map and the generator itself. `--check` compares that stamp with the sources and prints `stale` or `ok`. It writes nothing.
+It also writes a stamp holding a hash of `.agents/roles/`, `.agents/skills/`, the map, the generator itself and every generated file. `--check` compares that stamp with the sources and the generated files, and prints `stale` or `ok`, so a hand-edited generated file is also `stale`. It writes nothing.
 
-A missing or malformed map line gives a one-line warning, and the agent gets no model. A broken role file (missing field, unknown value) makes it exit non-zero.
+A malformed map line (not `tool.class = model [effort]`, an unknown tool or class, more than two words, or a model or effort with characters outside `A-Za-z0-9._/:-`) makes it exit non-zero, like a broken role file (missing field, unknown value). The character check also keeps the values safe to write into YAML and TOML unescaped. When a tool has no entry for the `strong` class, it prints one warning line per tool: `code-gate-reviewer` then runs on the session's model. A missing map file gives one warning line instead.
 
 - Alternative: commit the generated files and add a CI drift check. Rejected by the engineer, because personal model IDs would end up in git.
 
@@ -117,22 +117,22 @@ The task records which fix was used.
 
 ### D6. Flow scripts
 
-Each script lives in `scripts/flow/` and uses `set -euo pipefail`. On success it prints a few lines at most. On failure it passes stderr through and exits non-zero. GitHub JSON is filtered with `gh --jq`, so there is no `jq` dependency.
+Each script lives in `scripts/flow/` and uses `set -euo pipefail`. On success it prints a few lines at most. On failure it passes stderr through and exits non-zero. GitHub JSON is filtered with `gh --jq`, so the scripts need no `jq`. Only the tests need it (see Testing).
 
 | Script | Does |
 |---|---|
 | `issue-brief <n>` | Prints the issue's title, labels, body and comments, without the constitution or the config |
-| `change-start <name> <issue>` | Refuses when the working tree has uncommitted changes (untracked files included). Runs `setup-agents --check`, creates the branch from an updated `main`, then runs `openspec new change`. If that fails, it switches back and deletes the new branch, so a retry works |
+| `change-start <name> <issue>` | Refuses when the working tree has uncommitted changes (untracked files included). Runs `setup-agents --check`, creates the branch from an updated `main`, then runs `openspec new change`, using `openspec` from `PATH` or, when it is not installed, `npx -y @fission-ai/openspec@1.15.0`. If that fails, it switches back and deletes the new branch, so a retry works |
 | `pr-draft <name> <issue>` | Pushes, opens a draft PR from the template with `Closes #<issue>` and the change path, and prints the URL |
 | `gate-request <gate> <range>` | Posts a comment with the range, and replaces only the line for that gate in the description's "Review ranges" section. It reads the description once, re-reads it just before the edit and aborts if it changed. It fails if the heading is missing. Other lines and the gate boxes stay as they are |
-| `gate-status` | Reads PR comments and review bodies (same rules for both). Exits non-zero with a short error if `gh` fails (no PR, logged out, no network). Prints, for each gate (`spec`, `tests`, `code`), whether there is an approving comment, who wrote it and when, and whether the box is ticked. It also flags an approval older than the latest `gate-request` for that gate |
+| `gate-status` | Reads PR comments and review bodies (same rules for both). Exits non-zero with a short error if `gh` fails (no PR, logged out, no network). Prints, for each gate (`spec`, `tests`, `code`), whether there is an approving comment, who wrote it and when, and whether the box is ticked. It also flags an approval as stale when it is not newer than the latest `gate-request` for that gate. For the code gate only, it adds a note with the number of commits after the approval; this is information, not staleness, because the archive commit always comes after it. A rebase rewrites commit dates, so after one every commit counts; the new `gate-request` after the rebase makes the approval stale anyway |
 | `pr-ready` | Marks the PR ready |
 
-**Gate strings.** An approving comment starts with `spec approved`, `tests approved` or `code approved` (case-insensitive). Comments and review bodies are ordered by time (comments by `createdAt`, reviews by `submittedAt`), so the latest approval and the latest request win whatever the order of the data. An empty review body (GitHub "Approve") is read as no text, and a deleted author is shown as `ghost`. Comments posted by the scripts start with a hidden marker, `<!-- flow -->`, and `gate-status` never counts them. `gate-status` only reports. The agent shows the result to the engineer, who is the one who decides. No script ticks a box or writes an approval.
+**Gate strings.** An approving comment starts with `spec approved`, `tests approved` or `code approved` (case-insensitive). Comments and review bodies are ordered by time (comments by `createdAt`, reviews by `submittedAt`), so the latest approval and the latest request win whatever the order of the data. A comment whose first line ends with `?` is not an approval, and neither is a review with the state `CHANGES_REQUESTED`. A gate box line inside an HTML comment or a code fence in the description does not count. An empty review body (GitHub "Approve") is read as no text, and a deleted author is shown as `ghost`. Comments posted by the scripts start with a hidden marker, `<!-- flow -->`, and `gate-status` never counts them. `gate-status` only reports. The agent shows the result to the engineer, who is the one who decides. No script ticks a box or writes an approval.
 
 **Branch guard.** Every script that writes refuses to run when `git symbolic-ref --short HEAD` fails (detached HEAD) or returns `main`. This works the same in worktrees.
 
-**Testing.** When `FLOW_GH_FIXTURE` points to a file, `gate-status` reads the PR data from it instead of calling `gh`. The file holds the lines `gh --jq` would extract (gate boxes, then comment author, time and first line), so the fixtures test the parsing after the `gh` call, not the `gh` query itself. `scripts/flow/test` runs `gate-status` on fixtures that cover these cases:
+**Testing.** When `FLOW_GH_JSON` points to a file of saved PR, comment and review JSON, `gate-status` runs the same `--jq` filters on it with `jq` instead of calling `gh`, so the fixtures test the filters and the parsing. The tests need `jq`: without it they are skipped locally, and fail when `CI` is set. `scripts/flow/test` runs `gate-status` on fixtures that cover these cases:
 
 - no comments;
 - a correct approval;
@@ -142,7 +142,10 @@ Each script lives in `scripts/flow/` and uses `set -euo pipefail`. On success it
 - an approval older than the latest request;
 - a marker comment;
 - comments out of time order;
-- saved `gh` JSON with an empty review body and a deleted author (`FLOW_GH_JSON`, needs `jq`).
+- an empty review body and a deleted author;
+- a question (`Code approved?`) and a `CHANGES_REQUESTED` review starting with an approval phrase;
+- an approval at the same time as the request, and commits after a code approval (a note) and after a spec approval (nothing);
+- a ticked box inside an HTML comment and inside a code fence.
 
 There is no commit or push wrapper. That output is already small (research angle 3). The scripts never merge, never push to `main` and never force-push.
 
@@ -156,7 +159,9 @@ These are committed. They allow each flow script and `scripts/setup-agents` by e
 
 The permission files, `scripts/flow/`, `scripts/setup-agents` and `.agents/roles/` are owner-only in CODEOWNERS, because the rules run those scripts without asking. Both `scripts/x` and `./scripts/x` forms are allowed. `AGENTS.md` tells agents not to change them, or the flow scripts and roles, unless the task requires it, and the reviewers check this. The owner approved this on 2026-11-17.
 
-The allow rules would let an agent edit an allowed script and then run it without a prompt. So Claude Code and opencode also ask before any edit of `scripts/flow/**`, `scripts/setup-agents`, `.agents/roles/**`, `.claude/settings.json`, `opencode.json` and `.codex/rules/**`: `Edit(...)` rules in `permissions.ask` (Claude Code applies them to Write too; the paths start with `/` to anchor at the project root), and `edit` rules with `ask` in `opencode.json`. A bare `git push` also asks in opencode, like `git push *`. Codex has no per-path edit rule, so it relies on the `AGENTS.md` instruction and CODEOWNERS.
+The allow rules would let an agent edit an allowed script and then run it without a prompt. So Claude Code and opencode also ask before any edit of `scripts/flow/**`, `scripts/setup-agents`, `.agents/roles/**`, `.claude/settings.json`, `opencode.json` and `.codex/rules/**`: `Edit(...)` rules in `permissions.ask` (Claude Code applies them to Write too; the paths start with `/` to anchor at the project root), and `edit` rules with `ask` in `opencode.json`. A bare `git push` also asks in opencode, like `git push *`. Codex has no per-path edit rule, so it relies on the `AGENTS.md` instruction and CODEOWNERS; CODEOWNERS only acts at review, so locally a Codex agent can edit an allowed script and run it. This is accepted while nobody on the team uses Codex.
+
+opencode allows shell commands by default, so an agent could post `code approved` or tick a gate box as the engineer, and `gate-status` would count it. `opencode.json` and `.codex/rules/flow.rules` therefore ask before `gh pr comment`, `gh pr edit`, `gh pr review`, `gh pr merge` and `gh api`. Claude Code already asks, because `gh` is not on its allow list. Other shell commands stay allowed, to keep prompts few during development (engineer, 2026-11-18).
 
 `pr-draft`, `pr-ready` and `gate-request` push or post under the engineer's GitHub account. They run only when the main agent reaches the matching step, which `AGENTS.md` defines.
 

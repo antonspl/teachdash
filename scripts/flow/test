@@ -23,6 +23,28 @@ check() {
 
 have_jq=0
 command -v jq >/dev/null && have_jq=1
+if [ "$have_jq" = 0 ] && [ -n "${CI:-}" ]; then
+  # setup-agents --check: stale after a hand edit of a generated file, ok after a rerun.
+(cd "$sa" && scripts/setup-agents) >/dev/null 2>&1
+check "setup-agents --check says ok after a run" ok "$(cd "$sa" && scripts/setup-agents --check)"
+echo "hand edit" >>"$sa/.claude/agents/odd.md"
+actual=$(cd "$sa" && scripts/setup-agents --check)
+check "setup-agents --check says stale after a hand edit" stale "$actual"
+(cd "$sa" && scripts/setup-agents) >/dev/null 2>&1
+check "setup-agents --check says ok after a rerun" ok "$(cd "$sa" && scripts/setup-agents --check)"
+
+# A malformed map line stops setup-agents and names the line.
+cp "$sa/.agents/models.local" "$work/models.good"
+printf '%s\n' '# comment' 'codex.strong = gpt-x high extra' >"$sa/.agents/models.local"
+(cd "$sa" && scripts/setup-agents) >/dev/null 2>"$work/err"
+check "setup-agents rejects a malformed map line" 1 "$(grep -c 'models.local line 2: expected at most a model and an effort' "$work/err")"
+(cd "$sa" && scripts/setup-agents) >/dev/null 2>&1
+check "setup-agents exits non-zero on a malformed map line" 1 $?
+cp "$work/models.good" "$sa/.agents/models.local"
+
+echo "flow tests: jq is required when CI is set" >&2
+  exit 1
+fi
 
 # gate-status runs the live jq filters on saved PR, comment and review JSON in
 # the shapes gh returns (null bodies, deleted users, pending reviews).
@@ -109,6 +131,9 @@ if [ "$have_jq" = 1 ]; then
   cat >"$work/ghfix/pr.json" <<'JSON'
 {"number":7,"author":{"login":"alice"},"body":"- [x] Spec approved by @alice\n- [ ] Tests approved by @"}
 JSON
+  cat >"$work/ghfix/commits.json" <<'JSON'
+[{"commit":{"committer":{"date":"2026-11-17T09:00:00Z"}}}]
+JSON
   cat >"$work/ghfix/comments.json" <<'JSON'
 [{"user":{"login":"bob"},"created_at":"2026-11-17T10:00:00Z","body":"Spec approved"}]
 JSON
@@ -126,6 +151,7 @@ for arg in "$@"; do
 done
 case "$*" in
   "pr view"*) jq -r "$filter" "$GH_FIX/pr.json" ;;
+  "api --paginate repos/{owner}/{repo}/pulls/7/commits"*) jq -r "$filter" "$GH_FIX/commits.json" ;;
   "api --paginate repos/{owner}/{repo}/issues/7/comments"*) jq -r "$filter" "$GH_FIX/comments.json" ;;
   "api --paginate repos/{owner}/{repo}/pulls/7/reviews"*) [ -n "${FAIL_REVIEWS:-}" ] && exit 1; jq -r "$filter" "$GH_FIX/reviews.json" ;;
   *) exit 1 ;;
@@ -227,6 +253,7 @@ check "pr-draft stops on an unreadable issue before pushing" 1 "$(grep -c 'nothi
 sa=$work/sa
 mkdir -p "$sa/scripts" "$sa/.agents/roles"
 cp "$here/../setup-agents" "$sa/scripts/setup-agents"
+printf '%s\n' 'claude.strong = opus' 'claude.medium = sonnet' 'opencode.strong = p/strong' 'opencode.medium = p/medium' 'codex.strong = m high' 'codex.medium = m medium' >"$sa/.agents/models.local"
 desc='[*-&!{>|%@`] say "hi": a \ b #c'
 printf '%s\n' '---' 'name: odd' "description: $desc" 'class: medium' 'access: read' 'web: false' '---' 'Body.' >"$sa/.agents/roles/odd.md"
 (cd "$sa" && scripts/setup-agents) >/dev/null 2>"$work/err"
@@ -234,6 +261,24 @@ check "setup-agents accepts a description with YAML special characters" 0 "$(wc 
 quoted='"[*-&!{>|%@`] say \"hi\": a \\ b #c"'
 check "setup-agents quotes the description for Claude" "description: $quoted" "$(grep '^description:' "$sa/.claude/agents/odd.md")"
 check "setup-agents quotes the description for opencode" "description: $quoted" "$(grep '^description:' "$sa/.opencode/agents/odd.md")"
+
+# setup-agents --check: stale after a hand edit of a generated file, ok after a rerun.
+(cd "$sa" && scripts/setup-agents) >/dev/null 2>&1
+check "setup-agents --check says ok after a run" ok "$(cd "$sa" && scripts/setup-agents --check)"
+echo "hand edit" >>"$sa/.claude/agents/odd.md"
+actual=$(cd "$sa" && scripts/setup-agents --check)
+check "setup-agents --check says stale after a hand edit" stale "$actual"
+(cd "$sa" && scripts/setup-agents) >/dev/null 2>&1
+check "setup-agents --check says ok after a rerun" ok "$(cd "$sa" && scripts/setup-agents --check)"
+
+# A malformed map line stops setup-agents and names the line.
+cp "$sa/.agents/models.local" "$work/models.good"
+printf '%s\n' '# comment' 'codex.strong = gpt-x high extra' >"$sa/.agents/models.local"
+(cd "$sa" && scripts/setup-agents) >/dev/null 2>"$work/err"
+check "setup-agents rejects a malformed map line" 1 "$(grep -c 'models.local line 2: expected at most a model and an effort' "$work/err")"
+(cd "$sa" && scripts/setup-agents) >/dev/null 2>&1
+check "setup-agents exits non-zero on a malformed map line" 1 $?
+cp "$work/models.good" "$sa/.agents/models.local"
 
 echo "flow tests: $passed passed, $failed failed"
 [ "$failed" -eq 0 ]

@@ -1,0 +1,3 @@
+{"pr":{"number":7,"author":{"login":"alice"},"body":"Template:\n\n```\n- [x] Spec approved by @\n- [x] Tests approved by @\n```\n\n- [ ] Spec approved by @\n- [x] Tests approved by @"},
+ "comments":[],
+ "reviews":[]}

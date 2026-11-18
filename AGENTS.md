@@ -25,7 +25,7 @@ step.
 |---|---|
 | Any step, workflow and roles | §1 Workflow |
 | Explore, Clarify, Research | §1 steps 1-3 |
-| Propose, spec critique, spec gate | §1 steps 4-6, the tooling-changes paragraph |
+| Propose, spec critique, spec gate | §1 steps 4-6, the tooling-changes paragraph; §8 and §9 if the change touches teacher data or languages |
 | Tests (pass 1), test gate | §1 steps 7-8, §2 Testing |
 | Code (pass 2), code review, code gate | §1 steps 9-10, §3 Architecture |
 | Archive, final review | §1 steps 11-12 |
@@ -82,7 +82,8 @@ Agents' reports are not shown to the engineer: relay what matters in a few lines
   final review by a code owner other than the engineer.
 - Never merge PRs, never push to `main`, never force-push a shared branch. After a
   rebase of the change's own branch, push with `--force-with-lease`; the tool asks
-  the engineer first.
+  the engineer first. The rebase changes the commit hashes, so post the current
+  gate's range again with `gate-request`.
 - Never tick a gate box in the PR description and never write an approval comment
   ("spec approved" and so on). Only the engineer approves. Show the engineer what
   `scripts/flow/gate-status` reports and let them decide.

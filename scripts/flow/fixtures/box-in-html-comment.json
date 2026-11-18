@@ -1,0 +1,3 @@
+{"pr":{"number":7,"author":{"login":"alice"},"body":"## Gates\n\n<!-- example:\n- [x] Spec approved by @\n-->\n- [ ] Spec approved by @\n- [ ] Tests approved by @\n- [x] Code approved by @ <!-- inline -->"},
+ "comments":[],
+ "reviews":[]}

@@ -1,4 +1,5 @@
-# Flow scripts run without asking. Force pushes and pushes to main are refused.
+# Flow scripts run without asking. `gh pr comment|edit|review|merge` and `gh api`
+# prompt, so an agent cannot post an approval as the engineer. Force pushes and pushes to main are refused.
 # `git push --force-with-lease` to another branch matches no forbidden rule, so
 # Codex asks the engineer. Rules match command prefixes only: a flag placed after
 # other arguments (for example `git push origin x --force`) is not caught, and
@@ -92,4 +93,21 @@ prefix_rule(
     decision = "forbidden",
     justification = "Never push to main",
     match = ["git push --force-with-lease origin main"],
+)
+
+# Commands that could post an approval or edit the PR gate boxes as the engineer.
+prefix_rule(
+    pattern = ["gh", "pr", ["comment", "edit", "review", "merge"]],
+    decision = "prompt",
+    justification = "Only the engineer approves gates; ask before commenting on or changing a PR",
+    match = ["gh pr comment 148 --body x", "gh pr edit 148 --body x", "gh pr review 148 --approve", "gh pr merge 148"],
+    not_match = ["gh pr view 148", "gh pr list"],
+)
+
+prefix_rule(
+    pattern = ["gh", "api"],
+    decision = "prompt",
+    justification = "gh api can post comments or edit the PR as the engineer",
+    match = ["gh api repos/o/r/issues/1/comments"],
+    not_match = ["gh pr view 148"],
 )

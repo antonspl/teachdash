@@ -51,17 +51,49 @@ mapped() {
   ' "$MAP"
 }
 
-warn_bad_map_lines() {
+# Exits non-zero on the first malformed map line.
+validate_map() {
   [ -f "$MAP" ] || return 0
-  awk '
-    /^[ \t]*(#|$)/ { next }
-    $0 !~ /^[ \t]*(claude|opencode|codex)\.(strong|medium)[ \t]*=[ \t]*[^ \t]+([ \t]+[^ \t]+)?[ \t]*$/ {
-      printf "setup-agents: warning: ignoring malformed line %d in .agents/models.local\n", NR > "/dev/stderr"
+  awk -v file="$MAP" '
+    function bad(msg) {
+      printf "setup-agents: %s line %d: %s\n", file, NR, msg > "/dev/stderr"
+      exit 1
     }
-  ' "$MAP"
+    /^[ \t]*(#|$)/ { next }
+    {
+      i = index($0, "=")
+      if (i == 0) bad("expected \"tool.class = model [effort]\"")
+      key = substr($0, 1, i - 1)
+      gsub(/[ \t]/, "", key)
+      split(key, parts, ".")
+      if (key !~ /^[^.]+\.[^.]+$/) bad("expected \"tool.class = model [effort]\"")
+      if (parts[1] !~ /^(claude|opencode|codex)$/) bad("unknown tool \"" parts[1] "\" (claude, opencode or codex)")
+      if (parts[2] !~ /^(strong|medium)$/) bad("unknown class \"" parts[2] "\" (strong or medium)")
+      n = split(substr($0, i + 1), words, /[ \t]+/)
+      count = 0
+      for (w = 1; w <= n; w++) {
+        if (words[w] == "") continue
+        count++
+        if (words[w] !~ /^[A-Za-z0-9._\/:-]+$/) bad("model and effort may only use A-Z a-z 0-9 . _ / : -")
+      }
+      if (count == 0) bad("missing model")
+      if (count > 2) bad("expected at most a model and an effort")
+    }
+  ' "$MAP" || exit 1
 }
 
-# Hash of everything the generated files depend on.
+warn_missing_strong() {
+  if [ ! -f "$MAP" ]; then
+    echo "setup-agents: warning: no $MAP, agents run on the session's model (see .agents/models.example)" >&2
+    return 0
+  fi
+  for tool in claude opencode codex; do
+    [ -n "$(mapped "$tool" strong)" ] ||
+      echo "setup-agents: warning: no $tool.strong in $MAP, code-gate-reviewer runs on the session's model for $tool" >&2
+  done
+}
+
+# Hash of everything the generated files depend on, and of the generated files.
 sources_hash() {
   {
     find "$ROLES" "$SKILLS" -type f 2>/dev/null | LC_ALL=C sort | while read -r f; do
@@ -70,6 +102,10 @@ sources_hash() {
     done
     [ -f "$MAP" ] && cat "$MAP"
     cat scripts/setup-agents
+    generated_paths | while read -r f; do
+      printf '%s\n' "$f"
+      cat "$f" 2>/dev/null || :
+    done
   } | cksum
 }
 
@@ -215,7 +251,8 @@ remove_stale() {
 
 generate() {
   validate_roles
-  warn_bad_map_lines
+  validate_map
+  warn_missing_strong
 
   new_list=$(mktemp)
   trap 'rm -f "$new_list"' EXIT
