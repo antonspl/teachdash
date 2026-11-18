@@ -3,8 +3,18 @@
 # (@antonspl) may merge without an approval.
 * @antonspl @andreilebedevops
 
-# The constitution, the OpenSpec config and this file need the owner's approval.
-# The rest of the workflow (CLAUDE.md, CONTRIBUTING.md, .claude/) is open to any code owner.
+# The constitution, the OpenSpec config, this file, the permission files
+# (.claude/settings.json, opencode.json, .codex/rules/), the scripts they
+# allow without asking (scripts/flow/, scripts/setup-agents) and the role
+# definitions (.agents/roles/) need the owner's approval. The rest of the
+# workflow (AGENTS.md, CLAUDE.md, CONTRIBUTING.md, the other files in .agents/,
+# the PR template) is open to any code owner.
 /openspec/constitution.md @antonspl
 /openspec/config.yaml @antonspl
 /.github/CODEOWNERS @antonspl
+/.claude/settings.json @antonspl
+/opencode.json @antonspl
+/.codex/rules/ @antonspl
+/scripts/flow/ @antonspl
+/scripts/setup-agents @antonspl
+/.agents/roles/ @antonspl

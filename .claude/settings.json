@@ -1,0 +1,54 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(scripts/setup-agents *)",
+      "Bash(./scripts/setup-agents *)",
+      "Bash(scripts/flow/issue-brief *)",
+      "Bash(./scripts/flow/issue-brief *)",
+      "Bash(scripts/flow/change-start *)",
+      "Bash(./scripts/flow/change-start *)",
+      "Bash(scripts/flow/pr-draft *)",
+      "Bash(./scripts/flow/pr-draft *)",
+      "Bash(scripts/flow/pr-ready *)",
+      "Bash(./scripts/flow/pr-ready *)",
+      "Bash(scripts/flow/gate-request *)",
+      "Bash(./scripts/flow/gate-request *)",
+      "Bash(scripts/flow/gate-status *)",
+      "Bash(./scripts/flow/gate-status *)",
+      "Bash(scripts/flow/test *)",
+      "Bash(./scripts/flow/test *)"
+    ],
+    "ask": [
+      "Edit(/scripts/flow/**)",
+      "Edit(/scripts/setup-agents)",
+      "Edit(/.agents/roles/**)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/opencode.json)",
+      "Edit(/.codex/rules/**)"
+    ],
+    "deny": [
+      "Bash(git push --force)",
+      "Bash(git push --force *)",
+      "Bash(git push * --force)",
+      "Bash(git push * --force *)",
+      "Bash(git push -f)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git push * main)",
+      "Bash(git push * main *)",
+      "Bash(git push *:main)",
+      "Bash(git push *:main *)",
+      "Bash(git push * HEAD:main)",
+      "Bash(git push * HEAD:main *)",
+      "Bash(git push * +main)",
+      "Bash(git push * +main *)",
+      "Bash(git push * +*)",
+      "Bash(git push * +* *)",
+      "Bash(git push * refs/heads/main)",
+      "Bash(git push * refs/heads/main *)",
+      "Bash(git push *:refs/heads/main)",
+      "Bash(git push *:refs/heads/main *)"
+    ]
+  }
+}

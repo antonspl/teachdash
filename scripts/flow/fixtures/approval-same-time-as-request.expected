@@ -1,0 +1,3 @@
+spec:  approved by alice at 2026-11-17T10:00:00Z; box ticked; STALE, approval is older than the latest request
+tests: no approving comment; box not ticked
+code:  no approving comment; box not ticked

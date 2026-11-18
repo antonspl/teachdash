@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Reports, for each gate, the latest approving comment, the box and staleness.
+# Only reports; the engineer decides. Never ticks or approves anything.
+# Usage: scripts/flow/gate-status [pr]
+# With FLOW_GH_JSON=<file> (needs jq), runs the same filters as live mode on a
+# saved {"pr", "comments", "reviews"} file. See scripts/flow/test.
+#
+# Extracted format, one line per item, tab separated:
+#   N <number>                 the PR number
+#   A <login>                  the PR author
+#   B <gate> <x|space>         gate box from the description
+#   T <time>                   committer date of one commit, one line per commit
+#   C <login> <time> <first line of a comment or review body>
+set -euo pipefail
+# shellcheck source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+[ $# -eq 0 ] || require_number "$1" "pr number"
+
+# The same filters run live and on the fixtures: head uses the field names of
+# `gh pr view --json`, commits, comments and reviews those of the REST API.
+# shellcheck disable=SC2016 # the backticks are code fences in a jq regex
+FILTER_HEAD='
+  "N\t" + (.number | tostring),
+  "A\t" + ((.author.login // "") | if . == "" then "ghost" else . end),
+  (.body // "" | gsub("(^|\n) {0,3}```[\\s\\S]*?(\n {0,3}```[^\n]*|\\z)"; "\n")
+    | gsub("(^|\n) {0,3}~~~[\\s\\S]*?(\n {0,3}~~~[^\n]*|\\z)"; "\n")
+    | gsub("<!--[\\s\\S]*?(-->|\\z)"; "")
+    | split("\n")[]
+    | capture("^- \\[(?<box>[ xX])\\] (?<gate>Spec|Tests|Code) approved")?
+    | "B\t" + (.gate | ascii_downcase) + "\t" + (if .box == " " then "space" else "x" end))'
+
+FILTER_COMMITS='.[] | .commit.committer.date // empty | "T\t" + .'
+
+FILTER_COMMENTS='.[]
+  | "C\t" + ((.user.login // "") | if . == "" then "ghost" else . end) + "\t" + .created_at + "\t"
+    + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " "))'
+
+FILTER_REVIEWS='.[]
+  | select(.state != "PENDING" and .state != "DISMISSED" and .state != "CHANGES_REQUESTED" and .submitted_at != null)
+  | "C\t" + ((.user.login // "") | if . == "" then "ghost" else . end) + "\t" + .submitted_at + "\t"
+    + (.body // "" | split("\n") | .[0] // "" | rtrimstr("\r") | gsub("\t"; " "))'
+
+extract() {
+  if [ -n "${FLOW_GH_JSON:-}" ]; then
+    jq -r ".pr | $FILTER_HEAD" "$FLOW_GH_JSON" &&
+      jq -r ".commits // [] | $FILTER_COMMITS" "$FLOW_GH_JSON" &&
+      jq -r ".comments | $FILTER_COMMENTS" "$FLOW_GH_JSON" &&
+      jq -r ".reviews | $FILTER_REVIEWS" "$FLOW_GH_JSON"
+  else
+    local head number
+    head=$(gh pr view ${1:+"$1"} --json number,author,body --jq "$FILTER_HEAD") || return 1
+    number=$(printf '%s\n' "$head" | awk -F'\t' '$1 == "N" { print $2 }')
+    printf '%s\n' "$head"
+    # The REST endpoints are paginated; `gh pr view` returns only the first page.
+    gh api --paginate "repos/{owner}/{repo}/pulls/$number/commits" --jq "$FILTER_COMMITS" &&
+      gh api --paginate "repos/{owner}/{repo}/issues/$number/comments" --jq "$FILTER_COMMENTS" &&
+      gh api --paginate "repos/{owner}/{repo}/pulls/$number/reviews" --jq "$FILTER_REVIEWS"
+  fi
+}
+
+data=$(extract "${1:-}") || die "could not read the pull request from GitHub (no PR, gh logged out or no network)"
+
+printf '%s\n' "$data" | awk -F'\t' -v marker="$MARKER" '
+  BEGIN { n = split("spec tests code", gates, " ") }
+  $1 == "A" { author = $2 }
+  $1 == "B" { box[$2] = ($3 == "x") }
+  $1 == "T" { commits[++ncommits] = $2 }
+  # Times are ISO 8601 UTC, so string comparison orders them; input order does not matter.
+  $1 == "C" {
+    text = tolower($4)
+    is_flow = (index($4, marker) == 1)
+    is_question = (text ~ /\?[ \t\r]*$/)
+    for (i = 1; i <= n; i++) {
+      g = gates[i]
+      if (is_flow) {
+        if (text ~ ("^" tolower(marker) " " g " gate") && $3 > requested[g]) requested[g] = $3
+      } else if (!is_question && text ~ ("^[ ]*" g " approved") && $3 >= when[g]) {
+        who[g] = $2
+        when[g] = $3
+      }
+    }
+  }
+  END {
+    for (i = 1; i <= n; i++) {
+      g = gates[i]
+      line = sprintf("%-6s", g ":")
+      if (who[g] != "") line = line " approved by " who[g] ((author != "" && who[g] != author) ? " (not the PR author)" : "") " at " when[g]
+      else line = line " no approving comment"
+      line = line "; box " (box[g] ? "ticked" : "not ticked")
+      if (who[g] != "" && requested[g] != "" && requested[g] >= when[g]) line = line "; STALE, approval is older than the latest request"
+      else if (who[g] == "" && box[g]) line = line "; box ticked without a comment"
+      else if (who[g] != "" && !box[g]) line = line "; comment without a ticked box"
+      if (g == "code" && who[g] != "") {
+        after = 0
+        for (k = 1; k <= ncommits; k++) if (commits[k] > when[g]) after++
+        if (after > 0) line = line "; " after " commit" (after > 1 ? "s" : "") " after the approval"
+      }
+      print line
+    }
+  }'

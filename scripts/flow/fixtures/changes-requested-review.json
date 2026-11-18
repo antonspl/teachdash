@@ -1,0 +1,3 @@
+{"pr":{"number":7,"author":{"login":"alice"},"body":"- [x] Spec approved by @\n- [ ] Tests approved by @\n- [ ] Code approved by @"},
+ "comments":[],
+ "reviews":[{"user":{"login":"bob"},"state":"CHANGES_REQUESTED","submitted_at":"2026-11-17T10:00:00Z","body":"Spec approved, but fix the typo"}]}

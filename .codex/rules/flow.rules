@@ -1,0 +1,113 @@
+# Flow scripts run without asking. `gh pr comment|edit|review|merge` and `gh api`
+# prompt, so an agent cannot post an approval as the engineer. Force pushes and pushes to main are refused.
+# `git push --force-with-lease` to another branch matches no forbidden rule, so
+# Codex asks the engineer. Rules match command prefixes only: a flag placed after
+# other arguments (for example `git push origin x --force`) is not caught, and
+# neither is `git -C <dir> push`.
+
+prefix_rule(pattern = ["scripts/setup-agents"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/setup-agents"],
+    decision = "allow",
+    match = ["./scripts/setup-agents"],
+)
+prefix_rule(pattern = ["scripts/flow/issue-brief"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/issue-brief"],
+    decision = "allow",
+    match = ["./scripts/flow/issue-brief"],
+)
+prefix_rule(pattern = ["scripts/flow/change-start"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/change-start"],
+    decision = "allow",
+    match = ["./scripts/flow/change-start"],
+)
+prefix_rule(pattern = ["scripts/flow/pr-draft"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/pr-draft"],
+    decision = "allow",
+    match = ["./scripts/flow/pr-draft"],
+)
+prefix_rule(pattern = ["scripts/flow/pr-ready"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/pr-ready"],
+    decision = "allow",
+    match = ["./scripts/flow/pr-ready"],
+)
+prefix_rule(pattern = ["scripts/flow/gate-request"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/gate-request"],
+    decision = "allow",
+    match = ["./scripts/flow/gate-request"],
+)
+prefix_rule(pattern = ["scripts/flow/gate-status"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/gate-status"],
+    decision = "allow",
+    match = ["./scripts/flow/gate-status"],
+)
+prefix_rule(pattern = ["scripts/flow/test"], decision = "allow")
+prefix_rule(
+    pattern = ["./scripts/flow/test"],
+    decision = "allow",
+    match = ["./scripts/flow/test"],
+)
+
+# Force flag right after "push" or after the remote.
+prefix_rule(
+    pattern = ["git", "push", ["--force", "-f"]],
+    decision = "forbidden",
+    justification = "Never force-push; after a rebase use --force-with-lease and ask the engineer",
+    match = ["git push --force", "git push -f origin x"],
+    not_match = ["git push --force-with-lease origin x"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", ["origin"], ["--force", "-f"]],
+    decision = "forbidden",
+    justification = "Never force-push",
+    match = ["git push origin --force x", "git push origin -f x"],
+    not_match = ["git push origin --force-with-lease x"],
+)
+
+# Pushes to main, with or without a flag before the remote.
+prefix_rule(
+    pattern = ["git", "push", ["origin"], ["main", "HEAD:main", "+main", "+HEAD:main", "refs/heads/main", "HEAD:refs/heads/main", "+refs/heads/main"]],
+    decision = "forbidden",
+    justification = "Never push to main",
+    match = ["git push origin main", "git push origin HEAD:main", "git push origin +main", "git push origin refs/heads/main"],
+    not_match = ["git push origin feature-main"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", ["-u", "--set-upstream"], ["origin"], ["main", "HEAD:main", "+main", "+HEAD:main", "refs/heads/main", "HEAD:refs/heads/main", "+refs/heads/main"]],
+    decision = "forbidden",
+    justification = "Never push to main",
+    match = ["git push -u origin main", "git push --set-upstream origin HEAD:main"],
+)
+
+# Force-with-lease to main is refused too.
+prefix_rule(
+    pattern = ["git", "push", "--force-with-lease", ["origin"], ["main", "HEAD:main", "refs/heads/main"]],
+    decision = "forbidden",
+    justification = "Never push to main",
+    match = ["git push --force-with-lease origin main"],
+)
+
+# Commands that could post an approval or edit the PR gate boxes as the engineer.
+prefix_rule(
+    pattern = ["gh", "pr", ["comment", "edit", "review", "merge"]],
+    decision = "prompt",
+    justification = "Only the engineer approves gates; ask before commenting on or changing a PR",
+    match = ["gh pr comment 148 --body x", "gh pr edit 148 --body x", "gh pr review 148 --approve", "gh pr merge 148"],
+    not_match = ["gh pr view 148", "gh pr list"],
+)
+
+prefix_rule(
+    pattern = ["gh", "api"],
+    decision = "prompt",
+    justification = "gh api can post comments or edit the PR as the engineer",
+    match = ["gh api repos/o/r/issues/1/comments"],
+    not_match = ["gh pr view 148"],
+)

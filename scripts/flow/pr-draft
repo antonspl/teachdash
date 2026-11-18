@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Pushes the change branch and opens a draft PR from the template.
+# Usage: scripts/flow/pr-draft <name> <issue>
+set -euo pipefail
+# shellcheck source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+[ $# -eq 2 ] || die "usage: pr-draft <name> <issue>"
+name=$1
+issue=$2
+require_name "$name"
+require_number "$issue" issue
+
+branch=$(guard_branch)
+[ "$branch" = "$name" ] || die "branch is '$branch', expected '$name'"
+
+root=$(git rev-parse --show-toplevel)
+template=$root/.github/pull_request_template.md
+[ -f "$template" ] || die "missing $template"
+
+title=$(gh issue view "$issue" --json title --jq .title) || die "cannot read issue #$issue, nothing pushed"
+
+if ! out=$(git push -u origin HEAD 2>&1); then
+  printf '%s\n' "$out" >&2
+  die "push failed, no PR opened"
+fi
+
+body=$(sed -e "s#openspec/changes/<name>/#openspec/changes/$name/#" -e "s/^Closes #\$/Closes #$issue/" "$template")
+gh pr create --draft --title "$title" --body "$body"

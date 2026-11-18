@@ -8,7 +8,7 @@ context: |
   Language: English. All artifacts must be written in English.
   Keep OpenSpec structural headings and SHALL/MUST keywords in English.
   The project constitution is openspec/constitution.md. Every artifact and all
-  code MUST comply with it. Read it before creating any artifact.
+  code MUST comply with it. Read the sections relevant to the artifact (`AGENTS.md` lists which), and §1 always.
   Stack: Java Spring Boot + PostgreSQL (Flyway) backend, React + TypeScript + Vite
   frontend, Docker Compose on one VPS behind Caddy.
 

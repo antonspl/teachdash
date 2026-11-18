@@ -1,0 +1,4 @@
+{"pr":{"number":7,"author":{"login":"alice"},"body":"- [x] Spec approved by @\n- [ ] Tests approved by @\n- [x] Code approved by @"},
+ "commits":[{"commit":{"committer":{"date":"2026-11-17T08:00:00Z"}}},{"commit":{"committer":{"date":"2026-11-17T11:00:00Z"}}}],
+ "comments":[{"user":{"login":"alice"},"created_at":"2026-11-17T10:00:00Z","body":"Spec approved"}],
+ "reviews":[]}

@@ -1,0 +1,6 @@
+{"pr":{"number":7,"author":{"login":"alice"},"body":"- [x] Spec approved by @alice"},
+ "comments":[
+  {"user":{"login":"bob"},"created_at":"2026-11-17T12:00:00Z","body":"Spec approved"},
+  {"user":{"login":"alice"},"created_at":"2026-11-17T10:00:00Z","body":"spec approved."},
+  {"user":{"login":"carol"},"created_at":"2026-11-17T09:00:00Z","body":"<!-- flow --> Spec gate: please review `abc1234..def5678`"}],
+ "reviews":[]}

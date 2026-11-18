@@ -1,0 +1,294 @@
+#!/bin/sh
+# Generates the agent files and skills copy for Claude Code, opencode and Codex
+# from .agents/roles, .agents/skills and the personal map .agents/models.local.
+#
+# Usage: scripts/setup-agents [--check]
+set -eu
+
+cd "$(dirname "$0")/.."
+
+ROLES=.agents/roles
+SKILLS=.agents/skills
+MAP=.agents/models.local
+STAMP=.agents/.setup-stamp
+# Paths this script generated last time, one per line. Only these are ever deleted.
+MANIFEST=.agents/.generated
+
+die() {
+  printf 'setup-agents: %s\n' "$*" >&2
+  exit 1
+}
+
+# Prints the value of a frontmatter key.
+field() {
+  awk -v key="$2" '
+    NR == 1 && $0 != "---" { exit }
+    /^---$/ { n++; if (n == 2) exit; next }
+    n == 1 && index($0, key ":") == 1 { sub(/^[^:]*:[ ]*/, ""); print; exit }
+  ' "$1"
+}
+
+body() {
+  awk '/^---$/ && n < 2 { n++; next } n >= 2' "$1"
+}
+
+# Prints the map value for a tool and class, or nothing.
+mapped() {
+  [ -f "$MAP" ] || return 0
+  awk -v key="$1.$2" '
+    {
+      i = index($0, "=")
+      if (i == 0) next
+      k = substr($0, 1, i - 1)
+      gsub(/[ \t]/, "", k)
+      if (k != key) next
+      v = substr($0, i + 1)
+      sub(/^[ \t]+/, "", v)
+      sub(/[ \t]+$/, "", v)
+      print v
+      exit
+    }
+  ' "$MAP"
+}
+
+# Exits non-zero on the first malformed map line.
+validate_map() {
+  [ -f "$MAP" ] || return 0
+  awk -v file="$MAP" '
+    function bad(msg) {
+      printf "setup-agents: %s line %d: %s\n", file, NR, msg > "/dev/stderr"
+      exit 1
+    }
+    /^[ \t]*(#|$)/ { next }
+    {
+      i = index($0, "=")
+      if (i == 0) bad("expected \"tool.class = model [effort]\"")
+      key = substr($0, 1, i - 1)
+      gsub(/[ \t]/, "", key)
+      split(key, parts, ".")
+      if (key !~ /^[^.]+\.[^.]+$/) bad("expected \"tool.class = model [effort]\"")
+      if (parts[1] !~ /^(claude|opencode|codex)$/) bad("unknown tool \"" parts[1] "\" (claude, opencode or codex)")
+      if (parts[2] !~ /^(strong|medium)$/) bad("unknown class \"" parts[2] "\" (strong or medium)")
+      n = split(substr($0, i + 1), words, /[ \t]+/)
+      count = 0
+      for (w = 1; w <= n; w++) {
+        if (words[w] == "") continue
+        count++
+        if (words[w] !~ /^[A-Za-z0-9._\/:-]+$/) bad("model and effort may only use A-Z a-z 0-9 . _ / : -")
+      }
+      if (count == 0) bad("missing model")
+      if (count > 2) bad("expected at most a model and an effort")
+    }
+  ' "$MAP" || exit 1
+}
+
+warn_missing_strong() {
+  if [ ! -f "$MAP" ]; then
+    echo "setup-agents: warning: no $MAP, agents run on the session's model (see .agents/models.example)" >&2
+    return 0
+  fi
+  for tool in claude opencode codex; do
+    [ -n "$(mapped "$tool" strong)" ] ||
+      echo "setup-agents: warning: no $tool.strong in $MAP, code-gate-reviewer runs on the session's model for $tool" >&2
+  done
+}
+
+# Hash of everything the generated files depend on, and of the generated files.
+sources_hash() {
+  {
+    find "$ROLES" "$SKILLS" -type f 2>/dev/null | LC_ALL=C sort | while read -r f; do
+      printf '%s\n' "$f"
+      cat "$f"
+    done
+    [ -f "$MAP" ] && cat "$MAP"
+    cat scripts/setup-agents
+    generated_paths | while read -r f; do
+      printf '%s\n' "$f"
+      cat "$f" 2>/dev/null || :
+    done
+  } | cksum
+}
+
+validate_roles() {
+  ls "$ROLES"/*.md >/dev/null 2>&1 || die "no roles in $ROLES"
+  for f in "$ROLES"/*.md; do
+    grep -q "$(printf '\r')" "$f" && die "$f: CRLF line endings are not supported"
+    grep -q "'''" "$f" && die "$f: must not contain three single quotes (breaks the Codex TOML string)"
+    for key in name description class access web; do
+      [ -n "$(field "$f" "$key")" ] || die "$f: missing field '$key'"
+    done
+    case "$(field "$f" class)" in strong | medium) ;; *) die "$f: class must be strong or medium" ;; esac
+    case "$(field "$f" access)" in read | write) ;; *) die "$f: access must be read or write" ;; esac
+    case "$(field "$f" web)" in true | false) ;; *) die "$f: web must be true or false" ;; esac
+    [ "$(field "$f" name)" = "$(basename "$f" .md)" ] || die "$f: name must match the file name"
+  done
+}
+
+# Prints a role's description as a double-quoted YAML scalar, so characters
+# such as ': ', ' #', a leading '[' or '*' stay plain text.
+yaml_description() {
+  printf '"%s"\n' "$(field "$1" description | sed 's/\\/\\\\/g; s/"/\\"/g')"
+}
+
+claude_agent() {
+  name=$(field "$1" name)
+  model=$(mapped claude "$(field "$1" class)" | awk '{print $1}')
+  {
+    echo "---"
+    printf '%s\n' "name: $name"
+    printf '%s\n' "description: $(yaml_description "$1")"
+    [ -z "$model" ] || printf '%s\n' "model: $model"
+    if [ "$(field "$1" access)" = read ]; then
+      tools="Read, Grep, Glob, Bash"
+      [ "$(field "$1" web)" = true ] && tools="$tools, WebSearch, WebFetch"
+      printf '%s\n' "tools: $tools"
+    elif [ "$(field "$1" web)" = false ]; then
+      printf '%s\n' "disallowedTools: WebSearch, WebFetch"
+    fi
+    echo "---"
+    body "$1"
+  } >".claude/agents/$name.md"
+}
+
+opencode_deny() {
+  printf '  - action: %s\n    resource: "*"\n    effect: deny\n' "$1"
+}
+
+opencode_agent() {
+  name=$(field "$1" name)
+  model=$(mapped opencode "$(field "$1" class)" | awk '{print $1}')
+  {
+    echo "---"
+    printf '%s\n' "description: $(yaml_description "$1")"
+    echo "mode: subagent"
+    [ -z "$model" ] || printf '%s\n' "model: $model"
+    if [ "$(field "$1" access)" = read ] || [ "$(field "$1" web)" = false ]; then
+      echo "permissions:"
+      [ "$(field "$1" access)" = read ] && opencode_deny edit
+      if [ "$(field "$1" web)" = false ]; then
+        opencode_deny webfetch
+        opencode_deny websearch
+      fi
+    fi
+    echo "---"
+    body "$1"
+  } >".opencode/agents/$name.md"
+}
+
+codex_agent() {
+  name=$(field "$1" name)
+  value=$(mapped codex "$(field "$1" class)")
+  model=$(printf '%s\n' "$value" | awk '{print $1}')
+  effort=$(printf '%s\n' "$value" | awk '{print $2}')
+  description=$(field "$1" description | sed 's/\\/\\\\/g; s/"/\\"/g')
+  {
+    printf '%s\n' "name = \"$name\""
+    printf '%s\n' "description = \"$description\""
+    [ -z "$model" ] || printf '%s\n' "model = \"$model\""
+    [ -z "$effort" ] || printf '%s\n' "model_reasoning_effort = \"$effort\""
+    echo "developer_instructions = '''"
+    body "$1"
+    # Codex has no per-agent sandbox, so access limits are instructions only.
+    if [ "$(field "$1" access)" = read ]; then
+      echo
+      echo "You are read-only. Do not edit, create or delete files, and do not run commands that change anything."
+    fi
+    if [ "$(field "$1" web)" = false ]; then
+      echo "Do not search the web or fetch web pages."
+    fi
+    echo "'''"
+  } >".codex/agents/$name.toml"
+}
+
+check() {
+  if [ -f "$STAMP" ] && outputs_exist && [ "$(cat "$STAMP")" = "$(sources_hash)" ]; then
+    echo ok
+  else
+    echo stale
+    exit 1
+  fi
+}
+
+# Prints every path generate() writes, one per line.
+generated_paths() {
+  for f in "$ROLES"/*.md; do
+    name=$(basename "$f" .md)
+    printf '%s\n' ".claude/agents/$name.md" ".opencode/agents/$name.md" ".codex/agents/$name.toml"
+  done
+  if [ -d "$SKILLS" ]; then
+    (cd "$SKILLS" && find . -type f | sed 's|^\./||' | LC_ALL=C sort) | while read -r rel; do
+      printf '%s\n' ".claude/skills/$rel"
+    done
+  fi
+}
+
+outputs_exist() {
+  missing=$(generated_paths | while read -r path; do
+    [ -f "$path" ] || echo "$path"
+  done)
+  [ -z "$missing" ]
+}
+
+# Deletes files listed in the old manifest that are no longer generated, then
+# empty parent folders. Nothing outside the generated folders is touched.
+remove_stale() {
+  [ -f "$MANIFEST" ] || return 0
+  while read -r path; do
+    case "$path" in
+      *..* | "") continue ;;
+      .claude/agents/* | .opencode/agents/* | .codex/agents/* | .claude/skills/*) ;;
+      *) continue ;;
+    esac
+    grep -qxF -- "$path" "$1" && continue
+    rm -f -- "$path"
+    dir=$(dirname "$path")
+    while [ "$dir" != . ] && [ "$dir" != .claude ] && [ "$dir" != .opencode ] && [ "$dir" != .codex ] &&
+      rmdir "$dir" 2>/dev/null; do
+      dir=$(dirname "$dir")
+    done
+  done <"$MANIFEST"
+}
+
+generate() {
+  validate_roles
+  validate_map
+  warn_missing_strong
+
+  new_list=$(mktemp)
+  trap 'rm -f "$new_list"' EXIT
+  generated_paths >"$new_list"
+  remove_stale "$new_list"
+  # Track every path before writing it, so a run that dies midway loses nothing.
+  cp "$new_list" "$MANIFEST"
+  # Never write through a developer's symlink: replace it with a plain file.
+  while read -r path; do
+    [ -L "$path" ] && rm -f -- "$path"
+  done <"$new_list"
+
+  mkdir -p .claude/agents .opencode/agents .codex/agents
+  for f in "$ROLES"/*.md; do
+    claude_agent "$f"
+    opencode_agent "$f"
+    codex_agent "$f"
+  done
+
+  if [ -d "$SKILLS" ]; then
+    while read -r path; do
+      case "$path" in
+        .claude/skills/*)
+          mkdir -p "$(dirname "$path")"
+          cp "$SKILLS/${path#.claude/skills/}" "$path"
+          ;;
+      esac
+    done <"$new_list"
+  fi
+
+  sources_hash >"$STAMP"
+  printf '%s\n' "setup-agents: generated $(find "$ROLES" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ') agents for claude, opencode, codex"
+}
+
+case "${1:-}" in
+  --check) check ;;
+  "") generate ;;
+  *) die "usage: scripts/setup-agents [--check]" ;;
+esac

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Posts a gate review request and sets that gate's line under "## Review ranges"
+# in the PR description. Never touches the gate boxes.
+# Usage: scripts/flow/gate-request <spec|tests|code> <from..to>
+set -euo pipefail
+# shellcheck source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+[ $# -eq 2 ] || die "usage: gate-request <spec|tests|code> <from..to>"
+label=$(gate_label "$1")
+range=$2
+[[ $range =~ ^[0-9a-f]{7,40}\.\.[0-9a-f]{7,40}$ ]] || die "range must look like abc1234..def5678"
+
+guard_branch >/dev/null
+
+# One read of number and body. The body is re-read once, just before the edit.
+# GitHub has no conditional edit, so a change in that last instant can still be lost.
+info=$(gh pr view --json number,body --jq '.number, .body')
+pr=${info%%$'\n'*}
+body=
+case $info in *$'\n'*) body=${info#*$'\n'} ;; esac
+new=$(printf '%s\n' "$body" | set_range_line "$label" "$range")
+again=$(gh pr view "$pr" --json body --jq .body)
+[ "$again" = "$body" ] || die "the PR description changed while editing, nothing written; run again"
+# The comment goes first: if the edit fails, the request marker still exists.
+gh pr comment "$pr" --body "$MARKER $label gate: please review \`$range\`" >/dev/null
+gh pr edit "$pr" --body "$new" >/dev/null ||
+  die "PR #$pr: the request comment was posted but the range line was not updated"
+echo "PR #$pr: $label gate requested for $range"

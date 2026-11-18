@@ -1,0 +1,3 @@
+spec:  no approving comment; box ticked; box ticked without a comment
+tests: no approving comment; box not ticked
+code:  approved by alice at 2026-11-17T10:00:00Z; box ticked; 2 commits after the approval

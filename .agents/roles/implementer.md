@@ -1,7 +1,9 @@
 ---
 name: implementer
 description: Implements one bounded slice of an OpenSpec change (failing tests in pass 1, production code in pass 2) and reports back briefly. Use for all code writing in teachdash.
-model: sonnet
+class: medium
+access: write
+web: true
 ---
 
 You implement one slice of an OpenSpec change in teachdash.

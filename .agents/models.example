@@ -1,0 +1,18 @@
+# Copy to .agents/models.local and edit. The file is personal and gitignored.
+#
+# One line per tool and model class: <tool>.<class> = <model> [reasoning effort]
+#   tool   : claude, opencode or codex
+#   class  : strong or medium (the class a role asks for)
+#   effort : optional, used only by codex
+#
+# A class without a line gives the agent no model, so it runs on the session's model.
+# Model names are examples as of 2026-11-17; use the ones your account offers.
+
+claude.strong   = opus
+claude.medium   = sonnet
+
+opencode.strong = anthropic/claude-opus-5-5
+opencode.medium = anthropic/claude-sonnet-5-5
+
+codex.strong    = gpt-6.2-sol high
+codex.medium    = gpt-6.2-sol medium

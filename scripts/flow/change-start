@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Creates the change branch from an updated main and the OpenSpec change.
+# Run it from a checkout; it does not need to be on main.
+# Usage: scripts/flow/change-start <name> <issue>
+set -euo pipefail
+# shellcheck source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+[ $# -eq 2 ] || die "usage: change-start <name> <issue>"
+name=$1
+require_name "$name"
+require_number "$2" issue
+
+here=$(cd "$(dirname "$0")" && pwd)
+cd "$(git rev-parse --show-toplevel)"
+
+git symbolic-ref -q HEAD >/dev/null || die "detached HEAD, check out a branch first"
+[ -z "$(git status --porcelain --untracked-files=normal)" ] || die "uncommitted changes, commit or stash them first"
+git show-ref --verify --quiet "refs/heads/$name" && die "branch $name already exists"
+
+git fetch --quiet origin main
+start=$(git symbolic-ref --short HEAD)
+git switch --quiet --no-track -c "$name" origin/main
+
+if ! "$here/../setup-agents" --check >/dev/null; then
+  echo "warning: agent files are stale, run scripts/setup-agents and restart the session" >&2
+fi
+
+dir=openspec/changes/$name
+[ -e "$dir" ] && had_dir=1 || had_dir=0
+before=$(git ls-files --others --exclude-standard -- "$dir" | LC_ALL=C sort)
+if command -v openspec >/dev/null 2>&1; then
+  openspec_cmd=(openspec)
+else
+  openspec_cmd=(npx -y @fission-ai/openspec@1.15.0)
+fi
+if ! "${openspec_cmd[@]}" new change "$name" >/dev/null; then
+  if [ "$had_dir" = 0 ]; then
+    rm -rf "$dir"
+  else
+    # The folder is on origin/main: remove only the untracked files openspec added.
+    after=$(git ls-files --others --exclude-standard -- "$dir" | LC_ALL=C sort)
+    comm -13 <(printf '%s\n' "$before") <(printf '%s\n' "$after") | while IFS= read -r path; do
+      [ -z "$path" ] || rm -f -- "$path"
+    done
+    find "$dir" -mindepth 1 -type d -empty -delete
+  fi
+  git switch --quiet --force "$start"
+  git branch --quiet -D "$name"
+  die "openspec new change failed; went back to $start and removed branch $name"
+fi
+echo "branch $name from origin/main, change openspec/changes/$name/ (issue #$2)"
