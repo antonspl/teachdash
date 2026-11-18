@@ -19,6 +19,7 @@ set -euo pipefail
 
 # The same filters run live and on the fixtures: head uses the field names of
 # `gh pr view --json`, commits, comments and reviews those of the REST API.
+# shellcheck disable=SC2016 # the backticks are code fences in a jq regex
 FILTER_HEAD='
   "N\t" + (.number | tostring),
   "A\t" + ((.author.login // "") | if . == "" then "ghost" else . end),
