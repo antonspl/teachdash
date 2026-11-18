@@ -22,7 +22,7 @@ existing test that changes is web-profile R3-S10 (task 3.2).
 
 ## 4. End to end
 
-- [ ] 4.1 Playwright tests for web-client/R17-S5, R17-S6 and R17-S7 against `docker compose up --build --wait`, desktop and phone projects; verify `npm run test:e2e`
+- [x] 4.1 Playwright tests for web-client/R17-S5, R17-S6 and R17-S7 against `docker compose up --build --wait`, desktop and phone projects; verify `npm run test:e2e`
 - [ ] 4.2 Take screenshots of the "Add teacher" dialog with errors under name, email and time zone, and of `/profile` with errors under the name and the current password, at desktop and 360-pixel width; check by eye that messages do not touch the next field or the buttons; record the result in the PR
 
 ## 5. Final checks
