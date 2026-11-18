@@ -165,12 +165,23 @@ test('focus is not taken from an element the user focused meanwhile', () => {
   expect(document.activeElement).toBe(other)
 })
 
-test('focus moves from the element that had it when place ran', () => {
+test('focus moves from the element that had it when the submit started (clearAll)', () => {
   const h = setup()
   const other = screen.getByRole('button', { name: 'other' })
   other.focus()
+  act(() => h.api().clearAll())
   h.place(problem(['email', 'REQUIRED']))
   expect(document.activeElement).toBe(screen.getByLabelText('email'))
+})
+
+test('focus stays on an element focused after the submit started', () => {
+  const h = setup()
+  const other = screen.getByRole('button', { name: 'other' })
+  screen.getByLabelText('name').focus()
+  act(() => h.api().clearAll())
+  other.focus()
+  h.place(problem(['email', 'REQUIRED']))
+  expect(document.activeElement).toBe(other)
 })
 
 test('clear removes one field error', () => {

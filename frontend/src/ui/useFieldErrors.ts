@@ -30,12 +30,17 @@ export function useFieldErrors<K extends string>(
   // had the focus at that moment (usually the submit button). A ref, because only the
   // effect reads it; `place` also sets `errors`, which renders the form.
   const pendingFocus = useRef<{ key: K; active: Element | null } | null>(null)
+  // The element that had the focus when the submit started, recorded by `clearAll`
+  // (every form calls it first, before awaiting the request). `undefined` when
+  // `clearAll` has not been called since the last `place`: then `place` falls back to
+  // the element focused at that moment.
+  const submitActive = useRef<Element | null | undefined>(undefined)
 
   // Runs after every render while a focus is pending. Inputs are disabled while a
   // request runs and `focus()` does nothing on them, so wait for an enabled one. Drop
   // the request when there is nothing to focus (no element), and do not take the focus
   // from an element the user moved it to meanwhile: only move it when it is on the page
-  // body or still on the element that had it when `place` ran.
+  // body or still on the element that had it when the submit started.
   useEffect(() => {
     const pending = pendingFocus.current
     if (pending === null) {
@@ -91,9 +96,12 @@ export function useFieldErrors<K extends string>(
       }
     }
     const first = fields.find((field) => placed[field.key] !== undefined)
-    pendingFocus.current = first
-      ? { key: first.key, active: document.activeElement }
-      : null
+    const active =
+      submitActive.current === undefined
+        ? document.activeElement
+        : submitActive.current
+    submitActive.current = undefined
+    pendingFocus.current = first ? { key: first.key, active } : null
     setErrors(placed)
     return true
   }
@@ -114,6 +122,7 @@ export function useFieldErrors<K extends string>(
 
   function clearAll() {
     pendingFocus.current = null
+    submitActive.current = document.activeElement
     setErrors((current) => (Object.keys(current).length === 0 ? current : {}))
   }
 
