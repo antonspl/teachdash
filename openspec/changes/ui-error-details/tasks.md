@@ -27,7 +27,7 @@ existing test that changes is web-profile R3-S10 (task 3.2).
 
 ## 5. Final checks
 
-- [ ] 5.1 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (desktop and phone projects); all pass, and every web-client R5, R17 and R18 scenario and web-profile R3 scenario has a test
+- [x] 5.1 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (desktop and phone projects); all pass, and every web-client R5, R17 and R18 scenario and web-profile R3 scenario has a test
 
 ## Workflow follow-up
 
