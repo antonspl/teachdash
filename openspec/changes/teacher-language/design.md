@@ -81,7 +81,7 @@ Decided by the engineer (proposal Clarifications 10, 11): a teacher's `PATCH /ap
 
 ### D7. Tests
 
-Backend: one test per new or changed scenario of `accounts` R5 (S1, S4 to S6), R9 (S12 to S17), R11-S6, R12-S2 and R13, and `student-enrolment` R15 (class names by the implementer, in the existing packages). R13-S2 migrates a test database with Flyway `target("12")`, inserts rows, then migrates to `target("13")`; the version numbers are those of D1 and the test changes with them if they are renumbered at merge (#98). Frontend: one Vitest test per scenario of `web-profile` R2-S9 to R2-S15, R3-S10, and `web-admin-teachers` R2-S9 to R2-S14, with "[<scenario ID>]" at the start of the title, written with the code.
+Backend: one test per new or changed scenario of `accounts` R5 (S1, S4 to S6), R9 (S12 to S17), R11-S6, R12-S2 and R13-S1, and `student-enrolment` R15 (class names by the implementer, in the existing packages). The backfill of existing teachers with `en` has no test (proposal Clarifications, row 14). Frontend: one Vitest test per scenario of `web-profile` R2-S9 to R2-S15, R3-S10, and `web-admin-teachers` R2-S9 to R2-S14, with "[<scenario ID>]" at the start of the title, written with the code.
 
 ## Risks / Trade-offs
 

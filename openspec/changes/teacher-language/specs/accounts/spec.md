@@ -12,11 +12,6 @@ existing teachers `en` and leave students' and admins' values as they are.
 - **WHEN** rows are inserted directly for a teacher with no language, a student with no language, an admin with the language "en", a teacher with the language "xx", and then for a teacher with "en", a student with "en" and an admin with no language
 - **THEN** the first four inserts are rejected and the last three succeed
 
-#### Scenario: accounts/R13-S2 The migration gives existing teachers English
-- **GIVEN** a database migrated with Flyway `target` 12 (`V12__teacher_language.sql`), holding a teacher and an admin, both with no language, and a student with the language "sr"
-- **WHEN** Flyway migrates on to version 13 (`V13__teacher_language_required.sql`)
-- **THEN** the teacher has the language "en", the student still has "sr", and the admin has none
-
 ## MODIFIED Requirements
 
 ### Requirement: R5 Admin creates teacher accounts
