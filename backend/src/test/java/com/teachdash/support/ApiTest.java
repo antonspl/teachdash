@@ -224,6 +224,64 @@ public abstract class ApiTest {
 		return id;
 	}
 
+	/** Inserts a course directly with the given id and creation time; updated_at equals created_at. */
+	protected UUID createCourse(
+			UUID id,
+			UUID teacherId,
+			String title,
+			String instructionLanguage,
+			String targetLanguage,
+			Instant createdAt) {
+		Timestamp created = Timestamp.from(createdAt);
+		jdbc.sql("""
+				insert into courses (id, teacher_id, title, instruction_language, target_language, created_at, updated_at)
+				values (:id, :teacher, :title, :instruction, :target, :created, :created)
+				""")
+				.param("id", id)
+				.param("teacher", teacherId)
+				.param("title", title)
+				.param("instruction", instructionLanguage)
+				.param("target", targetLanguage)
+				.param("created", created)
+				.update();
+		return id;
+	}
+
+	protected UUID createCourse(
+			UUID teacherId,
+			String title,
+			String instructionLanguage,
+			String targetLanguage,
+			Instant createdAt) {
+		return createCourse(UUID.randomUUID(), teacherId, title, instructionLanguage, targetLanguage, createdAt);
+	}
+
+	/** A course row as stored, read by direct SQL. */
+	public record CourseRow(
+			UUID teacherId,
+			String title,
+			String instructionLanguage,
+			String targetLanguage,
+			Instant createdAt,
+			Instant updatedAt) {
+	}
+
+	protected CourseRow readCourse(UUID id) {
+		return jdbc.sql("""
+				select teacher_id, title, instruction_language, target_language, created_at, updated_at
+				from courses where id = :id
+				""")
+				.param("id", id)
+				.query((rs, i) -> new CourseRow(
+						rs.getObject("teacher_id", UUID.class),
+						rs.getString("title"),
+						rs.getString("instruction_language"),
+						rs.getString("target_language"),
+						rs.getTimestamp("created_at").toInstant(),
+						rs.getTimestamp("updated_at").toInstant()))
+				.single();
+	}
+
 	protected long countCourses(UUID teacherId) {
 		return jdbc.sql("select count(*) from courses where teacher_id = :teacher")
 				.param("teacher", teacherId)
