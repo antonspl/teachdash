@@ -50,7 +50,7 @@ The strict check waits for pass 2 because until then the code creates teachers w
 
 ### D3. Frontend: language list and select
 
-- A languages client in `frontend/src/api/languages.ts` calls `GET /api/languages` and returns the codes. One hook, `useLanguages`, loads the list when a form that needs it mounts and exposes `retry`. No cache beyond the component.
+- A languages client in `frontend/src/api/languages.ts` calls `GET /api/languages` and returns the codes. One hook, `useLanguages`, loads the list when a form that needs it mounts and exposes `retry`; when loading fails, `LanguageSelect` shows a translated error with a "Try again" button that calls it. No cache beyond the component.
 - Names come from `frontend/src/i18n/en.json` under `languages.<code>` (`de` to `uk`, the ten codes). A code with no name shows the code itself, so a new language needs no frontend change to be usable.
 - `Select` gains optional option labels and an optional empty placeholder option ("Choose a language"), so it can show names and start empty. A small `LanguageSelect` wraps `Select` with the names and the list from `useLanguages`; the profile form and the dialog both use it, and #144 will reuse it. If the stored language is missing from the list, the select adds it (R2-S12 of web-profile).
 - `ProfileForm` shows `LanguageSelect` only when `user.role` is teacher; `updateProfile` in `profile.ts` sends `nativeLanguage` only for a teacher. The `User` type in `AuthProvider` gets an optional `nativeLanguage`.
