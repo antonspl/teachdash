@@ -7,6 +7,7 @@
 #
 # Extracted format, one line per item, tab separated:
 #   N <number>                 the PR number
+#   H <branch>                 the PR head branch (live mode only)
 #   A <login>                  the PR author
 #   B <gate> <x|space>         gate box from the description
 #   T <time>                   committer date of one commit, one line per commit
@@ -22,6 +23,7 @@ set -euo pipefail
 # shellcheck disable=SC2016 # the backticks are code fences in a jq regex
 FILTER_HEAD='
   "N\t" + (.number | tostring),
+  "H\t" + (.headRefName // ""),
   "A\t" + ((.author.login // "") | if . == "" then "ghost" else . end),
   (.body // "" | gsub("(^|\n) {0,3}```[\\s\\S]*?(\n {0,3}```[^\n]*|\\z)"; "\n")
     | gsub("(^|\n) {0,3}~~~[\\s\\S]*?(\n {0,3}~~~[^\n]*|\\z)"; "\n")
@@ -49,7 +51,7 @@ extract() {
       jq -r ".reviews | $FILTER_REVIEWS" "$FLOW_GH_JSON"
   else
     local head number
-    head=$(gh pr view ${1:+"$1"} --json number,author,body --jq "$FILTER_HEAD") || return 1
+    head=$(gh pr view ${1:+"$1"} --json number,author,body,headRefName --jq "$FILTER_HEAD") || return 1
     number=$(printf '%s\n' "$head" | awk -F'\t' '$1 == "N" { print $2 }')
     printf '%s\n' "$head"
     # The REST endpoints are paginated; `gh pr view` returns only the first page.
@@ -60,6 +62,43 @@ extract() {
 }
 
 data=$(extract "${1:-}") || die "could not read the pull request from GitHub (no PR, gh logged out or no network)"
+
+# Live mode only: one line on how the branch stands against its upstream.
+# Never fails, so a git problem cannot hide the gate lines.
+branch_line() {
+  local head=$1 branch up rc=0 counts ahead behind
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "branch: unknown (not a git checkout)"
+    return 0
+  fi
+  if ! branch=$(git symbolic-ref --short HEAD 2>/dev/null); then
+    echo "branch: detached HEAD"
+    return 0
+  fi
+  if [ -n "$head" ] && [ "$branch" != "$head" ]; then
+    echo "branch: not the PR branch"
+    return 0
+  fi
+  up=$(fetch_upstream) || rc=$?
+  case $rc in
+    1) echo "branch: no upstream" ;;
+    2) echo "branch: unknown (fetch failed)" ;;
+    3) echo "branch: upstream is a local branch" ;;
+    *)
+      counts=$(git rev-list --left-right --count "HEAD...$up" 2>/dev/null) || { echo "branch: unknown (fetch failed)"; return 0; }
+      read -r ahead behind <<<"$counts"
+      if [ "$ahead" = 0 ] && [ "$behind" = 0 ]; then
+        echo "branch: in sync with upstream"
+      else
+        echo "branch: $ahead unpushed, $behind behind upstream"
+      fi
+      ;;
+  esac
+}
+
+if [ -z "${FLOW_GH_JSON:-}" ]; then
+  branch_line "$(printf '%s\n' "$data" | awk -F'\t' '$1 == "H" { print $2 }')"
+fi
 
 printf '%s\n' "$data" | awk -F'\t' -v marker="$MARKER" '
   BEGIN { n = split("spec tests code", gates, " ") }

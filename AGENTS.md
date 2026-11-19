@@ -42,8 +42,11 @@ in English.
 ## Main agent is an orchestrator
 
 Keep the main agent's context small. It talks to the engineer (whoever took the
-task), writes and edits OpenSpec artifacts, decides, and delegates. It does not read
-large parts of the codebase or write production code itself.
+task), decides, and delegates. It does not read large parts of the codebase, write
+production code or draft OpenSpec artifacts itself. Before delegating to the
+`implementer` or the `spec-writer`, it commits its own pending edits, staged by
+path, so no agent commits them. Agents do not push: the main agent pushes their
+commits after reading the report (the flow scripts push too).
 
 - **Before a proposal**: the main agent restates the task, proposes research angles
   and agrees them with the engineer. Explore is optional: never ask the engineer to
@@ -52,6 +55,14 @@ large parts of the codebase or write production code itself.
   `researcher` agent (medium model class), one per angle. Give it the task, the
   angle and what you need to decide. A built-in quick-search agent, where the tool
   has one, is only for finding where something is.
+- **Writing artifacts** (proposal, spec deltas, design, tasks, and every fix after
+  critique or engineer comments): the `spec-writer` agent (medium class). Brief it
+  with the change name, the issue and PR, the engineer's decisions as a numbered list,
+  the research conclusions and, for a fix, the findings with the decision on each. It
+  records decisions as given and does not take new ones. The main agent may make a
+  one- or two-line edit in one file itself.
+  The spec-writer, not the main agent, follows the OpenSpec propose and update skills
+  for writing; the main agent uses them only to agree the plan.
 - **Spec critique**: the `spec-critic` agent (medium class), after the spec is
   drafted and before asking for the spec gate, on every change.
 - **Implementation** (tests in pass 1, code in pass 2): the `implementer` agent
@@ -68,6 +79,14 @@ large parts of the codebase or write production code itself.
   the fix was non-trivial.
 
 Agents' reports are not shown to the engineer: relay what matters in a few lines.
+
+## Sessions
+
+After posting a gate request, the main agent ends its turn with one line: the gate,
+the range, and "continue in a new session after approval". A new session resumes from
+the branch, `scripts/flow/gate-status` (approvals, and whether the branch is pushed), the PR description and last gate request
+comment, the proposal's Clarifications and `tasks.md` (its ticks show where a phase
+stopped). It does not reread earlier phases' diffs. Inside one phase, keep the session.
 
 ## Git flow
 

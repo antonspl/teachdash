@@ -6,4 +6,5 @@ set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
 guard_branch >/dev/null
+guard_synced >/dev/null
 gh pr ready

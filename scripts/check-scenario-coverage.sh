@@ -19,10 +19,27 @@
 # compared ignoring whitespace differences), unless the same ID also appears in an active
 # change delta outside a REMOVED section, e.g. in the ADDED requirement that replaces it.
 #
+# Spec phase: an active change is in the spec phase when it has at least one new scenario ID
+# (in its deltas outside REMOVED sections, not in any main spec), none of its new IDs has a
+# test, and its tasks.md exists with no ticked task ("- [x]", also * + and 1. bullets). In the spec phase an uncovered
+# new ID prints "PENDING <id> (spec phase: <name>)" and does not fail the check. Every other
+# uncovered ID is MISSING. Main spec IDs are always strict.
+#
+# Strict mode: with COVERAGE_STRICT=1 (or --strict) PENDING counts as MISSING, with a message
+# that the change is still in the spec phase. CI runs strict on main and on every pull
+# request except a draft, so a change cannot reach main while it is in the spec phase.
+#
 # To add a capability whose tests are frontend tests, put its name in the list below.
 # Forgetting it shows up as MISSING, never as a false pass.
 FRONTEND_CAPABILITIES="web-client web-auth web-admin-teachers"
 set -euo pipefail
+
+strict="${COVERAGE_STRICT:-}"
+for arg in "$@"; do
+  if [ "$arg" = "--strict" ]; then
+    strict=1
+  fi
+done
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -89,6 +106,33 @@ main_scenarios_removed() {
       }
     ' "$spec"
   done
+}
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+# Prints the IDs of all scenarios in the main specs.
+main_scenario_ids() {
+  local spec
+  for spec in $(find openspec/specs -name spec.md 2>/dev/null | sort); do
+    grep -h -E '^#### Scenario: ' "$spec" | sed -E 's/^#### Scenario: ([^ ]+).*/\1/' || true
+  done
+}
+
+# Prints the IDs of one change's delta scenarios (outside REMOVED sections) that no main spec has.
+change_new_ids() {
+  local delta
+  for delta in $(find "$1" -path '*/specs/*/spec.md' | sort); do
+    awk '
+      /^## / { removed = ($0 ~ /^## REMOVED Requirements[[:space:]]*$/) }
+      !removed && /^#### Scenario: / {
+        id = $0
+        sub(/^#### Scenario: /, "", id)
+        sub(/ .*/, "", id)
+        print id
+      }
+    ' "$delta"
+  done | sort -u | comm -23 - <(main_scenario_ids | sort -u)
 }
 
 specs=$(find openspec/specs openspec/changes -name spec.md -not -path '*/archive/*' 2>/dev/null | sort || true)
@@ -200,20 +244,63 @@ NODE
 frontend_ids=""
 for id in $ids; do
   if is_frontend_capability "$id"; then
-    tmp=$(mktemp -d)
-    trap 'rm -rf "$tmp"' EXIT
+    tmp="$work"
     collect_frontend_ids "$tmp" || exit 1
     frontend_ids="$tmp/ids.txt"
     break
   fi
 done
 
+# pending.txt: "<id>|<change>" of new IDs of spec-phase changes. strict_new.txt: new IDs of
+# the other changes.
+pending_file="$work/pending.txt"
+strict_new_file="$work/strict_new.txt"
+: >"$pending_file"
+: >"$strict_new_file"
+for change_dir in openspec/changes/*/; do
+  change=$(basename "$change_dir")
+  if [ "$change" = "archive" ] || [ ! -d "$change_dir" ]; then
+    continue
+  fi
+  new_ids=$(change_new_ids "$change_dir")
+  spec_phase=0
+  if [ -n "$new_ids" ] && [ -f "$change_dir/tasks.md" ] \
+    && ! grep -q -E '^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]+\[[xX]\]' "$change_dir/tasks.md"; then
+    spec_phase=1
+    for id in $new_ids; do
+      if has_test "$id"; then
+        spec_phase=0
+        break
+      fi
+    done
+  fi
+  for id in $new_ids; do
+    if [ "$spec_phase" -eq 1 ]; then
+      echo "$id|$change" >>"$pending_file"
+    else
+      echo "$id" >>"$strict_new_file"
+    fi
+  done
+done
+
 missing=0
+pending=0
 frontend_missing=0
 total=0
 for id in $ids; do
   total=$((total + 1))
   if ! has_test "$id"; then
+    pending_change=$(awk -F'|' -v id="$id" '$1 == id { print $2; exit }' "$pending_file")
+    if [ -n "$pending_change" ] && ! grep -q -F -x -e "$id" "$strict_new_file"; then
+      if [ -n "$strict" ] && [ "$strict" != 0 ]; then
+        echo "MISSING test for scenario [$id] (change $pending_change is still in the spec phase)" >&2
+        missing=$((missing + 1))
+        continue
+      fi
+      echo "PENDING $id (spec phase: $pending_change)"
+      pending=$((pending + 1))
+      continue
+    fi
     echo "MISSING test for scenario [$id]" >&2
     missing=$((missing + 1))
     if is_frontend_capability "$id"; then
@@ -229,4 +316,8 @@ if [ "$missing" -gt 0 ]; then
   fi
   exit 1
 fi
-echo "OK: all $total scenarios have a test"
+if [ "$pending" -gt 0 ]; then
+  echo "OK: $((total - pending)) of $total scenarios have a test, $pending pending (spec phase)"
+else
+  echo "OK: all $total scenarios have a test"
+fi

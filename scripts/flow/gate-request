@@ -12,6 +12,11 @@ range=$2
 [[ $range =~ ^[0-9a-f]{7,40}\.\.[0-9a-f]{7,40}$ ]] || die "range must look like abc1234..def5678"
 
 guard_branch >/dev/null
+upstream=$(guard_synced)
+from=${range%%..*}
+to=${range##*..}
+git merge-base --is-ancestor "$from" "$to" 2>/dev/null || die "$from is not an ancestor of $to"
+git merge-base --is-ancestor "$to" "$upstream" 2>/dev/null || die "$to is not on the pushed branch $upstream"
 
 # One read of number and body. The body is re-read once, just before the edit.
 # GitHub has no conditional edit, so a change in that last instant can still be lost.

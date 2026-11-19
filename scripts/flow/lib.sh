@@ -27,6 +27,37 @@ guard_branch() {
   printf '%s\n' "$branch"
 }
 
+# Prints the upstream ref (for example origin/my-change) of the current branch
+# after fetching that one branch. Returns 1 without upstream, 2 if the fetch fails,
+# 3 if the upstream is a local branch.
+fetch_upstream() {
+  local branch up remote merge ssh
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null) || return 1
+  up=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
+  remote=$(git config "branch.$branch.remote") || return 1
+  merge=$(git config "branch.$branch.merge") || return 1
+  [ "$remote" != . ] || return 3
+  ssh=${GIT_SSH_COMMAND:-$(git config core.sshCommand || echo ssh)}
+  GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="$ssh -o BatchMode=yes" \
+    git -c credential.interactive=never fetch -q "$remote" "+$merge:refs/remotes/$up" >/dev/null 2>&1 || return 2
+  printf '%s\n' "$up"
+}
+
+# Requires an upstream, HEAD equal to it and no uncommitted changes to tracked
+# files. Prints the upstream ref. Call after guard_branch.
+guard_synced() {
+  local up counts ahead behind rc=0
+  up=$(fetch_upstream) || rc=$?
+  [ "$rc" -ne 1 ] || die "the branch has no upstream, push it first (git push -u)"
+  [ "$rc" -ne 3 ] || die "upstream is a local branch, push to the remote with git push -u origin HEAD"
+  [ "$rc" -eq 0 ] || die "could not fetch the upstream branch"
+  counts=$(git rev-list --left-right --count "HEAD...$up") || die "could not compare HEAD with $up"
+  read -r ahead behind <<<"$counts"
+  [ "$ahead" = 0 ] && [ "$behind" = 0 ] || die "the branch differs from $up: $ahead unpushed, $behind behind"
+  git diff --quiet HEAD -- || die "uncommitted changes to tracked files, commit or stash them first"
+  printf '%s\n' "$up"
+}
+
 # Maps a gate name to its label in the PR description.
 gate_label() {
   case "$1" in

@@ -2,6 +2,7 @@ name: ci
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
   workflow_dispatch:
@@ -90,11 +91,17 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
-      - run: scripts/check-scenario-coverage.sh
+      - name: Scenario coverage
+        env:
+          # Only a draft PR may have scenarios pending in the spec phase.
+          COVERAGE_STRICT: ${{ (github.event_name == 'pull_request' && github.event.pull_request.draft) && '0' || '1' }}
+        run: scripts/check-scenario-coverage.sh
+      - run: scripts/test-scenario-coverage.sh
       - name: Workflow scripts
         run: |
           find scripts/flow -maxdepth 1 -type f -print0 | sort -z \
-            | xargs -0 shellcheck -x -P SCRIPTDIR scripts/setup-agents
+            | xargs -0 shellcheck -x -P SCRIPTDIR scripts/setup-agents \
+            scripts/check-scenario-coverage.sh scripts/test-scenario-coverage.sh
           scripts/setup-agents
           roles=$(find .agents/roles -maxdepth 1 -name '*.md' | wc -l)
           for dir in .claude/agents .opencode/agents .codex/agents; do
