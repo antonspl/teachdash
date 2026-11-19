@@ -196,14 +196,15 @@ shared test helpers live in `com.teachdash.support`.
   target) pair. A course without a target language matches only courses with the
   same instruction language and no target language.
 - A course does not record who takes it: students with different native languages
-  may take the same course. Every student has a native language from a configured
-  list of student languages (ISO 639-1 codes), set by their teacher or chosen by the
-  student when joining through a link; it is student data (section 8). The supported
-  course languages are a subset of that list.
+  may take the same course. Every student and every teacher has a native language
+  from a configured list of native languages (ISO 639-1 codes). A student's is set by
+  their teacher or chosen by the student when joining through a link, and is student
+  data (section 8); a teacher's is set by the admin when creating the account and
+  changed by the teacher. The supported course languages are a subset of that list.
 - Language features (translation, vocabulary) apply only to courses with a target
-  language. Translation goes from the course's target language into the student's
-  native language, so every language in the list of student languages MUST be
-  supported as a translation target. A student whose native language is the target
+  language. Translation goes from the course's target language into the reader's
+  native language (a student's or a teacher's), so every language in the list of
+  native languages MUST be supported as a translation target. A reader whose native language is the target
   language gets no translation.
 - Features that handle learning content MUST work for every supported language,
   including Cyrillic text; specs include scenarios for `en` and `ru`.

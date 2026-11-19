@@ -19,7 +19,7 @@
 - [x] 3.3 Frontend: languages client and `useLanguages`, `languages.*` names in `en.json`, `Select` labels and placeholder, `LanguageSelect` (design D3); Vitest tests for its own states
 - [x] 3.4 Frontend: language select in `ProfileForm` for teachers, `User` type, `updateProfile`; Vitest tests `[web-profile/R2-S9]` to `[web-profile/R2-S15]`, the reworded `[web-profile/R2-S2]` and `[web-profile/R2-S5]`, and `[web-profile/R3-S10]` (updated)
 - [x] 3.5 Frontend: language field in the "Add teacher" dialog, `NewTeacher`; Vitest tests `[web-admin-teachers/R2-S9]` to `[web-admin-teachers/R2-S14]`, and existing R2 tests updated to choose a language
-- [ ] 3.6 Constitution §9 edit: exactly the four sentences listed in design D4; §8 is not changed
+- [x] 3.6 Constitution §9 edit: exactly the four sentences listed in design D4; §8 is not changed
 - [ ] 3.7 Run `./gradlew cleanTest test`, the frontend tests and lint, and `scripts/check-scenario-coverage.sh`; verify everything is green and the approved backend tests are unchanged
 
 ## Workflow follow-up
