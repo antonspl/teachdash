@@ -29,11 +29,4 @@ public class LanguageRepository {
 				.query((rs, i) -> new Language(rs.getString("code"), rs.getBoolean("content")))
 				.optional();
 	}
-
-	public boolean exists(String code) {
-		return jdbc.sql("select exists (select 1 from languages where code = :code)")
-				.param("code", code)
-				.query(Boolean.class)
-				.single();
-	}
 }

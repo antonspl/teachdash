@@ -15,6 +15,6 @@ public class ListedLanguageValidator implements ConstraintValidator<ListedLangua
 
 	@Override
 	public boolean isValid(String code, ConstraintValidatorContext context) {
-		return code == null || (code.length() == 2 && languages.exists(code));
+		return code == null || (code.length() == 2 && languages.find(code).isPresent());
 	}
 }

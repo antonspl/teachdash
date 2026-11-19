@@ -1,5 +1,6 @@
 package com.teachdash.languages.api;
 
+import com.teachdash.languages.domain.Language;
 import com.teachdash.languages.persistence.LanguageRepository;
 
 import jakarta.validation.ConstraintValidator;
@@ -19,7 +20,7 @@ public class ContentLanguageValidator implements ConstraintValidator<ContentLang
 			return true;
 		}
 		return languages.find(code)
-				.map(language -> language.content())
+				.map(Language::content)
 				.orElse(true);
 	}
 }
