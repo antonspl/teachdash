@@ -6,5 +6,11 @@ export async function listLanguages(signal?: AbortSignal): Promise<string[]> {
   if (!Array.isArray(body)) {
     throw new Error('Response is not a list')
   }
-  return body.map((item) => String((item as { code: unknown }).code))
+  return body.map((item) => {
+    const code = (item as { code?: unknown } | null)?.code
+    if (typeof code !== 'string') {
+      throw new Error('Language code is not a string')
+    }
+    return code
+  })
 }

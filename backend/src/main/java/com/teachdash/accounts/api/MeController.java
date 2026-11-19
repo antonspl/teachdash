@@ -1,6 +1,5 @@
 package com.teachdash.accounts.api;
 
-import java.security.Principal;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -41,8 +40,8 @@ class MeController {
 	}
 
 	@GetMapping
-	UserResponse me(Principal principal) {
-		return UserResponse.of(accounts.get(UUID.fromString(principal.getName())));
+	UserResponse me(Authentication authentication) {
+		return UserResponse.of(accounts.get(UUID.fromString(authentication.getName())));
 	}
 
 	@PatchMapping
@@ -98,11 +97,11 @@ class MeController {
 	@PostMapping("/password")
 	ResponseEntity<Void> changePassword(
 			@Valid @RequestBody ChangePasswordRequest request,
-			Principal principal,
+			Authentication authentication,
 			HttpServletRequest httpRequest,
 			HttpServletResponse httpResponse) {
 		var changed = accounts.changePassword(
-				UUID.fromString(principal.getName()),
+				UUID.fromString(authentication.getName()),
 				request.currentPassword(),
 				request.newPassword(),
 				SessionRevocationFilter.versionOf(httpRequest.getSession()));

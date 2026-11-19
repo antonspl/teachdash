@@ -44,7 +44,6 @@ test('shows names and starts empty with a placeholder', async () => {
   render(<Harness initial="" />)
   await screen.findByRole('option', { name: 'German' })
   expect(optionTexts()).toEqual([
-    en.languages.choose,
     'German',
     'English',
     'Russian',

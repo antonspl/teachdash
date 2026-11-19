@@ -17,8 +17,10 @@ export function useLanguages(): Languages {
     const controller = new AbortController()
     listLanguages(controller.signal).then(
       (list) => {
-        setCodes(list)
-        setFailed(false)
+        if (!controller.signal.aborted) {
+          setCodes(list)
+          setFailed(false)
+        }
       },
       () => {
         if (!controller.signal.aborted) {

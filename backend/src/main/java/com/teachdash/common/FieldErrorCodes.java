@@ -32,10 +32,9 @@ final class FieldErrorCodes {
 		if (error.contains(ConstraintViolation.class)) {
 			return codeOf(error.unwrap(ConstraintViolation.class));
 		}
-		boolean fieldCode = REQUIRED.equals(error.getCode())
-				|| INVALID_TYPE.equals(error.getCode())
-				|| INVALID_FORMAT.equals(error.getCode());
-		return fieldCode ? error.getCode() : INVALID_FORMAT;
+		String code = error.getCode();
+		boolean fieldCode = REQUIRED.equals(code) || INVALID_TYPE.equals(code) || INVALID_FORMAT.equals(code);
+		return fieldCode ? code : INVALID_FORMAT;
 	}
 
 	static List<FieldErrorDetail> fromFieldErrors(Collection<FieldError> errors) {

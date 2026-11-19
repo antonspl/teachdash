@@ -47,7 +47,9 @@ export function Select({
           onChange={(event) => onChange(event.target.value)}
         >
           {placeholder === undefined ? null : (
-            <option value="">{placeholder}</option>
+            <option value="" disabled hidden>
+              {placeholder}
+            </option>
           )}
           {options.map((option) => (
             <option key={option} value={option}>
