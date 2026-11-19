@@ -36,7 +36,7 @@ See proposal.md. State on main after courses-create:
 3. A `DuplicateKeyException` on `courses_teacher_title_uq` becomes 409 `TITLE_TAKEN` with `errors`; the translation is extracted from create into one private method used by both.
 4. Return the stored course (`findByIdAndTeacher`) as `CourseResponse`.
 
-No application pre-check on `lower(title)`: it would find the course itself on a same-title or case-only rename. The index only rejects another row, so own-title and case-only renames pass, and a race between two renames is decided by the index (parallel scenario). The update always sets `updated_at`, also for an unchanged title (proposal, clarification 5). Order of failures: malformed id (404) before body validation (400), then session and role (401/403 come from the security layer before any of these), then 404 for unknown or foreign id, then 409.
+No application pre-check on `lower(title)`: it would find the course itself on a same-title or case-only rename. The index only rejects another row, so own-title and case-only renames pass, and a race between two renames is decided by the index (parallel scenario). The update always sets `updated_at`, also for an unchanged title (proposal, clarification 5). Order of failures, as in student-enrolment R14: CSRF and role (403), deactivated teacher (401), malformed id (404), input (400), then a foreign or unknown id (404). The malformed-id 404 comes before body validation because the handler declares `@PathVariable UUID id` before `@Valid @RequestBody`, as `TeacherStudentController.changeLanguage` does; a type mismatch on the path variable fails before the body is read.
 
 ### D4. Time
 
@@ -52,6 +52,6 @@ None.
 
 ## Risks / Trade-offs
 
-- **Validation before the active-account check.** A deactivated teacher with a live session who sends an invalid body gets 400 instead of 401 on rename; same as create and the enrolment endpoints. The scenarios use valid bodies.
+- **Deactivated teachers.** `SessionRevocationFilter` drops an inactive teacher's session before any controller or validation, so a deactivated teacher gets 401 even with an invalid body. The `findActiveByIdForUpdate` row lock in rename only covers the race where the teacher is deactivated after the filter.
 - **Same-title rename touches `updatedAt`.** Chosen by the engineer; the row is written even if the title is unchanged.
 - **Unbounded list.** Safe only while the per-teacher limit holds; revisit with pagination if the limit grows large.
