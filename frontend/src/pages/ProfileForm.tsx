@@ -32,6 +32,7 @@ export function ProfileForm({
   const [nativeLanguage, setNativeLanguage] = useState(
     user.nativeLanguage ?? '',
   )
+  const [languageMissing, setLanguageMissing] = useState(false)
   const [message, setMessage] = useState<Message>()
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
@@ -55,11 +56,17 @@ export function ProfileForm({
     if (inFlight.current) {
       return
     }
+    setMessage(undefined)
+    fieldErrors.clearAll()
+    if (isTeacher && nativeLanguage === '') {
+      // Not the native `required` (untranslated bubble); the select has aria-required.
+      setLanguageMissing(true)
+      nativeLanguageRef.current?.focus()
+      return
+    }
     inFlight.current = true
     setSubmitting(true)
     onSendingChange?.(true)
-    setMessage(undefined)
-    fieldErrors.clearAll()
     try {
       const saved = await updateProfile(
         name,
@@ -130,14 +137,17 @@ export function ProfileForm({
       {isTeacher ? (
         <LanguageSelect
           label={t('profile.nativeLanguage')}
-          required
+          ariaRequired
           disabled={submitting}
           inputRef={nativeLanguageRef}
-          error={errors.nativeLanguage}
+          error={
+            languageMissing ? t('languages.required') : errors.nativeLanguage
+          }
           value={nativeLanguage}
           onChange={(value) => {
             setMessage(undefined)
             fieldErrors.clear('nativeLanguage')
+            setLanguageMissing(false)
             setNativeLanguage(value)
           }}
         />

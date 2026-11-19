@@ -185,6 +185,8 @@ function CreateDialog({
     }
     if (nativeLanguage === '') {
       // Not the native `required` (untranslated bubble); the select has aria-required.
+      setError(undefined)
+      fieldErrors.clearAll()
       setLanguageMissing(true)
       nativeLanguageRef.current?.focus()
       return
@@ -278,7 +280,7 @@ function CreateDialog({
             fieldErrors.clear('nativeLanguage')
           }}
           error={
-            languageMissing ? t('fieldErrors.REQUIRED') : errors.nativeLanguage
+            languageMissing ? t('languages.required') : errors.nativeLanguage
           }
           inputRef={nativeLanguageRef}
         />

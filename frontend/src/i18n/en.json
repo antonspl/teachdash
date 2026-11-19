@@ -40,6 +40,7 @@
   },
   "languages": {
     "choose": "Choose a language",
+    "required": "Please choose a native language.",
     "loadFailed": "The list of languages could not be loaded.",
     "de": "German",
     "en": "English",
@@ -118,7 +119,7 @@
       "timeZone": "Time zone",
       "nativeLanguage": "Native language",
       "submit": "Create teacher",
-      "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and email, or try another time zone."
+      "validationFailed": "Hmm, the backend didn't accept those values. Please check the name, the email, the time zone and the native language."
     },
     "actions": {
       "deactivate": "Deactivate",

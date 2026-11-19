@@ -1269,3 +1269,40 @@ test('[web-client/R17-S4] The profile form keeps its message for an unknown code
   expect(field(en.profile.name).getAttribute('aria-invalid')).toBeNull()
   expect(field(en.profile.name).getAttribute('aria-describedby')).toBeNull()
 })
+
+test('A teacher without a stored language gets a translated message, not a native bubble', async () => {
+  // given a teacher the backend returns with no native language
+  fetchMock.mockImplementation((url: string) => {
+    if (url === '/api/languages') {
+      return languagesResponse()
+    }
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          id: '1',
+          name: 'Anna Smith',
+          email: 'anna@example.com',
+          role: 'TEACHER',
+          timeZone: 'UTC',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    )
+  })
+  open()
+  await screen.findByRole('option', { name: 'German' })
+  expect(languageSelect().required).toBe(false)
+  expect(languageSelect().getAttribute('aria-required')).toBe('true')
+
+  // when
+  pressSave()
+
+  // then
+  expect(await screen.findByText(en.languages.required)).toBeTruthy()
+  expect(describedBy(en.profile.nativeLanguage)).toBe(en.languages.required)
+  expect(saves()).toHaveLength(0)
+
+  // and choosing a language clears it and allows the save
+  fireEvent.change(languageSelect(), { target: { value: 'de' } })
+  expect(screen.queryByText(en.languages.required)).toBeNull()
+})

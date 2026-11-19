@@ -312,6 +312,7 @@ test('[web-admin-teachers/R2-S4] Backend rejects the fields', async () => {
     await screen.findByText(en.adminTeachers.create.validationFailed),
   ).toBeTruthy()
   expect(en.adminTeachers.create.validationFailed).toMatch(/time zone/i)
+  expect(en.adminTeachers.create.validationFailed).toMatch(/language/i)
   expect(
     screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.name).value,
   ).toBe('Anna Smith')
@@ -1365,14 +1366,40 @@ test('[web-admin-teachers/R2-S10] No language, no request', async () => {
   fireEvent.click(submitButton())
 
   // then
-  expect(await screen.findByText(en.fieldErrors.REQUIRED)).toBeTruthy()
+  expect(await screen.findByText(en.languages.required)).toBeTruthy()
   expect(languageSelect().getAttribute('aria-describedby')).toBeTruthy()
   expect(
     document.getElementById(
       languageSelect().getAttribute('aria-describedby') as string,
     )?.textContent,
-  ).toBe(en.fieldErrors.REQUIRED)
+  ).toBe(en.languages.required)
+  expect(screen.queryByText(en.fieldErrors.REQUIRED)).toBeNull()
   expect(calls('POST')).toHaveLength(0)
+})
+
+test('Submitting without a language clears the errors of the previous submit', async () => {
+  // given a failed submit that left a message and a field error
+  backend({
+    list: () => json([]),
+    create: () =>
+      validationFailed([{ field: 'email', code: 'INVALID_FORMAT' }]),
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+  fireEvent.click(submitButton())
+  await screen.findByText(en.fieldErrors.INVALID_FORMAT)
+
+  // when the language is cleared and the dialog is submitted again
+  fireEvent.change(languageSelect(), { target: { value: '' } })
+  fireEvent.click(submitButton())
+
+  // then only the language message is left
+  expect(await screen.findByText(en.languages.required)).toBeTruthy()
+  expect(screen.queryByText(en.fieldErrors.INVALID_FORMAT)).toBeNull()
+  expect(
+    screen.queryByText(en.adminTeachers.create.validationFailed),
+  ).toBeNull()
+  expect(calls('POST')).toHaveLength(1)
 })
 
 test('[web-admin-teachers/R2-S11] The request carries the language', async () => {
@@ -1448,7 +1475,7 @@ test('[web-admin-teachers/R2-S13] The language list does not load', async () => 
   await fillForm('Anna Smith', 'anna@example.com', '')
   expect(await screen.findByText(en.languages.loadFailed)).toBeTruthy()
   fireEvent.click(submitButton())
-  await screen.findByText(en.fieldErrors.REQUIRED)
+  await screen.findByText(en.languages.required)
   fireEvent.click(screen.getByRole('button', { name: en.ui.tryAgain }))
 
   // then
