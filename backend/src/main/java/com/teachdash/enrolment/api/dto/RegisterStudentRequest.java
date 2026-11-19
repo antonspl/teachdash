@@ -4,7 +4,7 @@ import com.teachdash.common.validation.EmailAddress;
 import com.teachdash.common.validation.Normalize;
 import com.teachdash.common.validation.PersonName;
 import com.teachdash.common.validation.TimeZoneId;
-import com.teachdash.languages.api.NativeLanguage;
+import com.teachdash.languages.api.validation.NativeLanguage;
 
 public record RegisterStudentRequest(
 		@PersonName String name,

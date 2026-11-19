@@ -2,7 +2,7 @@ package com.teachdash.courses.api.dto;
 
 import com.teachdash.common.validation.CourseTitle;
 import com.teachdash.common.validation.Normalize;
-import com.teachdash.languages.api.CourseLanguage;
+import com.teachdash.languages.api.validation.CourseLanguage;
 
 import jakarta.validation.constraints.NotBlank;
 

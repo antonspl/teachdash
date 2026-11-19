@@ -1,4 +1,4 @@
-package com.teachdash.languages.api;
+package com.teachdash.languages.api.validation;
 
 import com.teachdash.languages.persistence.LanguageRepository;
 

@@ -1,4 +1,4 @@
-package com.teachdash.languages.api;
+package com.teachdash.languages.api.validation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -11,18 +11,17 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
-import jakarta.validation.constraints.NotBlank;
 
-/** A language code listed in the languages table. */
+/** A listed language that courses can be taught in or from. */
 @Documented
-@NotBlank
 @ListedLanguage
+@ContentLanguage
 @Constraint(validatedBy = {})
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)
-public @interface NativeLanguage {
+public @interface CourseLanguage {
 
-	String message() default "unknown language";
+	String message() default "unsupported language";
 
 	Class<?>[] groups() default {};
 

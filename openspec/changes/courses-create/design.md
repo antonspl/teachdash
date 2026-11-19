@@ -73,7 +73,7 @@ principal (R1-S14). No `SecurityConfig` change: `/api/teacher/**` already needs 
 - `@CourseTitle` in `common/validation/`: `@NotBlank`, `@Size(max = 200)` and the same
   letter-or-digit pattern as `@PersonName`. `CourseTitle.MAX_LENGTH` is reused by tests;
   the column length mirrors it.
-- Language codes, in `languages/api`:
+- Language codes, in `languages/api/validation`:
   - `@ListedLanguage`: the current `NativeLanguageValidator` check (`null` passes;
     otherwise a 2-character listed code), reported as `INVALID_FORMAT`.
     `@NativeLanguage` becomes `@NotBlank` + `@ListedLanguage`, so student languages keep
@@ -82,7 +82,7 @@ principal (R1-S14). No `SecurityConfig` change: `/api/teacher/**` already needs 
     `@ListedLanguage`'s failure) and for a listed code with `content` true. It fails only
     for a listed code with `content` false. `FieldErrorCodes` maps it to
     `UNSUPPORTED_COURSE_LANGUAGE`. `common.FieldErrorCodes` thus imports
-    `languages.api.ContentLanguage`; this is intentional (`common` already imports
+    `languages.api.validation.ContentLanguage`; this is intentional (`common` already imports
     `accounts`) and simpler than carrying the code in the constraint payload.
   - `@CourseLanguage` = `@ListedLanguage` + `@ContentLanguage`. `targetLanguage` uses it
     alone; `instructionLanguage` adds `@NotBlank`.

@@ -1,10 +1,9 @@
-package com.teachdash.languages.api;
+package com.teachdash.languages.api.validation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.RECORD_COMPONENT;
@@ -12,13 +11,16 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
+import jakarta.validation.constraints.NotBlank;
 
-/** A 2-character language code listed in the languages table; null passes. */
+/** A language code listed in the languages table. */
 @Documented
-@Constraint(validatedBy = ListedLanguageValidator.class)
-@Target({ ANNOTATION_TYPE, FIELD, PARAMETER, RECORD_COMPONENT })
+@NotBlank
+@ListedLanguage
+@Constraint(validatedBy = {})
+@Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)
-public @interface ListedLanguage {
+public @interface NativeLanguage {
 
 	String message() default "unknown language";
 

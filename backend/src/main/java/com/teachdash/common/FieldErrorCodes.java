@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.teachdash.common.validation.MaxUtf8Bytes;
-import com.teachdash.languages.api.ContentLanguage;
+import com.teachdash.languages.api.validation.ContentLanguage;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.constraints.NotBlank;
