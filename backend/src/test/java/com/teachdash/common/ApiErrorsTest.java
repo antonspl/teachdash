@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.List;
 import java.util.Map;
@@ -284,5 +285,30 @@ class ApiErrorsTest extends ApiTest {
 		for (var response : List.of(noPage, wrongType, tooLong)) {
 			response.then().body(not(containsString("abc"))).body(not(containsString("Ж")));
 		}
+	}
+
+	@Test
+	@DisplayName("[api-errors/R1-S10] A language that is not a course language has its own code")
+	void aLanguageThatIsNotACourseLanguageHasItsOwnCode() {
+		// given a logged-in teacher, and the language list with "de" marked content false
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+		assertFalse(jdbc.sql("select content from languages where code = 'de'")
+				.query(Boolean.class)
+				.single());
+
+		// when the teacher creates a course with the instruction language "de" and the target language "xx"
+		var response = teacher.post("/api/teacher/courses",
+				Map.of("title", "Course", "instructionLanguage", "de", "targetLanguage", "xx"));
+
+		// then the response is 400 with the unsupported code for the first field and the format code for the second
+		response.then().statusCode(400)
+				.body("code", equalTo("VALIDATION_FAILED"))
+				.body("errors", equalTo(List.of(
+						error("instructionLanguage", "UNSUPPORTED_COURSE_LANGUAGE"),
+						error("targetLanguage", "INVALID_FORMAT"))))
+				.body(not(containsString("xx")));
+		// and no course is created
+		assertEquals(0, countRows("courses"));
 	}
 }

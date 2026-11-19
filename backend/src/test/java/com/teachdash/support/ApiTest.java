@@ -202,6 +202,35 @@ public abstract class ApiTest {
 				.optional();
 	}
 
+	/** Inserts a course directly; created_at and updated_at are both the current clock time. */
+	protected UUID createCourse(
+			UUID teacherId,
+			String title,
+			String instructionLanguage,
+			String targetLanguage) {
+		UUID id = UUID.randomUUID();
+		Timestamp now = Timestamp.from(Instant.now(clock));
+		jdbc.sql("""
+				insert into courses (id, teacher_id, title, instruction_language, target_language, created_at, updated_at)
+				values (:id, :teacher, :title, :instruction, :target, :now, :now)
+				""")
+				.param("id", id)
+				.param("teacher", teacherId)
+				.param("title", title)
+				.param("instruction", instructionLanguage)
+				.param("target", targetLanguage)
+				.param("now", now)
+				.update();
+		return id;
+	}
+
+	protected long countCourses(UUID teacherId) {
+		return jdbc.sql("select count(*) from courses where teacher_id = :teacher")
+				.param("teacher", teacherId)
+				.query(Long.class)
+				.single();
+	}
+
 	protected TestClient loggedInAdmin() {
 		createAdmin("admin@example.com", "admin-password-1");
 		return loggedInAs("admin@example.com");
