@@ -8,7 +8,7 @@ An "Add teacher" button at the top of the page SHALL open a modal dialog with na
 email, time zone and native language. The time zone SHALL be chosen from the browser's
 time zones plus `UTC`, with the browser's own zone preselected. The native language SHALL
 be a required select with no language preselected, whose options are the codes returned
-by `GET /api/languages`, shown with names from the translation resources. Nothing SHALL
+by `GET /api/languages`, shown with names from the translation resources (a code with no name is shown as the code itself). Nothing SHALL
 be sent until a language is chosen; if the list cannot be loaded, the dialog SHALL show a
 translated error with a "Try again" button. On success the dialog SHALL close, the
 link SHALL be shown (R3) and the list SHALL load again with the new teacher first until
@@ -80,5 +80,10 @@ the page is reloaded. On failure the dialog SHALL stay open with the entered val
 
 #### Scenario: web-admin-teachers/R2-S13 The language list does not load
 - **GIVEN** loading the languages fails with a server error, and then succeeds
-- **WHEN** the admin opens the "Add teacher" dialog, and presses "Try again"
-- **THEN** a translated error with a "Try again" button is shown, no request is sent on submit, and after "Try again" the select offers the languages
+- **WHEN** the admin opens the "Add teacher" dialog, fills in the other fields and submits, and then presses "Try again"
+- **THEN** a translated error with a "Try again" button is shown and no request is sent on submit, and after "Try again" the error is gone, the other values stay and the select offers the languages
+
+#### Scenario: web-admin-teachers/R2-S14 A language with no name shows its code
+- **GIVEN** the backend lists the languages "de" and "sv", and the translation resources have no name for "sv"
+- **WHEN** the admin opens the "Add teacher" dialog
+- **THEN** the language select offers "German" and "sv"

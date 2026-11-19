@@ -43,9 +43,9 @@ The strict check waits for pass 2 because until then the code creates teachers w
 ### D2. Backend
 
 - `CreateTeacherRequest` gets `@NativeLanguage String nativeLanguage`, stripped with `Normalize.strip` in the compact constructor, like `JoinVisitor`. `TeacherAdminService.createTeacher` passes it to `accounts.createPasswordlessUser` in place of `null`.
-- `UpdateProfileRequest` gets a nullable `nativeLanguage` with a listed-language check but without `@NotBlank` (so a student or an admin can omit it), plus a role-aware check in the controller path: for a teacher a missing or blank value is `REQUIRED` and an invalid value `INVALID_FORMAT`; for other roles the value is neither checked nor stored. Implemented by validating in the service/controller with the same validator logic, so error codes and the `errors` shape (field `nativeLanguage`) are those of `@NativeLanguage` and all failing fields are reported together (R13-S6). `INVALID_TYPE` for an array or object comes from the existing JSON-reading handler (api-errors R1).
-- `AccountService.updateProfile` gets the language; `UserRepository.updateProfile` sets `native_language` for a teacher and leaves it alone for other roles (one targeted update, never `save()`).
-- `TeacherResponse` gets `nativeLanguage` (always set for teachers). `UserSummary` already has it; teachers now have a value, so the admin's student's-teachers list shows it with no change (R15-S2). `UserResponse` needs no change: `NON_NULL` hides it for admins only.
+- `UpdateProfileRequest` gets `JsonNode nativeLanguage`, read tolerantly and with no bean annotation: an annotation cannot see the caller's role, and a typed `String` would make Jackson fail on an array or object even for a student or an admin. The controller takes the `BindingResult` after `@Valid`; for a teacher only, it then checks the node and adds errors for field `nativeLanguage` to the same result before the existing handler builds the response, so name, time zone and language failures are reported together. The checks: field absent (`node == null`) keeps the stored value; JSON `null` or a blank string is `REQUIRED`; a non-text node (array, object, number, boolean) is `INVALID_TYPE`; a stripped text not in the list is `INVALID_FORMAT` (the list lookup of `@NativeLanguage`, shared as one function so creation and profile use one rule). For a student or an admin the node is not looked at. Only a valid text value reaches the service.
+- `AccountService.updateProfile` gets the language; `UserRepository.updateProfile` takes an optional language: when it is present (only for a teacher) it sets `native_language`, otherwise the column is untouched (one targeted update, never `save()`); the update is scoped to the caller's own id, so no other account changes.
+- `TeacherResponse` gets `nativeLanguage` (always set for teachers). `UserSummary` already has it; teachers now have a value, so the admin's student's-teachers list shows it with no change (R15-S2). `UserResponse` needs no change: `NON_NULL` hides it for admins only. The creation response (`CreatedAccount`: id and link) is unchanged.
 - Existing tests that build teachers (`ApiTest.createUser`) set `native_language` for teachers (default `en`, overridable), as they do for students.
 
 ### D3. Frontend: language list and select
@@ -58,7 +58,14 @@ The strict check waits for pass 2 because until then the code creates teachers w
 
 ### D4. Constitution §9
 
-One sentence changes: "Every student has a native language ... set by their teacher or chosen by the student when joining through a link" becomes "Every student and every teacher has a native language ...; a teacher's is set by the admin when creating the account and changed by the teacher", and "Translation goes from the course's target language into the student's native language" becomes "into the reader's native language (a student's or a teacher's)". "Features ... a student whose native language is the target language gets no translation" becomes "A reader whose native language ...". The list stays "student languages" in name only; the edit stays minimal. The owner approves it in this PR.
+§8 needs no change: a teacher's language is not teacher-owned data. In §9, exactly these four sentences change (the lines are 198-207 of the constitution at the time of writing), and nothing else:
+
+1. "Every student has a native language from a configured list of student languages (ISO 639-1 codes), set by their teacher or chosen by the student when joining through a link; it is student data (section 8)." becomes "Every student and every teacher has a native language from a configured list of native languages (ISO 639-1 codes). A student's is set by their teacher or chosen by the student when joining through a link, and is student data (section 8); a teacher's is set by the admin when creating the account and changed by the teacher."
+2. "The supported course languages are a subset of that list." stays: "that list" now names the list of native languages.
+3. "Translation goes from the course's target language into the student's native language, so every language in the list of student languages MUST be supported as a translation target." becomes "... into the reader's native language (a student's or a teacher's), so every language in the list of native languages MUST be supported as a translation target."
+4. "A student whose native language is the target language gets no translation." becomes "A reader whose native language is the target language gets no translation."
+
+The sentence "A course does not record who takes it: students with different native languages may take the same course" stays: it is about students. The owner approves the edit in this PR.
 
 ### D5. Role of the field per role (summary)
 
@@ -68,19 +75,16 @@ One sentence changes: "Every student has a native language ... set by their teac
 | teacher | required | returned everywhere; set at creation by the admin; changed by `PATCH /api/me` |
 | student | required | returned; changed by the teacher only |
 
-### D6. Decision for the engineer to confirm
+### D6. `PATCH /api/me`: the language is optional for a teacher
 
-`PATCH /api/me` requires `nativeLanguage` from a teacher, like name and time zone: the profile form always sends all fields. The alternative (optional, a missing value leaves it unchanged) is also possible; the brief says "required for teachers" and "same rule as for students", which this follows. Scenarios accounts/R13-S6 and R13-S7 depend on it.
+Decided by the engineer (proposal Clarifications 10, 11): a teacher's `PATCH /api/me` without `nativeLanguage` keeps the stored value, so clients that do not know the field keep working. `null`, "" and blank are `REQUIRED`, an unlisted code `INVALID_FORMAT`, a wrong type `INVALID_TYPE`; the value rule is that of creation (accounts R5, R9, R11). For a student or an admin the field is ignored whatever its type, which is why the check is role-aware (D2). The profile form still always sends the language for a teacher.
 
 ### D7. Tests
 
-Backend: one test per scenario of `accounts` R13 and R12, and `student-enrolment` R15 (class names by the implementer, in the existing packages). R13-S9 migrates a test database to V12, inserts rows, then runs V13 (Flyway `target`). Frontend: one Vitest test per scenario of `web-profile` R2-S9 to R2-S12, R3-S10, and `web-admin-teachers` R2-S9 to R2-S13, with "[<scenario ID>]" at the start of the title, written with the code.
-
-### D8. Stale wording of `languages` R1
-
-`languages` R1 says "Every listed language may be a student's native language". It is true but incomplete after this change. Changing it would be a seventh modified requirement, over the limit of six, so it is not in the deltas. The wording is fixed by hand in `openspec/specs/languages/spec.md` at archive, with the Purpose line ("a student's or teacher's native language"), and the engineer sees that edit in the PR. Alternatively the engineer may drop another requirement from the change or approve a seventh.
+Backend: one test per new or changed scenario of `accounts` R5 (S1, S4 to S6), R9 (S12 to S17), R11-S6, R12-S2 and R13, and `student-enrolment` R15 (class names by the implementer, in the existing packages). R13-S2 migrates a test database with Flyway `target("12")`, inserts rows, then migrates to `target("13")`; the version numbers are those of D1 and the test changes with them if they are renumbered at merge (#98). Frontend: one Vitest test per scenario of `web-profile` R2-S9 to R2-S15, R3-S10, and `web-admin-teachers` R2-S9 to R2-S14, with "[<scenario ID>]" at the start of the title, written with the code.
 
 ## Risks / Trade-offs
 
 - The V13 check makes any code path that creates a teacher without a language fail with 500: the admin endpoint and the test helpers are the only ones, and both are changed. The admin bootstrap creates an admin, not a teacher.
+- Rollback: after V13, an old application version that creates a teacher without a language fails with 500 on the check. A rollback of the app therefore needs the V13 constraint dropped first (and V12's admin check can stay); there is no automatic down migration.
 - Deployed data: existing teachers become `en`, including the owner's account, until they change it in the profile.

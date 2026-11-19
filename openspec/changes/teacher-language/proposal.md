@@ -9,11 +9,15 @@ Issue #161.
 | 1 | What is a teacher's language? | The same concept as the student's: the language the teacher reads translations in. It reuses the existing field `users.native_language` / `nativeLanguage`, the same list (`languages` R1), the same validation and the same error codes (`REQUIRED`, `INVALID_FORMAT`, `INVALID_TYPE`). It is not the UI language (#102). |
 | 2 | Required? | Required for teachers. The migration backfills existing teachers with `en`. Admins have no language. The database checks become: null for admins, required for students and teachers. |
 | 3 | Who sets it at creation? | The admin, when creating a teacher. `CreateTeacherRequest` gets a required `nativeLanguage` (same rule as for students: one validation rule per field). The admin's "Add teacher" dialog gets a language field: required, no preselected value, as in the student form (#144); language names come from i18n. |
-| 4 | Who changes it later? | The teacher, through `PATCH /api/me` (`UpdateProfileRequest`) and a language dropdown in the profile form (`ProfilePage`/`ProfileForm`). A student still cannot change theirs through `PATCH /api/me`: the field is ignored, as today. |
-| 5 | Where is it returned? | For teachers: in `/api/me`, the login response and the admin's teacher list and details. |
+| 4 | Who changes it later? | The teacher, through `PATCH /api/me` (`UpdateProfileRequest`) and a language dropdown in the profile form (`ProfilePage`/`ProfileForm`). A student still cannot change theirs through `PATCH /api/me`. |
+| 5 | Where is it returned? | For teachers: in `/api/me`, the login and set-password responses, the admin's teacher list and the admin's list of a student's teachers. There is no admin view of a single teacher, so none is added. The response to creating a teacher stays as it is (id and link) and does not carry it. |
 | 6 | Translation? | Not in this change: no content exists yet (#13, #106). |
-| 7 | Constitution? | Update §9 in this PR: every student and teacher has a native language, and translation goes into the reader's (student's or teacher's) native language. The owner approves it in this PR. The edit stays minimal. |
+| 7 | Constitution? | Update §9 in this PR: every student and teacher has a native language, and translation goes into the reader's (student's or teacher's) native language. The owner approves it in this PR. The edit stays minimal: exactly the sentences listed in design D4; §8 needs no change. |
 | 8 | More research? | No further research. |
+| 9 | Size of the change? | Everything stays in this one change, backend and frontend. The engineer approves an explicit exception to the limit of six requirements: fixing the specs properly touches 10 requirements (one added, nine modified: accounts R5, R9, R11, R12, R13; student-enrolment R15; languages R1; web-profile R2, R3; web-admin-teachers R2). The constitution's limit is not edited. |
+| 10 | Is the field required in `PATCH /api/me`? | No. For a teacher it is optional: a `PATCH /api/me` without `nativeLanguage` keeps the stored value. JSON `null` or `""` (also a blank string) is rejected with `REQUIRED`; a code not in the list with `INVALID_FORMAT`; a wrong JSON type (array, object, number, boolean) with `INVALID_TYPE`. The value rule is otherwise the same as at creation. |
+| 11 | Students and admins in `PATCH /api/me`? | `nativeLanguage` of any type (string, unlisted code, array, object, `null`) is ignored: no 400, the stored value does not change. Design says where the role-aware check runs. |
+| 12 | Other critique answers | The migration test names the Flyway target versions, and design Risks has a rollback note. New scenarios: a teacher's change leaves other users' languages alone; a code with no i18n name shows the code; retry after the language list fails (profile and admin dialog); the current-user state has the new language after a save without a reload. `languages` R1 is modified in the delta (the Purpose lines are fixed at archive, as Purposes are not part of deltas); design D8 is dropped. |
 
 ## Research angles
 
@@ -32,8 +36,9 @@ Translation goes into the reader's native language (constitution §9). Teachers 
 
 - Every teacher has a native language, required, from the same list as a student's. The migration backfills existing teachers with `en`.
 - The admin picks it when creating a teacher (`CreateTeacherRequest.nativeLanguage`, "Add teacher" dialog).
-- The teacher changes it through `PATCH /api/me` and a dropdown in the profile form. A student's and an admin's `PATCH /api/me` ignores the field.
+- The teacher changes it through `PATCH /api/me` and a dropdown in the profile form. A student's and an admin's `PATCH /api/me` ignores the field, whatever its type.
 - `nativeLanguage` is returned for teachers in `/api/me`, login, set-password, the admin's teacher list and the admin's student's-teachers list.
+- The language is optional in a teacher's `PATCH /api/me` (omitted keeps the stored value); for students and admins any value is ignored.
 - Constitution §9: every student and teacher has a native language; translation goes into the reader's native language.
 - Frontend: a shared language select with names from i18n.
 
@@ -45,10 +50,11 @@ None.
 
 ### Modified Capabilities
 
-- `accounts`: adds R13 (a teacher has a native language: creation, own change, database rule, backfill); R12 (the admin's teacher list shows it).
-- `student-enrolment`: R15 now covers teachers (R15-S2 and R15-S3 change, R15-S5 added).
-- `web-profile`: R2 (the teacher's language select, new scenarios R2-S9 to R2-S12) and R3 (R3-S10 request carries the language).
-- `web-admin-teachers`: R2 (the language field in the "Add teacher" dialog, new scenarios R2-S9 to R2-S13).
+- `accounts`: R5 (creating a teacher takes a required native language), R9 (a teacher may change it through `PATCH /api/me`, optional; ignored for others), R11 (one rule per field mentions it), R12 (the teacher list shows it), and added R13 (database rule and backfill).
+- `student-enrolment`: R15 now covers teachers (R15-S2, R15-S3 change, R15-S5 added).
+- `languages`: R1 wording ("a student's or teacher's native language").
+- `web-profile`: R2 (the teacher's language select; R2-S2 and R2-S5 reworded; new scenarios R2-S9 to R2-S15) and R3 (R3-S10 request carries the language).
+- `web-admin-teachers`: R2 (the language field in the "Add teacher" dialog; new scenarios R2-S9 to R2-S14).
 
 ## Out of scope
 
@@ -58,7 +64,7 @@ None.
 - A student changing their own language.
 - The student form and join form fields (#144), except the shared language select this change adds.
 - Showing the teacher's language in the admin's teacher list page (the field is in the API only).
-- `languages` R1 wording ("Every listed language may be a student's native language") is not a modified requirement here, to stay within six requirements; see design D8.
+- The Purpose lines of `languages`, `accounts` and `web-profile`: Purposes are not part of deltas, so they are edited by hand at archive (tasks).
 
 ## Impact
 
