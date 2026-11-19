@@ -31,12 +31,12 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 
 ## 2. Flow scripts
 
-- [ ] 2.1 Add `guard_synced` to `lib.sh` and use it in `gate-request` and `pr-ready`. Add the range checks to `gate-request` (design D4). Verify: `shellcheck` passes as in CI.
-- [ ] 2.2 Add the live-mode branch line to `gate-status` (design D4). Verify, and record in the PR:
+- [x] 2.1 Add `guard_synced` to `lib.sh` and use it in `gate-request` and `pr-ready`. Add the range checks to `gate-request` (design D4). Verify: `shellcheck` passes as in CI.
+- [x] 2.2 Add the live-mode branch line to `gate-status` (design D4). Verify, and record in the PR:
   - on this PR, the line reads `in sync`, and after a local commit `1 unpushed`;
   - on `main`, it reads `not the PR branch`, when given this PR's number;
   - the existing fixture outputs are unchanged.
-- [ ] 2.3 Add the D4 cases to `scripts/flow/test`. Verify: `scripts/flow/test` passes. Each new case fails when its check is removed. Record one such run in the PR.
+- [x] 2.3 Add the D4 cases to `scripts/flow/test`. Verify: `scripts/flow/test` passes. Each new case fails when its check is removed. Record one such run in the PR.
 
 ## 3. Coverage check
 

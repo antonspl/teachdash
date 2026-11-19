@@ -123,13 +123,36 @@ code=$?
 check "gate-status fails when gh fails" 1 "$code"
 check "gate-status says it could not read the PR" 1 "$(printf '%s\n' "$actual" | grep -c 'could not read the pull request')"
 
+# Branch sync fixtures: a local bare repository as the remote, no network.
+gitc() { git -c user.name=t -c user.email=t@t "$@"; }
+sync_remote=$work/sync-remote.git
+git init -q --bare -b main "$sync_remote"
+sync=$work/sync
+git clone -q "$sync_remote" "$sync" 2>/dev/null
+gitc -C "$sync" commit -q --allow-empty -m base
+git -C "$sync" push -q origin main 2>/dev/null
+git -C "$sync" checkout -q -b feat
+echo one >"$sync/file.txt"
+git -C "$sync" add file.txt
+gitc -C "$sync" commit -q -m one
+git -C "$sync" push -q -u origin feat 2>/dev/null
+sync_base=$(git -C "$sync" rev-parse --short main)
+sync_head=$(git -C "$sync" rev-parse --short HEAD)
+sync_range=$sync_base..$sync_head
+# A commit that is on no pushed branch.
+git -C "$sync" checkout -q -b side main
+gitc -C "$sync" commit -q --allow-empty -m side
+side=$(git -C "$sync" rev-parse --short HEAD)
+git -C "$sync" checkout -q feat
+git -C "$sync" branch -q -D side
+
 # gate-status in live mode: one `gh pr view` call, then the paginated REST calls
 # for comments and reviews, all through the real --jq filters (the fake gh applies
 # them with jq to saved JSON). A failure in any call fails the script.
 if [ "$have_jq" = 1 ]; then
   mkdir -p "$work/ghfix"
   cat >"$work/ghfix/pr.json" <<'JSON'
-{"number":7,"author":{"login":"alice"},"body":"- [x] Spec approved by @alice\n- [ ] Tests approved by @"}
+{"number":7,"author":{"login":"alice"},"headRefName":"feat","body":"- [x] Spec approved by @alice\n- [ ] Tests approved by @"}
 JSON
   cat >"$work/ghfix/commits.json" <<'JSON'
 [{"commit":{"committer":{"date":"2026-11-17T09:00:00Z"}}}]
@@ -158,11 +181,36 @@ case "$*" in
 esac
 SH
   : >"$work/ghlog"
-  actual=$(GH_LOG=$work/ghlog GH_FIX=$work/ghfix PATH="$work/fakebin:$PATH" "$here/gate-status" 7 2>&1)
-  check "gate-status reads paginated comments and reviews" "spec:  approved by bob (not the PR author) at 2026-11-17T10:00:00Z; box ticked
+  actual=$(cd "$sync" && GH_LOG=$work/ghlog GH_FIX=$work/ghfix PATH="$work/fakebin:$PATH" "$here/gate-status" 7 2>&1)
+  check "gate-status reads paginated comments and reviews" "branch: in sync with upstream
+spec:  approved by bob (not the PR author) at 2026-11-17T10:00:00Z; box ticked
 tests: approved by bob (not the PR author) at 2026-11-17T11:00:00Z; box not ticked; comment without a ticked box
 code:  no approving comment; box not ticked" "$actual"
   check "gate-status makes one gh pr view call" 1 "$(grep -c '^pr view' "$work/ghlog")"
+  gs() { (cd "$1" && GH_LOG=$work/ghlog GH_FIX=$work/ghfix PATH="$work/fakebin:$PATH" "$here/gate-status" 7 2>&1 | head -1); }
+  echo two >>"$sync/file.txt"
+  gitc -C "$sync" commit -q -am two
+  check "gate-status branch line: unpushed" "branch: 1 unpushed, 0 behind upstream" "$(gs "$sync")"
+  git -C "$sync" reset -q --hard HEAD~1
+  git clone -q -b feat "$sync_remote" "$work/sync-other" 2>/dev/null
+  echo three >>"$work/sync-other/file.txt"
+  gitc -C "$work/sync-other" commit -q -am three
+  git -C "$work/sync-other" push -q origin feat 2>/dev/null
+  check "gate-status branch line: behind" "branch: 0 unpushed, 1 behind upstream" "$(gs "$sync")"
+  git -C "$sync" merge -q --ff-only origin/feat
+  git -C "$sync" checkout -q -b noup
+  check "gate-status branch line: not the PR branch wins over no upstream" "branch: not the PR branch" "$(gs "$sync")"
+  git -C "$sync" checkout -q feat
+  git -C "$sync" branch -q -D noup
+  git -C "$sync" checkout -q --detach
+  check "gate-status branch line: detached HEAD" "branch: detached HEAD" "$(gs "$sync")"
+  git -C "$sync" checkout -q feat
+  git clone -q -b feat "$sync_remote" "$work/sync-badfetch" 2>/dev/null
+  git -C "$work/sync-badfetch" config remote.origin.url "$work/does-not-exist.git"
+  check "gate-status branch line: fetch failed" "branch: unknown (fetch failed)" "$(gs "$work/sync-badfetch")"
+  git -C "$sync" branch -q --unset-upstream
+  check "gate-status branch line: no upstream" "branch: no upstream" "$(gs "$sync")"
+  git -C "$sync" branch -q --set-upstream-to=origin/feat
   FAIL_REVIEWS=1 GH_LOG=$work/ghlog GH_FIX=$work/ghfix PATH="$work/fakebin:$PATH" "$here/gate-status" 7 >/dev/null 2>&1
   check "gate-status fails when the reviews call fails" 1 $?
 fi
@@ -236,13 +284,54 @@ case "$2" in
   view) [ "$3" = "--json" ] && printf '7\n## Review ranges\n' || printf '## Review ranges\n' ;;
   comment) echo comment >>"$GH_LOG" ;;
   edit) echo edit >>"$GH_LOG"; exit 1 ;;
+  ready) echo ready >>"$GH_LOG" ;;
 esac
 SH
 chmod +x "$work/fakebin/gh"
 : >"$work/ghlog"
-(cd "$repo" && GH_LOG=$work/ghlog PATH="$work/fakebin:$PATH" "$here/gate-request" spec abc1234..def5678) >/dev/null 2>"$work/err"
+(cd "$sync" && GH_LOG=$work/ghlog PATH="$work/fakebin:$PATH" "$here/gate-request" spec "$sync_range") >/dev/null 2>"$work/err"
 check "gate-request posts the comment before the edit" "comment edit" "$(tr '\n' ' ' <"$work/ghlog" | sed 's/ $//')"
 check "gate-request says the range line was not updated" 1 "$(grep -c 'comment was posted but the range line was not updated' "$work/err")"
+
+# Branch sync: each refusal happens before any gh call and says why.
+sync_refuse() {
+  local label=$1 dir=$2 pattern=$3
+  shift 3
+  : >"$work/ghlog"
+  (cd "$dir" && GH_LOG=$work/ghlog PATH="$work/fakebin:$PATH" "$@") >/dev/null 2>"$work/err"
+  local code=$?
+  check "$label exits non-zero" 1 "$([ "$code" -ne 0 ] && echo 1 || echo 0)"
+  check "$label says why" 1 "$(grep -cE "$pattern" "$work/err")"
+  check "$label makes no gh call" 0 "$(wc -l <"$work/ghlog" | tr -d ' ')"
+}
+sync_refuse "gate-request with a range end not on the pushed branch" "$sync" 'not on the pushed branch' "$here/gate-request" spec "$sync_base..$side"
+sync_refuse "gate-request with a start that is not an ancestor" "$sync" 'is not an ancestor' "$here/gate-request" spec "$side..$sync_head"
+
+echo local >>"$sync/file.txt"
+sync_refuse "gate-request with uncommitted changes" "$sync" 'uncommitted changes' "$here/gate-request" spec "$sync_range"
+sync_refuse "pr-ready with uncommitted changes" "$sync" 'uncommitted changes' "$here/pr-ready"
+git -C "$sync" checkout -q -- file.txt
+
+gitc -C "$sync" commit -q --allow-empty -m local
+sync_refuse "gate-request with an unpushed commit" "$sync" '1 unpushed, 0 behind' "$here/gate-request" spec "$sync_range"
+sync_refuse "pr-ready with an unpushed commit" "$sync" '1 unpushed, 0 behind' "$here/pr-ready"
+git -C "$sync" reset -q --hard HEAD~1
+
+git -C "$work/sync-other" pull -q origin feat 2>/dev/null
+gitc -C "$work/sync-other" commit -q --allow-empty -m remote
+git -C "$work/sync-other" push -q origin feat 2>/dev/null
+sync_refuse "gate-request when behind the upstream" "$sync" '0 unpushed, 1 behind' "$here/gate-request" spec "$sync_range"
+sync_refuse "pr-ready when behind the upstream" "$sync" '0 unpushed, 1 behind' "$here/pr-ready"
+git -C "$sync" merge -q --ff-only origin/feat
+
+git -C "$sync" checkout -q -b noup
+sync_refuse "gate-request without an upstream" "$sync" 'no upstream' "$here/gate-request" spec "$sync_range"
+sync_refuse "pr-ready without an upstream" "$sync" 'no upstream' "$here/pr-ready"
+git -C "$sync" checkout -q feat
+
+: >"$work/ghlog"
+(cd "$sync" && GH_LOG=$work/ghlog PATH="$work/fakebin:$PATH" "$here/pr-ready") >/dev/null 2>&1
+check "pr-ready on an in-sync branch calls gh pr ready" ready "$(cat "$work/ghlog")"
 
 # pr-draft validates the issue before pushing.
 printf '#!/bin/sh\nexit 1\n' >"$work/fakebin/gh"
