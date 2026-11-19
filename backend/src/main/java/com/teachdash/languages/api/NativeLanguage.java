@@ -16,7 +16,8 @@ import jakarta.validation.constraints.NotBlank;
 /** A language code listed in the languages table. */
 @Documented
 @NotBlank
-@Constraint(validatedBy = NativeLanguageValidator.class)
+@ListedLanguage
+@Constraint(validatedBy = {})
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)
 public @interface NativeLanguage {

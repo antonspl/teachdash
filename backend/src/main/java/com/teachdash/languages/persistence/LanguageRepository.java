@@ -1,6 +1,7 @@
 package com.teachdash.languages.persistence;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -20,6 +21,13 @@ public class LanguageRepository {
 		return jdbc.sql("select code, content from languages order by code")
 				.query((rs, i) -> new Language(rs.getString("code"), rs.getBoolean("content")))
 				.list();
+	}
+
+	public Optional<Language> find(String code) {
+		return jdbc.sql("select code, content from languages where code = :code")
+				.param("code", code)
+				.query((rs, i) -> new Language(rs.getString("code"), rs.getBoolean("content")))
+				.optional();
 	}
 
 	public boolean exists(String code) {
