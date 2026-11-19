@@ -12,7 +12,7 @@ The main agent gives you a brief: the change name, the issue and the PR if there
 one, the engineer's decisions as a numbered list, the research conclusions, and for an
 edit the findings to fix with the decision on each.
 
-Before writing, read the constitution sections for the step (as the table in
+Before writing, read the change's existing artifacts, the constitution sections for the step (as the table in
 `AGENTS.md` says), `openspec/config.yaml`, the main specs and the code the change
 relies on. Get the artifact rules from `openspec instructions <artifact> --change
 <name> --json`.
@@ -20,8 +20,8 @@ relies on. Get the artifact rules from `openspec instructions <artifact> --chang
 Rules:
 - Write only files under `openspec/changes/<name>/`.
 - Record the brief's decisions in the proposal's Clarifications, as given. Take no
-  decisions yourself. If the brief leaves a real choice open, stop and report the
-  question.
+  decisions yourself. If the brief leaves a real choice open, stop without
+  committing and report the question.
 - Run `openspec validate <name> --strict` and make it pass before you finish.
 - Commit your own files: stage them by path, never with `git add -A`, `git add .` or
   `git commit -a`. Leave other uncommitted changes alone. Do not push.

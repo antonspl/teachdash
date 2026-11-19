@@ -44,8 +44,9 @@ in English.
 Keep the main agent's context small. It talks to the engineer (whoever took the
 task), decides, and delegates. It does not read large parts of the codebase, write
 production code or draft OpenSpec artifacts itself. Before delegating to the
-`implementer` or the `spec-writer`, it commits its own pending edits, so no agent
-commits them. It pushes after reading the agent's report.
+`implementer` or the `spec-writer`, it commits its own pending edits, staged by
+path, so no agent commits them. Agents do not push: the main agent pushes their
+commits after reading the report (the flow scripts push too).
 
 - **Before a proposal**: the main agent restates the task, proposes research angles
   and agrees them with the engineer. Explore is optional: never ask the engineer to
@@ -59,7 +60,7 @@ commits them. It pushes after reading the agent's report.
   with the change name, the issue and PR, the engineer's decisions as a numbered list,
   the research conclusions and, for a fix, the findings with the decision on each. It
   records decisions as given and does not take new ones. The main agent may make a
-  one- or two-line edit itself.
+  one- or two-line edit in one file itself.
 - **Spec critique**: the `spec-critic` agent (medium class), after the spec is
   drafted and before asking for the spec gate, on every change.
 - **Implementation** (tests in pass 1, code in pass 2): the `implementer` agent
