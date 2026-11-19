@@ -6,6 +6,8 @@ export function Select({
   value,
   onChange,
   options,
+  labels,
+  placeholder,
   error,
   required,
   disabled,
@@ -15,6 +17,10 @@ export function Select({
   value: string
   onChange: (value: string) => void
   options: string[]
+  // Shown instead of the option value, where given.
+  labels?: Record<string, string>
+  // An empty first option, so the select can start with nothing chosen.
+  placeholder?: string
   error?: string
   required?: boolean
   disabled?: boolean
@@ -40,9 +46,12 @@ export function Select({
           aria-describedby={error ? errorId : undefined}
           onChange={(event) => onChange(event.target.value)}
         >
+          {placeholder === undefined ? null : (
+            <option value="">{placeholder}</option>
+          )}
           {options.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {labels?.[option] ?? option}
             </option>
           ))}
         </select>
