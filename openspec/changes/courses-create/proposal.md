@@ -11,6 +11,7 @@
 | May the target language equal the instruction language? | Yes, e.g. Russian A1 taught in Russian. Translation goes into the student's native language, not the instruction language (constitution §9). |
 | Limits? | Title of 1–200 characters. At most 20 courses per teacher, because we do not know yet how heavy a course will be. |
 | May one teacher have two courses with the same title? | No. Titles are unique per teacher, ignoring case. |
+| Timestamps? | `createdAt` and `updatedAt`; on create they are equal. Rename (#105) must update `updatedAt`. |
 | Scope? | Create only. Listing, viewing and renaming are #105; deleting is #131. |
 | How is a duplicate title reported? | 409 `TITLE_TAKEN`, naming the `title` field, like `EMAIL_TAKEN`. |
 | Which characters may a title have? | Any punctuation (`: , . ? !`), as textbook names use it; at least one letter or digit. |
@@ -34,7 +35,7 @@ Courses are the root of all teaching content: lessons, assignments and sharing a
 
 ## What Changes
 
-- A `courses` table owned by a teacher: title, instruction language, optional target language, creation time.
+- A `courses` table owned by a teacher: title, instruction language, optional target language, creation and update times.
 - `POST /api/teacher/courses` creates a course for the current teacher. Rules:
   - The title is normalised, 1–200 characters, and unique per teacher ignoring case.
   - Both language codes must be listed languages with `content` true.

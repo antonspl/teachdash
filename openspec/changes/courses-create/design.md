@@ -43,7 +43,8 @@ create table courses (
     title                varchar(200) not null,
     instruction_language varchar(2)   not null references languages (code),
     target_language      varchar(2)   references languages (code),
-    created_at           timestamptz  not null
+    created_at           timestamptz  not null,
+    updated_at           timestamptz  not null
 );
 create unique index courses_teacher_title_uq on courses (teacher_id, lower(title));
 ```
@@ -63,7 +64,7 @@ uses the same image.
 `com.teachdash.courses` (`api`, `api/dto`, `domain`, `persistence`):
 `POST /api/teacher/courses`, `@ResponseStatus(CREATED)`, body
 `CreateCourseRequest(title, instructionLanguage, targetLanguage)`, response
-`CourseResponse(id, title, instructionLanguage, targetLanguage, createdAt)`. Unknown body
+`CourseResponse(id, title, instructionLanguage, targetLanguage, createdAt, updatedAt)`. Unknown body
 fields such as `teacherId` are ignored (Spring Boot default); the owner is always the
 principal (R1-S14). No `SecurityConfig` change: `/api/teacher/**` already needs TEACHER.
 
@@ -107,7 +108,8 @@ a migration changes the list.
 2. `courses.countByTeacher(teacherId) >= maxPerTeacher` → `409 COURSE_LIMIT_REACHED`
    (plain `ApiException`, no `errors`). This runs before the insert, so a teacher at the
    limit gets the limit error even for a taken title (R1-S12).
-3. Insert with a new UUID and `clock` time through an explicit insert query (as in
+3. Insert with a new UUID, and `created_at` and `updated_at` both set to one `clock`
+   time, through an explicit insert query (as in
    `TeacherStudentRepository`), not `save()`: Spring Data JDBC treats an entity with a
    preassigned id as existing and would issue an UPDATE. `DuplicateKeyException` on
    `courses_teacher_title_uq` → `ApiException.field(CONFLICT, "TITLE_TAKEN", "title")`.
@@ -124,12 +126,19 @@ the title race even without it. `ApiExceptionHandler` / the api-errors R2 allow-
 not a secret and changes through a PR. Raising it is safe; lowering it leaves teachers
 above the limit, who then simply cannot create more.
 
-### D5. Languages are immutable
+### D5. `updated_at`
+
+The first `updated_at` in the schema. It is set by the application from `clock`, like
+`created_at`, not by a database trigger, so tests control it with `MutableClock`. Every
+later change to a course row (rename in #105) MUST set it; #105's spec states that.
+Changes to lessons do not touch it: lessons have their own rows.
+
+### D6. Languages are immutable
 
 No endpoint in this change updates a course. #105 (rename) must accept only the title.
 No database trigger is added: the rule is enforced by the API surface and by #105's spec.
 
-### D6. Tests rely on the seeded flags
+### D7. Tests rely on the seeded flags
 
 R1-S9, R1-S10 and api-errors R1-S10 use the seeded `content` false for "de" and "uk"; no
 test switches a flag (the engineer chose not to test changing the list). A validator

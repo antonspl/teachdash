@@ -8,17 +8,17 @@ course language from the language list and optionally teaching another.
 ## ADDED Requirements
 
 ### Requirement: R1 A teacher creates a course
-`POST /api/teacher/courses` SHALL create a course owned by the caller and return 201
-with `{id, title, instructionLanguage, targetLanguage, createdAt}`; the target is optional.
-The trimmed title MUST have 1–200 characters with a letter or digit and be unique per
-teacher ignoring case. Trimmed codes MUST be listed (languages R1); a listed code with `content`
-false gets `UNSUPPORTED_COURSE_LANGUAGE`. At most 20 courses per teacher, checked after input
+`POST /api/teacher/courses` SHALL create a course owned by the caller and return 201 with
+`{id, title, instructionLanguage, targetLanguage?, createdAt, updatedAt}`. The trimmed
+title MUST have 1–200 characters with a letter or digit, unique per teacher ignoring
+case. Trimmed codes MUST be listed; a listed code with `content` false gets
+`UNSUPPORTED_COURSE_LANGUAGE`. At most 20 courses per teacher, checked after input
 validation, before the duplicate-title check.
 
 #### Scenario: courses/R1-S1 Create an English course taught in English
 - **GIVEN** a logged-in teacher A
 - **WHEN** teacher A creates a course with the title "English B1", the instruction language "en" and the target language "en"
-- **THEN** the response is 201 with a new `id`, the title "English B1", `instructionLanguage` "en", `targetLanguage` "en" and a `createdAt` time, and the course is stored owned by teacher A
+- **THEN** the response is 201 with a new `id`, the title "English B1", `instructionLanguage` "en", `targetLanguage` "en", a `createdAt` time and an `updatedAt` equal to `createdAt`, and the course is stored owned by teacher A
 
 #### Scenario: courses/R1-S2 Create a Russian course without a target language
 - **GIVEN** a logged-in teacher A

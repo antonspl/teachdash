@@ -27,5 +27,5 @@
 
 - Code review gate: the `code-gate-reviewer` runs, then the engineer approves the code in the PR.
 - Archive in the same PR, after confirming every scenario ID has a matching test.
-- Comment on #105 that rename must accept only the title (design D5), on #106 that tables are plural and `lesson_courses` stays the lesson's only link to a course (proposal, angle C), and on #115 that the course form offers only languages with `content` true.
+- Comment on #105 that rename must accept only the title (design D6) and must set `updated_at` (design D5), on #106 that tables are plural and `lesson_courses` stays the lesson's only link to a course (proposal, angle C), and on #115 that the course form offers only languages with `content` true.
 - Mark the PR ready for the final review by a code owner other than the engineer.
