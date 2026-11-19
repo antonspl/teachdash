@@ -13,7 +13,12 @@ export type Teacher = {
   hasPassword: boolean
 }
 
-export type NewTeacher = { name: string; email: string; timeZone: string }
+export type NewTeacher = {
+  name: string
+  email: string
+  timeZone: string
+  nativeLanguage: string
+}
 
 async function readJson(response: Response): Promise<unknown> {
   return (await response.json()) as unknown

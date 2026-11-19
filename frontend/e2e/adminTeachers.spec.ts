@@ -76,6 +76,9 @@ test('[web-admin-teachers/R2-S1] Admin creates a teacher', async ({ page }) => {
     .getByLabel(en.adminTeachers.create.timeZone)
     .selectOption('Europe/Berlin')
   await page
+    .getByLabel(en.adminTeachers.create.nativeLanguage)
+    .selectOption('de')
+  await page
     .getByRole('button', { name: en.adminTeachers.create.submit })
     .click()
 

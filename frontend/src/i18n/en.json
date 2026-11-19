@@ -116,6 +116,7 @@
       "name": "Name",
       "email": "Email",
       "timeZone": "Time zone",
+      "nativeLanguage": "Native language",
       "submit": "Create teacher",
       "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and email, or try another time zone."
     },
