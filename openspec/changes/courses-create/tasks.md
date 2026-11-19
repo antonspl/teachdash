@@ -18,10 +18,10 @@
 
 - [x] 3.1 Language validation: `LanguageRepository.find`, `@ListedLanguage` (moved from `NativeLanguageValidator`, with `@NativeLanguage` composed from it), `@ContentLanguage`, `@CourseLanguage`, and the `UNSUPPORTED_COURSE_LANGUAGE` mapping in `FieldErrorCodes` (design D3); verify the student-enrolment R13 tests still pass
 - [x] 3.2 `@CourseTitle` in `common/validation/` (design D3)
-- [ ] 3.3 Courses: `CreateCourseRequest` (normalising title and codes), `CourseResponse`, `CourseRepository`, `CourseService.create` with the lock, limit check and `TITLE_TAKEN` mapping in the order of design D4, the `teachdash.courses.max-per-teacher=20` property, and the controller replacing its stub; add a comment at the row lock saying it serialises the limit check
-- [ ] 3.4 Add `TITLE_TAKEN` to the codes allowed to carry `errors` (api-errors R2); verify all courses and api-errors tests pass
-- [ ] 3.5 Check that no course title appears in logs (constitution §5: record IDs, not content)
-- [ ] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.3 Courses: `CreateCourseRequest` (normalising title and codes), `CourseResponse`, `CourseRepository`, `CourseService.create` with the lock, limit check and `TITLE_TAKEN` mapping in the order of design D4, the `teachdash.courses.max-per-teacher=20` property, and the controller replacing its stub; add a comment at the row lock saying it serialises the limit check
+- [x] 3.4 Add `TITLE_TAKEN` to the codes allowed to carry `errors` (api-errors R2); verify all courses and api-errors tests pass
+- [x] 3.5 Check that no course title appears in logs (constitution §5: record IDs, not content)
+- [x] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
