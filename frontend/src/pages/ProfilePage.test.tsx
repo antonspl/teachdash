@@ -23,7 +23,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function userResponse(role: string, name = 'Anna Smith', timeZone = 'UTC') {
+function userResponse(
+  role: string,
+  name = 'Anna Smith',
+  timeZone = 'UTC',
+  nativeLanguage: string | undefined = role === 'ADMIN' ? undefined : 'ru',
+) {
   return new Response(
     JSON.stringify({
       id: '1',
@@ -31,6 +36,7 @@ function userResponse(role: string, name = 'Anna Smith', timeZone = 'UTC') {
       email: 'anna@example.com',
       role,
       timeZone,
+      nativeLanguage,
     }),
     { status: 200, headers: { 'Content-Type': 'application/json' } },
   )
@@ -45,6 +51,15 @@ function problem(
     status,
     headers: { 'Content-Type': 'application/problem+json' },
   })
+}
+
+function languagesResponse(codes = ['de', 'en', 'ru']) {
+  return Promise.resolve(
+    new Response(
+      JSON.stringify(codes.map((code) => ({ code, content: false }))),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    ),
+  )
 }
 
 function open(path = '/profile') {
@@ -147,6 +162,9 @@ function teacherWithSave(
     if (url === '/api/me' && init?.method === 'PATCH') {
       return onSave()
     }
+    if (url === '/api/languages') {
+      return languagesResponse()
+    }
     return Promise.resolve(userResponse('TEACHER', name, timeZone))
   })
 }
@@ -207,6 +225,7 @@ test('[web-profile/R2-S2] Form and header show what the backend returned', async
   expect(sentBody(saves()[0])).toEqual({
     name: '  Anna S.  ',
     timeZone: 'UTC',
+    nativeLanguage: 'ru',
   })
 })
 
@@ -248,26 +267,48 @@ test('[web-profile/R2-S4] An empty name is not sent', async () => {
 })
 
 test('[web-profile/R2-S5] Values the backend rejects', async () => {
-  // given
-  teacherWithSave(() => Promise.resolve(problem(400, 'VALIDATION_FAILED')))
-  await openForm()
-  typeName('Anna Typed')
+  for (const [role, message] of [
+    ['TEACHER', en.profile.validationFailedTeacher],
+    ['STUDENT', en.profile.validationFailed],
+  ] as const) {
+    // given
+    fetchMock.mockReset()
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (url === '/api/me' && init?.method === 'PATCH') {
+        return Promise.resolve(problem(400, 'VALIDATION_FAILED'))
+      }
+      if (url === '/api/languages') {
+        return languagesResponse()
+      }
+      return Promise.resolve(userResponse(role))
+    })
+    const view = open()
+    await screen.findByLabelText(en.profile.name)
+    typeName('Anna Typed')
 
-  // when
-  pressSave()
+    // when
+    pressSave()
 
-  // then
-  expect(await screen.findByText(en.profile.validationFailed)).toBeTruthy()
-  expect(
-    (screen.getByLabelText(en.profile.name) as HTMLInputElement).value,
-  ).toBe('Anna Typed')
-  expect(headerHas('Anna Smith')).toBe(true)
-  expect(
-    (screen.getByRole('button', { name: en.profile.save }) as HTMLButtonElement)
-      .disabled,
-  ).toBe(false)
-  pressSave()
-  await waitFor(() => expect(saves()).toHaveLength(2))
+    // then
+    expect(await screen.findByText(message), role).toBeTruthy()
+    expect(message).toMatch(/name/)
+    expect(message).toMatch(/time zone/)
+    expect(/native language/.test(message), role).toBe(role === 'TEACHER')
+    expect(
+      (screen.getByLabelText(en.profile.name) as HTMLInputElement).value,
+    ).toBe('Anna Typed')
+    expect(headerHas('Anna Smith')).toBe(true)
+    expect(
+      (
+        screen.getByRole('button', {
+          name: en.profile.save,
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false)
+    pressSave()
+    await waitFor(() => expect(saves()).toHaveLength(2))
+    view.unmount()
+  }
 })
 
 test('[web-profile/R2-S6] Save that fails for another reason', async () => {
@@ -335,6 +376,7 @@ test('[web-profile/R2-S7] Stored time zone the browser does not list', async () 
   expect(sentBody(saves()[0])).toEqual({
     name: 'Anna B.',
     timeZone: 'Europe/Kiev',
+    nativeLanguage: 'ru',
   })
 })
 
@@ -360,6 +402,233 @@ test('[web-profile/R2-S8] A second press while saving sends nothing', async () =
   // then
   await new Promise((resolve) => setTimeout(resolve, 20))
   expect(saves()).toHaveLength(1)
+})
+
+function languageSelect() {
+  return screen.getByLabelText(en.profile.nativeLanguage) as HTMLSelectElement
+}
+
+function languageOptions() {
+  return screen
+    .getAllByRole('option')
+    .filter((option) => option.parentElement === languageSelect())
+    .map((option) => option.textContent)
+}
+
+function selectedLanguage() {
+  const select = languageSelect()
+  return select.selectedOptions[0]?.textContent
+}
+
+// A teacher whose stored language changes with each save, so a reload shows it.
+function teacherWithStoredLanguage(stored: string) {
+  let language = stored
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    if (url === '/api/me' && init?.method === 'PATCH') {
+      language = (JSON.parse(init.body as string) as { nativeLanguage: string })
+        .nativeLanguage
+    }
+    if (url === '/api/languages') {
+      return languagesResponse()
+    }
+    return Promise.resolve(
+      userResponse('TEACHER', 'Anna Smith', 'UTC', language),
+    )
+  })
+}
+
+test('[web-profile/R2-S9] A teacher changes the native language', async () => {
+  // given
+  teacherWithStoredLanguage('ru')
+  const view = open()
+  await screen.findByRole('option', { name: 'German' })
+  expect(languageOptions()).toEqual(['German', 'English', 'Russian'])
+  expect(selectedLanguage()).toBe('Russian')
+
+  // when
+  fireEvent.change(languageSelect(), { target: { value: 'de' } })
+  pressSave()
+  expect(await screen.findByText(en.profile.saved)).toBeTruthy()
+  view.unmount()
+  open()
+  await screen.findByRole('option', { name: 'German' })
+
+  // then
+  expect(saves()).toHaveLength(1)
+  expect(
+    (sentBody(saves()[0]) as { nativeLanguage: string }).nativeLanguage,
+  ).toBe('de')
+  expect(selectedLanguage()).toBe('German')
+})
+
+test('[web-profile/R2-S10] Students and admins have no language select', async () => {
+  for (const role of ['STUDENT', 'ADMIN']) {
+    // given
+    fetchMock.mockReset()
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (url === '/api/me' && init?.method === 'PATCH') {
+        return Promise.resolve(userResponse(role))
+      }
+      return Promise.resolve(userResponse(role, 'Anna Smith', 'UTC', 'ru'))
+    })
+    const view = open()
+    await screen.findByLabelText(en.profile.name)
+
+    // when
+    typeName('Anna S.')
+    pressSave()
+
+    // then
+    expect(await screen.findByText(en.profile.saved), role).toBeTruthy()
+    expect(screen.queryByLabelText(en.profile.nativeLanguage), role).toBeNull()
+    expect(sentBody(saves()[0]), role).toEqual({
+      name: 'Anna S.',
+      timeZone: 'UTC',
+    })
+    expect(
+      fetchMock.mock.calls.some(([url]) => url === '/api/languages'),
+      role,
+    ).toBe(false)
+    view.unmount()
+  }
+})
+
+test('[web-profile/R2-S11] A language the backend rejects', async () => {
+  // given
+  teacherWithSave(() =>
+    Promise.resolve(
+      problem(400, 'VALIDATION_FAILED', [
+        { field: 'nativeLanguage', code: 'INVALID_FORMAT' },
+      ]),
+    ),
+  )
+  open()
+  await screen.findByRole('option', { name: 'German' })
+  fireEvent.change(languageSelect(), { target: { value: 'de' } })
+
+  // when
+  pressSave()
+
+  // then
+  expect(await screen.findByText(en.fieldErrors.INVALID_FORMAT)).toBeTruthy()
+  expect(describedBy(en.profile.nativeLanguage)).toBe(
+    en.fieldErrors.INVALID_FORMAT,
+  )
+  expect(languageSelect().value).toBe('de')
+  expect(
+    (screen.getByRole('button', { name: en.profile.save }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(false)
+  pressSave()
+  await waitFor(() => expect(saves()).toHaveLength(2))
+})
+
+test('[web-profile/R2-S12] The language list does not load', async () => {
+  // given
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    if (url === '/api/languages') {
+      return Promise.reject(new TypeError('Failed to fetch'))
+    }
+    if (url === '/api/me' && init?.method === 'PATCH') {
+      return Promise.resolve(userResponse('TEACHER', 'Anna S.'))
+    }
+    return Promise.resolve(userResponse('TEACHER'))
+  })
+
+  // when
+  await openForm()
+  expect(await screen.findByText(en.languages.loadFailed)).toBeTruthy()
+  typeName('Anna S.')
+  pressSave()
+
+  // then
+  expect(await screen.findByText(en.profile.saved)).toBeTruthy()
+  expect(screen.getByRole('button', { name: en.ui.tryAgain })).toBeTruthy()
+  expect(languageOptions()).toEqual(['Russian'])
+  expect(sentBody(saves()[0])).toEqual({
+    name: 'Anna S.',
+    timeZone: 'UTC',
+    nativeLanguage: 'ru',
+  })
+})
+
+test('[web-profile/R2-S13] Try again loads the list', async () => {
+  // given
+  let listCalls = 0
+  fetchMock.mockImplementation((url: string) => {
+    if (url === '/api/languages') {
+      listCalls += 1
+      return listCalls === 1
+        ? Promise.reject(new TypeError('Failed to fetch'))
+        : languagesResponse()
+    }
+    return Promise.resolve(userResponse('TEACHER'))
+  })
+  open()
+  await screen.findByText(en.languages.loadFailed)
+
+  // when
+  fireEvent.click(screen.getByRole('button', { name: en.ui.tryAgain }))
+
+  // then
+  await screen.findByRole('option', { name: 'German' })
+  expect(screen.queryByText(en.languages.loadFailed)).toBeNull()
+  expect(languageOptions()).toEqual(['German', 'English', 'Russian'])
+  expect(selectedLanguage()).toBe('Russian')
+})
+
+test('[web-profile/R2-S14] A language with no name shows its code', async () => {
+  // given
+  expect('sv' in en.languages).toBe(false)
+  fetchMock.mockImplementation((url: string) => {
+    if (url === '/api/languages') {
+      return languagesResponse(['de', 'sv'])
+    }
+    return Promise.resolve(userResponse('TEACHER', 'Anna Smith', 'UTC', 'sv'))
+  })
+
+  // when
+  open()
+  await screen.findByRole('option', { name: 'German' })
+
+  // then
+  expect(languageOptions()).toEqual(['German', 'sv'])
+  expect(selectedLanguage()).toBe('sv')
+})
+
+test('[web-profile/R2-S15] The current-user state gets the new language', async () => {
+  // given
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    if (url === '/api/languages') {
+      return languagesResponse()
+    }
+    if (url === '/api/me' && init?.method === 'PATCH') {
+      return Promise.resolve(userResponse('TEACHER', 'Anna Smith', 'UTC', 'de'))
+    }
+    return Promise.resolve(userResponse('TEACHER'))
+  })
+  open()
+  await screen.findByRole('option', { name: 'German' })
+  const currentUserRequests = () =>
+    fetchMock.mock.calls.filter(
+      ([url, init]) =>
+        url === '/api/me' &&
+        (init as RequestInit | undefined)?.method === undefined,
+    ).length
+  const before = currentUserRequests()
+
+  // when
+  fireEvent.change(languageSelect(), { target: { value: 'de' } })
+  pressSave()
+  await screen.findByText(en.profile.saved)
+  fireEvent.click(screen.getByRole('button', { name: en.header.backToCabinet }))
+  await screen.findByText(en.cabinet.teacher)
+  fireEvent.click(screen.getByRole('button', { name: en.header.profile }))
+  await screen.findByRole('option', { name: 'German' })
+
+  // then
+  expect(selectedLanguage()).toBe('German')
+  expect(currentUserRequests()).toBe(before)
 })
 
 // The session-ended tests read the path from the real location, like web-auth/R6.
@@ -509,6 +778,9 @@ function teacherWithPassword(onChange: () => Promise<Response>) {
   fetchMock.mockImplementation((url: string, init?: RequestInit) => {
     if (url === '/api/me/password' && init?.method === 'POST') {
       return onChange()
+    }
+    if (url === '/api/languages') {
+      return languagesResponse()
     }
     return Promise.resolve(userResponse('TEACHER'))
   })
@@ -764,7 +1036,11 @@ test('[web-profile/R3-S10] The two forms do not affect each other', async () => 
   // then
   expect(await screen.findByText(en.profile.saved)).toBeTruthy()
   expect(saves()).toHaveLength(1)
-  expect(sentBody(saves()[0])).toEqual({ name: 'Anna S.', timeZone: 'UTC' })
+  expect(sentBody(saves()[0])).toEqual({
+    name: 'Anna S.',
+    timeZone: 'UTC',
+    nativeLanguage: 'ru',
+  })
   expect(screen.getByText(en.profile.wrongPassword)).toBeTruthy()
   expect(field(en.profile.currentPassword).value).toBe('old-password')
   expect(field(en.profile.newPassword).value).toBe('new-password-1')
@@ -978,7 +1254,9 @@ test('[web-client/R17-S4] The profile form keeps its message for an unknown code
   pressSave()
 
   // then
-  expect(await screen.findByText(en.profile.validationFailed)).toBeTruthy()
+  expect(
+    await screen.findByText(en.profile.validationFailedTeacher),
+  ).toBeTruthy()
   expect(field(en.profile.name).getAttribute('aria-invalid')).toBeNull()
   expect(field(en.profile.name).getAttribute('aria-describedby')).toBeNull()
 })

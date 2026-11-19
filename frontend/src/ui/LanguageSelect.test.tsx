@@ -43,11 +43,7 @@ test('shows names and starts empty with a placeholder', async () => {
   fetchMock.mockResolvedValue(list(['de', 'en', 'ru']))
   render(<Harness initial="" />)
   await screen.findByRole('option', { name: 'German' })
-  expect(optionTexts()).toEqual([
-    'German',
-    'English',
-    'Russian',
-  ])
+  expect(optionTexts()).toEqual(['German', 'English', 'Russian'])
   expect((screen.getByLabelText('Language') as HTMLSelectElement).value).toBe(
     '',
   )

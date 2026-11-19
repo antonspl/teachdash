@@ -73,5 +73,7 @@ test('placeholder is not a selectable option and nothing is preselected', () => 
     />,
   )
   expect(screen.queryByRole('option', { name: 'Choose' })).toBeNull()
-  expect((screen.getByLabelText('Language') as HTMLSelectElement).value).toBe('')
+  expect((screen.getByLabelText('Language') as HTMLSelectElement).value).toBe(
+    '',
+  )
 })
