@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type Ref } from 'react'
 import styles from './Field.module.css'
 
 export function Select({
@@ -6,17 +6,23 @@ export function Select({
   value,
   onChange,
   options,
+  error,
   required,
   disabled,
+  inputRef,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   options: string[]
+  error?: string
   required?: boolean
   disabled?: boolean
+  // Lets a form move the focus to the select.
+  inputRef?: Ref<HTMLSelectElement>
 }) {
   const id = useId()
+  const errorId = `${id}-error`
   return (
     <div className={styles.field}>
       <label htmlFor={id} className={styles.label}>
@@ -24,11 +30,14 @@ export function Select({
       </label>
       <div className={styles.selectWrap}>
         <select
+          ref={inputRef}
           id={id}
-          className={`${styles.input} ${styles.select}`}
+          className={`${styles.input} ${styles.select} ${error ? styles.invalid : ''}`}
           value={value}
           required={required}
           disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           onChange={(event) => onChange(event.target.value)}
         >
           {options.map((option) => (
@@ -51,6 +60,11 @@ export function Select({
           </svg>
         </span>
       </div>
+      {error ? (
+        <p id={errorId} className={styles.error}>
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }

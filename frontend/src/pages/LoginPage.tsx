@@ -13,6 +13,7 @@ import { StatusMessage } from '../ui/StatusMessage'
 import { Text } from '../ui/Text'
 import { TextInput } from '../ui/TextInput'
 import { Title } from '../ui/Title'
+import { useFieldErrors } from '../ui/useFieldErrors'
 
 // The remembered page is used only when it belongs to the role's cabinet, or is the
 // profile page, which every role has (a trailing slash is ignored there).
@@ -35,6 +36,13 @@ export function LoginPage() {
   const [error, setError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
+  const emailRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+  const fieldErrors = useFieldErrors([
+    { key: 'email', backend: 'email', ref: emailRef },
+    { key: 'password', backend: 'password', ref: passwordRef },
+  ])
+  const { errors } = fieldErrors
 
   const remembered =
     state.status === 'anonymous' ? state.sessionEnded?.path : undefined
@@ -47,6 +55,7 @@ export function LoginPage() {
     inFlight.current = true
     setSubmitting(true)
     setError(undefined)
+    fieldErrors.clearAll()
     try {
       const user = await login(email, password)
       const cabinet = cabinetPath[user.role]
@@ -56,6 +65,9 @@ export function LoginPage() {
       )
     } catch (failure) {
       setPassword('')
+      if (failure instanceof ApiError && fieldErrors.place(failure)) {
+        return
+      }
       setError(
         failure instanceof ApiError ? failure.message : t('errors.generic'),
       )
@@ -80,15 +92,25 @@ export function LoginPage() {
           type="email"
           autoComplete="username"
           required
+          inputRef={emailRef}
+          error={errors.email}
           value={email}
-          onChange={setEmail}
+          onChange={(value) => {
+            setEmail(value)
+            fieldErrors.clear('email')
+          }}
         />
         <PasswordInput
           label={t('login.password')}
           autoComplete="current-password"
           required
+          inputRef={passwordRef}
+          error={errors.password}
           value={password}
-          onChange={setPassword}
+          onChange={(value) => {
+            setPassword(value)
+            fieldErrors.clear('password')
+          }}
         />
         {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}
         <Button type="submit" disabled={submitting}>

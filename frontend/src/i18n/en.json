@@ -23,6 +23,13 @@
     "WRONG_PASSWORD": "The password is incorrect.",
     "INVALID_CREDENTIALS": "That email and password don't match."
   },
+  "fieldErrors": {
+    "REQUIRED": "Please fill this in.",
+    "TOO_SHORT": "Hmm, that's too short.",
+    "TOO_LONG": "Hmm, that's too long.",
+    "INVALID_FORMAT": "Hmm, that doesn't look right. Please check it.",
+    "INVALID_TYPE": "Hmm, that doesn't look right. Please check it."
+  },
   "ui": {
     "show": "Show",
     "hide": "Hide",

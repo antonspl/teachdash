@@ -11,6 +11,7 @@ import { Page } from '../ui/Page'
 import { PasswordInput } from '../ui/PasswordInput'
 import { StatusMessage } from '../ui/StatusMessage'
 import { Title } from '../ui/Title'
+import { useFieldErrors } from '../ui/useFieldErrors'
 
 // Read without side effects in a useState initialiser, so a repeated render or effect
 // under React strict mode cannot lose it; the fragment is removed in a layout effect.
@@ -42,6 +43,11 @@ export function SetPasswordPage() {
   const inFlight = useRef(false)
   const passwordInput = useRef<HTMLInputElement>(null)
   const confirmInput = useRef<HTMLInputElement>(null)
+  // `token` comes from the link, not from a field: an error on it stays form-level.
+  const fieldErrors = useFieldErrors([
+    { key: 'password', backend: 'password', ref: passwordInput },
+  ])
+  const { errors } = fieldErrors
 
   const hints = passwordHints(password, confirm)
 
@@ -51,6 +57,7 @@ export function SetPasswordPage() {
       return
     }
     setError(undefined)
+    fieldErrors.clearAll()
     if (passwordProblem(password, confirm)) {
       // The hint is the message: focusing its field makes assistive technology read it.
       ;(hints.password ? passwordInput : confirmInput).current?.focus()
@@ -62,6 +69,9 @@ export function SetPasswordPage() {
       const user = await setPasswordWithLink(token, password)
       void navigate(cabinetPath[user.role], { replace: true })
     } catch (failure) {
+      if (failure instanceof ApiError && fieldErrors.place(failure)) {
+        return
+      }
       setError(
         failure instanceof ApiError ? failure.message : t('errors.generic'),
       )
@@ -85,9 +95,16 @@ export function SetPasswordPage() {
             autoComplete="new-password"
             required
             inputRef={passwordInput}
-            error={hints.password ? t(hints.password) : undefined}
+            error={
+              (hints.password ? t(hints.password) : undefined) ??
+              errors.password
+            }
             value={password}
-            onChange={setPassword}
+            onChange={(value) => {
+              setPassword(value)
+              setError(undefined)
+              fieldErrors.clear('password')
+            }}
           />
           <PasswordInput
             label={t('setPassword.confirm')}
@@ -96,7 +113,10 @@ export function SetPasswordPage() {
             inputRef={confirmInput}
             error={hints.repeat ? t(hints.repeat) : undefined}
             value={confirm}
-            onChange={setConfirm}
+            onChange={(value) => {
+              setConfirm(value)
+              setError(undefined)
+            }}
           />
           {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}
           <Button type="submit" disabled={submitting}>

@@ -9,6 +9,7 @@ import { Select } from '../ui/Select'
 import { StatusMessage } from '../ui/StatusMessage'
 import { TextInput } from '../ui/TextInput'
 import { timeZoneOptions } from '../timeZones'
+import { useFieldErrors } from '../ui/useFieldErrors'
 
 type Message = { tone: 'success' | 'danger'; text: string }
 
@@ -30,6 +31,13 @@ export function ProfileForm({
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
   const zones = useMemo(() => timeZoneOptions(user.timeZone), [user.timeZone])
+  const nameRef = useRef<HTMLInputElement>(null)
+  const timeZoneRef = useRef<HTMLSelectElement>(null)
+  const fieldErrors = useFieldErrors([
+    { key: 'name', backend: 'name', ref: nameRef },
+    { key: 'timeZone', backend: 'timeZone', ref: timeZoneRef },
+  ])
+  const { errors } = fieldErrors
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -40,12 +48,16 @@ export function ProfileForm({
     setSubmitting(true)
     onSendingChange?.(true)
     setMessage(undefined)
+    fieldErrors.clearAll()
     try {
       const saved = await updateProfile(name, timeZone)
       setName(saved.name)
       setTimeZone(saved.timeZone)
       setMessage({ tone: 'success', text: t('profile.saved') })
     } catch (failure) {
+      if (failure instanceof ApiError && fieldErrors.place(failure)) {
+        return
+      }
       if (failure instanceof ApiError && failure.code === 'VALIDATION_FAILED') {
         setMessage({ tone: 'danger', text: t('profile.validationFailed') })
       } else {
@@ -69,9 +81,12 @@ export function ProfileForm({
         autoComplete="name"
         required
         disabled={submitting}
+        inputRef={nameRef}
+        error={errors.name}
         value={name}
         onChange={(value) => {
           setMessage(undefined)
+          fieldErrors.clear('name')
           setName(value)
         }}
       />
@@ -79,10 +94,13 @@ export function ProfileForm({
         label={t('profile.timeZone')}
         required
         disabled={submitting}
+        inputRef={timeZoneRef}
+        error={errors.timeZone}
         value={timeZone}
         options={zones}
         onChange={(value) => {
           setMessage(undefined)
+          fieldErrors.clear('timeZone')
           setTimeZone(value)
         }}
       />

@@ -8,6 +8,7 @@ import { ButtonRow } from '../ui/ButtonRow'
 import { Form } from '../ui/Form'
 import { PasswordInput } from '../ui/PasswordInput'
 import { StatusMessage } from '../ui/StatusMessage'
+import { useFieldErrors } from '../ui/useFieldErrors'
 
 type Message = { tone: 'success' | 'danger'; text: string }
 
@@ -28,13 +29,29 @@ export function PasswordForm({
   // Changes on success: the new inputs start with the password hidden again.
   const [round, setRound] = useState(0)
   const inFlight = useRef(false)
+  const currentInput = useRef<HTMLInputElement>(null)
   const nextInput = useRef<HTMLInputElement>(null)
   const repeatInput = useRef<HTMLInputElement>(null)
 
-  // Editing a field removes the form's own message.
-  function edit(set: (value: string) => void) {
+  const fieldErrors = useFieldErrors(
+    [
+      { key: 'current', backend: 'currentPassword', ref: currentInput },
+      { key: 'next', backend: 'newPassword', ref: nextInput },
+    ],
+    { WRONG_PASSWORD: t('profile.wrongPassword') },
+  )
+  const { errors } = fieldErrors
+
+  // Editing a field removes the form's own message and that field's backend error.
+  function edit(
+    key: 'current' | 'next' | 'repeat',
+    set: (value: string) => void,
+  ) {
     return (value: string) => {
       setMessage(undefined)
+      if (key !== 'repeat') {
+        fieldErrors.clear(key)
+      }
       set(value)
     }
   }
@@ -47,6 +64,7 @@ export function PasswordForm({
       return
     }
     setMessage(undefined)
+    fieldErrors.clearAll()
     const problem = passwordProblem(next, repeat)
     if (problem) {
       // The hint is the message: focusing its field makes assistive technology read it.
@@ -64,6 +82,9 @@ export function PasswordForm({
       setRound((current) => current + 1)
       setMessage({ tone: 'success', text: t('profile.passwordChanged') })
     } catch (failure) {
+      if (failure instanceof ApiError && fieldErrors.place(failure)) {
+        return
+      }
       if (failure instanceof ApiError && failure.code === 'WRONG_PASSWORD') {
         setMessage({ tone: 'danger', text: t('profile.wrongPassword') })
       } else if (
@@ -96,8 +117,10 @@ export function PasswordForm({
         autoComplete="current-password"
         required
         disabled={submitting}
+        inputRef={currentInput}
+        error={errors.current}
         value={current}
-        onChange={edit(setCurrent)}
+        onChange={edit('current', setCurrent)}
       />
       <PasswordInput
         key={`newPassword-${round}`}
@@ -106,9 +129,9 @@ export function PasswordForm({
         required
         disabled={submitting}
         inputRef={nextInput}
-        error={hints.password ? t(hints.password) : undefined}
+        error={(hints.password ? t(hints.password) : undefined) ?? errors.next}
         value={next}
-        onChange={edit(setNext)}
+        onChange={edit('next', setNext)}
       />
       <PasswordInput
         key={`repeatPassword-${round}`}
@@ -119,7 +142,7 @@ export function PasswordForm({
         inputRef={repeatInput}
         error={hints.repeat ? t(hints.repeat) : undefined}
         value={repeat}
-        onChange={edit(setRepeat)}
+        onChange={edit('repeat', setRepeat)}
       />
       {message ? (
         <StatusMessage tone={message.tone}>{message.text}</StatusMessage>

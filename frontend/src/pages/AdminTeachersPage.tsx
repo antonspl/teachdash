@@ -33,6 +33,7 @@ import { StatusMessage, type StatusTone } from '../ui/StatusMessage'
 import { Text } from '../ui/Text'
 import { TextInput } from '../ui/TextInput'
 import { Toolbar } from '../ui/Toolbar'
+import { useFieldErrors } from '../ui/useFieldErrors'
 
 const statusTone: Record<TeacherStatus, StatusTone> = {
   ACTIVE: 'success',
@@ -151,6 +152,15 @@ function CreateDialog({
   const inFlight = useRef(false)
   const mounted = useRef(true)
   const [zones] = useState(timeZoneOptions)
+  const nameRef = useRef<HTMLInputElement>(null)
+  const emailRef = useRef<HTMLInputElement>(null)
+  const timeZoneRef = useRef<HTMLSelectElement>(null)
+  const fieldErrors = useFieldErrors([
+    { key: 'name', backend: 'name', ref: nameRef },
+    { key: 'email', backend: 'email', ref: emailRef },
+    { key: 'timeZone', backend: 'timeZone', ref: timeZoneRef },
+  ])
+  const { errors } = fieldErrors
 
   useEffect(() => {
     mounted.current = true
@@ -167,12 +177,16 @@ function CreateDialog({
     inFlight.current = true
     setSubmitting(true)
     setError(undefined)
+    fieldErrors.clearAll()
     const submitted = { name, email, timeZone }
     try {
       const { id, link } = await createTeacher(submitted)
       onCreated({ id, name: submitted.name, link })
     } catch (failure) {
       if (!mounted.current) {
+        return
+      }
+      if (failure instanceof ApiError && fieldErrors.place(failure)) {
         return
       }
       if (failure instanceof ApiError && failure.code === 'VALIDATION_FAILED') {
@@ -208,20 +222,35 @@ function CreateDialog({
           label={t('adminTeachers.create.name')}
           required
           value={name}
-          onChange={setName}
+          onChange={(value) => {
+            setName(value)
+            fieldErrors.clear('name')
+          }}
+          error={errors.name}
+          inputRef={nameRef}
         />
         <TextInput
           label={t('adminTeachers.create.email')}
           type="email"
           required
           value={email}
-          onChange={setEmail}
+          onChange={(value) => {
+            setEmail(value)
+            fieldErrors.clear('email')
+          }}
+          error={errors.email}
+          inputRef={emailRef}
         />
         <Select
           label={t('adminTeachers.create.timeZone')}
           required
           value={timeZone}
-          onChange={setTimeZone}
+          onChange={(value) => {
+            setTimeZone(value)
+            fieldErrors.clear('timeZone')
+          }}
+          error={errors.timeZone}
+          inputRef={timeZoneRef}
           options={zones}
         />
         {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}

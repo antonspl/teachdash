@@ -36,8 +36,12 @@ function userResponse(role: string, name = 'Anna Smith', timeZone = 'UTC') {
   )
 }
 
-function problem(status: number, code: string) {
-  return new Response(JSON.stringify({ status, code }), {
+function problem(
+  status: number,
+  code: string,
+  errors?: { field: string; code: string }[],
+) {
+  return new Response(JSON.stringify({ status, code, errors }), {
     status,
     headers: { 'Content-Type': 'application/problem+json' },
   })
@@ -740,11 +744,18 @@ test('[web-profile/R3-S9] A second press while changing sends nothing', async ()
 
 test('[web-profile/R3-S10] The two forms do not affect each other', async () => {
   // given
-  teacherWithPassword(() => Promise.resolve(problem(400, 'WRONG_PASSWORD')))
+  teacherWithPassword(() =>
+    Promise.resolve(
+      problem(400, 'WRONG_PASSWORD', [
+        { field: 'currentPassword', code: 'WRONG_PASSWORD' },
+      ]),
+    ),
+  )
   await openForm()
   typePasswords('old-password', 'new-password-1')
   pressChange()
   await screen.findByText(en.profile.wrongPassword)
+  expect(describedBy(en.profile.currentPassword)).toBe(en.profile.wrongPassword)
 
   // when
   typeName('Anna S.')
@@ -760,6 +771,11 @@ test('[web-profile/R3-S10] The two forms do not affect each other', async () => 
   expect(field(en.profile.repeatPassword).value).toBe('new-password-1')
   fireEvent.change(field(en.profile.newPassword), {
     target: { value: 'another-password' },
+  })
+  expect(screen.getByText(en.profile.wrongPassword)).toBeTruthy()
+  expect(screen.getByText(en.profile.saved)).toBeTruthy()
+  fireEvent.change(field(en.profile.currentPassword), {
+    target: { value: 'other-old-password' },
   })
   expect(screen.queryByText(en.profile.wrongPassword)).toBeNull()
   expect(screen.getByText(en.profile.saved)).toBeTruthy()
@@ -829,4 +845,140 @@ test('[web-profile/R4-S2] A password change with an ended session', async () => 
   // then
   expect(await screen.findByText(en.login.sessionEnded)).toBeTruthy()
   expect(screen.getByRole('heading', { name: en.login.title })).toBeTruthy()
+})
+
+function describedBy(label: string) {
+  const id = screen.getByLabelText(label).getAttribute('aria-describedby')
+  return document.getElementById(id ?? '')?.textContent
+}
+
+test('[web-client/R17-S2] The profile form places a time zone error under the select', async () => {
+  // given
+  teacherWithSave(() =>
+    Promise.resolve(
+      problem(400, 'VALIDATION_FAILED', [
+        { field: 'timeZone', code: 'INVALID_FORMAT' },
+      ]),
+    ),
+  )
+  await openForm()
+  typeName('Anna Typed')
+
+  // when
+  pressSave()
+
+  // then
+  expect(await screen.findByText(en.fieldErrors.INVALID_FORMAT)).toBeTruthy()
+  const select = screen.getByLabelText(en.profile.timeZone)
+  expect(select.getAttribute('aria-invalid')).toBe('true')
+  expect(describedBy(en.profile.timeZone)).toBe(en.fieldErrors.INVALID_FORMAT)
+  expect(screen.queryByText(en.profile.validationFailed)).toBeNull()
+  expect(select.closest('form')?.querySelector('[role="status"]')).toBeNull()
+  expect(field(en.profile.name).value).toBe('Anna Typed')
+  expect(headerHas('Anna Smith')).toBe(true)
+  await waitFor(() => expect(document.activeElement).toBe(select))
+})
+
+test('[web-client/R17-S2] The password form places a current password error', async () => {
+  // given
+  teacherWithPassword(() =>
+    Promise.resolve(
+      problem(400, 'VALIDATION_FAILED', [
+        { field: 'currentPassword', code: 'REQUIRED' },
+      ]),
+    ),
+  )
+  await openForm()
+  typePasswords('old-password', 'new-password-1')
+
+  // when
+  pressChange()
+
+  // then
+  expect(await screen.findByText(en.fieldErrors.REQUIRED)).toBeTruthy()
+  expect(field(en.profile.currentPassword).getAttribute('aria-invalid')).toBe(
+    'true',
+  )
+  expect(describedBy(en.profile.currentPassword)).toBe(en.fieldErrors.REQUIRED)
+  expect(screen.queryByText(en.profile.passwordValidationFailed)).toBeNull()
+  expect(
+    field(en.profile.currentPassword)
+      .closest('form')
+      ?.querySelector('[role="status"]'),
+  ).toBeNull()
+})
+
+test('[web-client/R17-S2] The password form places a new password error', async () => {
+  // given
+  teacherWithPassword(() =>
+    Promise.resolve(
+      problem(400, 'VALIDATION_FAILED', [
+        { field: 'newPassword', code: 'TOO_LONG' },
+      ]),
+    ),
+  )
+  await openForm()
+  typePasswords('old-password', 'new-password-1')
+
+  // when
+  pressChange()
+
+  // then
+  expect(await screen.findByText(en.fieldErrors.TOO_LONG)).toBeTruthy()
+  expect(field(en.profile.newPassword).getAttribute('aria-invalid')).toBe(
+    'true',
+  )
+  expect(describedBy(en.profile.newPassword)).toBe(en.fieldErrors.TOO_LONG)
+  expect(screen.queryByText(en.profile.passwordValidationFailed)).toBeNull()
+  expect(
+    field(en.profile.newPassword)
+      .closest('form')
+      ?.querySelector('[role="status"]'),
+  ).toBeNull()
+})
+
+test('[web-client/R17-S8] Focus goes to the current password field', async () => {
+  // given
+  teacherWithPassword(() =>
+    Promise.resolve(
+      problem(400, 'VALIDATION_FAILED', [
+        { field: 'newPassword', code: 'TOO_LONG' },
+        { field: 'currentPassword', code: 'REQUIRED' },
+      ]),
+    ),
+  )
+  await openForm()
+  typePasswords('old-password', 'new-password-1')
+
+  // when
+  pressChange()
+
+  // then
+  expect(await screen.findByText(en.fieldErrors.TOO_LONG)).toBeTruthy()
+  expect(describedBy(en.profile.currentPassword)).toBe(en.fieldErrors.REQUIRED)
+  expect(describedBy(en.profile.newPassword)).toBe(en.fieldErrors.TOO_LONG)
+  await waitFor(() =>
+    expect(document.activeElement).toBe(field(en.profile.currentPassword)),
+  )
+})
+
+test('[web-client/R17-S4] The profile form keeps its message for an unknown code', async () => {
+  // given
+  teacherWithSave(() =>
+    Promise.resolve(
+      problem(400, 'VALIDATION_FAILED', [
+        { field: 'name', code: 'SOMETHING_NEW' },
+      ]),
+    ),
+  )
+  await openForm()
+  typeName('Anna Typed')
+
+  // when
+  pressSave()
+
+  // then
+  expect(await screen.findByText(en.profile.validationFailed)).toBeTruthy()
+  expect(field(en.profile.name).getAttribute('aria-invalid')).toBeNull()
+  expect(field(en.profile.name).getAttribute('aria-describedby')).toBeNull()
 })

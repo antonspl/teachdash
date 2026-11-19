@@ -4,15 +4,19 @@ import { ACCEPT } from './headers'
 const API_PREFIX = '/api'
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
+export type FieldError = { field: string; code: string }
+
 export class ApiError extends Error {
   readonly status: number | undefined
   readonly code: string | undefined
+  readonly fieldErrors: readonly FieldError[]
   readonly isProblem: boolean
 
   constructor(options: {
     message: string
     status?: number
     code?: string
+    fieldErrors?: readonly FieldError[]
     isProblem?: boolean
     cause?: unknown
   }) {
@@ -20,6 +24,7 @@ export class ApiError extends Error {
     this.name = 'ApiError'
     this.status = options.status
     this.code = options.code
+    this.fieldErrors = options.fieldErrors ?? []
     this.isProblem = options.isProblem ?? false
   }
 }
@@ -89,16 +94,38 @@ function isProblemResponse(response: Response): boolean {
   return mediaType === 'application/problem+json'
 }
 
-function parseProblemCode(text: string): string | undefined {
+function isFieldError(entry: unknown): entry is FieldError {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    'field' in entry &&
+    typeof entry.field === 'string' &&
+    'code' in entry &&
+    typeof entry.code === 'string'
+  )
+}
+
+function parseProblem(text: string): {
+  code: string | undefined
+  fieldErrors: FieldError[]
+} {
   try {
     const body: unknown = JSON.parse(text)
-    if (typeof body === 'object' && body !== null && 'code' in body) {
-      return typeof body.code === 'string' ? body.code : undefined
+    if (typeof body === 'object' && body !== null) {
+      const code =
+        'code' in body && typeof body.code === 'string' ? body.code : undefined
+      const errors: unknown = 'errors' in body ? body.errors : undefined
+      const fieldErrors = Array.isArray(errors)
+        ? errors
+            .filter(isFieldError)
+            .map(({ field, code }) => ({ field, code }))
+        : []
+      return { code, fieldErrors }
     }
   } catch {
     // A complete body that is not valid JSON is a problem without a code.
   }
-  return undefined
+  return { code: undefined, fieldErrors: [] }
 }
 
 // Not awaited: a slow body must not delay the error, and a cancel failure must not replace it.
@@ -137,11 +164,12 @@ async function toApiError(
       cause: error,
     })
   }
-  const code = parseProblemCode(text)
+  const { code, fieldErrors } = parseProblem(text)
   return new ApiError({
     message: messageForCode(code),
     status: response.status,
     code,
+    fieldErrors,
     isProblem: true,
   })
 }
