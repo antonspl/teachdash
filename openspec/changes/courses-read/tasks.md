@@ -25,7 +25,7 @@
 
 ## 4. Code-review fix: no scalar coercion
 
-- [ ] 4.1 Write the failing test for courses R5-S11 (a new test in `RenameCourseTest`; the approved tests stay unchanged)
+- [x] 4.1 Write the failing test for courses R5-S11 (a new test in `RenameCourseTest`; the approved tests stay unchanged)
 - [ ] 4.2 Turn off scalar-to-string coercion in the shared Jackson config (design D5)
 - [ ] 4.3 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the suite is green and no other endpoint relied on the coercion
 

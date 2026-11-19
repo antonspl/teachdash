@@ -350,4 +350,32 @@ class RenameCourseTest extends ApiTest {
 			}
 		}
 	}
+
+	@Test
+	@DisplayName("[courses/R5-S11] A number or a boolean is not a title")
+	void aNumberOrABooleanIsNotATitle() {
+		// given a logged-in teacher A with the course "Grammar"
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID course = createCourse(teacherA, "Grammar", "en", "en");
+		TestClient teacher = loggedInAs("a@example.com");
+		String path = COURSES + "/" + course;
+
+		// when teacher A renames it with the title 123, then with true, and creates a course with the title 123 and the instruction language "en", then with true
+		var renameNumber = teacher.patch(path, "{\"title\": 123}");
+		var renameBoolean = teacher.patch(path, "{\"title\": true}");
+		var createNumber = teacher.post(COURSES, "{\"title\": 123, \"instructionLanguage\": \"en\"}");
+		var createBoolean = teacher.post(COURSES, "{\"title\": true, \"instructionLanguage\": \"en\"}");
+
+		// then every response is 400 VALIDATION_FAILED with exactly one INVALID_TYPE error on "title" and no value echoed
+		for (Response response : List.of(renameNumber, renameBoolean, createNumber, createBoolean)) {
+			response.then().statusCode(400)
+					.body("code", equalTo("VALIDATION_FAILED"))
+					.body("errors", equalTo(List.of(error("title", "INVALID_TYPE"))))
+					.body(not(containsString("123")))
+					.body(not(containsString("true")));
+		}
+		// and the title is still "Grammar" and teacher A has one course
+		assertEquals("Grammar", readCourse(course).title());
+		assertEquals(1, countCourses(teacherA));
+	}
 }
