@@ -16,7 +16,7 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
   - the "Sessions" section.
 
   Verify: `grep -n "writes and edits OpenSpec artifacts" AGENTS.md` finds nothing.
-- [ ] 1.4 Live run in Claude Code, after a restart, on a throwaway branch with no PR. Leave one unrelated uncommitted file in the checkout. Run two agents:
+- [x] 1.4 Live run in Claude Code, after a restart, on a throwaway branch with no PR. Leave one unrelated uncommitted file in the checkout. Run two agents:
   - the spec-writer, briefed for a throwaway change with two decisions and one requirement;
   - the implementer, with a one-line slice.
 
