@@ -40,8 +40,8 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 
 ## 3. Coverage check
 
-- [ ] 3.1 Implement the spec phase rule in `scripts/check-scenario-coverage.sh` and update its header comment (design D5). Verify: the check is green on `main` and on this PR.
-- [ ] 3.2 Add `scripts/test-scenario-coverage.sh` (design D5). It copies the coverage script into fixture trees. Run it in the `coverage` CI job and add it to the shellcheck list there. Cases and expected results:
+- [x] 3.1 Implement the spec phase rule in `scripts/check-scenario-coverage.sh` and update its header comment (design D5). Verify: the check is green on `main` and on this PR.
+- [x] 3.2 Add `scripts/test-scenario-coverage.sh` (design D5). It copies the coverage script into fixture trees. Run it in the `coverage` CI job and add it to the shellcheck list there. Cases and expected results:
   - a change with a new scenario, no test and no ticked task: `PENDING <id> (spec phase: <name>)`, exit 0;
   - the same change with one task ticked: `MISSING <id>`, exit 1;
   - the same change with no ticked task, but a test for one of two new scenarios: the other is `MISSING`, exit 1;
