@@ -4,14 +4,12 @@
 
 ### Requirement: R5 Translated API errors
 
-When a request fails, the API client SHALL give the caller a translated message chosen
-by the problem `code`. A code without a translation, or a response that is not a problem
-response, SHALL give a generic translated message. The message for `INVALID_CREDENTIALS`
-SHALL say only that the email and password do not match; the login page shows the hint
-about getting a link separately (`web-auth` R1). When a problem response carries
-`errors` (`api-errors` R1-R2), the client SHALL also give the caller its `{field, code}`
-entries in the order received, leaving out every entry whose `field` or `code` is not a
-string; a response with no such entry gives the caller no field errors.
+When a request fails, the API client SHALL give the caller a translated message for the
+problem `code`; a code without a translation, or a response that is not a problem
+response, gives a generic one. The `INVALID_CREDENTIALS` message SHALL say only that
+the email and password do not match (`web-auth` R1 shows the link hint). The client
+SHALL also give the caller the `{field, code}` entries of `errors` (`api-errors` R1-R2)
+in order, without entries whose `field` or `code` is not a string.
 
 #### Scenario: web-client/R5-S1 Known problem code gives its translated message
 - **GIVEN** the backend answers with a problem response with code `WRONG_PASSWORD`
