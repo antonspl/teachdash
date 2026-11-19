@@ -3,6 +3,7 @@ package com.teachdash.courses.domain;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 import org.postgresql.util.PSQLException;
@@ -64,12 +65,26 @@ public class CourseService {
 		try {
 			courses.insert(course);
 		} catch (DuplicateKeyException e) {
-			if (!violatesTitleIndex(e)) {
-				throw e;
-			}
-			throw ApiException.field(HttpStatus.CONFLICT, "TITLE_TAKEN", "title");
+			throw translateDuplicate(e);
 		}
 		return course;
+	}
+
+	@Transactional(readOnly = true)
+	public List<Course> list(UUID teacherId) {
+		return courses.findByTeacher(teacherId);
+	}
+
+	@Transactional(readOnly = true)
+	public Course get(UUID teacherId, UUID id) {
+		return courses.findByIdAndTeacher(id, teacherId).orElseThrow(ApiException::notFound);
+	}
+
+	private static RuntimeException translateDuplicate(DuplicateKeyException e) {
+		if (!violatesTitleIndex(e)) {
+			return e;
+		}
+		return ApiException.field(HttpStatus.CONFLICT, "TITLE_TAKEN", "title");
 	}
 
 	private static boolean violatesTitleIndex(DuplicateKeyException e) {

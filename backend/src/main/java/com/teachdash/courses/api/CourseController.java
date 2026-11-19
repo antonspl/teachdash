@@ -1,6 +1,7 @@
 package com.teachdash.courses.api;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -39,16 +40,16 @@ class CourseController {
 				request.targetLanguage()));
 	}
 
-	// STUB (courses-read pass 1): replaced in pass 2
 	@GetMapping("/api/teacher/courses")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void list() {
+	List<CourseResponse> list(Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return courses.list(teacherId).stream().map(CourseResponse::from).toList();
 	}
 
-	// STUB (courses-read pass 1): replaced in pass 2
 	@GetMapping("/api/teacher/courses/{id}")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void view(@PathVariable UUID id) {
+	CourseResponse view(@PathVariable UUID id, Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return CourseResponse.from(courses.get(teacherId, id));
 	}
 
 	// STUB (courses-read pass 1): replaced in pass 2
