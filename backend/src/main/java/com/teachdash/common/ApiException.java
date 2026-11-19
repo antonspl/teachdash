@@ -37,10 +37,14 @@ public class ApiException extends RuntimeException {
 	}
 
 	public static ApiException validation(BindingResult result) {
-		return new ApiException(
-				HttpStatus.BAD_REQUEST,
-				"VALIDATION_FAILED",
-				FieldErrorCodes.fromFieldErrors(result.getFieldErrors()));
+		if (!result.getGlobalErrors().isEmpty()) {
+			throw new IllegalStateException("Class-level constraints are not supported, object: " + result.getObjectName());
+		}
+		List<FieldErrorDetail> details = FieldErrorCodes.fromFieldErrors(result.getFieldErrors());
+		if (details.isEmpty()) {
+			throw new IllegalStateException("Validation failed with no field errors, object: " + result.getObjectName());
+		}
+		return new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", details);
 	}
 
 	public static ApiException field(HttpStatus status, String code, String field) {

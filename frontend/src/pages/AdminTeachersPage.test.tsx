@@ -292,6 +292,7 @@ test('[web-admin-teachers/R2-S3] Email already in use', async () => {
     screen.getByLabelText<HTMLSelectElement>(en.adminTeachers.create.timeZone)
       .value,
   ).toBe('UTC')
+  expect(languageSelect().value).toBe('de')
 })
 
 test('[web-admin-teachers/R2-S4] Backend rejects the fields', async () => {
@@ -318,6 +319,7 @@ test('[web-admin-teachers/R2-S4] Backend rejects the fields', async () => {
     screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.email)
       .value,
   ).toBe('anna@example.com')
+  expect(languageSelect().value).toBe('de')
 })
 
 test('[web-admin-teachers/R2-S5] The form is not sent twice', async () => {
@@ -363,6 +365,7 @@ test('[web-admin-teachers/R2-S6] Network failure on create', async () => {
     screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.email)
       .value,
   ).toBe('anna@example.com')
+  expect(languageSelect().value).toBe('de')
   expect(submitButton().disabled).toBe(false)
 })
 
