@@ -6,7 +6,7 @@
 - [x] 1.2 Add `nativeLanguage` to the bodies of every existing test that creates a teacher through the admin endpoint (R5 and R11 tests, `TeacherManagementTest`, `AccountFieldRulesTest`) choosing `en` unless the scenario says otherwise. Existing teacher `PATCH /api/me` bodies in `ProfileTest` keep omitting `nativeLanguage` (this proves the optional rule); do not add it to them; change bodies only, never assertions. Grep the test tree for other bodies. Verify the existing suite still passes
 - [x] 1.3 Write tests for accounts R5-S1 and R5-S4 to R5-S6, R9-S12 to R9-S17, R11-S6, R12-S2 and R13-S1 to R13-S2, and for student-enrolment R15-S1 to R15-S5, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`. Create data and sessions in GIVEN directly. R13-S2 migrates to version 12 and then to 13 with Flyway `target` (design D7). The WHEN step only captures responses, so each test fails in THEN
 - [x] 1.4 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test fails at its THEN step (not in setup) and every other test passes. Report any new test that passes already
-- [ ] 1.5 List `V12__teacher_language.sql` (permanent; V13 follows in pass 2) and the helper and body edits to existing tests in the PR description
+- [x] 1.5 List `V12__teacher_language.sql` (permanent; V13 follows in pass 2) and the helper and body edits to existing tests in the PR description
 
 ## 2. Test review
 
