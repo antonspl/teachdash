@@ -109,6 +109,12 @@ test('[web-auth/R5-S3] Passwords that differ are not sent', async () => {
   // then
   expect(await screen.findByText(en.password.mismatch)).toBeTruthy()
   expect(linkCalls()).toHaveLength(0)
+  const id = (
+    screen.getByLabelText(en.setPassword.confirm) as HTMLElement
+  ).getAttribute('aria-describedby')
+  expect(document.getElementById(id ?? '')?.textContent).toBe(
+    en.password.mismatch,
+  )
 })
 
 test('[web-auth/R5-S4] A short password is not sent', async () => {
@@ -122,6 +128,12 @@ test('[web-auth/R5-S4] A short password is not sent', async () => {
   // then
   expect(await screen.findByText(en.password.tooShort)).toBeTruthy()
   expect(linkCalls()).toHaveLength(0)
+  const id = (
+    screen.getByLabelText(en.setPassword.password) as HTMLElement
+  ).getAttribute('aria-describedby')
+  expect(document.getElementById(id ?? '')?.textContent).toBe(
+    en.password.tooShort,
+  )
 })
 
 test('[web-auth/R5-S5] A used, expired or replaced link shows a clear message', async () => {
@@ -174,6 +186,12 @@ test('[web-auth/R5-S8] A password over 72 bytes is not sent', async () => {
   // then
   expect(await screen.findByText(en.password.tooLong)).toBeTruthy()
   expect(linkCalls()).toHaveLength(0)
+  const id = (
+    screen.getByLabelText(en.setPassword.password) as HTMLElement
+  ).getAttribute('aria-describedby')
+  expect(document.getElementById(id ?? '')?.textContent).toBe(
+    en.password.tooLong,
+  )
 })
 
 test('[web-auth/R5-S9] A link used at the same moment elsewhere', async () => {

@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../api/client'
 import { changePassword } from '../api/profile'
-import { passwordProblem } from '../passwordRules'
+import { passwordHints, passwordProblem } from '../passwordRules'
 import { Button } from '../ui/Button'
 import { ButtonRow } from '../ui/ButtonRow'
 import { Form } from '../ui/Form'
@@ -28,6 +28,8 @@ export function PasswordForm({
   // Changes on success: the new inputs start with the password hidden again.
   const [round, setRound] = useState(0)
   const inFlight = useRef(false)
+  const nextInput = useRef<HTMLInputElement>(null)
+  const repeatInput = useRef<HTMLInputElement>(null)
 
   // Editing a field removes the form's own message.
   function edit(set: (value: string) => void) {
@@ -37,6 +39,8 @@ export function PasswordForm({
     }
   }
 
+  const hints = passwordHints(next, repeat)
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
     if (inFlight.current) {
@@ -45,7 +49,8 @@ export function PasswordForm({
     setMessage(undefined)
     const problem = passwordProblem(next, repeat)
     if (problem) {
-      setMessage({ tone: 'danger', text: t(problem) })
+      // The hint is the message: focusing its field makes assistive technology read it.
+      ;(hints.password ? nextInput : repeatInput).current?.focus()
       return
     }
     inFlight.current = true
@@ -100,6 +105,8 @@ export function PasswordForm({
         autoComplete="new-password"
         required
         disabled={submitting}
+        inputRef={nextInput}
+        error={hints.password ? t(hints.password) : undefined}
         value={next}
         onChange={edit(setNext)}
       />
@@ -109,6 +116,8 @@ export function PasswordForm({
         autoComplete="new-password"
         required
         disabled={submitting}
+        inputRef={repeatInput}
+        error={hints.repeat ? t(hints.repeat) : undefined}
         value={repeat}
         onChange={edit(setRepeat)}
       />
