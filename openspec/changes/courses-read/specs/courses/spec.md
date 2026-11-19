@@ -122,3 +122,8 @@ CSRF and role (403), deactivated (401), malformed id (404), input (400), foreign
 - **GIVEN** a logged-in teacher A with the courses "One", "Two", "Three" and "Four", and the clock advanced
 - **WHEN** teacher A renames all four to "Same" at the same time
 - **THEN** exactly one response is 200 and the other three are 409 `TITLE_TAKEN`, exactly one of the courses has the title "Same", and the other three keep their titles and their `updatedAt`
+
+#### Scenario: courses/R5-S11 A number or a boolean is not a title
+- **GIVEN** a logged-in teacher A with the course "Grammar"
+- **WHEN** teacher A renames it with the title `123`, then with `true`, and creates a course with the title `123` and the instruction language "en", then with `true`
+- **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "INVALID_TYPE"}]`, no body contains "123" or "true" as a value, the title is still "Grammar" and teacher A has one course

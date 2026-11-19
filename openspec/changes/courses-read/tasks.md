@@ -23,6 +23,12 @@
 - [x] 3.5 Check that no course title appears in logs (constitution §5: record IDs, not content)
 - [x] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
+## 4. Code-review fix: no scalar coercion
+
+- [ ] 4.1 Write the failing test for courses R5-S11 (a new test in `RenameCourseTest`; the approved tests stay unchanged)
+- [ ] 4.2 Turn off scalar-to-string coercion in the shared Jackson config (design D5)
+- [ ] 4.3 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the suite is green and no other endpoint relied on the coercion
+
 ## Workflow follow-up
 
 - Code review gate: the `code-gate-reviewer` runs, then the engineer approves the code in the PR.

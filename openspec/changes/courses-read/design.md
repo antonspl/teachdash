@@ -42,6 +42,10 @@ No application pre-check on `lower(title)`: it would find the course itself on a
 
 `updated_at` comes from the injected `Clock`, like `created_at` (courses-create D5). Tests advance `MutableClock` between creating the course and renaming it.
 
+### D5. No scalar coercion to String
+
+Scalar coercion to `String` is turned off in the shared `ObjectMapper` (Spring Boot Jackson config), so every endpoint rejects a number or boolean where a string is expected with `INVALID_TYPE` (api-errors R1). Today Jackson saves a title of `123` as "123". It is an older gap that create also had; R5-S11 covers both endpoints. Any other endpoint that relied on the coercion is checked in task 4.3.
+
 ## Dependencies
 
 None added.
