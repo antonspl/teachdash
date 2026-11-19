@@ -103,7 +103,7 @@ class AccessControlTest extends ApiTest {
 		List<Response> responses = new ArrayList<>();
 		for (TestClient client : List.of(teacher, student)) {
 			responses.add(client.post("/api/admin/teachers",
-					Map.of("name", "New", "email", "new@example.com", "timeZone", "UTC")));
+					Map.of("name", "New", "email", "new@example.com", "timeZone", "UTC", "nativeLanguage", "en")));
 			responses.add(client.post("/api/admin/teachers/" + otherId + "/deactivate"));
 			responses.add(client.post("/api/admin/teachers/" + otherId + "/reactivate"));
 			responses.add(client.post("/api/admin/users/" + adminId + "/reset-link"));

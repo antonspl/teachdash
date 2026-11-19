@@ -119,7 +119,7 @@ public abstract class ApiTest {
 		return createUser(role, name, email, password, active, "en");
 	}
 
-	/** The language is stored for students only; other roles must not have one. */
+	/** The language is stored for students and teachers; an admin must not have one. */
 	protected UUID createUser(
 			String role,
 			String name,
@@ -132,7 +132,7 @@ public abstract class ApiTest {
 				insert into users (id, email, name, role, password_hash, time_zone, active, created_at, native_language)
 				values (:id, :email, :name, :role, :hash, 'UTC', :active, :now, :language)
 				""")
-				.param("language", "STUDENT".equals(role) ? nativeLanguage : null)
+				.param("language", "ADMIN".equals(role) ? null : nativeLanguage)
 				.param("id", id)
 				.param("email", email)
 				.param("name", name)
@@ -158,6 +158,19 @@ public abstract class ApiTest {
 
 	protected UUID createStudent(String email, String password, String nativeLanguage) {
 		return createUser("STUDENT", "Student", email, password, true, nativeLanguage);
+	}
+
+	protected UUID createTeacher(String email, String password, String nativeLanguage) {
+		return createUser("TEACHER", "Teacher", email, password, true, nativeLanguage);
+	}
+
+	/** The stored native language of any user; null for an admin. */
+	protected String userLanguage(UUID id) {
+		return jdbc.sql("select native_language from users where id = :id")
+				.param("id", id)
+				.query(String.class)
+				.optional()
+				.orElse(null);
 	}
 
 	protected String studentLanguage(UUID id) {

@@ -404,9 +404,9 @@ class StudentLanguageTest extends ApiTest {
 	@Test
 	@DisplayName("[student-enrolment/R15-S2] The admin sees it on students only")
 	void theAdminSeesItOnStudentsOnly() {
-		// given a logged-in admin, and teacher A with student S, email "s@example.com", native language "pt"
+		// given a logged-in admin, and teacher A with native language "fr" and student S, email "s@example.com", native language "pt"
 		TestClient admin = loggedInAdmin();
-		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1", "fr");
 		UUID student = createStudent("s@example.com", "student-pass-1", "pt");
 		assignStudent(teacherA, student);
 
@@ -419,17 +419,17 @@ class StudentLanguageTest extends ApiTest {
 		students.then().statusCode(200)
 				.body("find { it.id == '" + student + "' }.nativeLanguage", equalTo("pt"));
 		lookup.then().statusCode(200).body("nativeLanguage", equalTo("pt"));
-		// and the entry for teacher A in the third has no nativeLanguage property
+		// and the entry for teacher A in the third shows "fr"
 		teachers.then().statusCode(200)
-				.body("find { it.id == '" + teacherA + "' }", not(hasKey("nativeLanguage")));
+				.body("find { it.id == '" + teacherA + "' }.nativeLanguage", equalTo("fr"));
 	}
 
 	@Test
 	@DisplayName("[student-enrolment/R15-S3] The student sees it and cannot change it")
 	void theStudentSeesItAndCannotChangeIt() {
-		// given a logged-in student with the name "Анна" and native language "ru", and a logged-in teacher
+		// given a logged-in student with the name "Анна" and native language "ru", and a logged-in teacher with native language "fr"
 		createUser("STUDENT", "Анна", "anna@example.com", "student-pass-1", true, "ru");
-		createTeacher("a@example.com", "teacher-pass-1");
+		createTeacher("a@example.com", "teacher-pass-1", "fr");
 		TestClient teacher = loggedInAs("a@example.com");
 		TestClient student = newClient();
 
@@ -448,8 +448,8 @@ class StudentLanguageTest extends ApiTest {
 		secondRead.then().statusCode(200).body("nativeLanguage", equalTo("ru"));
 		// and the second read shows the name "Anna"
 		secondRead.then().body("name", equalTo("Anna"));
-		// and the teacher's response has no nativeLanguage property
-		teacherRead.then().statusCode(200).body("$", not(hasKey("nativeLanguage")));
+		// and the teacher's response shows "fr"
+		teacherRead.then().statusCode(200).body("nativeLanguage", equalTo("fr"));
 	}
 
 	@Test
@@ -466,5 +466,28 @@ class StudentLanguageTest extends ApiTest {
 
 		// then the response shows the native language "sr"
 		response.then().statusCode(200).body("nativeLanguage", equalTo("sr"));
+	}
+
+	@Test
+	@DisplayName("[student-enrolment/R15-S5] A teacher's login and password link return it, an admin's data does not")
+	void aTeachersLoginAndPasswordLinkReturnItAnAdminsDataDoesNot() {
+		// given a teacher with native language "es", no password and a valid set-password link, and a logged-in admin
+		UUID admin = createAdmin("admin@example.com", "admin-password-1");
+		UUID teacher = createTeacher("t@example.com", null, "es");
+		String token = createToken(teacher, "SET_PASSWORD", false, admin);
+
+		// when the teacher sets the password "password-1" through the link and then logs in with it, and the admin logs in and reads the current user
+		var setPassword = newClient().post("/api/password-links", Map.of("token", token, "password", "password-1"));
+		var teacherLogin = newClient().login("t@example.com", "password-1");
+		TestClient adminClient = newClient();
+		var adminLogin = adminClient.login("admin@example.com", "admin-password-1");
+		var adminRead = adminClient.get("/api/me");
+
+		// then both of the teacher's responses show "es"
+		setPassword.then().statusCode(200).body("nativeLanguage", equalTo("es"));
+		teacherLogin.then().statusCode(200).body("nativeLanguage", equalTo("es"));
+		// and the admin's responses have no nativeLanguage property
+		adminLogin.then().statusCode(200).body("$", not(hasKey("nativeLanguage")));
+		adminRead.then().statusCode(200).body("$", not(hasKey("nativeLanguage")));
 	}
 }
