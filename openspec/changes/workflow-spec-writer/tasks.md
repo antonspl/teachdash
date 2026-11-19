@@ -4,12 +4,12 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 
 ## 1. Roles and instructions
 
-- [ ] 1.1 Add `.agents/roles/spec-writer.md` (design D1, D3). Verify:
+- [x] 1.1 Add `.agents/roles/spec-writer.md` (design D1, D3). Verify:
   - `scripts/setup-agents` generates it for all three tools;
   - in Claude Code it has write tools and no web tools;
   - `scripts/setup-agents --check` prints `ok`.
-- [ ] 1.2 Add the commit rules to `.agents/roles/implementer.md` (design D3). Proven by the live run in 1.4.
-- [ ] 1.3 Update `AGENTS.md` (design D1, D2, D3):
+- [x] 1.2 Add the commit rules to `.agents/roles/implementer.md` (design D3). Proven by the live run in 1.4.
+- [x] 1.3 Update `AGENTS.md` (design D1, D2, D3):
   - the spec-writer bullet;
   - the main agent's narrower role;
   - the commit-before-delegating rule;

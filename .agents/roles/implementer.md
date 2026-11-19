@@ -17,6 +17,9 @@ Rules:
 - Pass 2 (code): make the tests pass. Never modify approved tests; if
   one looks wrong, stop and report it instead.
 - Run the relevant test suite before finishing and tick completed tasks in `tasks.md`.
+- Commit your own files: stage them by path, never with `git add -A`, `git add .` or
+  `git commit -a`. Leave other uncommitted changes alone and list them in your report.
+  Do not push.
 
 Report back in at most 15 lines: what you did, files touched, test result
 (command + pass/fail counts), and anything you were unsure about. Do not paste code.
