@@ -129,4 +129,22 @@ class FieldRejectionErrorsTest extends ApiTest {
 				.body("code", equalTo("NOT_FOUND"))
 				.body("$", not(hasKey("errors")));
 	}
+
+	@Test
+	@DisplayName("[api-errors/R2-S6] Taken course title")
+	void takenCourseTitle() {
+		// given a logged-in teacher with a course titled "Грамматика"
+		UUID teacher = createTeacher("teacher@example.com", "teacher-pass-1");
+		createCourse(teacher, "Грамматика", "ru", "ru");
+		TestClient client = loggedInAs("teacher@example.com");
+
+		// when the teacher creates a course titled " ГРАММАТИКА " with the instruction language "ru"
+		var response = client.post("/api/teacher/courses",
+				Map.of("title", " ГРАММАТИКА ", "instructionLanguage", "ru"));
+
+		// then the response is 409 TITLE_TAKEN naming the title field
+		response.then().statusCode(409)
+				.body("code", equalTo("TITLE_TAKEN"))
+				.body("errors", equalTo(List.of(error("title", "TITLE_TAKEN"))));
+	}
 }

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.teachdash.common.validation.MaxUtf8Bytes;
+import com.teachdash.languages.api.validation.ContentLanguage;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.constraints.NotBlank;
@@ -20,6 +21,7 @@ final class FieldErrorCodes {
 	static final String TOO_LONG = "TOO_LONG";
 	static final String INVALID_FORMAT = "INVALID_FORMAT";
 	static final String INVALID_TYPE = "INVALID_TYPE";
+	static final String UNSUPPORTED_COURSE_LANGUAGE = "UNSUPPORTED_COURSE_LANGUAGE";
 
 	private FieldErrorCodes() {
 	}
@@ -34,6 +36,9 @@ final class FieldErrorCodes {
 		}
 		if (constraint == MaxUtf8Bytes.class) {
 			return TOO_LONG;
+		}
+		if (constraint == ContentLanguage.class) {
+			return UNSUPPORTED_COURSE_LANGUAGE;
 		}
 		return INVALID_FORMAT;
 	}

@@ -1,4 +1,4 @@
-package com.teachdash.languages.api;
+package com.teachdash.common.validation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -12,16 +12,23 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
-/** A language code listed in the languages table. */
 @Documented
 @NotBlank
-@Constraint(validatedBy = NativeLanguageValidator.class)
+@Size(max = CourseTitle.MAX_LENGTH)
+@Pattern(
+		regexp = "(?!.*[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}])(?=.*[\\p{L}\\p{Nd}&&[^\\u3164\\uFFA0\\u115F\\u1160]]).*",
+		flags = Pattern.Flag.DOTALL)
+@Constraint(validatedBy = {})
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)
-public @interface NativeLanguage {
+public @interface CourseTitle {
 
-	String message() default "unknown language";
+	int MAX_LENGTH = 200;
+
+	String message() default "invalid title";
 
 	Class<?>[] groups() default {};
 

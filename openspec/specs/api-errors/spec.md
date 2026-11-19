@@ -7,10 +7,10 @@ show each error next to the field it belongs to, and how a malformed path id is 
 ## Requirements
 
 ### Requirement: R1 Validation errors name each failing field
-A 400 `VALIDATION_FAILED` response SHALL carry `errors`: a non-empty list of
-`{field, code}`, one per failing field, sorted by field, then code, as strings. `field`
-is the dotted body path (`[i]` for list items) or the query parameter name. Several
-broken rules give the first of `REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`.
+A 400 `VALIDATION_FAILED` response SHALL carry `errors`: one `{field, code}` per failing
+field, sorted as strings by field, then code. `field` is the dotted body path (`[i]` for
+list items) or the query parameter name. Several broken rules give the first of
+`REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`/`UNSUPPORTED_COURSE_LANGUAGE`.
 NUL is `INVALID_FORMAT`, a wrong type `INVALID_TYPE`; in a body these stop reading, so
 only that field is listed. Rejected values MUST NOT be in the response.
 
@@ -59,11 +59,17 @@ only that field is listed. Rejected values MUST NOT be in the response.
 - **WHEN** the teacher calls it with no `page`, with `page=abc`, and with `page=1` and `q` of 11 Cyrillic letters ("Ж")
 - **THEN** each response is 400 with code `VALIDATION_FAILED` and `errors` is exactly `[{field: "page", code: "REQUIRED"}]`, `[{field: "page", code: "INVALID_TYPE"}]` and `[{field: "q", code: "TOO_LONG"}]`, and no body contains "abc" or "Ж"
 
+#### Scenario: api-errors/R1-S10 A course in an unsupported language is rejected with its own code
+- **GIVEN** a logged-in teacher, and the language list with "de" marked `content` false
+- **WHEN** the teacher creates a course with the title "Course", the instruction language "de" and the target language "xx"
+- **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "instructionLanguage", code: "UNSUPPORTED_COURSE_LANGUAGE"}, {field: "targetLanguage", code: "INVALID_FORMAT"}]`, the body does not contain "xx", and no course is created
+
 ### Requirement: R2 Single-field rejections name the field
-An `EMAIL_TAKEN` or `WRONG_PASSWORD` response SHALL keep its status and code and carry
-`errors` with one entry whose code is the response code: field `email` for
-`EMAIL_TAKEN`, `currentPassword` for `WRONG_PASSWORD`. Responses with any code other
-than `VALIDATION_FAILED`, `EMAIL_TAKEN` and `WRONG_PASSWORD` MUST NOT carry `errors`.
+An `EMAIL_TAKEN`, `WRONG_PASSWORD` or `TITLE_TAKEN` response SHALL keep its status and
+code and carry `errors` with one entry whose code is the response code: field `email`
+for `EMAIL_TAKEN`, `currentPassword` for `WRONG_PASSWORD`, `title` for `TITLE_TAKEN`.
+Responses with any code other than `VALIDATION_FAILED`, `EMAIL_TAKEN`, `WRONG_PASSWORD`
+and `TITLE_TAKEN` MUST NOT carry `errors`.
 
 #### Scenario: api-errors/R2-S1 Taken email at teacher creation
 - **GIVEN** a logged-in admin and a teacher with email "t@example.com"
@@ -89,6 +95,11 @@ than `VALIDATION_FAILED`, `EMAIL_TAKEN` and `WRONG_PASSWORD` MUST NOT carry `err
 - **GIVEN** teacher A with a student assigned to them, and a logged-in teacher A
 - **WHEN** someone logs in with a wrong password, teacher A registers the assigned student's email again, and teacher A opens `/api/teacher/students/not-a-uuid`
 - **THEN** the responses are 401 `INVALID_CREDENTIALS`, 409 `ALREADY_ENROLLED` and 404 `NOT_FOUND`, and none has an `errors` property
+
+#### Scenario: api-errors/R2-S6 Taken course title
+- **GIVEN** a logged-in teacher with a course titled "Грамматика"
+- **WHEN** the teacher creates a course titled " ГРАММАТИКА " with the instruction language "ru"
+- **THEN** the response is 409 with code `TITLE_TAKEN` and `errors` exactly `[{field: "title", code: "TITLE_TAKEN"}]`
 
 ### Requirement: R3 A malformed path id is not found
 On every endpoint the caller is allowed to use, a path id that cannot be read as an id

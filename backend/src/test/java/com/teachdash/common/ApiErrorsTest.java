@@ -285,4 +285,26 @@ class ApiErrorsTest extends ApiTest {
 			response.then().body(not(containsString("abc"))).body(not(containsString("Ж")));
 		}
 	}
+
+	@Test
+	@DisplayName("[api-errors/R1-S10] A course in an unsupported language is rejected with its own code")
+	void aCourseInAnUnsupportedLanguageIsRejectedWithItsOwnCode() {
+		// given a logged-in teacher, and the language list with "de" marked content false
+		createTeacher("teacher@example.com", "teacher-pass-1");
+		TestClient teacher = loggedInAs("teacher@example.com");
+
+		// when the teacher creates a course with the instruction language "de" and the target language "xx"
+		var response = teacher.post("/api/teacher/courses",
+				Map.of("title", "Course", "instructionLanguage", "de", "targetLanguage", "xx"));
+
+		// then the response is 400 with the unsupported code for the first field and the format code for the second
+		response.then().statusCode(400)
+				.body("code", equalTo("VALIDATION_FAILED"))
+				.body("errors", equalTo(List.of(
+						error("instructionLanguage", "UNSUPPORTED_COURSE_LANGUAGE"),
+						error("targetLanguage", "INVALID_FORMAT"))))
+				.body(not(containsString("xx")));
+		// and no course is created
+		assertEquals(0, countRows("courses"));
+	}
 }
