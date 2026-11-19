@@ -16,12 +16,12 @@
 
 ## 3. Implementation
 
-- [ ] 3.1 `CourseRepository`: `findByTeacher` (order `created_at desc, id`), `findByIdAndTeacher`, `updateTitle(id, teacherId, title, updatedAt)` returning the row count (design D2)
+- [x] 3.1 `CourseRepository`: `findByTeacher` (order `created_at desc, id`), `findByIdAndTeacher`, `updateTitle(id, teacherId, title, updatedAt)` returning the row count (design D2)
 - [x] 3.2 `CourseService`: `list` and `get` (404 `NOT_FOUND` through the owner in the query); extract the `courses_teacher_title_uq` to `TITLE_TAKEN` translation from `create` into one method (design D3); verify the courses R1 tests still pass
-- [ ] 3.3 `RenameCourseRequest(title)` with `@CourseTitle` and `Normalize.name`; `CourseService.rename` with the teacher row lock, the update setting `updated_at` from the clock, 404 on zero rows and the shared `TITLE_TAKEN` translation (design D3); add a comment at the row lock saying why it is taken
-- [ ] 3.4 `CourseController`: replace the three stubs, mapping to `CourseResponse.from` (design D1). The PATCH handler declares `@PathVariable UUID id` before `@Valid @RequestBody`, as `TeacherStudentController.changeLanguage` does, so a malformed id is 404 before body validation (design D3)
-- [ ] 3.5 Check that no course title appears in logs (constitution §5: record IDs, not content)
-- [ ] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.3 `RenameCourseRequest(title)` with `@CourseTitle` and `Normalize.name`; `CourseService.rename` with the teacher row lock, the update setting `updated_at` from the clock, 404 on zero rows and the shared `TITLE_TAKEN` translation (design D3); add a comment at the row lock saying why it is taken
+- [x] 3.4 `CourseController`: replace the three stubs, mapping to `CourseResponse.from` (design D1). The PATCH handler declares `@PathVariable UUID id` before `@Valid @RequestBody`, as `TeacherStudentController.changeLanguage` does, so a malformed id is 404 before body validation (design D3)
+- [x] 3.5 Check that no course title appears in logs (constitution §5: record IDs, not content)
+- [x] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

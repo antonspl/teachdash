@@ -3,6 +3,7 @@ package com.teachdash.courses.persistence;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -69,6 +70,19 @@ public class CourseRepository {
 				.param("teacherId", teacherId)
 				.query(CourseRepository::mapCourse)
 				.optional();
+	}
+
+	public int updateTitle(UUID id, UUID teacherId, String title, Instant updatedAt) {
+		return jdbc.sql("""
+				update courses
+				set title = :title, updated_at = :updatedAt
+				where id = :id and teacher_id = :teacherId
+				""")
+				.param("title", title)
+				.param("updatedAt", Timestamp.from(updatedAt))
+				.param("id", id)
+				.param("teacherId", teacherId)
+				.update();
 	}
 
 	private static Course mapCourse(ResultSet rs, int rowNum) throws SQLException {

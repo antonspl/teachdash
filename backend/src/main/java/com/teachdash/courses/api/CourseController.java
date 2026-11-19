@@ -52,9 +52,12 @@ class CourseController {
 		return CourseResponse.from(courses.get(teacherId, id));
 	}
 
-	// STUB (courses-read pass 1): replaced in pass 2
 	@PatchMapping("/api/teacher/courses/{id}")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void rename(@PathVariable UUID id, @RequestBody RenameCourseRequest request) {
+	CourseResponse rename(
+			@PathVariable UUID id,
+			@Valid @RequestBody RenameCourseRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return CourseResponse.from(courses.rename(teacherId, id, request.title()));
 	}
 }

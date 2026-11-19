@@ -70,6 +70,24 @@ public class CourseService {
 		return course;
 	}
 
+	@Transactional
+	public Course rename(UUID teacherId, UUID id, String title) {
+		// The teacher row lock serialises parallel renames, so the unique index decides one winner cleanly.
+		users.findActiveByIdForUpdate(teacherId)
+				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
+		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
+		int updated;
+		try {
+			updated = courses.updateTitle(id, teacherId, title, now);
+		} catch (DuplicateKeyException e) {
+			throw translateDuplicate(e);
+		}
+		if (updated == 0) {
+			throw ApiException.notFound();
+		}
+		return courses.findByIdAndTeacher(id, teacherId).orElseThrow(ApiException::notFound);
+	}
+
 	@Transactional(readOnly = true)
 	public List<Course> list(UUID teacherId) {
 		return courses.findByTeacher(teacherId);

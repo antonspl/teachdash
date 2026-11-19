@@ -1,5 +1,11 @@
 package com.teachdash.courses.api.dto;
 
-// STUB (courses-read pass 1): bare record; pass 2 adds the title validation
-public record RenameCourseRequest(String title) {
+import com.teachdash.common.validation.CourseTitle;
+import com.teachdash.common.validation.Normalize;
+
+public record RenameCourseRequest(@CourseTitle String title) {
+
+	public RenameCourseRequest {
+		title = Normalize.name(title);
+	}
 }
