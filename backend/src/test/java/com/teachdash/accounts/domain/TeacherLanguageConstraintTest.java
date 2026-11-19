@@ -1,11 +1,11 @@
 package com.teachdash.accounts.domain;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -23,17 +23,23 @@ class TeacherLanguageConstraintTest extends ApiTest {
 		// given the migrated database
 
 		// when rows are inserted directly: a teacher with no language, a student with no language, an admin with "en", a teacher with "xx", and then a teacher with "en", a student with "en" and an admin with no language
-		List<Boolean> accepted = new ArrayList<>();
-		accepted.add(insert("TEACHER", "t1@example.com", null));
-		accepted.add(insert("STUDENT", "s1@example.com", null));
-		accepted.add(insert("ADMIN", "a1@example.com", "en"));
-		accepted.add(insert("TEACHER", "t2@example.com", "xx"));
-		accepted.add(insert("TEACHER", "t3@example.com", "en"));
-		accepted.add(insert("STUDENT", "s3@example.com", "en"));
-		accepted.add(insert("ADMIN", "a3@example.com", null));
+		boolean teacherNoLanguage = insert("TEACHER", "t1@example.com", null);
+		boolean studentNoLanguage = insert("STUDENT", "s1@example.com", null);
+		boolean adminWithLanguage = insert("ADMIN", "a1@example.com", "en");
+		boolean teacherUnknownLanguage = insert("TEACHER", "t2@example.com", "xx");
+		boolean teacherEnglish = insert("TEACHER", "t3@example.com", "en");
+		boolean studentEnglish = insert("STUDENT", "s3@example.com", "en");
+		boolean adminNoLanguage = insert("ADMIN", "a3@example.com", null);
 
 		// then the first four inserts are rejected and the last three succeed
-		assertEquals(List.of(false, false, false, false, true, true, true), accepted);
+		assertAll(
+				() -> assertFalse(teacherNoLanguage, "teacher with no language should be rejected"),
+				() -> assertFalse(studentNoLanguage, "student with no language should be rejected"),
+				() -> assertFalse(adminWithLanguage, "admin with \"en\" should be rejected"),
+				() -> assertFalse(teacherUnknownLanguage, "teacher with \"xx\" should be rejected"),
+				() -> assertTrue(teacherEnglish, "teacher with \"en\" should be accepted"),
+				() -> assertTrue(studentEnglish, "student with \"en\" should be accepted"),
+				() -> assertTrue(adminNoLanguage, "admin with no language should be accepted"));
 	}
 
 	private boolean insert(String role, String email, String language) {

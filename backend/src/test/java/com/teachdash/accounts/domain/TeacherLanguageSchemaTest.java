@@ -1,6 +1,7 @@
 package com.teachdash.accounts.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -33,11 +34,12 @@ class TeacherLanguageSchemaTest {
 				insert(connection, "STUDENT", "student@example.com", "sr");
 			}
 
-			// when Flyway migrates on (to version 13: "13" is not a valid target until pass 2 adds V13, so the test uses "latest")
+			// when Flyway migrates on (this Flyway has no way to target a missing version 13, so it migrates to latest)
 			migrateTo(postgres, "latest");
 
-			// then the teacher has "en", the student still has "sr" and the admin has none
+			// then version 13 is applied, the teacher has "en", the student still has "sr" and the admin has none
 			try (Connection connection = connect(postgres)) {
+				assertTrue(version13Applied(connection), "migration version 13 should be applied successfully");
 				assertEquals("en", language(connection, "teacher@example.com"));
 				assertEquals("sr", language(connection, "student@example.com"));
 				assertEquals(null, language(connection, "admin@example.com"));
@@ -67,6 +69,16 @@ class TeacherLanguageSchemaTest {
 			statement.setString(3, role);
 			statement.setString(4, language);
 			statement.executeUpdate();
+		}
+	}
+
+	private static boolean version13Applied(Connection connection) throws SQLException {
+		try (PreparedStatement statement = connection
+				.prepareStatement("select count(*) from flyway_schema_history where version = '13' and success")) {
+			try (ResultSet rows = statement.executeQuery()) {
+				rows.next();
+				return rows.getInt(1) == 1;
+			}
 		}
 	}
 
