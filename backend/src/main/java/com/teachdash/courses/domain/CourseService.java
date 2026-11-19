@@ -2,6 +2,7 @@ package com.teachdash.courses.domain;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -45,7 +46,7 @@ public class CourseService {
 		if (courses.countByTeacher(teacherId) >= maxPerTeacher) {
 			throw new ApiException(HttpStatus.CONFLICT, "COURSE_LIMIT_REACHED");
 		}
-		Instant now = clock.instant();
+		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 		Course course = new Course(
 				UUID.randomUUID(),
 				teacherId,
