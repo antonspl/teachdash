@@ -11,6 +11,7 @@ public record TeacherResponse(
 		String email,
 		Role role,
 		String timeZone,
+		String nativeLanguage,
 		boolean active,
 		boolean hasPassword) {
 
@@ -21,6 +22,7 @@ public record TeacherResponse(
 				user.getEmail(),
 				user.getRole(),
 				user.getTimeZone(),
+				user.getNativeLanguage(),
 				user.isActive(),
 				user.getPasswordHash() != null);
 	}

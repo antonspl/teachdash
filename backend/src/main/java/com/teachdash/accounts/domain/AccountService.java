@@ -132,8 +132,8 @@ public class AccountService {
 		return users.findById(id).orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
 	}
 
-	public User updateProfile(UUID id, String name, String timeZone) {
-		return users.updateProfile(id, name, timeZone)
+	public User updateProfile(UUID id, String name, String timeZone, String nativeLanguage) {
+		return users.updateProfile(id, name, timeZone, nativeLanguage)
 				.orElseThrow(() -> unauthorized("UNAUTHENTICATED"));
 	}
 

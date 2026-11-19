@@ -76,7 +76,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		if (error.contains(ConstraintViolation.class)) {
 			return FieldErrorCodes.codeOf(error.unwrap(ConstraintViolation.class));
 		}
-		return FieldErrorCodes.INVALID_FORMAT;
+		return FieldErrorCodes.isFieldCode(error.getCode()) ? error.getCode() : FieldErrorCodes.INVALID_FORMAT;
 	}
 
 	@Override

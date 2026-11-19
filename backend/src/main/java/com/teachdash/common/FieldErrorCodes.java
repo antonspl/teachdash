@@ -26,6 +26,10 @@ final class FieldErrorCodes {
 	private FieldErrorCodes() {
 	}
 
+	static boolean isFieldCode(String code) {
+		return REQUIRED.equals(code) || INVALID_TYPE.equals(code) || INVALID_FORMAT.equals(code);
+	}
+
 	static String codeOf(ConstraintViolation<?> violation) {
 		Class<?> constraint = violation.getConstraintDescriptor().getAnnotation().annotationType();
 		if (constraint == NotBlank.class || constraint == NotNull.class || constraint == NotEmpty.class) {

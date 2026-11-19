@@ -30,11 +30,18 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 
 	boolean existsByIdAndRole(UUID id, Role role);
 
-	@Query("update users set name = :name, time_zone = :timeZone where id = :id returning *")
+	/** A null language leaves the stored one unchanged. */
+	@Query("""
+			update users set name = :name, time_zone = :timeZone,
+			    native_language = coalesce(:nativeLanguage, native_language)
+			where id = :id
+			returning *
+			""")
 	Optional<User> updateProfile(
 			@Param("id") UUID id,
 			@Param("name") String name,
-			@Param("timeZone") String timeZone);
+			@Param("timeZone") String timeZone,
+			@Param("nativeLanguage") String nativeLanguage);
 
 	/** Sets the password and raises the session version, so every older session is rejected. */
 	@Query("""
