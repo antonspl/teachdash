@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthProvider'
 import { cabinetPath } from '../auth/guards'
-import { passwordProblem } from '../passwordRules'
+import { passwordHints, passwordProblem } from '../passwordRules'
 import { Button } from '../ui/Button'
 import { Form } from '../ui/Form'
 import { Page } from '../ui/Page'
@@ -40,20 +40,24 @@ export function SetPasswordPage() {
   const [error, setError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
+  const passwordInput = useRef<HTMLInputElement>(null)
+  const confirmInput = useRef<HTMLInputElement>(null)
+
+  const hints = passwordHints(password, confirm)
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
     if (token === undefined || inFlight.current) {
       return
     }
-    const problem = passwordProblem(password, confirm)
-    if (problem) {
-      setError(t(problem))
+    setError(undefined)
+    if (passwordProblem(password, confirm)) {
+      // The hint is the message: focusing its field makes assistive technology read it.
+      ;(hints.password ? passwordInput : confirmInput).current?.focus()
       return
     }
     inFlight.current = true
     setSubmitting(true)
-    setError(undefined)
     try {
       const user = await setPasswordWithLink(token, password)
       void navigate(cabinetPath[user.role], { replace: true })
@@ -80,6 +84,8 @@ export function SetPasswordPage() {
             label={t('setPassword.password')}
             autoComplete="new-password"
             required
+            inputRef={passwordInput}
+            error={hints.password ? t(hints.password) : undefined}
             value={password}
             onChange={setPassword}
           />
@@ -87,6 +93,8 @@ export function SetPasswordPage() {
             label={t('setPassword.confirm')}
             autoComplete="new-password"
             required
+            inputRef={confirmInput}
+            error={hints.repeat ? t(hints.repeat) : undefined}
             value={confirm}
             onChange={setConfirm}
           />

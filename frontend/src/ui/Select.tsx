@@ -22,20 +22,35 @@ export function Select({
       <label htmlFor={id} className={styles.label}>
         {label}
       </label>
-      <select
-        id={id}
-        className={styles.input}
-        value={value}
-        required={required}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+      <div className={styles.selectWrap}>
+        <select
+          id={id}
+          className={`${styles.input} ${styles.select}`}
+          value={value}
+          required={required}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        <span className={styles.arrow} aria-hidden="true" data-select-arrow>
+          <svg
+            className={styles.arrowIcon}
+            viewBox="0 0 12 12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M1 3.5 6 8.5 11 3.5" />
+          </svg>
+        </span>
+      </div>
     </div>
   )
 }
