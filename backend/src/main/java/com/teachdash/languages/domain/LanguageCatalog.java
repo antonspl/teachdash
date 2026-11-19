@@ -18,10 +18,9 @@ public class LanguageCatalog {
 	private final Map<String, Language> byCode;
 
 	LanguageCatalog(LanguageRepository repository) {
-		this.all = repository.findAll().stream()
-				.sorted((a, b) -> a.code().compareTo(b.code()))
-				.toList();
-		this.byCode = all.stream().collect(Collectors.toUnmodifiableMap(Language::code, Function.identity()));
+		this.all = List.copyOf(repository.findAll());
+		this.byCode = all.stream()
+				.collect(Collectors.toUnmodifiableMap(Language::code, Function.identity()));
 	}
 
 	public Optional<Language> find(String code) {
