@@ -283,31 +283,34 @@ test('[web-profile/R2-S5] Values the backend rejects', async () => {
       return Promise.resolve(userResponse(role))
     })
     const view = open()
-    await screen.findByLabelText(en.profile.name)
-    typeName('Anna Typed')
+    try {
+      await screen.findByLabelText(en.profile.name)
+      typeName('Anna Typed')
 
-    // when
-    pressSave()
+      // when
+      pressSave()
 
-    // then
-    expect(await screen.findByText(message), role).toBeTruthy()
-    expect(message).toMatch(/name/)
-    expect(message).toMatch(/time zone/)
-    expect(/native language/.test(message), role).toBe(role === 'TEACHER')
-    expect(
-      (screen.getByLabelText(en.profile.name) as HTMLInputElement).value,
-    ).toBe('Anna Typed')
-    expect(headerHas('Anna Smith')).toBe(true)
-    expect(
-      (
-        screen.getByRole('button', {
-          name: en.profile.save,
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(false)
-    pressSave()
-    await waitFor(() => expect(saves()).toHaveLength(2))
-    view.unmount()
+      // then
+      expect(await screen.findByText(message), role).toBeTruthy()
+      expect(message).toMatch(/name/)
+      expect(message).toMatch(/time zone/)
+      expect(/native language/.test(message), role).toBe(role === 'TEACHER')
+      expect(
+        (screen.getByLabelText(en.profile.name) as HTMLInputElement).value,
+      ).toBe('Anna Typed')
+      expect(headerHas('Anna Smith')).toBe(true)
+      expect(
+        (
+          screen.getByRole('button', {
+            name: en.profile.save,
+          }) as HTMLButtonElement
+        ).disabled,
+      ).toBe(false)
+      pressSave()
+      await waitFor(() => expect(saves()).toHaveLength(2))
+    } finally {
+      view.unmount()
+    }
   }
 })
 
@@ -472,24 +475,30 @@ test('[web-profile/R2-S10] Students and admins have no language select', async (
       return Promise.resolve(userResponse(role, 'Anna Smith', 'UTC', 'ru'))
     })
     const view = open()
-    await screen.findByLabelText(en.profile.name)
+    try {
+      await screen.findByLabelText(en.profile.name)
 
-    // when
-    typeName('Anna S.')
-    pressSave()
+      // when
+      typeName('Anna S.')
+      pressSave()
 
-    // then
-    expect(await screen.findByText(en.profile.saved), role).toBeTruthy()
-    expect(screen.queryByLabelText(en.profile.nativeLanguage), role).toBeNull()
-    expect(sentBody(saves()[0]), role).toEqual({
-      name: 'Anna S.',
-      timeZone: 'UTC',
-    })
-    expect(
-      fetchMock.mock.calls.some(([url]) => url === '/api/languages'),
-      role,
-    ).toBe(false)
-    view.unmount()
+      // then
+      expect(await screen.findByText(en.profile.saved), role).toBeTruthy()
+      expect(
+        screen.queryByLabelText(en.profile.nativeLanguage),
+        role,
+      ).toBeNull()
+      expect(sentBody(saves()[0]), role).toEqual({
+        name: 'Anna S.',
+        timeZone: 'UTC',
+      })
+      expect(
+        fetchMock.mock.calls.some(([url]) => url === '/api/languages'),
+        role,
+      ).toBe(false)
+    } finally {
+      view.unmount()
+    }
   }
 })
 

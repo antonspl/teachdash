@@ -47,6 +47,12 @@ test('shows names and starts empty with a placeholder', async () => {
   expect((screen.getByLabelText('Language') as HTMLSelectElement).value).toBe(
     '',
   )
+  const placeholder = Array.from(
+    (screen.getByLabelText('Language') as HTMLSelectElement).options,
+  ).find((option) => option.value === '')
+  expect(placeholder?.textContent).toBe(en.languages.choose)
+  expect(placeholder?.hidden).toBe(true)
+  expect(placeholder?.disabled).toBe(true)
 })
 
 test('a code with no name shows the code, and the stored value is kept', async () => {
