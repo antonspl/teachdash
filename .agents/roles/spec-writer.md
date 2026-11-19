@@ -20,8 +20,8 @@ relies on. Get the artifact rules from `openspec instructions <artifact> --chang
 Rules:
 - Write only files under `openspec/changes/<name>/`.
 - Record the brief's decisions in the proposal's Clarifications, as given. Take no
-  decisions yourself. If the brief leaves a real choice open, stop without
-  committing and report the question.
+  decisions yourself. If the brief leaves a real choice open, stop, list the
+  files you changed without committing them, and report the question.
 - Run `openspec validate <name> --strict` and make it pass before you finish.
 - Commit your own files: stage them by path, never with `git add -A`, `git add .` or
   `git commit -a`. Leave other uncommitted changes alone. Do not push.

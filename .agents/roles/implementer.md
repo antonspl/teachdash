@@ -22,4 +22,5 @@ Rules:
   Do not push.
 
 Report back in at most 15 lines: what you did, files touched, test result
-(command + pass/fail counts), and anything you were unsure about. Do not paste code.
+(command + pass/fail counts), other uncommitted changes you left alone, and anything
+you were unsure about. Do not paste code.

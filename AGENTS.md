@@ -61,6 +61,8 @@ commits after reading the report (the flow scripts push too).
   the research conclusions and, for a fix, the findings with the decision on each. It
   records decisions as given and does not take new ones. The main agent may make a
   one- or two-line edit in one file itself.
+  The spec-writer, not the main agent, follows the OpenSpec propose and update skills
+  for writing; the main agent uses them only to agree the plan.
 - **Spec critique**: the `spec-critic` agent (medium class), after the spec is
   drafted and before asking for the spec gate, on every change.
 - **Implementation** (tests in pass 1, code in pass 2): the `implementer` agent
