@@ -14,9 +14,10 @@ Issue #161.
 | 6 | Translation? | Not in this change: no content exists yet (#13, #106). |
 | 7 | Constitution? | Update §9 in this PR: every student and teacher has a native language, and translation goes into the reader's (student's or teacher's) native language. The owner approves it in this PR. The edit stays minimal: exactly the sentences listed in design D4; §8 needs no change. |
 | 8 | More research? | No further research. |
-| 9 | Size of the change? | Everything stays in this one change, backend and frontend. The engineer approves an explicit exception to the limit of six requirements: fixing the specs properly touches 10 requirements (one added, nine modified: accounts R5, R9, R11, R12, R13; student-enrolment R15; languages R1; web-profile R2, R3; web-admin-teachers R2). The constitution's limit is not edited. |
+| 9 | Size of the change? | Everything stays in this one change, backend and frontend. The engineer approves an explicit exception to the limit of six requirements: fixing the specs properly touches 11 requirements (one added, ten modified: accounts R5, R9, R11, R12, R13; student-enrolment R3, R15; languages R1; web-profile R2, R3; web-admin-teachers R2). The constitution's limit is not edited. |
 | 10 | Is the field required in `PATCH /api/me`? | No. For a teacher it is optional: a `PATCH /api/me` without `nativeLanguage` keeps the stored value. JSON `null` or `""` (also a blank string) is rejected with `REQUIRED`; a code not in the list with `INVALID_FORMAT`; a wrong JSON type (array, object, number, boolean) with `INVALID_TYPE`. The value rule is otherwise the same as at creation. |
 | 11 | Students and admins in `PATCH /api/me`? | `nativeLanguage` of any type (string, unlisted code, array, object, `null`) is ignored: no 400, the stored value does not change. Design says where the role-aware check runs. |
+| 13 | Second critique | Student-enrolment R3 is modified too (a teacher's entry has the language); "all failing fields at once" in R5 and R9 means validation failures only (a JSON type error stops at the first field, as in api-errors); R5-S6 also covers `5` and `true`; the profile check does not use the annotations (design D2); existing teacher `PATCH /api/me` bodies in ProfileTest keep omitting the language; web-client R17 is unchanged; the deploy window is recorded in design Risks. |
 | 12 | Other critique answers | The migration test names the Flyway target versions, and design Risks has a rollback note. New scenarios: a teacher's change leaves other users' languages alone; a code with no i18n name shows the code; retry after the language list fails (profile and admin dialog); the current-user state has the new language after a save without a reload. `languages` R1 is modified in the delta (the Purpose lines are fixed at archive, as Purposes are not part of deltas); design D8 is dropped. |
 
 ## Research angles
@@ -51,7 +52,7 @@ None.
 ### Modified Capabilities
 
 - `accounts`: R5 (creating a teacher takes a required native language), R9 (a teacher may change it through `PATCH /api/me`, optional; ignored for others), R11 (one rule per field mentions it), R12 (the teacher list shows it), and added R13 (database rule and backfill).
-- `student-enrolment`: R15 now covers teachers (R15-S2, R15-S3 change, R15-S5 added).
+- `student-enrolment`: R3 (a teacher's entry in the admin's list carries the native language) and R15 now covering teachers (R15-S2, R15-S3 change, R15-S5 added).
 - `languages`: R1 wording ("a student's or teacher's native language").
 - `web-profile`: R2 (the teacher's language select; R2-S2 and R2-S5 reworded; new scenarios R2-S9 to R2-S15) and R3 (R3-S10 request carries the language).
 - `web-admin-teachers`: R2 (the language field in the "Add teacher" dialog; new scenarios R2-S9 to R2-S14).

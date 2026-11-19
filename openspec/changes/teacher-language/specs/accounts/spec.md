@@ -24,8 +24,8 @@ An admin SHALL be able to create a teacher account with name, email, time zone a
 native language. The native language is required: a code from the language list
 (languages R1) with whitespace around it ignored. Missing, `null` or blank is `REQUIRED`,
 an array, object, number or boolean `INVALID_TYPE`, any other value not in the list
-`INVALID_FORMAT`; it is checked together with the other fields, so all failing fields are
-reported at once. The account has no password yet; the response SHALL contain a single-use
+`INVALID_FORMAT`; it is checked together with the other fields, so all failing validation fields are
+reported at once (a JSON type error stops at the first field, as in api-errors). The account has no password yet; the response SHALL contain a single-use
 set-password link and does not return the language. Emails MUST be unique across all
 accounts, case-insensitive.
 
@@ -56,8 +56,8 @@ accounts, case-insensitive.
 
 #### Scenario: accounts/R5-S6 A wrong JSON type is reported
 - **GIVEN** a logged-in admin
-- **WHEN** the admin creates teachers with the name "Anna", a new email, the time zone "Europe/Berlin" and, in turn, the native language `["sr"]` and `{"code": "sr"}`
-- **THEN** both responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "nativeLanguage", code: "INVALID_TYPE"}]`, and no account is created
+- **WHEN** the admin creates teachers with the name "Anna", a new email, the time zone "Europe/Berlin" and, in turn, the native language `["sr"]`, `{"code": "sr"}`, `5` and `true`
+- **THEN** all four responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "nativeLanguage", code: "INVALID_TYPE"}]`, and no account is created
 
 ### Requirement: R9 Profile
 A logged-in user SHALL be able to change their name and time zone, and change their
@@ -66,8 +66,8 @@ A teacher MAY also change their native language through `PATCH /api/me`. The fie
 optional: a request without it keeps the stored value. When present for a teacher it has
 the rules of creation (R5): whitespace around it is ignored; `null`, "" or a blank string
 is `REQUIRED`, an array, object, number or boolean `INVALID_TYPE`, a code not in the list
-`INVALID_FORMAT`; it is checked with name and time zone and all failing fields are
-reported at once, and a failed request changes nothing. For a student or an admin the field
+`INVALID_FORMAT`; it is checked with name and time zone and all failing validation fields are
+reported at once (a JSON type error stops at the first field, as in api-errors), and a failed request changes nothing. For a student or an admin the field
 is ignored whatever its value or type: no error, the stored value does not change. A
 teacher's change never touches another account's language.
 A successful password change MUST end the account's other sessions and invalidate its
