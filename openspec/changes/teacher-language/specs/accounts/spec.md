@@ -158,7 +158,7 @@ that races a revocation MUST lose: it changes nothing and the session gets 401.
 #### Scenario: accounts/R9-S17 A teacher's change does not touch other accounts
 - **GIVEN** a logged-in teacher with native language "en", their student with native language "sr", another teacher with native language "fr" and an admin
 - **WHEN** the teacher updates the profile with the native language "de"
-- **THEN** the response is 200, and the student, the other teacher and the admin still have "sr", "fr" and no language
+- **THEN** the response is 200 with the native language "de", the teacher has "de", and the student, the other teacher and the admin still have "sr", "fr" and no language
 
 ### Requirement: R11 Account fields have one rule
 Name, email, time zone and a teacher's native language SHALL follow the same rules wherever an account is created or
