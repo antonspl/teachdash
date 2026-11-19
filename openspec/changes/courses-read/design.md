@@ -1,0 +1,57 @@
+# Design: courses-read
+
+## Context
+
+See proposal.md. State on main after courses-create:
+
+- `courses` (V11) has `teacher_id`, `title`, languages, `created_at`, `updated_at` and the unique index `courses_teacher_title_uq` on `(teacher_id, lower(title))`.
+- `CourseController` (package-private, `courses/api`) has `POST /api/teacher/courses`. `CourseService.create` takes `users.findActiveByIdForUpdate(teacherId)`, inserts, and translates a `DuplicateKeyException` on that index to `ApiException.field(CONFLICT, "TITLE_TAKEN", "title")`.
+- `CourseResponse.from(Course)` builds the response; `@CourseTitle` and `Normalize.name` define the title rules.
+- `common/ApiExceptionHandler.handleTypeMismatch` maps a malformed path id to 404 `NOT_FOUND` without `errors`, before the body is read or validated.
+
+## Goals / Non-Goals
+
+**Goals:** list, view and rename with teacher scoping at the query, one title rule, correct `updatedAt`.
+
+**Non-Goals:** delete, pagination, language changes, frontend.
+
+## Decisions
+
+### D1. Endpoints
+
+`GET /api/teacher/courses` returns a JSON array of `CourseResponse`, ordered `created_at desc, id`. `GET /api/teacher/courses/{id}` returns one `CourseResponse`. Both are in `CourseController`; no `SecurityConfig` change. The list is unbounded in code because create caps a teacher at 20 courses (courses R1); lowering or raising that property needs no change here.
+
+### D2. Owner in the query
+
+`CourseRepository` gains `findByTeacher(teacherId)`, `findByIdAndTeacher(id, teacherId)` and `updateTitle(id, teacherId, title, updatedAt)` (returns the number of updated rows). All have `teacher_id` in the `where` clause, so another teacher's course and an unknown id are the same empty result and become `NOT_FOUND` (no `errors`). Teacher scoping is thus at the query, not a check after loading.
+
+### D3. Rename
+
+`PATCH /api/teacher/courses/{id}`, body `RenameCourseRequest(title)`, with `@CourseTitle` and the title normalised with `Normalize.name` in the compact constructor, as in create. Unknown fields are ignored (Spring Boot default), so languages and `teacherId` cannot change anything: the request has no field for them and the update statement sets only `title` and `updated_at`.
+
+`CourseService.rename(teacherId, id, title)`, `@Transactional`:
+
+1. `users.findActiveByIdForUpdate(teacherId)` (401 for a deactivated teacher; serialises the teacher's writes).
+2. `updateTitle(id, teacherId, title, clock.instant().truncatedTo(MILLIS))`; zero rows means 404.
+3. A `DuplicateKeyException` on `courses_teacher_title_uq` becomes 409 `TITLE_TAKEN` with `errors`; the translation is extracted from create into one private method used by both.
+4. Return the stored course (`findByIdAndTeacher`) as `CourseResponse`.
+
+No application pre-check on `lower(title)`: it would find the course itself on a same-title or case-only rename. The index only rejects another row, so own-title and case-only renames pass, and a race between two renames is decided by the index (parallel scenario). The update always sets `updated_at`, also for an unchanged title (proposal, clarification 5). Order of failures: malformed id (404) before body validation (400), then session and role (401/403 come from the security layer before any of these), then 404 for unknown or foreign id, then 409.
+
+### D4. Time
+
+`updated_at` comes from the injected `Clock`, like `created_at` (courses-create D5). Tests advance `MutableClock` between creating the course and renaming it.
+
+## Dependencies
+
+None added.
+
+## Migrations
+
+None.
+
+## Risks / Trade-offs
+
+- **Validation before the active-account check.** A deactivated teacher with a live session who sends an invalid body gets 400 instead of 401 on rename; same as create and the enrolment endpoints. The scenarios use valid bodies.
+- **Same-title rename touches `updatedAt`.** Chosen by the engineer; the row is written even if the title is unchanged.
+- **Unbounded list.** Safe only while the per-teacher limit holds; revisit with pagination if the limit grows large.
