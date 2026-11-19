@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -13,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
-import com.teachdash.courses.api.dto.CreateCourseRequest;
 import com.teachdash.courses.persistence.CourseRepository;
 
 @Service
@@ -41,7 +41,11 @@ public class CourseService {
 	}
 
 	@Transactional
-	public Course create(UUID teacherId, CreateCourseRequest request) {
+	public Course create(
+			UUID teacherId,
+			String title,
+			String instructionLanguage,
+			String targetLanguage) {
 		// The row lock serialises the limit check, so parallel requests cannot pass it together.
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
@@ -52,9 +56,9 @@ public class CourseService {
 		Course course = new Course(
 				UUID.randomUUID(),
 				teacherId,
-				request.title(),
-				request.instructionLanguage(),
-				request.targetLanguage(),
+				title,
+				instructionLanguage,
+				targetLanguage,
 				now,
 				now);
 		try {
@@ -69,7 +73,13 @@ public class CourseService {
 	}
 
 	private static boolean violatesTitleIndex(DuplicateKeyException e) {
-		String message = e.getMostSpecificCause().getMessage();
-		return message != null && message.contains(TITLE_INDEX);
+		for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+			if (cause instanceof PSQLException psql
+					&& psql.getServerErrorMessage() != null
+					&& TITLE_INDEX.equals(psql.getServerErrorMessage().getConstraint())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

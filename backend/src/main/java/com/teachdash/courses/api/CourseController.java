@@ -28,6 +28,10 @@ class CourseController {
 	@ResponseStatus(HttpStatus.CREATED)
 	CourseResponse create(@Valid @RequestBody CreateCourseRequest request, Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		return CourseResponse.from(courses.create(teacherId, request));
+		return CourseResponse.from(courses.create(
+				teacherId,
+				request.title(),
+				request.instructionLanguage(),
+				request.targetLanguage()));
 	}
 }

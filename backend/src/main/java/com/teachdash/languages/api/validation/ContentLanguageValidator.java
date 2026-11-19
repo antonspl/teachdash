@@ -1,16 +1,16 @@
 package com.teachdash.languages.api.validation;
 
 import com.teachdash.languages.domain.Language;
-import com.teachdash.languages.persistence.LanguageRepository;
+import com.teachdash.languages.domain.LanguageCatalog;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 public class ContentLanguageValidator implements ConstraintValidator<ContentLanguage, String> {
 
-	private final LanguageRepository languages;
+	private final LanguageCatalog languages;
 
-	ContentLanguageValidator(LanguageRepository languages) {
+	ContentLanguageValidator(LanguageCatalog languages) {
 		this.languages = languages;
 	}
 

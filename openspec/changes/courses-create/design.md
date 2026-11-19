@@ -86,7 +86,8 @@ principal (R1-S14). No `SecurityConfig` change: `/api/teacher/**` already needs 
     `accounts`) and simpler than carrying the code in the constraint payload.
   - `@CourseLanguage` = `@ListedLanguage` + `@ContentLanguage`. `targetLanguage` uses it
     alone; `instructionLanguage` adds `@NotBlank`.
-  - `LanguageRepository` gets `find(code)` returning the `Language` with its flag.
+  - `languages.domain.LanguageCatalog` holds the languages with their flags and offers
+    `find(code)` and `all()`; the validators and `GET /api/languages` use it.
 - `CreateCourseRequest` normalises in its compact constructor: the title with
   `Normalize.name`, both codes with `Normalize.strip` (as `nativeLanguage`). "" and "  "
   therefore give `REQUIRED` for the instruction language and `INVALID_FORMAT` for the
@@ -97,12 +98,15 @@ principal (R1-S14). No `SecurityConfig` change: `/api/teacher/**` already needs 
 - All rules are Bean Validation, so all failing fields come back in one response
   (R1-S10), sorted as api-errors R1 defines. Rejected values are never echoed.
 
-A per-field query of a ten-row table is cheap. No cache: it would need invalidation when
-a migration changes the list.
+`LanguageCatalog` loads the table once at startup, after the Flyway migrations, and never
+invalidates it. A new or changed language needs a migration and a deploy, which restarts
+the app. Validation therefore costs no database query, and any odd string is a plain map
+miss.
 
 ### D4. Create flow and errors
 
-`CourseService.create(teacherId, request)`, `@Transactional`:
+`CourseService.create(teacherId, title, instructionLanguage, targetLanguage)`
+(plain values; the controller maps the request), `@Transactional`:
 
 1. `users.findActiveByIdForUpdate(teacherId)` — 401 if deactivated; locks the teacher row.
 2. `courses.countByTeacher(teacherId) >= maxPerTeacher` → `409 COURSE_LIMIT_REACHED`
@@ -111,8 +115,9 @@ a migration changes the list.
 3. Insert with a new UUID, and `created_at` and `updated_at` both set to one `clock`
    time, through an explicit insert query (as in
    `TeacherStudentRepository`), not `save()`: Spring Data JDBC treats an entity with a
-   preassigned id as existing and would issue an UPDATE. `DuplicateKeyException` on
-   `courses_teacher_title_uq` → `ApiException.field(CONFLICT, "TITLE_TAKEN", "title")`.
+   preassigned id as existing and would issue an UPDATE. A `DuplicateKeyException` whose
+   `PSQLException` cause reports the constraint name `courses_teacher_title_uq`
+   (`getServerErrorMessage().getConstraint()`, not a message search) → `ApiException.field(CONFLICT, "TITLE_TAKEN", "title")`.
 
 Bean Validation runs before the service, so the order is: input (400), limit (409
 `COURSE_LIMIT_REACHED`), title (409 `TITLE_TAKEN`). R1-S12 covers both steps.
@@ -153,6 +158,8 @@ None added.
 
 ## Risks / Trade-offs
 
+- **Validation before the active-account check.** A deactivated teacher with a live
+  session who sends an invalid body gets 400, not 401; same as the enrolment endpoints.
 - **Content flag turned off later.** Existing courses keep that language; only new
   courses are refused. Whether such courses need handling is a question for the change
   that turns a flag off.
