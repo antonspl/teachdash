@@ -3,11 +3,9 @@ package com.teachdash.accounts.api;
 import java.security.Principal;
 import java.util.UUID;
 
-import org.springframework.core.MethodParameter;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +18,7 @@ import com.teachdash.accounts.api.dto.UpdateProfileRequest;
 import com.teachdash.accounts.api.dto.UserResponse;
 import com.teachdash.accounts.domain.AccountService;
 import com.teachdash.accounts.domain.Role;
+import com.teachdash.common.ApiException;
 import com.teachdash.languages.api.validation.ListedLanguages;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,8 +36,8 @@ class MeController {
 
 	MeController(AccountService accounts, SessionStarter sessionStarter, ListedLanguages listedLanguages) {
 		this.accounts = accounts;
-		this.listedLanguages = listedLanguages;
 		this.sessionStarter = sessionStarter;
+		this.listedLanguages = listedLanguages;
 	}
 
 	@GetMapping
@@ -50,16 +49,21 @@ class MeController {
 	UserResponse updateProfile(
 			@Valid @RequestBody UpdateProfileRequest request,
 			BindingResult bindingResult,
-			Principal principal) throws MethodArgumentNotValidException {
-		UUID userId = UUID.fromString(principal.getName());
+			Authentication authentication) {
+		UUID userId = UUID.fromString(authentication.getName());
 		String nativeLanguage = null;
-		if (accounts.get(userId).getRole() == Role.TEACHER) {
+		if (hasRole(authentication, Role.TEACHER)) {
 			nativeLanguage = checkNativeLanguage(request.nativeLanguage(), bindingResult);
 		}
 		if (bindingResult.hasErrors()) {
-			throw new MethodArgumentNotValidException(currentParameter(), bindingResult);
+			throw ApiException.validation(bindingResult);
 		}
 		return UserResponse.of(accounts.updateProfile(userId, request.name(), request.timeZone(), nativeLanguage));
+	}
+
+	private static boolean hasRole(Authentication authentication, Role role) {
+		String authority = "ROLE_" + role.name();
+		return authentication.getAuthorities().stream().anyMatch(granted -> authority.equals(granted.getAuthority()));
 	}
 
 	/** Returns the stripped language, or null when absent; adds a field error when it is not valid. */
@@ -85,20 +89,10 @@ class MeController {
 			}
 		}
 		if (problem != null) {
-			result.addError(new FieldError("updateProfileRequest", "nativeLanguage", null, false,
-					new String[] { problem }, null, null));
+			result.rejectValue("nativeLanguage", problem);
 			return null;
 		}
 		return text;
-	}
-
-	private static MethodParameter currentParameter() {
-		for (var method : MeController.class.getDeclaredMethods()) {
-			if (method.getName().equals("updateProfile")) {
-				return new MethodParameter(method, 0);
-			}
-		}
-		throw new IllegalStateException("updateProfile not found");
 	}
 
 	@PostMapping("/password")

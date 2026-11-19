@@ -66,17 +66,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	private static List<FieldErrorDetail> fieldErrors(MethodArgumentNotValidException ex) {
-		List<FieldErrorDetail> details = ex.getBindingResult().getFieldErrors().stream()
-				.map(error -> new FieldErrorDetail(error.getField(), codeOf(error)))
-				.toList();
-		return FieldErrorCodes.reduce(details);
-	}
-
-	private static String codeOf(FieldError error) {
-		if (error.contains(ConstraintViolation.class)) {
-			return FieldErrorCodes.codeOf(error.unwrap(ConstraintViolation.class));
-		}
-		return FieldErrorCodes.isFieldCode(error.getCode()) ? error.getCode() : FieldErrorCodes.INVALID_FORMAT;
+		return FieldErrorCodes.fromFieldErrors(ex.getBindingResult().getFieldErrors());
 	}
 
 	@Override
@@ -180,7 +170,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 					return globalErrorsNotSupported(errors.getObjectName());
 				}
 				for (FieldError error : errors.getFieldErrors()) {
-					details.add(new FieldErrorDetail(error.getField(), codeOf(error)));
+					details.add(new FieldErrorDetail(error.getField(), FieldErrorCodes.codeOf(error)));
 				}
 			}
 			else {

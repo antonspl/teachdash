@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.BindingResult;
 
 import jakarta.validation.ConstraintViolation;
 
@@ -33,6 +34,13 @@ public class ApiException extends RuntimeException {
 				HttpStatus.BAD_REQUEST,
 				"VALIDATION_FAILED",
 				FieldErrorCodes.fromViolations(violations));
+	}
+
+	public static ApiException validation(BindingResult result) {
+		return new ApiException(
+				HttpStatus.BAD_REQUEST,
+				"VALIDATION_FAILED",
+				FieldErrorCodes.fromFieldErrors(result.getFieldErrors()));
 	}
 
 	public static ApiException field(HttpStatus status, String code, String field) {

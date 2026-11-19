@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.springframework.validation.FieldError;
+
 import com.teachdash.common.validation.MaxUtf8Bytes;
 import com.teachdash.languages.api.validation.ContentLanguage;
 
@@ -26,8 +28,20 @@ final class FieldErrorCodes {
 	private FieldErrorCodes() {
 	}
 
-	static boolean isFieldCode(String code) {
-		return REQUIRED.equals(code) || INVALID_TYPE.equals(code) || INVALID_FORMAT.equals(code);
+	static String codeOf(FieldError error) {
+		if (error.contains(ConstraintViolation.class)) {
+			return codeOf(error.unwrap(ConstraintViolation.class));
+		}
+		boolean fieldCode = REQUIRED.equals(error.getCode())
+				|| INVALID_TYPE.equals(error.getCode())
+				|| INVALID_FORMAT.equals(error.getCode());
+		return fieldCode ? error.getCode() : INVALID_FORMAT;
+	}
+
+	static List<FieldErrorDetail> fromFieldErrors(Collection<FieldError> errors) {
+		return reduce(errors.stream()
+				.map(error -> new FieldErrorDetail(error.getField(), codeOf(error)))
+				.toList());
 	}
 
 	static String codeOf(ConstraintViolation<?> violation) {
