@@ -5,7 +5,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.List;
 import java.util.Map;
@@ -288,14 +287,11 @@ class ApiErrorsTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[api-errors/R1-S10] A language that is not a course language has its own code")
-	void aLanguageThatIsNotACourseLanguageHasItsOwnCode() {
+	@DisplayName("[api-errors/R1-S10] A course in an unsupported language is rejected with its own code")
+	void aCourseInAnUnsupportedLanguageIsRejectedWithItsOwnCode() {
 		// given a logged-in teacher, and the language list with "de" marked content false
 		createTeacher("teacher@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("teacher@example.com");
-		assertFalse(jdbc.sql("select content from languages where code = 'de'")
-				.query(Boolean.class)
-				.single());
 
 		// when the teacher creates a course with the instruction language "de" and the target language "xx"
 		var response = teacher.post("/api/teacher/courses",

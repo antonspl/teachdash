@@ -55,7 +55,7 @@ only that field is listed. Rejected values MUST NOT be in the response.
 - **WHEN** the teacher calls it with no `page`, with `page=abc`, and with `page=1` and `q` of 11 Cyrillic letters ("Ж")
 - **THEN** each response is 400 with code `VALIDATION_FAILED` and `errors` is exactly `[{field: "page", code: "REQUIRED"}]`, `[{field: "page", code: "INVALID_TYPE"}]` and `[{field: "q", code: "TOO_LONG"}]`, and no body contains "abc" or "Ж"
 
-#### Scenario: api-errors/R1-S10 A language that is not a course language has its own code
+#### Scenario: api-errors/R1-S10 A course in an unsupported language is rejected with its own code
 - **GIVEN** a logged-in teacher, and the language list with "de" marked `content` false
 - **WHEN** the teacher creates a course with the title "Course", the instruction language "de" and the target language "xx"
 - **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "instructionLanguage", code: "UNSUPPORTED_COURSE_LANGUAGE"}, {field: "targetLanguage", code: "INVALID_FORMAT"}]`, the body does not contain "xx", and no course is created

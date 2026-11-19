@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,13 +53,6 @@ class CreateCourseTest extends ApiTest {
 	private TestClient loggedInTeacher(String email) {
 		createTeacher(email, "teacher-pass-1");
 		return loggedInAs(email);
-	}
-
-	private boolean hasContent(String code) {
-		return jdbc.sql("select content from languages where code = :code")
-				.param("code", code)
-				.query(Boolean.class)
-				.single();
 	}
 
 	@Test
@@ -171,8 +163,8 @@ class CreateCourseTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[courses/R1-S6] Title length and format")
-	void titleLengthAndFormat() {
+	@DisplayName("[courses/R1-S6] A title must have 1–200 characters and a letter or digit")
+	void aTitleMustHave1To200CharactersAndALetterOrDigit() {
 		// given a logged-in teacher A
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("a@example.com");
@@ -266,13 +258,11 @@ class CreateCourseTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[courses/R1-S9] A listed language that is not a course language")
-	void aListedLanguageThatIsNotACourseLanguage() {
+	@DisplayName("[courses/R1-S9] A course cannot be created in an unsupported language")
+	void aCourseCannotBeCreatedInAnUnsupportedLanguage() {
 		// given a logged-in teacher A, and the language list with "de" and "uk" marked content false
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		TestClient teacher = loggedInAs("a@example.com");
-		assertFalse(hasContent("de"));
-		assertFalse(hasContent("uk"));
 
 		// when teacher A creates courses with "de" as instruction language, with "uk" as target language, and with both
 		var instruction = teacher.post(COURSES, course("Course", "de"));

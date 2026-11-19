@@ -40,7 +40,7 @@ validation, before the duplicate-title check.
 - **WHEN** teacher A creates a course with the title "  Грамматика\u200B  " (ending in a zero-width space), the instruction language " en " and the target language " ru " (spaces only)
 - **THEN** the response is 201 with the title "Грамматика", `instructionLanguage` "en" and `targetLanguage` "ru", and the stored course has the same values
 
-#### Scenario: courses/R1-S6 Title length and format
+#### Scenario: courses/R1-S6 A title must have 1–200 characters and a letter or digit
 - **GIVEN** a logged-in teacher A
 - **WHEN** teacher A creates courses with the instruction language "en" and each title "   ", 201 Cyrillic letters ("Я"), "!!!", and 200 Cyrillic letters ("Я")
 - **THEN** the first three responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "REQUIRED"}]`, `[{field: "title", code: "TOO_LONG"}]` and `[{field: "title", code: "INVALID_FORMAT"}]`, the fourth is 201, and teacher A has exactly one course
@@ -55,7 +55,7 @@ validation, before the duplicate-title check.
 - **WHEN** teacher A creates courses with the title "Course", the instruction language "en" and, in turn, the target language "xx"; "RU"; "rus"; ""; "  "
 - **THEN** each response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "targetLanguage", code: "INVALID_FORMAT"}]`, no body contains "xx" or "rus", and teacher A has no course
 
-#### Scenario: courses/R1-S9 A listed language that is not a course language
+#### Scenario: courses/R1-S9 A course cannot be created in an unsupported language
 - **GIVEN** a logged-in teacher A, and the language list with "de" and "uk" marked `content` false
 - **WHEN** teacher A creates courses with the title "Course" and, in turn: the instruction language "de"; the instruction language "en" and the target language "uk"; the instruction language "de" and the target language "uk"
 - **THEN** each response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "instructionLanguage", code: "UNSUPPORTED_COURSE_LANGUAGE"}]`, `[{field: "targetLanguage", code: "UNSUPPORTED_COURSE_LANGUAGE"}]` and `[{field: "instructionLanguage", code: "UNSUPPORTED_COURSE_LANGUAGE"}, {field: "targetLanguage", code: "UNSUPPORTED_COURSE_LANGUAGE"}]`, and teacher A has no course
