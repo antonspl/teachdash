@@ -2,8 +2,8 @@
 
 ### Requirement: R3 A teacher lists their courses
 `GET /api/teacher/courses` SHALL return the caller's courses, and only theirs, as a JSON array
-without pagination, newest first (`createdAt` descending, then `id` ascending), each item in the
-create response shape. Admin and student get 403 `FORBIDDEN`; a client with no session and a
+without pagination, newest first (`createdAt` descending, then `id` ascending), each item with the
+fields R1 returns: `{id, title, instructionLanguage, targetLanguage, createdAt, updatedAt}`. Admin and student get 403 `FORBIDDEN`; a client with no session and a
 teacher deactivated after login get 401 `UNAUTHENTICATED`.
 
 #### Scenario: courses/R3-S1 Courses are listed newest first
@@ -36,7 +36,7 @@ teacher deactivated after login get 401 `UNAUTHENTICATED`.
 - **WHEN** teacher A lists the courses
 - **THEN** the response is 200 with exactly one item, the course "Grammar" owned by teacher A
 
-#### Scenario: courses/R3-S7 A list item has the create response shape
+#### Scenario: courses/R3-S7 A list item has the same fields as a created course
 - **GIVEN** a logged-in teacher A with a course with the title "Литература 9 класс", instruction language "ru" and no target language, created at one time
 - **WHEN** teacher A lists the courses
 - **THEN** the item has exactly the properties `id`, `title`, `instructionLanguage`, `targetLanguage`, `createdAt` and `updatedAt`, with the title "Литература 9 класс", `instructionLanguage` "ru", `targetLanguage` `null`, and `updatedAt` equal to `createdAt`
@@ -47,8 +47,8 @@ teacher deactivated after login get 401 `UNAUTHENTICATED`.
 - **THEN** the admin's and the student's responses are 403 with code `FORBIDDEN`, and teacher A's (deactivated) and the client's responses are 401 with code `UNAUTHENTICATED`
 
 ### Requirement: R4 A teacher views one of their courses
-`GET /api/teacher/courses/{id}` SHALL return 200 with the caller's course in the create response
-shape. Another teacher's course, an unknown id and a malformed id MUST give 404 `NOT_FOUND` with
+`GET /api/teacher/courses/{id}` SHALL return 200 with the caller's course with the
+same fields as R3. Another teacher's course, an unknown id and a malformed id MUST give 404 `NOT_FOUND` with
 no `errors` property, so existence does not leak. Access is as in R3.
 
 #### Scenario: courses/R4-S1 A teacher views their course
@@ -68,7 +68,7 @@ no `errors` property, so existence does not leak. Access is as in R3.
 
 ### Requirement: R5 A teacher renames a course
 `PATCH /api/teacher/courses/{id}` with `{title}` SHALL rename the caller's course and return 200
-in the create response shape. The title follows the R1 rules (409 `TITLE_TAKEN` on a clash); the
+with the same fields as R3. The title follows the R1 rules (409 `TITLE_TAKEN` on a clash); the
 course's own title and a case-only change are allowed. Only the title changes; other fields are
 ignored. Every success sets `updatedAt` to now; `createdAt` never changes. Checks run in order:
 CSRF and role (403), deactivated (401), malformed id (404), input (400), foreign or unknown id (404).
