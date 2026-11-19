@@ -107,7 +107,9 @@ Callers:
   - `branch: unknown (fetch failed)`;
   - `branch: not the PR branch`, when the current branch is not the PR's head branch.
 
-  In fixture mode (`FLOW_GH_JSON`) the line is not printed, so the existing fixtures stay as they are.
+  The first matching state in this order wins: detached HEAD, not the PR branch, no upstream, fetch failed, then the counts. In fixture mode (`FLOW_GH_JSON`) the line is not printed, so the existing fixtures stay as they are.
+
+`guard_synced` also blocks on an unrelated tracked edit in the checkout. That is intended: a gate request or a ready PR must describe exactly what is pushed.
 
 `scripts/flow/test` gets cases on a local bare repository as the remote. They need no network, and each temp repository sets `user.name` and `user.email`. The cases:
 
@@ -124,24 +126,28 @@ Callers:
 For each active change (`openspec/changes/<name>/`, archive excluded):
 
 - **New IDs** are the scenario IDs in the change's deltas, outside REMOVED sections, that do not appear in any main spec. An ID carries its capability, so one list of main-spec IDs is enough. An ID that a REMOVED and ADDED pair reuses counts as old, so it stays strict.
-- A change is **in the spec phase** when:
-  - it has at least one new ID; and
-  - its `tasks.md` has no ticked task.
+- A change is **in the spec phase** when all of these hold:
+  - it has at least one new ID;
+  - none of its new IDs has a test;
+  - its `tasks.md` exists and has no ticked task.
 
-  A change with no new IDs is never in the spec phase.
+  Otherwise it is strict. A change with no new IDs, or with no `tasks.md`, is never in the spec phase.
 - In the spec phase, an uncovered **new** ID prints as `PENDING <id> (spec phase: <name>)` and does not fail the check. Every other uncovered ID is `MISSING`, as today.
 
-The phase comes from `tasks.md`, not from the tests found. So a stray `test.only` or a wrong `@DisplayName` prefix in pass 2 still shows as `MISSING`. Pass 1 ticks its test tasks, so the change becomes strict with the first finished slice. Between slices of pass 1, CI is red. That is a real state: tests are still missing.
+Both signals must say "not started" so neither can hide a missing test alone:
+- In pass 2 tasks are ticked, so a stray `test.only` or a wrong `@DisplayName` prefix still shows as `MISSING`.
+- If pass 1 writes tests but forgets to tick, the first test already makes the change strict.
+
+Between slices of pass 1, CI is red. That is a real state: tests are still missing.
 
 Main specs stay strict. The archive moves the deltas into the main specs before merge, so a change cannot reach `main` with a missing test.
 
-A new `scripts/test-scenario-coverage.sh` runs the coverage script on fixture trees in a temp folder. The fixtures use backend capabilities only, because the rule does not depend on the test runner. The `coverage` CI job runs it.
+A new `scripts/test-scenario-coverage.sh` copies the coverage script into fixture trees in a temp folder and runs it there. The script reads the tree above its own location, so a copy is needed. The fixtures use backend capabilities only, because the rule does not depend on the test runner. The `coverage` CI job runs the new script and adds it to the shellcheck list.
 
-Rejected: reading the gate state from the PR in CI. It needs a token and depends on boxes that are not always ticked. Also rejected: deciding the phase from the tests found. A broken test list would then look like the spec phase.
+Rejected: reading the gate state from the PR in CI. It needs a token and depends on boxes that are not always ticked. Also rejected: deciding the phase from the tests found alone. A broken test list would then look like the spec phase.
 
 ## Risks / Trade-offs
 
 - **The brief loses nuance.** The brief is a numbered list of decisions, and the writer copies them into Clarifications. The spec-critic runs on every change after the writer.
-- **A pass 1 slice that writes tests but ticks no task** keeps the change PENDING. The test gate is the human check for this, and the archive makes every scenario strict before merge.
 - **`guard_synced` fetches** on every call. That is one small fetch of one branch, under a second.
 - **Stale agent files.** Developers must run `scripts/setup-agents` after the merge. `change-start` already warns when the files are stale.

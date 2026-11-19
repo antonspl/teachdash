@@ -41,12 +41,15 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 ## 3. Coverage check
 
 - [ ] 3.1 Implement the spec phase rule in `scripts/check-scenario-coverage.sh` and update its header comment (design D5). Verify: the check is green on `main` and on this PR.
-- [ ] 3.2 Add `scripts/test-scenario-coverage.sh` with fixture trees, and run it in the `coverage` CI job (design D5). Cases:
-  - a change with a new scenario, no test and no ticked task: `PENDING`, exit 0;
-  - the same change with one task ticked: `MISSING`, exit 1;
-  - a MODIFIED delta with one new and one old ID, where the old ID's test is removed: the old ID is `MISSING`;
-  - a REMOVED-only change: never in the spec phase;
-  - two active changes, one in the spec phase and one not: only the first is `PENDING`;
-  - a main-spec scenario with its test removed: `MISSING`.
+- [ ] 3.2 Add `scripts/test-scenario-coverage.sh` (design D5). It copies the coverage script into fixture trees. Run it in the `coverage` CI job and add it to the shellcheck list there. Cases and expected results:
+  - a change with a new scenario, no test and no ticked task: `PENDING <id> (spec phase: <name>)`, exit 0;
+  - the same change with one task ticked: `MISSING <id>`, exit 1;
+  - the same change with no ticked task, but a test for one of two new scenarios: the other is `MISSING`, exit 1;
+  - the same change with no `tasks.md`: `MISSING`, exit 1;
+  - a MODIFIED delta with one new and one old ID, where the old ID's test is removed: the old ID is `MISSING`, exit 1;
+  - a REMOVED-only change: the removed main scenario needs no test, and another main scenario without a test is `MISSING`, exit 1;
+  - two active changes, A in the spec phase and B with a ticked task, each with one uncovered new ID: `PENDING` for A's ID, `MISSING` for B's ID, exit 1;
+  - pass 2 state (tasks ticked) with a backend test whose `@DisplayName` prefix has a typo: `MISSING`, exit 1;
+  - a main-spec scenario with its test removed: `MISSING`, exit 1.
 
-  Verify: the script passes, and each case fails when the rule is changed to match it wrongly. Record one such run in the PR.
+  Verify: the script passes, and each case fails when its part of the rule is changed. Record one such run in the PR.
