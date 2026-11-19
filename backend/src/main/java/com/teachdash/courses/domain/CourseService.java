@@ -3,6 +3,7 @@ package com.teachdash.courses.domain;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 import org.postgresql.util.PSQLException;
@@ -64,12 +65,44 @@ public class CourseService {
 		try {
 			courses.insert(course);
 		} catch (DuplicateKeyException e) {
-			if (!violatesTitleIndex(e)) {
-				throw e;
-			}
-			throw ApiException.field(HttpStatus.CONFLICT, "TITLE_TAKEN", "title");
+			throw translateDuplicate(e);
 		}
 		return course;
+	}
+
+	@Transactional
+	public Course rename(UUID teacherId, UUID id, String title) {
+		// Gives 401 if the teacher was deactivated after the session filter, and serialises the teacher's course writes.
+		users.findActiveByIdForUpdate(teacherId)
+				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
+		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
+		int updated;
+		try {
+			updated = courses.updateTitle(id, teacherId, title, now);
+		} catch (DuplicateKeyException e) {
+			throw translateDuplicate(e);
+		}
+		if (updated == 0) {
+			throw ApiException.notFound();
+		}
+		return courses.findByIdAndTeacher(id, teacherId).orElseThrow(ApiException::notFound);
+	}
+
+	@Transactional(readOnly = true)
+	public List<Course> list(UUID teacherId) {
+		return courses.findByTeacher(teacherId);
+	}
+
+	@Transactional(readOnly = true)
+	public Course get(UUID teacherId, UUID id) {
+		return courses.findByIdAndTeacher(id, teacherId).orElseThrow(ApiException::notFound);
+	}
+
+	private static RuntimeException translateDuplicate(DuplicateKeyException e) {
+		if (!violatesTitleIndex(e)) {
+			return e;
+		}
+		return ApiException.field(HttpStatus.CONFLICT, "TITLE_TAKEN", "title");
 	}
 
 	private static boolean violatesTitleIndex(DuplicateKeyException e) {
