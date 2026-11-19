@@ -8,7 +8,7 @@
 - [x] 1.4 Write tests for courses R1-S1 to R1-S16 in `courses/api/CreateCourseTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`. Create existing courses and sessions in GIVEN with the helpers, never through the stubbed endpoint. R1-S9 relies on the seeded `content` false for "de" and "uk" and asserts it in GIVEN. R1-S13 uses `Parallel.run`. In R1-S15 the anonymous client fetches a CSRF cookie first. The WHEN step only captures responses, so each test fails in THEN
 - [x] 1.5 Write tests for api-errors R1-S10 and R2-S6 next to the other api-errors tests
 - [x] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test fails at its THEN step (not in setup) and every other test passes. Report to the engineer any new test that passes against the stub. R1-S15 may already pass through the existing security rules (anonymous, admin and student on `/api/teacher/**`; deactivated sessions)
-- [ ] 1.7 List the stub (temporary) and `V11__courses.sql` (permanent) in the PR description
+- [x] 1.7 List the stub (temporary) and `V11__courses.sql` (permanent) in the PR description
 
 ## 2. Test review
 
