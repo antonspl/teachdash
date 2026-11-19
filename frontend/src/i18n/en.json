@@ -52,16 +52,20 @@
   },
   "header": {
     "logout": "Log out",
-    "logoutError": "Could not log out. Please try again."
+    "logoutError": "Could not log out. Please try again.",
+    "profile": "Profile",
+    "backToCabinet": "Back to cabinet"
+  },
+  "password": {
+    "mismatch": "The passwords do not match.",
+    "tooShort": "The password must be at least 8 characters.",
+    "tooLong": "The password is too long (at most 72 bytes)."
   },
   "setPassword": {
     "title": "Set your password",
     "password": "New password",
     "confirm": "Repeat the password",
     "submit": "Set password",
-    "mismatch": "The passwords do not match.",
-    "tooShort": "The password must be at least 8 characters.",
-    "tooLong": "The password is too long (at most 72 bytes).",
     "incompleteLink": "This link is incomplete. Please use the full link you were given or ask for a new one."
   },
   "startup": {
@@ -106,5 +110,23 @@
       "confirm": "Confirm",
       "cancel": "Cancel"
     }
+  },
+  "profile": {
+    "title": "Your profile",
+    "email": "Your email: {{email}}",
+    "profileHeading": "About you",
+    "passwordHeading": "Password",
+    "name": "Name",
+    "timeZone": "Time zone",
+    "save": "Save",
+    "saved": "Saved, all done!",
+    "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and the time zone.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "repeatPassword": "Repeat the new password",
+    "changePassword": "Change password",
+    "passwordChanged": "Done, your password is changed! We logged you out on your other devices.",
+    "wrongPassword": "Hmm, that current password doesn't look right. Give it another try.",
+    "passwordValidationFailed": "Hmm, the backend didn't accept those passwords. Please check them and try again."
   }
 }

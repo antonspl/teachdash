@@ -202,3 +202,65 @@ test('a 401 from login does not end a session', async () => {
   })
   expect(auth.state).toEqual({ status: 'user', user })
 })
+
+test('updateProfile patches me and stores the returned user', async () => {
+  fetchMock.mockResolvedValueOnce(json(user))
+  mount()
+  await waitFor(() => expect(auth.state.status).toBe('user'))
+
+  const updated = { ...user, name: 'Anna', timeZone: 'Europe/Berlin' }
+  fetchMock.mockResolvedValueOnce(json(updated))
+  await act(async () => {
+    await auth.updateProfile('Anna', 'Europe/Berlin')
+  })
+  const [url, init] = fetchMock.mock.calls[1]
+  expect(url).toBe('/api/me')
+  expect(init.method).toBe('PATCH')
+  expect(JSON.parse(init.body)).toEqual({
+    name: 'Anna',
+    timeZone: 'Europe/Berlin',
+  })
+  expect(auth.state).toEqual({ status: 'user', user: updated })
+})
+
+test('failed updateProfile rejects and keeps the stored user', async () => {
+  fetchMock.mockResolvedValueOnce(json(user))
+  mount()
+  await waitFor(() => expect(auth.state.status).toBe('user'))
+
+  fetchMock.mockResolvedValueOnce(problem('VALIDATION_FAILED', 400))
+  await act(async () => {
+    await expect(auth.updateProfile('', 'UTC')).rejects.toMatchObject({
+      code: 'VALIDATION_FAILED',
+    })
+  })
+  expect(auth.state).toEqual({ status: 'user', user })
+})
+
+test('a late updateProfile answer does not undo a logout', async () => {
+  fetchMock.mockResolvedValueOnce(json(user))
+  mount()
+  await waitFor(() => expect(auth.state.status).toBe('user'))
+
+  let finishSave: (response: Response) => void = () => undefined
+  fetchMock.mockReturnValueOnce(
+    new Promise<Response>((resolve) => {
+      finishSave = resolve
+    }),
+  )
+  let saving: Promise<unknown> = Promise.resolve()
+  act(() => {
+    saving = auth.updateProfile('Anna', 'UTC')
+  })
+  fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
+  await act(async () => {
+    await auth.logout()
+  })
+  expect(auth.state).toEqual({ status: 'anonymous' })
+
+  await act(async () => {
+    finishSave(json({ ...user, name: 'Anna' }))
+    await saving
+  })
+  expect(auth.state).toEqual({ status: 'anonymous' })
+})

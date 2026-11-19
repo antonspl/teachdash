@@ -1,6 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { expect, type APIRequestContext, type Page } from '@playwright/test'
+import {
+  expect,
+  type APIRequestContext,
+  type Page,
+  type PlaywrightWorkerArgs,
+} from '@playwright/test'
 import en from '../src/i18n/en.json' with { type: 'json' }
 import { ACCEPT } from '../src/api/headers'
 
@@ -117,4 +122,40 @@ export async function loginAsAdminInUi(page: Page) {
   await page.getByLabel(en.login.password, { exact: true }).fill(admin.password)
   await page.getByRole('button', { name: en.login.submit }).click()
   await expect(page).toHaveURL(/\/admin$/)
+}
+
+/**
+ * Creates a teacher with the given name, gives them a password through the API (the
+ * token of the set-password link) and logs in through the login page, ending on the
+ * teacher cabinet. Returns the teacher's email and the password for later steps.
+ */
+export async function createTeacherAndLoginInUi(
+  page: Page,
+  playwright: PlaywrightWorkerArgs['playwright'],
+  baseURL: string | undefined,
+  name: string,
+  password = 'teacher-pass-1',
+) {
+  const admin = await playwright.request.newContext({ baseURL })
+  const teacher = await createTeacher(admin, name)
+  await admin.dispose()
+  const token = new URLSearchParams(
+    new URL(teacher.setPasswordLink).hash.slice(1),
+  ).get('token')
+  expect(token, 'the set-password link has a token').toBeTruthy()
+  // A separate anonymous context, so the page's own cookies stay clean.
+  const anonymous = await playwright.request.newContext({ baseURL })
+  const set = await anonymous.post('/api/password-links', {
+    headers: await csrfHeaders(anonymous),
+    data: { token, password },
+  })
+  expect(set.status(), 'setting the password with the link').toBe(200)
+  await anonymous.dispose()
+
+  await page.goto('/login')
+  await page.getByLabel(en.login.email).fill(teacher.email)
+  await page.getByLabel(en.login.password, { exact: true }).fill(password)
+  await page.getByRole('button', { name: en.login.submit }).click()
+  await expect(page).toHaveURL(/\/teacher$/)
+  return { email: teacher.email, password }
 }

@@ -170,7 +170,24 @@ test("[web-auth/R3-S1] Cabinet shows the role and the user's name", async () => 
   // then
   expect(await screen.findByText(en.cabinet.teacher)).toBeTruthy()
   expect(screen.getByText(/Anna Smith/)).toBeTruthy()
+  expect(screen.getByRole('button', { name: en.header.profile })).toBeTruthy()
   expect(screen.getByRole('button', { name: en.header.logout })).toBeTruthy()
+})
+
+test('[web-auth/R3-S2] Profile button opens the profile', async () => {
+  // given
+  fetchMock.mockResolvedValue(userResponse('ADMIN'))
+  open('/admin')
+
+  // when
+  fireEvent.click(
+    await screen.findByRole('button', { name: en.header.profile }),
+  )
+
+  // then
+  expect(
+    await screen.findByRole('heading', { name: en.profile.title }),
+  ).toBeTruthy()
 })
 
 // Answers each API path with the given response factory; anything else is a 401 problem.

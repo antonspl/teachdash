@@ -9,6 +9,7 @@ export type TextInputProps = {
   autoComplete?: string
   error?: string
   required?: boolean
+  disabled?: boolean
   // Extra control shown beside the input (used by PasswordInput).
   adornment?: ReactNode
 }
@@ -21,6 +22,7 @@ export function TextInput({
   autoComplete,
   error,
   required,
+  disabled,
   adornment,
 }: TextInputProps) {
   const id = useId()
@@ -38,6 +40,7 @@ export function TextInput({
           value={value}
           autoComplete={autoComplete}
           required={required}
+          disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           onChange={(event) => onChange(event.target.value)}

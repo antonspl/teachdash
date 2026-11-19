@@ -14,10 +14,15 @@ import { Text } from '../ui/Text'
 import { TextInput } from '../ui/TextInput'
 import { Title } from '../ui/Title'
 
-// The remembered page is used only when it belongs to the role's cabinet.
+// The remembered page is used only when it belongs to the role's cabinet, or is the
+// profile page, which every role has (a trailing slash is ignored there).
 function belongsTo(path: string, cabinet: string): boolean {
   const pathname = path.split(/[?#]/)[0]
-  return pathname === cabinet || pathname.startsWith(`${cabinet}/`)
+  return (
+    pathname === cabinet ||
+    pathname.startsWith(`${cabinet}/`) ||
+    pathname.replace(/\/+$/, '') === '/profile'
+  )
 }
 
 export function LoginPage() {
