@@ -72,7 +72,7 @@ public class CourseService {
 
 	@Transactional
 	public Course rename(UUID teacherId, UUID id, String title) {
-		// The teacher row lock serialises parallel renames, so the unique index decides one winner cleanly.
+		// Gives 401 if the teacher was deactivated after the session filter, and serialises the teacher's course writes.
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
