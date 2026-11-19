@@ -166,6 +166,20 @@ expect "an ID new in a strict change is not pending" 1 \
   "1 of 1 scenarios have no test"
 
 new_tree
+write_spec "$tree/$c/c1/specs/cap/spec.md" "ADDED Requirements" "New" "cap/R1-S1"
+write_tasks c1 "$(printf -- '- [ ] 1.1 Write tests\n  - [X] 1.2 Done')"
+expect "an indented capital X tick makes the change strict" 1 \
+  "MISSING test for scenario [cap/R1-S1]" \
+  "1 of 1 scenarios have no test"
+
+new_tree
+write_spec "$tree/$c/c1/specs/cap/spec.md" "ADDED Requirements" "New" "cap/R1-S1"
+write_tasks c1 "$(printf -- '* [ ] 1.1 Write tests\n* [x] 1.2 Done')"
+expect "a * bullet tick makes the change strict" 1 \
+  "MISSING test for scenario [cap/R1-S1]" \
+  "1 of 1 scenarios have no test"
+
+new_tree
 write_spec "$tree/openspec/specs/cap/spec.md" "Requirements" "Old" "cap/R1-S1"
 write_test "[cap/R1-S1]"
 write_spec "$tree/$c/c1/specs/cap/spec.md" "ADDED Requirements" "New" "cap/R2-S1"

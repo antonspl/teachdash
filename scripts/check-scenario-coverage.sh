@@ -21,7 +21,7 @@
 #
 # Spec phase: an active change is in the spec phase when it has at least one new scenario ID
 # (in its deltas outside REMOVED sections, not in any main spec), none of its new IDs has a
-# test, and its tasks.md exists with no ticked task ("- [x]"). In the spec phase an uncovered
+# test, and its tasks.md exists with no ticked task ("- [x]", also * + and 1. bullets). In the spec phase an uncovered
 # new ID prints "PENDING <id> (spec phase: <name>)" and does not fail the check. Every other
 # uncovered ID is MISSING. Main spec IDs are always strict.
 #
@@ -254,7 +254,7 @@ for change_dir in openspec/changes/*/; do
   new_ids=$(change_new_ids "$change_dir")
   spec_phase=0
   if [ -n "$new_ids" ] && [ -f "$change_dir/tasks.md" ] \
-    && ! grep -q -E '^[[:space:]]*- \[[xX]\]' "$change_dir/tasks.md"; then
+    && ! grep -q -E '^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]+\[[xX]\]' "$change_dir/tasks.md"; then
     spec_phase=1
     for id in $new_ids; do
       if has_test "$id"; then
