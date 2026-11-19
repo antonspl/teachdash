@@ -4,7 +4,7 @@
 
 Questions answered by the engineer in the #141 retrospective (2026-11-19):
 
-1. **Who writes the OpenSpec artifacts?** A new `spec-writer` role writes them. The main agent only orchestrates: it talks to the engineer, records the decisions and hands the writer a brief.
+1. **Who writes the OpenSpec artifacts?** A new `spec-writer` role writes them. The main agent only orchestrates: it talks to the engineer, lists the decisions in a brief for the writer, and pushes. The writer records them in Clarifications.
 2. **Does the main agent keep one session for the whole change?** No. After each approved gate the work continues in a new session. All state lives in the PR, in `openspec/changes/<name>/` and in git.
 3. **Which #141 problems are fixed here?**
    - The implementer committed the main agent's uncommitted edits.

@@ -8,31 +8,45 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
   - `scripts/setup-agents` generates it for all three tools;
   - in Claude Code it has write tools and no web tools;
   - `scripts/setup-agents --check` prints `ok`.
-- [ ] 1.2 Update `.agents/roles/implementer.md` with the commit rules (design D3). Verify: the diff adds only the commit rules.
-- [ ] 1.3 Update `AGENTS.md`: the spec-writer bullet, the main agent's narrower role, the commit-before-delegating rule and the "Sessions" section (design D1, D2, D3). Verify:
-  - `wc -c AGENTS.md` is under 32768;
-  - `grep -n "writes and edits OpenSpec artifacts" AGENTS.md` finds nothing.
-- [ ] 1.4 Live run in Claude Code after a restart. Brief the spec-writer for a throwaway change, with two decisions and one requirement. Verify, and record in the PR:
-  - the report fits 15 lines;
-  - `openspec validate --strict` passed;
-  - the commit holds only that change's files, with an unrelated uncommitted file left alone.
+- [ ] 1.2 Add the commit rules to `.agents/roles/implementer.md` (design D3). Proven by the live run in 1.4.
+- [ ] 1.3 Update `AGENTS.md` (design D1, D2, D3):
+  - the spec-writer bullet;
+  - the main agent's narrower role;
+  - the commit-before-delegating rule;
+  - the "Sessions" section.
 
-  Then delete the throwaway change and its commit.
+  Verify: `grep -n "writes and edits OpenSpec artifacts" AGENTS.md` finds nothing.
+- [ ] 1.4 Live run in Claude Code, after a restart, on a throwaway branch with no PR. Leave one unrelated uncommitted file in the checkout. Run two agents:
+  - the spec-writer, briefed for a throwaway change with two decisions and one requirement;
+  - the implementer, with a one-line slice.
+
+  Verify, and record in the PR:
+  - each report fits 15 lines;
+  - `openspec validate --strict` passed;
+  - each commit holds only its own files;
+  - the unrelated file is still uncommitted and is listed in both reports;
+  - neither agent pushed.
+
+  Then delete the throwaway branch.
 
 ## 2. Flow scripts
 
-- [ ] 2.1 Add `guard_synced` to `lib.sh` and use it in `gate-request` and `pr-ready`. Add the range-end check to `gate-request` (design D4). Verify: `shellcheck` passes as in CI.
-- [ ] 2.2 Add the branch line to `gate-status` (design D4). Verify, on this PR: the line reads `in sync`, and after a local commit `1 unpushed`.
-- [ ] 2.3 Add the D4 cases to `scripts/flow/test`. Verify: `scripts/flow/test` passes. Each new case fails when its check is removed (record one such run in the PR).
+- [ ] 2.1 Add `guard_synced` to `lib.sh` and use it in `gate-request` and `pr-ready`. Add the range checks to `gate-request` (design D4). Verify: `shellcheck` passes as in CI.
+- [ ] 2.2 Add the live-mode branch line to `gate-status` (design D4). Verify, and record in the PR:
+  - on this PR, the line reads `in sync`, and after a local commit `1 unpushed`;
+  - on `main`, it reads `not the PR branch`, when given this PR's number;
+  - the existing fixture outputs are unchanged.
+- [ ] 2.3 Add the D4 cases to `scripts/flow/test`. Verify: `scripts/flow/test` passes. Each new case fails when its check is removed. Record one such run in the PR.
 
 ## 3. Coverage check
 
-- [ ] 3.1 Implement the spec phase rule in `scripts/check-scenario-coverage.sh` and update its header comment (design D5). Verify, and record in the PR:
-  - a throwaway change with a new scenario and no test prints `PENDING` and exits 0;
-  - adding a test for one of two new scenarios makes the other `MISSING` with exit 1;
-  - a main-spec scenario with its test removed is still `MISSING`;
-  - the check is green on `main`.
+- [ ] 3.1 Implement the spec phase rule in `scripts/check-scenario-coverage.sh` and update its header comment (design D5). Verify: the check is green on `main` and on this PR.
+- [ ] 3.2 Add `scripts/test-scenario-coverage.sh` with fixture trees, and run it in the `coverage` CI job (design D5). Cases:
+  - a change with a new scenario, no test and no ticked task: `PENDING`, exit 0;
+  - the same change with one task ticked: `MISSING`, exit 1;
+  - a MODIFIED delta with one new and one old ID, where the old ID's test is removed: the old ID is `MISSING`;
+  - a REMOVED-only change: never in the spec phase;
+  - two active changes, one in the spec phase and one not: only the first is `PENDING`;
+  - a main-spec scenario with its test removed: `MISSING`.
 
-## 4. CI
-
-- [ ] 4.1 The `coverage` job is green on this PR, and `ci-ok` is green.
+  Verify: the script passes, and each case fails when the rule is changed to match it wrongly. Record one such run in the PR.
