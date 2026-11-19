@@ -54,6 +54,6 @@ class CourseController {
 	// STUB (courses-read pass 1): replaced in pass 2
 	@PatchMapping("/api/teacher/courses/{id}")
 	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void rename(@PathVariable UUID id, @Valid @RequestBody RenameCourseRequest request) {
+	void rename(@PathVariable UUID id, @RequestBody RenameCourseRequest request) {
 	}
 }
