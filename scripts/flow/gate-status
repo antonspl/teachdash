@@ -67,6 +67,10 @@ data=$(extract "${1:-}") || die "could not read the pull request from GitHub (no
 # Never fails, so a git problem cannot hide the gate lines.
 branch_line() {
   local head=$1 branch up rc=0 counts ahead behind
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "branch: unknown (not a git checkout)"
+    return 0
+  fi
   if ! branch=$(git symbolic-ref --short HEAD 2>/dev/null); then
     echo "branch: detached HEAD"
     return 0

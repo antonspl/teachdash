@@ -35,7 +35,9 @@ fetch_upstream() {
   up=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
   remote=$(git config "branch.$branch.remote") || return 1
   merge=$(git config "branch.$branch.merge") || return 1
-  git fetch -q "$remote" "+$merge:refs/remotes/$up" >/dev/null 2>&1 || return 2
+  [ "$remote" != . ] || return 1
+  GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh} -o BatchMode=yes" \
+    git -c credential.interactive=never fetch -q "$remote" "+$merge:refs/remotes/$up" >/dev/null 2>&1 || return 2
   printf '%s\n' "$up"
 }
 
@@ -46,7 +48,7 @@ guard_synced() {
   up=$(fetch_upstream) || rc=$?
   [ "$rc" -ne 1 ] || die "the branch has no upstream, push it first (git push -u)"
   [ "$rc" -eq 0 ] || die "could not fetch the upstream branch"
-  counts=$(git rev-list --left-right --count "HEAD...$up")
+  counts=$(git rev-list --left-right --count "HEAD...$up") || die "could not compare HEAD with $up"
   read -r ahead behind <<<"$counts"
   [ "$ahead" = 0 ] && [ "$behind" = 0 ] || die "the branch differs from $up: $ahead unpushed, $behind behind"
   git diff --quiet HEAD -- || die "uncommitted changes to tracked files, commit or stash them first"

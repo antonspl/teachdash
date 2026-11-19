@@ -211,6 +211,12 @@ code:  no approving comment; box not ticked" "$actual"
   git -C "$sync" branch -q --unset-upstream
   check "gate-status branch line: no upstream" "branch: no upstream" "$(gs "$sync")"
   git -C "$sync" branch -q --set-upstream-to=origin/feat
+  git -C "$sync" branch -q localup main
+  git -C "$sync" checkout -q localup
+  git -C "$sync" branch -q --set-upstream-to=main
+  git -C "$sync" checkout -q feat
+  mkdir -p "$work/nogit"
+  check "gate-status branch line: not a git checkout" "branch: unknown (not a git checkout)" "$(gs "$work/nogit")"
   FAIL_REVIEWS=1 GH_LOG=$work/ghlog GH_FIX=$work/ghfix PATH="$work/fakebin:$PATH" "$here/gate-status" 7 >/dev/null 2>&1
   check "gate-status fails when the reviews call fails" 1 $?
 fi
@@ -327,6 +333,10 @@ git -C "$sync" merge -q --ff-only origin/feat
 git -C "$sync" checkout -q -b noup
 sync_refuse "gate-request without an upstream" "$sync" 'no upstream' "$here/gate-request" spec "$sync_range"
 sync_refuse "pr-ready without an upstream" "$sync" 'no upstream' "$here/pr-ready"
+git -C "$sync" checkout -q feat
+
+git -C "$sync" checkout -q localup
+sync_refuse "gate-request with a local upstream" "$sync" 'no upstream' "$here/gate-request" spec "$sync_range"
 git -C "$sync" checkout -q feat
 
 : >"$work/ghlog"
