@@ -118,8 +118,10 @@ Bean Validation runs before the service, so the order is: input (400), limit (40
 `COURSE_LIMIT_REACHED`), title (409 `TITLE_TAKEN`). R1-S12 covers both steps.
 
 The row lock makes step 2 safe under parallel requests (R1-S13); the unique index covers
-the title race even without it. `ApiExceptionHandler` / the api-errors R2 allow-list gets
-`TITLE_TAKEN`.
+the title race even without it. Only a violation of `courses_teacher_title_uq` becomes
+`TITLE_TAKEN`; any other duplicate is rethrown. `TITLE_TAKEN` carries `errors` because it
+is built with `ApiException.field`; there is no central allow-list, so api-errors R2 holds
+by only using `field` for the codes it names.
 
 `maxPerTeacher` comes from `teachdash.courses.max-per-teacher=20` in
 `application.properties`, read with `@Value`. It is not an environment variable: it is

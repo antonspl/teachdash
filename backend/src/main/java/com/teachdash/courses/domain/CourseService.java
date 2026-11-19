@@ -19,6 +19,8 @@ import com.teachdash.courses.persistence.CourseRepository;
 @Service
 public class CourseService {
 
+	private static final String TITLE_INDEX = "courses_teacher_title_uq";
+
 	private final UserRepository users;
 
 	private final CourseRepository courses;
@@ -58,8 +60,16 @@ public class CourseService {
 		try {
 			courses.insert(course);
 		} catch (DuplicateKeyException e) {
+			if (!violatesTitleIndex(e)) {
+				throw e;
+			}
 			throw ApiException.field(HttpStatus.CONFLICT, "TITLE_TAKEN", "title");
 		}
 		return course;
+	}
+
+	private static boolean violatesTitleIndex(DuplicateKeyException e) {
+		String message = e.getMostSpecificCause().getMessage();
+		return message != null && message.contains(TITLE_INDEX);
 	}
 }
