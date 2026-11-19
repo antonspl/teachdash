@@ -82,7 +82,7 @@ Agents' reports are not shown to the engineer: relay what matters in a few lines
 
 After posting a gate request, the main agent ends its turn with one line: the gate,
 the range, and "continue in a new session after approval". A new session resumes from
-the branch, `scripts/flow/gate-status`, the PR description and last gate request
+the branch, `scripts/flow/gate-status` (approvals, and whether the branch is pushed), the PR description and last gate request
 comment, the proposal's Clarifications and `tasks.md` (its ticks show where a phase
 stopped). It does not reread earlier phases' diffs. Inside one phase, keep the session.
 
