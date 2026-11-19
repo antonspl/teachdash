@@ -62,11 +62,11 @@ function teacher(over: Record<string, unknown> = {}) {
 
 type Handler = () => Response | Promise<Response>
 
-// Answers /api/me as the admin, the teachers list from `list` and create from `create`.
 function languagesResponse(codes = ['de', 'en', 'ru']) {
   return json(codes.map((code) => ({ code, content: false })))
 }
 
+// Answers /api/me as the admin, the teachers list from `list` and create from `create`.
 function backend(handlers: {
   list: Handler
   create?: Handler
@@ -1346,6 +1346,8 @@ test('[web-admin-teachers/R2-S9] The language select starts empty', async () => 
 
   // then
   expect(languageSelect().value).toBe('')
+  expect(languageSelect().getAttribute('aria-required')).toBe('true')
+  expect(languageSelect().required).toBe(false)
   expect(languageOptions()).toEqual(['German', 'English', 'Russian'])
 })
 

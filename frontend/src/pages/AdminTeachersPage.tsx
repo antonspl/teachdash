@@ -184,7 +184,7 @@ function CreateDialog({
       return
     }
     if (nativeLanguage === '') {
-      // Not the native `required`: its bubble is not translated by the app.
+      // Not the native `required` (untranslated bubble); the select has aria-required.
       setLanguageMissing(true)
       nativeLanguageRef.current?.focus()
       return
@@ -270,6 +270,7 @@ function CreateDialog({
         />
         <LanguageSelect
           label={t('adminTeachers.create.nativeLanguage')}
+          ariaRequired
           value={nativeLanguage}
           onChange={(value) => {
             setNativeLanguage(value)

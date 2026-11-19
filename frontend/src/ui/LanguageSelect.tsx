@@ -10,6 +10,7 @@ export function LanguageSelect({
   onChange,
   error,
   required,
+  ariaRequired,
   disabled,
   inputRef,
 }: {
@@ -18,6 +19,7 @@ export function LanguageSelect({
   onChange: (value: string) => void
   error?: string
   required?: boolean
+  ariaRequired?: boolean
   disabled?: boolean
   inputRef?: Ref<HTMLSelectElement>
 }) {
@@ -43,6 +45,7 @@ export function LanguageSelect({
         placeholder={value === '' ? t('languages.choose') : undefined}
         error={error}
         required={required}
+        ariaRequired={ariaRequired}
         disabled={disabled}
         inputRef={inputRef}
       />

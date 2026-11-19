@@ -10,6 +10,7 @@ export function Select({
   placeholder,
   error,
   required,
+  ariaRequired,
   disabled,
   inputRef,
 }: {
@@ -23,6 +24,8 @@ export function Select({
   placeholder?: string
   error?: string
   required?: boolean
+  // Announces the field as required without the native validation bubble.
+  ariaRequired?: boolean
   disabled?: boolean
   // Lets a form move the focus to the select.
   inputRef?: Ref<HTMLSelectElement>
@@ -41,6 +44,7 @@ export function Select({
           className={`${styles.input} ${styles.select} ${error ? styles.invalid : ''}`}
           value={value}
           required={required}
+          aria-required={ariaRequired ? true : undefined}
           disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
