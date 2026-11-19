@@ -165,5 +165,8 @@ None added.
 - **Unicode forms.** Titles are not NFC-normalised, so "й" typed as one code point and as
   "и" + combining breve are different titles. `Normalize.name` does not fold forms for
   names either; changing that is a separate change for both fields.
+- **Length in UTF-16 units.** `@Size` counts UTF-16 units, so an emoji counts as 2 and a
+  title of 101 emoji gets `TOO_LONG`. `@PersonName` does the same; the engineer accepted
+  this for both fields, with no follow-up.
 - **Limit is a guess.** 20 is from angle D's estimate, not measured. Capacity really
   depends on file limits in #55.
