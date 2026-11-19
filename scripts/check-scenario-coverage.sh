@@ -25,10 +25,21 @@
 # new ID prints "PENDING <id> (spec phase: <name>)" and does not fail the check. Every other
 # uncovered ID is MISSING. Main spec IDs are always strict.
 #
+# Strict mode: with COVERAGE_STRICT=1 (or --strict) PENDING counts as MISSING, with a message
+# that the change is still in the spec phase. CI runs strict on main and on every pull
+# request except a draft, so a change cannot reach main while it is in the spec phase.
+#
 # To add a capability whose tests are frontend tests, put its name in the list below.
 # Forgetting it shows up as MISSING, never as a false pass.
 FRONTEND_CAPABILITIES="web-client web-auth web-admin-teachers"
 set -euo pipefail
+
+strict="${COVERAGE_STRICT:-}"
+for arg in "$@"; do
+  if [ "$arg" = "--strict" ]; then
+    strict=1
+  fi
+done
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -281,6 +292,11 @@ for id in $ids; do
   if ! has_test "$id"; then
     pending_change=$(awk -F'|' -v id="$id" '$1 == id { print $2; exit }' "$pending_file")
     if [ -n "$pending_change" ] && ! grep -q -F -x -e "$id" "$strict_new_file"; then
+      if [ -n "$strict" ] && [ "$strict" != 0 ]; then
+        echo "MISSING test for scenario [$id] (change $pending_change is still in the spec phase)" >&2
+        missing=$((missing + 1))
+        continue
+      fi
       echo "PENDING $id (spec phase: $pending_change)"
       pending=$((pending + 1))
       continue

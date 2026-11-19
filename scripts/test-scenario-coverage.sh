@@ -48,7 +48,7 @@ expect() {
   local name="$1" want_rc="$2" out rc want
   shift 2
   want=$(printf '%s\n' "$@")
-  out=$(bash "$tree/scripts/check-scenario-coverage.sh" 2>&1)
+  out=$(COVERAGE_STRICT=$STRICT bash "$tree/scripts/check-scenario-coverage.sh" 2>&1)
   rc=$?
   cases=$((cases + 1))
   if [ "$out" = "$want" ] && [ "$rc" -eq "$want_rc" ]; then
@@ -64,6 +64,7 @@ expect() {
 }
 
 c=openspec/changes
+STRICT=
 
 new_tree
 write_spec "$tree/openspec/specs/cap/spec.md" "Requirements" "Old" "cap/R1-S1"
@@ -186,6 +187,17 @@ write_spec "$tree/$c/c1/specs/cap/spec.md" "ADDED Requirements" "New" "cap/R2-S1
 write_test "[cap/R2-S1]"
 write_tasks c1 "- [x] 1.1 Tests"
 expect "all scenarios covered" 0 "OK: all 2 scenarios have a test"
+
+new_tree
+write_spec "$tree/openspec/specs/cap/spec.md" "Requirements" "Old" "cap/R1-S1"
+write_test "[cap/R1-S1]"
+write_spec "$tree/$c/c1/specs/cap/spec.md" "ADDED Requirements" "New" "cap/R2-S1"
+write_tasks c1 "- [ ] 1.1 Write tests"
+STRICT=1
+expect "strict mode: a spec-phase scenario is missing" 1 \
+  "MISSING test for scenario [cap/R2-S1] (change c1 is still in the spec phase)" \
+  "1 of 2 scenarios have no test"
+STRICT=
 
 echo "$cases cases, $failures failed"
 [ "$failures" -eq 0 ]

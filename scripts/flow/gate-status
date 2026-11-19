@@ -83,6 +83,7 @@ branch_line() {
   case $rc in
     1) echo "branch: no upstream" ;;
     2) echo "branch: unknown (fetch failed)" ;;
+    3) echo "branch: upstream is a local branch" ;;
     *)
       counts=$(git rev-list --left-right --count "HEAD...$up" 2>/dev/null) || { echo "branch: unknown (fetch failed)"; return 0; }
       read -r ahead behind <<<"$counts"

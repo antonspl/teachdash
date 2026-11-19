@@ -140,7 +140,7 @@ Both signals must say "not started" so neither can hide a missing test alone:
 
 Between slices of pass 1, CI is red. That is a real state: tests are still missing.
 
-Main specs stay strict. The archive moves the deltas into the main specs before merge, so a change cannot reach `main` with a missing test.
+Main specs stay strict. The archive moves the deltas into the main specs before merge, so a change cannot reach `main` with a missing test. A ready PR and `main` also run the check strict (`COVERAGE_STRICT=1`), where PENDING counts as MISSING; only a draft PR runs it non-strict.
 
 A new `scripts/test-scenario-coverage.sh` copies the coverage script into fixture trees in a temp folder and runs it there. The script reads the tree above its own location, so a copy is needed. The fixtures use backend capabilities only, because the rule does not depend on the test runner. The `coverage` CI job runs the new script and adds it to the shellcheck list.
 

@@ -336,7 +336,7 @@ sync_refuse "pr-ready without an upstream" "$sync" 'no upstream' "$here/pr-ready
 git -C "$sync" checkout -q feat
 
 git -C "$sync" checkout -q localup
-sync_refuse "gate-request with a local upstream" "$sync" 'no upstream' "$here/gate-request" spec "$sync_range"
+sync_refuse "gate-request with a local upstream" "$sync" 'upstream is a local branch' "$here/gate-request" spec "$sync_range"
 git -C "$sync" checkout -q feat
 
 : >"$work/ghlog"
