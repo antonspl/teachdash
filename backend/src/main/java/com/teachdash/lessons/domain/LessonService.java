@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.teachdash.accounts.domain.User;
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
 import com.teachdash.lessons.persistence.LessonRepository;
@@ -40,8 +39,9 @@ public class LessonService {
 
 	@Transactional
 	public Lesson create(UUID teacherId, UUID courseId, String title) {
-		requireActiveTeacher(teacherId);
-		// The course row lock serialises the limit check and the position.
+		// User row first so the order matches course writes (users, then course); the course lock serialises the limit and position.
+		users.findActiveByIdForUpdate(teacherId)
+				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 		if (!lessons.lockCourse(courseId, teacherId)) {
 			throw ApiException.notFound();
 		}
@@ -61,11 +61,5 @@ public class LessonService {
 			throw ApiException.notFound();
 		}
 		return lessons.findByCourse(courseId, teacherId);
-	}
-
-	private void requireActiveTeacher(UUID teacherId) {
-		users.findById(teacherId)
-				.filter(User::isActive)
-				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 	}
 }
