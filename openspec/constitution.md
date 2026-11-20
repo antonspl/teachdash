@@ -35,6 +35,8 @@ with its own issue, spec and PR.
 2. **Clarify** — before writing a proposal, restate the task in plain words, list
    open questions and ambiguities, and propose research angles. Get the engineer's
    answers and agreement on the angles, or agreement that a small task needs none.
+   For a change to UI under `frontend/src`, the proposed angles always include a
+   design angle (AGENTS.md).
    Record the answers in the proposal. Keep it short: ask only what the issue and
    the exploration do not already answer.
 3. **Research** — one researcher agent per agreed angle. If the findings raise new
@@ -60,8 +62,10 @@ with its own issue, spec and PR.
 9. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
    if a test looks wrong, stop and ask the engineer.
 10. **Code review** — the code-gate review runs, then the engineer approves the code in the PR. Security problems,
-   data loss and spec violations are fixed in the PR. Every other finding becomes
-   an issue, so rare edge cases do not add more review rounds.
+   data loss and spec violations are fixed in the PR. Design-rule
+   (`.agents/design/project-rules.md`) and WCAG 2.2 AA violations in UI the change
+   adds or edits (its markup, CSS, copy or behaviour) are fixed in the PR too. Every
+   other finding becomes an issue, so rare edge cases do not add more review rounds.
 11. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
 12. **Final review** — mark the PR ready. A code owner other than the engineer
     reviews spec, tests and code together and approves the PR on GitHub. Then anyone on
