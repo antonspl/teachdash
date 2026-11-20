@@ -50,8 +50,23 @@ public class LessonService {
 		}
 		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 		UUID id = UUID.randomUUID();
-		int position = lessons.insertAtEnd(new Lesson(id, teacherId, title, 0, now, now), courseId);
+		int position = lessons.insertAtEnd(id, teacherId, courseId, title, now);
 		return new Lesson(id, teacherId, title, position, now, now);
+	}
+
+	@Transactional
+	public Lesson rename(UUID teacherId, UUID courseId, UUID lessonId, String title) {
+		// The user row is locked before the course row, as in CourseService.rename, to avoid a deadlock.
+		users.findActiveByIdForUpdate(teacherId)
+				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
+		if (!lessons.lockCourse(courseId, teacherId)) {
+			throw ApiException.notFound();
+		}
+		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
+		if (lessons.updateTitle(lessonId, courseId, teacherId, title, now) == 0) {
+			throw ApiException.notFound();
+		}
+		return lessons.findByIdInCourse(lessonId, courseId, teacherId).orElseThrow(ApiException::notFound);
 	}
 
 	@Transactional(readOnly = true)

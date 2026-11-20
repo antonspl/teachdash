@@ -3,7 +3,9 @@ package com.teachdash.lessons.persistence;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -45,7 +47,7 @@ public class LessonRepository {
 				.single();
 	}
 
-	public int insertAtEnd(Lesson lesson, UUID courseId) {
+	public int insertAtEnd(UUID id, UUID teacherId, UUID courseId, String title, Instant now) {
 		return jdbc.sql("""
 				insert into lessons (id, teacher_id, title, created_at, updated_at, course_id, position)
 				select :id, :teacherId, :title, :createdAt, :updatedAt, :courseId, coalesce(max(position), 0) + 1
@@ -53,11 +55,11 @@ public class LessonRepository {
 				where course_id = :courseId
 				returning position
 				""")
-				.param("id", lesson.id())
-				.param("teacherId", lesson.teacherId())
-				.param("title", lesson.title())
-				.param("createdAt", Timestamp.from(lesson.createdAt()))
-				.param("updatedAt", Timestamp.from(lesson.updatedAt()))
+				.param("id", id)
+				.param("teacherId", teacherId)
+				.param("title", title)
+				.param("createdAt", Timestamp.from(now))
+				.param("updatedAt", Timestamp.from(now))
 				.param("courseId", courseId)
 				.query(Integer.class)
 				.single();
@@ -74,6 +76,32 @@ public class LessonRepository {
 				.param("teacherId", teacherId)
 				.query(LessonRepository::mapLesson)
 				.list();
+	}
+
+	public Optional<Lesson> findByIdInCourse(UUID lessonId, UUID courseId, UUID teacherId) {
+		return jdbc.sql("""
+				select id, teacher_id, title, position, created_at, updated_at
+				from lessons
+				where id = :lessonId and course_id = :courseId and teacher_id = :teacherId
+				""")
+				.param("lessonId", lessonId)
+				.param("courseId", courseId)
+				.param("teacherId", teacherId)
+				.query(LessonRepository::mapLesson)
+				.optional();
+	}
+
+	public int updateTitle(UUID lessonId, UUID courseId, UUID teacherId, String title, Instant now) {
+		return jdbc.sql("""
+				update lessons set title = :title, updated_at = :now
+				where id = :lessonId and course_id = :courseId and teacher_id = :teacherId
+				""")
+				.param("title", title)
+				.param("now", Timestamp.from(now))
+				.param("lessonId", lessonId)
+				.param("courseId", courseId)
+				.param("teacherId", teacherId)
+				.update();
 	}
 
 	private static Lesson mapLesson(ResultSet rs, int rowNum) throws SQLException {

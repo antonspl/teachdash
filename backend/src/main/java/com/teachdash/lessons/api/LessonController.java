@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -14,9 +13,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.teachdash.lessons.api.dto.CreateLessonRequest;
 import com.teachdash.lessons.api.dto.LessonResponse;
+import com.teachdash.lessons.api.dto.RenameLessonRequest;
 import com.teachdash.lessons.domain.LessonService;
 
 import jakarta.validation.Valid;
@@ -46,10 +47,14 @@ class LessonController {
 		return lessons.list(teacherId, courseId).stream().map(LessonResponse::from).toList();
 	}
 
-	// STUB: replaced in pass 2 (lessons-edit-delete 3.2)
 	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}")
-	LessonResponse rename(@PathVariable UUID courseId, @PathVariable UUID lessonId) {
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED);
+	LessonResponse rename(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@Valid @RequestBody RenameLessonRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return LessonResponse.from(lessons.rename(teacherId, courseId, lessonId, request.title()));
 	}
 
 	// STUB: replaced in pass 2 (lessons-edit-delete 3.2)
