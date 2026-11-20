@@ -5,7 +5,7 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 ## 1. Gate status
 
 - [x] 1.1 Add the fixtures in `scripts/flow/fixtures`, each a `.json` with its `.expected`, all with the PR by `alice`, commits before the comments and no box ticked:
-  - `approval-singular-test`: comment "Test approved" from `alice`. Expected: `tests: approved by alice at <time>; comment without a ticked box`, and the spec and code lines read `no approving comment; box not ticked` (the other gates are unaffected).
+  - `approval-singular-test`: comment "Test approved" from `alice`. Expected: `tests: approved by alice at <time>; box not ticked; comment without a ticked box`, and the spec and code lines read `no approving comment; box not ticked` (the other gates are unaffected).
   - `approval-singular-test-question`: comment "Test approved?". Expected: all three gates `no approving comment; box not ticked`.
   - `approval-no-d`: three comments "Spec approve", "Code approve" and "Test approve". Expected: all three gates `no approving comment; box not ticked`.
   Plural "tests approved" is already covered by the live-mode check "gate-status reads paginated comments and reviews" in `scripts/flow/test` (a review "Tests approved" approves the tests gate); no new fixture is needed for it. The existing `marker-comment` fixture must keep passing. Verify, and record in the PR: before 1.2, `scripts/flow/test` fails on `approval-singular-test` (the singular case) and passes on the other new fixtures; after 1.2 all pass.
