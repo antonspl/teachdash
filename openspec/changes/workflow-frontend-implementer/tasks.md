@@ -128,6 +128,7 @@ Every `git diff` check in groups 5-12 uses base `3355250`, the last commit befor
   - the leftover `zshots.spec.ts` / `frontend/screenshots/` finding, `.agents/design/` on the "no unrequested changes" list and the triage check of 3.2 are still there;
   - `git diff 3355250 -- .agents/roles/code-gate-reviewer.md` leaves the frontmatter (class `strong`) and the other Check bullets unchanged, and changes the triage line only as 7.2 says.
 - [x] 7.2 Reword the triage line of `.agents/roles/code-gate-reviewer.md` as 6.3 does for `reviewer.md`: the own-UI case speaks of design-rule violations (the design rules in `.agents/design/`, in the precedence order of its README) and WCAG 2.2 AA violations in UI the change adds or edits (design D7; G-20; reworks 3.2). Verify, and record in the PR: ``tr '\n' ' ' < .agents/roles/code-gate-reviewer.md | tr -s ' ' | grep -o 'design rules in `.agents/design/`, in the precedence order of its README'`` finds it, and the triage check of 3.2 still finds the own-UI case.
+- [x] 7.3 Record that 22f1a98 applied G-21: the `code-gate-reviewer`'s Design section sits outside its 25-line limit with its own cap of 15 lines (design D7), and the opening paragraph of `.agents/design/project-rules.md` says it wins over the vendored sources only and points to C0 for the full order (design D2, D14). Verify: `grep -n '15 lines' .agents/roles/code-gate-reviewer.md` finds the cap; `grep -n 'C0' .agents/design/project-rules.md | head -2` shows the opening-paragraph pointer and the C0 line.
 
 ## 8. AGENTS.md and CONTRIBUTING.md routing
 
