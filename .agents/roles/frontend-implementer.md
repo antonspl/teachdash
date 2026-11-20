@@ -27,7 +27,8 @@ Additions:
 - You may only add new role-named tokens to `frontend/src/styles/tokens.css` inside
   your slice. Changing an existing token's value, renaming it or deleting it is an
   engineer decision: stop and report instead.
-- When the slice changes pages (`frontend/src/pages/`) or `src/ui/` components, take
+- When the slice changes rendered UI (any change to `frontend/src/**/*.tsx` except
+  `*.test.tsx`, `frontend/src/**/*.css`, or `frontend/src/i18n/*.json`), take
   screenshots of each page it touches and each state it changes (for example the error
   shown after an empty submit, or a dialog open), at the desktop viewport and at 360 px:
   1. rebuild with `docker compose up --build --wait`, so port 8081 serves your code;
@@ -41,4 +42,8 @@ Additions:
   6. delete `frontend/e2e/zshots.spec.ts` before committing.
 - List the screenshot paths in your report. The list does not count toward the
   15-line report limit.
+- Before the code gate, when the main agent asks, take a final set of every screen and
+  state listed in the change's "UI design" section, at the desktop viewport and at
+  360 px, into `frontend/screenshots/<change-name>/` by the same steps, and list the
+  paths.
 - No new dependencies.
