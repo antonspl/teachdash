@@ -45,5 +45,5 @@ Additions:
 - Before the code gate, when the main agent asks, take a final set of every screen and
   state listed in the change's "UI design" section, at the desktop viewport and at
   360 px, into `frontend/screenshots/<change-name>/` by the same steps, and list the
-  paths.
+  paths. If that section says "UI design: none", take no set and say so.
 - No new dependencies.

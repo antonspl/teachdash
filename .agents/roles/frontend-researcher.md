@@ -24,4 +24,6 @@ Additions:
   components (reused or new). Put them under "For the engineer"; the main agent asks
   them, and the answers go into the proposal's Clarifications and the "UI design"
   section of `design.md`.
-- Do not sweep existing UI outside the change for design problems; that is #171.
+- Do not sweep existing UI outside the change for design problems; existing UI design
+  is out of scope. A problem you meet on the way still gets the one-line mention from
+  `researcher.md`.
