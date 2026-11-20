@@ -1,11 +1,16 @@
 # Tasks
 
-This is a tooling change with `skip_specs: true`. The spec gate covers the proposal and the design. There is no "Failing tests" section and no test review stop. The proof for each task is recorded in the PR and reviewed at the code gate. All tasks start after the spec gate. Every `openspec` call uses `npx -y @fission-ai/openspec@1.15.0` (as `scripts/flow/change-start`).
+This is a tooling change with `skip_specs: true`. The spec gate covers the proposal and the design. There is no "Failing tests" section and no test review stop. The proof for each task is recorded in the PR and reviewed at the code gate; the dry run's proof (5.1) is screenshots that the engineer attaches to the PR by hand. All tasks start after the spec gate. Every `openspec` call uses `npx -y @fission-ai/openspec@1.15.0` (as `scripts/flow/change-start`).
 
 ## 1. Design sources and project rules
 
 - [ ] 1.1 Add `.agents/design/licenses/` with the five upstream licence files, verbatim, named `<owner>-<repo>.LICENSE`; for anthropics/skills take `skills/frontend-design/LICENSE.txt` @e4bb5d9 (design D10). Verify: each file matches the upstream licence file at the pinned commit (`diff` against a fresh fetch).
-- [ ] 1.2 Add `.agents/design/project-rules.md` (design D2). Verify, and record in the PR: it lists the base rules and C0-C14; for each C item, a `grep` over the source files of 1.4 and 1.5 for the dropped pattern finds nothing outside `project-rules.md` and the README (for example C1 `Session Expiring|Save API Key`, C2 `uppercase`, C3 `:[[:space:]]*#[0-9a-fA-F]{3,8}\b|[0-9]+px` (the hex part needs a CSS context, a colon before the value, so issue numbers such as `#168` and anchors do not match), C4 `font-family|fonts\.googleapis|distinctive`, C8 `autocomplete="off"`, C9 `44x44|44 ?px`, C13 `P0|P1|P2|P3|/10|score`, C14 `illustrat|<img`), and a `grep` for the rewritten form finds it (for example `--space-`, `--color-`, `src/ui/`, `<dialog>`, `24 CSS px`, `R14-S12`); items with no searchable pattern (C0, C10) are checked by reading and noted as such.
+- [ ] 1.2 Add `.agents/design/project-rules.md` (design D2). Verify, and record in the PR: it lists the base rules and C0-C14; for each C item, a `grep -nE` over the source files of 1.4 and 1.5 for the dropped pattern finds nothing outside `project-rules.md` and the README, and a `grep` for the rewritten form finds it (for example `--space-`, `--color-`, `src/ui/`, `<dialog>`, `24 CSS px`, `R14-S12`). The dropped patterns:
+  - C1 `Session Expiring|Save API Key`; C2 `uppercase`; C8 `autocomplete="off"`; C9 `44x44|44 ?px`; C13 `P0|P1|P2|P3|/10|score`; C14 `illustrat|<img`;
+  - C3, aligned with `frontend/scripts/check-design-tokens.mjs`: hex `:[[:space:]]*#[0-9a-fA-F]{3,8}\b` (a colon before the value, so issue numbers such as `#168` and anchors do not match), and lengths `[0-9]+(px|rem)\b` on lines that are not `@media` lines (`grep -nE '[0-9]+(px|rem)\b' <files> | grep -v '@media'`), because the script does not check `@media` conditions;
+  - C4, aligned with the same script: `fonts\.googleapis|distinctive`, and `font-family:` or `font:` only when the value is not a single `var(...)` (``grep -nE 'font(-family)?:' <files> | grep -vE 'font(-family)?:[[:space:]]*var\([^()]*(\([^()]*\))?[^()]*\)[[:space:]]*(;|\}|`|$)'``).
+
+  Items with no searchable pattern (C0, C10) are checked by reading and noted as such.
 - [ ] 1.3 Add `.agents/design/README.md`: reading order, precedence, the source/path/commit/licence-file table and the NOTICE note (design D1, D10). Verify: every file in `.agents/design/` is listed, every commit matches D1, and the reading order is `README.md`, `project-rules.md`, `checklist.md`, then `accessibility.md` for slices that add or change interactive elements, forms or dialogs.
 - [ ] 1.4 Add `checklist.md` from vercel-labs/web-interface-guidelines @434b7f9, with the three impeccable audit points in our own words (design D1). Verify: the drop list is gone (grep in 1.7), and the three points are present.
 - [ ] 1.5 Add `accessibility.md`, `accessibility-wcag22.md`, `accessibility-patterns.md`, `refactoring-ui.md`, `refactoring-ui-patterns.md`, `frontend-design-copy.md` and `critique-rubric.md`, each fetched by its pinned commit and adapted as design D1 says. Verify:
@@ -25,22 +30,29 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 
 ## 3. Reviewers and researcher
 
-- [ ] 3.1 Update `.agents/roles/reviewer.md`: the frontend Check bullet and `.agents/design/` on the "no unrequested changes" list (design D7). Proven by the dry run in 5.1 on the throwaway branch; its last SHA is recorded in the PR.
-- [ ] 3.2 Update `.agents/roles/code-gate-reviewer.md`: the project-rules bullet and `.agents/design/` on the "no unrequested changes" list (design D7). Verify: `grep -n '.agents/design' .agents/roles/code-gate-reviewer.md` shows both lines.
-- [ ] 3.3 Update `.agents/roles/researcher.md` with the design-angle rule (design D5). Proven by the dry run in 5.1 on the throwaway branch; its last SHA is recorded in the PR.
+- [ ] 3.1 Update `.agents/roles/reviewer.md`: the frontend Check bullet, `.agents/design/` on the "no unrequested changes" list, and the own-UI case in the triage line ("Mark each finding as one to fix in the PR ..."): design-rule and WCAG 2.2 AA violations in UI the change adds or edits are also marked fix in the PR (design D7). Verify, and record in the PR: ``tr '\n' ' ' < .agents/roles/reviewer.md | tr -s ' ' | grep -oE 'Mark each finding.{0,250}WCAG 2\.2 AA violations? in UI the change adds or edits'`` finds the triage line. The Check bullet is proven by the dry-run screenshots of 5.1.
+- [ ] 3.2 Update `.agents/roles/code-gate-reviewer.md`: the project-rules bullet, `.agents/design/` on the "no unrequested changes" list, and the same own-UI case in the triage line (design D7). Verify: `grep -n '.agents/design' .agents/roles/code-gate-reviewer.md` shows both lines, and ``tr '\n' ' ' < .agents/roles/code-gate-reviewer.md | tr -s ' ' | grep -oE 'Mark each finding.{0,250}WCAG 2\.2 AA violations? in UI the change adds or edits'`` finds the triage line.
+- [ ] 3.3 Update `.agents/roles/researcher.md` with the design-angle rule (design D5). Proven by the dry-run screenshots of 5.1.
 - [ ] 3.4 After 2.1 and 3.1-3.3, run `scripts/setup-agents`. Verify, and record in the PR: it generates `frontend-implementer` for Claude Code, opencode and Codex without script changes, and `scripts/setup-agents --check` prints `ok`.
 
 ## 4. AGENTS.md, constitution, config, .gitignore
 
-- [ ] 4.1 Update `AGENTS.md` (design D4, D5, D6, D7). Verify, and record in the PR, each of the six points with its own check. The checks run on the file with line wraps removed, so a wrapped line still matches: `flat` below means `tr '\n' ' ' < AGENTS.md | tr -s ' '`, and each check is `flat | grep -o '<term>'` for every term listed, followed by reading the matched paragraph:
+- [ ] 4.1 Update `AGENTS.md` (design D4, D5, D6, D7). Verify, and record in the PR, each of the six points with its own check, followed by reading the matched paragraph. The checks run on the file with line wraps removed, so a wrapped line still matches, and use no repetition count above 255 (the macOS `grep` limit):
+
+  ```sh
+  flat() { tr '\n' ' ' < AGENTS.md | tr -s ' '; }
+  impl() { flat | grep -oE 'Implementation\*\*.*- \*\*Review\*\*'; }   # the Implementation bullet
+  review() { flat | grep -oE '\*\*Review\*\*.*Agents. reports'; }       # the Review bullet
+  ```
+
   - the commit-before-delegating line names the `frontend-implementer`: `flat | grep -oE 'Before delegating[^.]*frontend-implementer'`;
-  - the design angle: the terms `design angle`, `frontend/src`, `Clarify`, `small task`, `Explore is run` and `existing screens` are found, and reading shows they belong to the design-angle text;
-  - design and UI problems in existing UI outside the change filed only after the engineer agrees, other findings by step 10: the terms `area:frontend`, `engineer agrees` and `step 10` are found;
-  - routing of implementation slices touching `frontend/` to `frontend-implementer`, with "Failing tests" staying with `implementer`: `flat | grep -oE 'Implementation[^*]*frontend-implementer'`;
-  - the frontend review check against `.agents/design/` and the screenshots: the terms `.agents/design/` and `screenshots` are found in the review bullet;
+  - the design angle: `flat | grep -oi '<term>'` finds each of `design angle`, `frontend/src`, `Clarify`, `small task`, `Explore is run` and `existing screens`, and reading shows they belong to the design-angle text;
+  - design and UI problems in existing UI outside the change filed only after the engineer agrees, other findings by step 10: `flat | grep -o '<term>'` finds each of `area:frontend`, `engineer agrees` and `step 10`;
+  - routing of implementation slices touching `frontend/` to `frontend-implementer`: `impl | grep -o 'frontend-implementer'` finds it; and the "Failing tests" (pass 1) text stays with `implementer`: ``impl | grep -oiE 'failing tests[^.]*`implementer`|`implementer`[^.]*failing tests'`` finds it, and reading shows pass 1 is not given to `frontend-implementer`;
+  - the frontend review check: `review | grep -oE '\.agents/design/|screenshots'` finds both terms;
   - `flat | grep -o 'implementer or frontend-implementer report'` finds the phrase.
 - [ ] 4.2 Edit constitution §1 step 2 with the design-angle sentence (design D5) and step 10 with the own-UI sentence (design D7). Verify: `git diff main -- openspec/constitution.md` touches only steps 2 and 10, one sentence each.
-- [ ] 4.3 Add the layer-split rule for implementation task groups to `openspec/config.yaml` `rules.tasks` as design D4 says; lines 27 and 38 are not changed. Verify: `npx -y @fission-ai/openspec@1.15.0 instructions tasks --change workflow-frontend-implementer --json` lists the new rule, and `git diff main -- openspec/config.yaml` adds only that one rule.
+- [ ] 4.3 Add the layer-split rule for implementation task groups to `openspec/config.yaml` `rules.tasks` as design D4 says, including the order (in a change with both layers, backend implementation groups come before the frontend groups that call them); the "Section 1 is Failing tests" rule in `rules.tasks` and the "Pass 1 production code" apply guidance are not changed. Verify: `npx -y @fission-ai/openspec@1.15.0 instructions tasks --change workflow-frontend-implementer --json` lists the new rule, and `git diff main -- openspec/config.yaml` adds only that one rule.
 - [ ] 4.4 Add `frontend/screenshots/` to `.gitignore` (design D8). Verify: a file saved in `frontend/screenshots/<change-name>/` does not show in `git status`.
 
 ## 5. Proof
@@ -49,14 +61,14 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
   - #165 goes through Clarify and Research up to the design questions; no spec deltas are written for #165;
   - a `researcher` on the design angle returns design questions, and existing-UI problems apart;
   - the main agent asks them before any code;
-  - on a throwaway branch off this one, a scratch change `ui-required-fields` is created by `scripts/flow/change-start` or `openspec new change`, never by hand; its proposal Clarifications hold the design answers and its minimal `tasks.md` holds the slice;
+  - a throwaway branch is made off this one with `git switch -c <throwaway name, for example dry-run-frontend-implementer> workflow-frontend-implementer` (not `scripts/flow/change-start`, which branches from `origin/main` and would take the real #165 branch name); on it a scratch change is created with `npx -y @fission-ai/openspec@1.15.0 new change ui-required-fields`, never by hand; its proposal Clarifications hold the design answers and its minimal `tasks.md` holds the slice;
   - the `frontend-implementer` builds that slice and lists its screenshot paths in `frontend/screenshots/ui-required-fields/`: each page the slice touches and each state it changes (for example the error shown after an empty submit, or a dialog open), at desktop and 360 px;
-  - the `reviewer` checks the slice against `.agents/design/` and the screenshots.
+  - the `reviewer` checks the slice against `.agents/design/` and the screenshots; design-rule and WCAG 2.2 AA violations in UI the slice adds or edits are fixed on the throwaway branch; design and UI problems in existing UI outside the slice are listed to the engineer and filed only after agreement (#168 is already filed).
 
-  Verify, and record in PR #169: the questions and when they were asked; the screenshot paths from the report (the engineer attaches images by hand if wanted); the reviewer's design findings and their triage (design-rule and WCAG 2.2 AA violations in UI the slice adds or changes are fixed on the throwaway branch); no `zshots` spec in the slice's commit; `implementer.md` unchanged; the throwaway branch's last SHA. Then delete the branch (local, and remote if pushed), the scratch change and the code; no #165 code survives. Design and UI problems in existing UI outside the slice are listed to the engineer and filed only after agreement (#168 is already filed). opencode and Codex are not run, and routing in a change with both layers is not exercised (#165 is frontend-only); the PR states both are unverified.
+  Verify (design D12): the proof is screenshots only. The engineer attaches screenshots to PR #169 by hand, showing how the new flow works (for example the design questions asked before code, the frontend-implementer's work and the reviewer's work) and what result it gives (the UI). They are also the proof for 3.1 and 3.3. No throwaway-branch SHA, no pushed branch and no text logs are required. The throwaway branch is not pushed and is deleted right after the run, with the scratch change and the code; no #165 code survives. opencode and Codex are not run, and routing in a change with both layers is not exercised (#165 is frontend-only); the PR states both are unverified.
 
 ## Workflow follow-up
 
-- Code review gate: the `code-gate-reviewer` runs, then the engineer approves the code in the PR.
+- Code review gate: the PR holds the proofs (the recorded checks of tasks 1-4 and the engineer's dry-run screenshots of 5.1); the `code-gate-reviewer` runs, then the engineer approves the code in the PR.
 - Archive in the same PR; nothing merges into `openspec/specs/`.
 - Mark the PR ready for the final review by a code owner other than the engineer; the owner approves the role files, `openspec/config.yaml` and the constitution (§1 steps 2 and 10).
