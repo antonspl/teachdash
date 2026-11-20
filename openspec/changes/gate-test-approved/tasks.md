@@ -4,7 +4,7 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 
 ## 1. Gate status
 
-- [ ] 1.1 Add the fixtures in `scripts/flow/fixtures`, each a `.json` with its `.expected`, all with the PR by `alice`, commits before the comments and no box ticked:
+- [x] 1.1 Add the fixtures in `scripts/flow/fixtures`, each a `.json` with its `.expected`, all with the PR by `alice`, commits before the comments and no box ticked:
   - `approval-singular-test`: comment "Test approved" from `alice`. Expected: `tests: approved by alice at <time>; comment without a ticked box`, and the spec and code lines read `no approving comment; box not ticked` (the other gates are unaffected).
   - `approval-singular-test-question`: comment "Test approved?". Expected: all three gates `no approving comment; box not ticked`.
   - `approval-no-d`: three comments "Spec approve", "Code approve" and "Test approve". Expected: all three gates `no approving comment; box not ticked`.
