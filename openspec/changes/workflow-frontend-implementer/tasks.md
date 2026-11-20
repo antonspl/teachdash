@@ -107,12 +107,12 @@ Every `git diff` check in groups 5-12 uses base `3355250`, the last commit befor
 
 ## 6. Generic researcher and reviewer
 
-- [ ] 6.1 Remove the design-angle bullet from `.agents/roles/researcher.md` and change its description to: for all investigation, except UI angles, which go to `frontend-researcher` (design D5, D6; G-15). Verify, and record in the PR:
+- [x] 6.1 Remove the design-angle bullet from `.agents/roles/researcher.md` and change its description to: for all investigation, except UI angles, which go to `frontend-researcher` (design D5, D6; G-15). Verify, and record in the PR:
   - the design bullet is gone: `grep -cE '\.agents/design|design angle|critique-rubric' .agents/roles/researcher.md` prints 0;
   - the description: `grep -nE '^description:.*except UI angles.*frontend-researcher' .agents/roles/researcher.md` finds it;
   - `git diff 3355250 -- .agents/roles/researcher.md` shows only that bullet removed and the description line changed.
-- [ ] 6.2 Remove the frontend Check bullet from `.agents/roles/reviewer.md` (design D7). Verify, and record in the PR: `grep -cE 'zshots|frontend/screenshots|critique-rubric|frontend-implementer' .agents/roles/reviewer.md` prints 0; `.agents/design/` is still on the "no unrequested changes" list (`grep -n '\.agents/design/'` finds that line only); the triage check of 3.1 still finds the own-UI case; the diff check of the file is in 6.3.
-- [ ] 6.3 Reword the triage line of `.agents/roles/reviewer.md` ("Mark each finding as one to fix in the PR ...") so the own-UI case speaks of design-rule violations (the design rules in `.agents/design/`, in the precedence order of its README) and WCAG 2.2 AA violations in UI the change adds or edits, instead of "a design-rule ... violation" (design D7; G-20; reworks 3.1). The `frontend-reviewer` inherits it. Verify, and record in the PR:
+- [x] 6.2 Remove the frontend Check bullet from `.agents/roles/reviewer.md` (design D7). Verify, and record in the PR: `grep -cE 'zshots|frontend/screenshots|critique-rubric|frontend-implementer' .agents/roles/reviewer.md` prints 0; `.agents/design/` is still on the "no unrequested changes" list (`grep -n '\.agents/design/'` finds that line only); the triage check of 3.1 still finds the own-UI case; the diff check of the file is in 6.3.
+- [x] 6.3 Reword the triage line of `.agents/roles/reviewer.md` ("Mark each finding as one to fix in the PR ...") so the own-UI case speaks of design-rule violations (the design rules in `.agents/design/`, in the precedence order of its README) and WCAG 2.2 AA violations in UI the change adds or edits, instead of "a design-rule ... violation" (design D7; G-20; reworks 3.1). The `frontend-reviewer` inherits it. Verify, and record in the PR:
   - ``tr '\n' ' ' < .agents/roles/reviewer.md | tr -s ' ' | grep -o 'design rules in `.agents/design/`, in the precedence order of its README'`` finds it;
   - the triage check of 3.1 still finds the own-UI case;
   - `grep -c 'Mark each finding' .agents/roles/frontend-reviewer.md` prints 0 (no triage line of its own);
@@ -120,14 +120,14 @@ Every `git diff` check in groups 5-12 uses base `3355250`, the last commit befor
 
 ## 7. code-gate-reviewer
 
-- [ ] 7.1 Strengthen the frontend bullet of `.agents/roles/code-gate-reviewer.md` (design D7, D8; reworks 3.2). Verify, and record in the PR, on the file with line wraps removed (`tr '\n' ' ' < .agents/roles/code-gate-reviewer.md | tr -s ' '`):
+- [x] 7.1 Strengthen the frontend bullet of `.agents/roles/code-gate-reviewer.md` (design D7, D8; reworks 3.2). Verify, and record in the PR, on the file with line wraps removed (`tr '\n' ' ' < .agents/roles/code-gate-reviewer.md | tr -s ' '`):
   - for a PR touching `frontend/src` it reads `README.md` first, then `project-rules.md`, `checklist.md`, and `accessibility.md` for forms and dialogs: `grep -oE 'README\.md.{0,120}project-rules\.md.{0,120}checklist\.md'` finds the order, and `grep -o 'accessibility.md'` finds it;
   - it checks against the "UI design" section of `design.md` and the final screenshot set (G-16): `grep -oE 'UI design|final screenshot set'` finds both, and reading shows the main agent passes the paths in `frontend/screenshots/<change-name>/`;
   - its report gets a "Design" section that says what was checked: reading;
   - with no final set (for example "UI design: none"), the Design section says "no screenshots: <reason>" (F8): `grep -o 'no screenshots: '` finds it, and reading shows that case;
   - the leftover `zshots.spec.ts` / `frontend/screenshots/` finding, `.agents/design/` on the "no unrequested changes" list and the triage check of 3.2 are still there;
   - `git diff 3355250 -- .agents/roles/code-gate-reviewer.md` leaves the frontmatter (class `strong`) and the other Check bullets unchanged, and changes the triage line only as 7.2 says.
-- [ ] 7.2 Reword the triage line of `.agents/roles/code-gate-reviewer.md` as 6.3 does for `reviewer.md`: the own-UI case speaks of design-rule violations (the design rules in `.agents/design/`, in the precedence order of its README) and WCAG 2.2 AA violations in UI the change adds or edits (design D7; G-20; reworks 3.2). Verify, and record in the PR: ``tr '\n' ' ' < .agents/roles/code-gate-reviewer.md | tr -s ' ' | grep -o 'design rules in `.agents/design/`, in the precedence order of its README'`` finds it, and the triage check of 3.2 still finds the own-UI case.
+- [x] 7.2 Reword the triage line of `.agents/roles/code-gate-reviewer.md` as 6.3 does for `reviewer.md`: the own-UI case speaks of design-rule violations (the design rules in `.agents/design/`, in the precedence order of its README) and WCAG 2.2 AA violations in UI the change adds or edits (design D7; G-20; reworks 3.2). Verify, and record in the PR: ``tr '\n' ' ' < .agents/roles/code-gate-reviewer.md | tr -s ' ' | grep -o 'design rules in `.agents/design/`, in the precedence order of its README'`` finds it, and the triage check of 3.2 still finds the own-UI case.
 
 ## 8. AGENTS.md and CONTRIBUTING.md routing
 
