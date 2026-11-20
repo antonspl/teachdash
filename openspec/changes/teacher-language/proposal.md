@@ -20,6 +20,7 @@ Issue #161.
 | 13 | Second critique | Student-enrolment R3 is modified too (a teacher's entry has the language); "all failing fields at once" in R5 and R9 means validation failures only (a JSON type error stops at the first field, as in api-errors); R5-S6 also covers `5` and `true`; the profile check does not use the annotations (design D2); existing teacher `PATCH /api/me` bodies in ProfileTest keep omitting the language; web-client R17 is unchanged; the deploy window is recorded in design Risks. |
 | 12 | Other critique answers | Design Risks has a rollback note. New scenarios: a teacher's change leaves other users' languages alone; a code with no i18n name shows the code; retry after the language list fails (profile and admin dialog); the current-user state has the new language after a save without a reload. `languages` R1 is modified in the delta (the Purpose lines are fixed at archive, as Purposes are not part of deltas); design D8 is dropped. |
 | 14 | Test the backfill? | No. Scenario accounts/R13-S2 (the migration test that backfills existing teachers with `en`, checked by migrating Flyway to version 12 and on) is dropped: it is not worth a test, it needs Flyway targets and is fragile against later migrations, and only the owner's teacher account exists before M2. R13 keeps its backfill text and R13-S1; other scenarios are not renumbered. |
+| 15 | Simpler `PATCH /api/me` rules (code review) | Supersedes the parts of rows 10 and 11 about `null` being `REQUIRED` and about any type being ignored for students and admins. `nativeLanguage` is a plain `String` checked by the existing `@NativeLanguage` annotation (null allowed); no `JsonNode`, no role-aware validation. Absent or JSON `null` keeps the stored value, for every role. ""/blank is `REQUIRED`, an unlisted code `INVALID_FORMAT`, a non-string (array, object, number, boolean) `INVALID_TYPE`, for every role (student, teacher, admin); a JSON type error stops at the first field, as in api-errors. A valid code is saved for a teacher and ignored for a student or an admin (stored value unchanged; an admin stays without a language). Reason: the `JsonNode` design was complex; students will pick their language in our frontend later, so a hand-made bad value from a student getting 400 is acceptable. |
 
 ## Research angles
 
@@ -38,9 +39,9 @@ Translation goes into the reader's native language (constitution §9). Teachers 
 
 - Every teacher has a native language, required, from the same list as a student's. The migration backfills existing teachers with `en`.
 - The admin picks it when creating a teacher (`CreateTeacherRequest.nativeLanguage`, "Add teacher" dialog).
-- The teacher changes it through `PATCH /api/me` and a dropdown in the profile form. A student's and an admin's `PATCH /api/me` ignores the field, whatever its type.
+- The teacher changes it through `PATCH /api/me` and a dropdown in the profile form. A student's and an admin's `PATCH /api/me` ignores a valid code.
 - `nativeLanguage` is returned for teachers in `/api/me`, login, set-password, the admin's teacher list and the admin's student's-teachers list.
-- The language is optional in a teacher's `PATCH /api/me` (omitted keeps the stored value); for students and admins any value is ignored.
+- The language is optional in `PATCH /api/me` (absent or `null` keeps the stored value); "", an unlisted code or a wrong type is rejected for every role; a valid code is ignored for students and admins.
 - Constitution §9: every student and teacher has a native language; translation goes into the reader's native language.
 - Frontend: a shared language select with names from i18n.
 
@@ -52,7 +53,7 @@ None.
 
 ### Modified Capabilities
 
-- `accounts`: R5 (creating a teacher takes a required native language), R9 (a teacher may change it through `PATCH /api/me`, optional; ignored for others), R11 (one rule per field mentions it), R12 (the teacher list shows it), and added R13 (database rule and backfill).
+- `accounts`: R5 (creating a teacher takes a required native language), R9 (a teacher may change it through `PATCH /api/me`, optional; a valid code is ignored for others), R11 (one rule per field mentions it), R12 (the teacher list shows it), and added R13 (database rule and backfill).
 - `student-enrolment`: R3 (a teacher's entry in the admin's list carries the native language) and R15 now covering teachers (R15-S2, R15-S3 change, R15-S5 added).
 - `languages`: R1 wording ("a student's or teacher's native language").
 - `web-profile`: R2 (the teacher's language select; R2-S2 and R2-S5 reworded; new scenarios R2-S9 to R2-S15) and R3 (R3-S10 request carries the language).

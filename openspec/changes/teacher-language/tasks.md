@@ -15,12 +15,13 @@
 ## 3. Implementation
 
 - [x] 3.1 Add `V13__teacher_language_required.sql` (design D1); `nativeLanguage` in `CreateTeacherRequest` and `TeacherAdminService.createTeacher`; `nativeLanguage` in `TeacherResponse` (design D2); verify accounts R5, R11-S6, R12 and R13 tests pass
-- [x] 3.2 `PATCH /api/me`: `UpdateProfileRequest.nativeLanguage`, the role-aware check (no `@NotBlank`/`@NativeLanguage` on the profile field; one shared lookup function used by the annotation and the check; absent is Java `null`, JSON `null` is `NullNode`), `AccountService.updateProfile` and `UserRepository.updateProfile` (design D2); verify accounts R9-S12 to R9-S17 and student-enrolment R15 tests pass
+- [x] 3.2 `PATCH /api/me`: `UpdateProfileRequest.nativeLanguage`, the role-aware check (no `@NotBlank`/`@NativeLanguage` on the profile field; one shared lookup function used by the annotation and the check; absent is Java `null`, JSON `null` is `NullNode`), `AccountService.updateProfile` and `UserRepository.updateProfile` (design D2, reworked in 3.7); verify accounts R9-S12 to R9-S17 and student-enrolment R15 tests pass
 - [x] 3.3 Frontend: languages client and `useLanguages`, `languages.*` names in `en.json`, `Select` labels and placeholder, `LanguageSelect` (design D3); Vitest tests for its own states
 - [x] 3.4 Frontend: language select in `ProfileForm` for teachers, `User` type, `updateProfile`; Vitest tests `[web-profile/R2-S9]` to `[web-profile/R2-S15]`, the reworded `[web-profile/R2-S2]` and `[web-profile/R2-S5]`, and `[web-profile/R3-S10]` (updated)
 - [x] 3.5 Frontend: language field in the "Add teacher" dialog, `NewTeacher`; Vitest tests `[web-admin-teachers/R2-S9]` to `[web-admin-teachers/R2-S14]`, and existing R2 tests updated to choose a language
 - [x] 3.6 Constitution §9 edit: exactly the four sentences listed in design D4; §8 is not changed
-- [x] 3.7 Run `./gradlew cleanTest test`, the frontend tests and lint, and `scripts/check-scenario-coverage.sh`; verify everything is green and the approved backend tests are unchanged
+- [ ] 3.7 Rework `PATCH /api/me` (proposal Clarifications 15, design D2, D6): `UpdateProfileRequest.nativeLanguage` becomes a plain `String` with `@NativeLanguage`; remove the `JsonNode`, `BindingResult`, `ApiException.validation` and `FieldErrorCodes` pass-through code; the service saves a valid code for a teachers only; update the tests of accounts R9-S13, S14 and S16 to the new text
+- [x] 3.8 Run `./gradlew cleanTest test`, the frontend tests and lint, and `scripts/check-scenario-coverage.sh`; verify everything is green and the approved backend tests are unchanged
 
 ## Workflow follow-up
 

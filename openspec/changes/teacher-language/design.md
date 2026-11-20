@@ -43,8 +43,8 @@ The strict check waits for pass 2 because until then the code creates teachers w
 ### D2. Backend
 
 - `CreateTeacherRequest` gets `@NativeLanguage String nativeLanguage`, stripped with `Normalize.strip` in the compact constructor, like `JoinVisitor`. `TeacherAdminService.createTeacher` passes it to `accounts.createPasswordlessUser` in place of `null`.
-- `UpdateProfileRequest` gets `JsonNode nativeLanguage`, read tolerantly and with no bean annotation: an annotation cannot see the caller's role, and a typed `String` would make Jackson fail on an array or object even for a student or an admin. The controller takes the `BindingResult` after `@Valid`; for a teacher only, it then checks the node and adds errors for field `nativeLanguage` to the same result before the existing handler builds the response, so name, time zone and language failures are reported together. The checks: field absent (`node == null`) keeps the stored value; JSON `null` or a blank string is `REQUIRED`; a non-text node (array, object, number, boolean) is `INVALID_TYPE`; a stripped text not in the list is `INVALID_FORMAT`. This check does not use `@NotBlank` or `@NativeLanguage`: those annotations cannot see the role. Both the annotation and the profile check call one shared lookup function (in `languages/api/validation`, next to `NativeLanguage`), so creation and profile use one rule. Jackson maps an absent field to Java `null` and a JSON `null` to `NullNode`, which is how the two are told apart. For a student or an admin the node is not looked at. Only a valid text value reaches the service.
-- `AccountService.updateProfile` gets the language; `UserRepository.updateProfile` takes an optional language: when it is present (only for a teacher) it sets `native_language`, otherwise the column is untouched (one targeted update, never `save()`); the update is scoped to the caller's own id, so no other account changes.
+- `UpdateProfileRequest` gets a plain `String nativeLanguage` with `@NativeLanguage` (null allowed, stripped with `Normalize.strip` in the compact constructor), so the code is back to plain bean validation: no `JsonNode`, no `BindingResult` handling in the controller, no `ApiException.validation`, no role-aware check, no pass-through in `FieldErrorCodes`, and no separate shared lookup function beyond the one the annotation already uses. Name, time zone and language failures are reported together by the existing handler. Absent and JSON `null` are both Java `null` and keep the stored value; "" or blank is `REQUIRED`, an unlisted code `INVALID_FORMAT`; a non-string JSON value makes Jackson fail with `INVALID_TYPE` at the first field, as in api-errors. All of this holds for every role. Only the service decides what is saved: a non-null valid value is saved for a teacher and ignored for a student or an admin.
+- `AccountService.updateProfile` gets the language; `UserRepository.updateProfile` takes an optional language: when it is present (the service passes it only for a teacher) it sets `native_language`, otherwise the column is untouched (one targeted update, never `save()`); the update is scoped to the caller's own id, so no other account changes.
 - `TeacherResponse` gets `nativeLanguage` (always set for teachers). `UserSummary` already has it; teachers now have a value, so the admin's student's-teachers list shows it with no change (R15-S2). `UserResponse` needs no change: `NON_NULL` hides it for admins only. The creation response (`CreatedAccount`: id and link) is unchanged.
 - Existing tests that build teachers (`ApiTest.createUser`) set `native_language` for teachers (default `en`, overridable), as they do for students.
 
@@ -71,13 +71,13 @@ The sentence "A course does not record who takes it: students with different nat
 
 | Role | `native_language` | API |
 |---|---|---|
-| admin | null | never returned; `PATCH /api/me` ignores it |
+| admin | null | never returned; `PATCH /api/me` ignores a valid code |
 | teacher | required | returned everywhere; set at creation by the admin; changed by `PATCH /api/me` |
 | student | required | returned; changed by the teacher only |
 
-### D6. `PATCH /api/me`: the language is optional for a teacher
+### D6. `PATCH /api/me`: the language is optional
 
-Decided by the engineer (proposal Clarifications 10, 11): a teacher's `PATCH /api/me` without `nativeLanguage` keeps the stored value, so clients that do not know the field keep working. `null`, "" and blank are `REQUIRED`, an unlisted code `INVALID_FORMAT`, a wrong type `INVALID_TYPE`; the value rule is that of creation (accounts R5, R9, R11). For a student or an admin the field is ignored whatever its type, which is why the check is role-aware (D2). The profile form still always sends the language for a teacher.
+Decided by the engineer (proposal Clarifications 10, 11, 15): a `PATCH /api/me` without `nativeLanguage`, or with `null`, keeps the stored value, so clients that do not know the field keep working. "" and blank are `REQUIRED`, an unlisted code `INVALID_FORMAT`, a wrong type `INVALID_TYPE`, for every role; the value rule is that of creation (accounts R5, R9, R11). A valid code is saved for a teacher and ignored for a student or an admin. The check is plain bean validation (D2). A hand-made bad value from a student gets 400; this is acceptable because students will pick their language in the frontend later. The profile form still always sends the language for a teacher.
 
 ### D7. Tests
 

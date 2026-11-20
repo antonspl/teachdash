@@ -58,13 +58,14 @@ accounts, case-insensitive.
 A logged-in user SHALL be able to change their name and time zone, and change their
 password by giving the current one. The time zone MUST be a valid IANA zone name.
 A teacher MAY also change their native language through `PATCH /api/me`. The field is
-optional: a request without it keeps the stored value. When present for a teacher it has
-the rules of creation (R5): whitespace around it is ignored; `null`, "" or a blank string
-is `REQUIRED`, an array, object, number or boolean `INVALID_TYPE`, a code not in the list
-`INVALID_FORMAT`; it is checked with name and time zone and all failing validation fields are
-reported at once (a JSON type error stops at the first field, as in api-errors), and a failed request changes nothing. For a student or an admin the field
-is ignored whatever its value or type: no error, the stored value does not change. A
-teacher's change never touches another account's language.
+optional: a request without it, or with JSON `null`, keeps the stored value, for every role.
+When present it has the rules of creation (R5), for every role: whitespace around it is
+ignored; "" or a blank string is `REQUIRED`, an array, object, number or boolean
+`INVALID_TYPE`, a code not in the list `INVALID_FORMAT`; it is checked with name and time zone
+and all failing validation fields are reported at once (a JSON type error stops at the first
+field, as in api-errors), and a failed request changes nothing. A valid code is saved for a
+teacher; for a student or an admin it is ignored: no error, the stored value does not change
+(an admin stays without a language). A teacher's change never touches another account's language.
 A successful password change MUST end the account's other sessions and invalidate its
 unused password links; the session that made the change stays valid under a new session
 id, so a copy of the old id stops working. A password change
@@ -130,25 +131,25 @@ that races a revocation MUST lose: it changes nothing and the session gets 401.
 - **WHEN** the teacher updates the profile with the name "Anna S.", the time zone "Asia/Dubai" and the native language " ru ", and then reads the current user
 - **THEN** the update returns 200 with `nativeLanguage` "ru", and the current user shows "ru", "Anna S." and "Asia/Dubai"
 
-#### Scenario: accounts/R9-S13 Omitting the native language keeps it
+#### Scenario: accounts/R9-S13 Omitting the native language or sending null keeps it
 - **GIVEN** a logged-in teacher with native language "pl"
-- **WHEN** the teacher updates the profile with a new name and time zone and no native language
-- **THEN** the response is 200 with `nativeLanguage` "pl", and the new name and time zone are saved
+- **WHEN** the teacher updates the profile with a new name and time zone and, in turn, no native language and the native language `null`
+- **THEN** both responses are 200 with `nativeLanguage` "pl", and the new name and time zone are saved
 
-#### Scenario: accounts/R9-S14 A teacher's invalid language changes nothing
-- **GIVEN** a logged-in teacher with the name "Anna" and native language "en"
-- **WHEN** the teacher updates the profile with a valid new name and time zone and, in turn, the native language: `null`; ""; "  "; "xx"; "SR"; `["sr"]`; `{"code": "sr"}`; `5`; `true`
-- **THEN** the responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "nativeLanguage", code: "REQUIRED"}]` for the first three, `INVALID_FORMAT` for "xx" and "SR", and `INVALID_TYPE` for the last four, and the name is still "Anna" and the native language "en"
+#### Scenario: accounts/R9-S14 An invalid language changes nothing
+- **GIVEN** a logged-in teacher with the name "Anna" and native language "en", a logged-in student with native language "ru" and a logged-in admin
+- **WHEN** each updates the profile with a valid new name and time zone and, in turn, the native language: ""; "  "; "xx"; "SR"; `["sr"]`; `{"code": "sr"}`; `5`; `true`
+- **THEN** all responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "nativeLanguage", code: "REQUIRED"}]` for the first two, `INVALID_FORMAT` for "xx" and "SR", and `INVALID_TYPE` for the last four, and the names are unchanged, the teacher's native language is still "en", the student's "ru" and the admin has none
 
 #### Scenario: accounts/R9-S15 All failing fields are reported together
 - **GIVEN** a logged-in teacher
 - **WHEN** the teacher updates the profile with a blank name, a valid time zone and the native language "xx"
 - **THEN** the response is 400 with `errors` exactly `[{field: "name", code: "REQUIRED"}, {field: "nativeLanguage", code: "INVALID_FORMAT"}]`
 
-#### Scenario: accounts/R9-S16 A student's or an admin's value is ignored
+#### Scenario: accounts/R9-S16 A student's or an admin's valid language is ignored
 - **GIVEN** a logged-in student with native language "ru" and a logged-in admin
-- **WHEN** each updates the profile with a valid new name and time zone and, in turn, the native language: none; `null`; "xx"; "de"; `["de"]`; `{"code": "de"}`
-- **THEN** all twelve responses are 200, the student's show `nativeLanguage` "ru", the admin's have no `nativeLanguage` property, and the new names are saved
+- **WHEN** each updates the profile with a valid new name and time zone and, in turn, the native language: none; `null`; "de"
+- **THEN** all six responses are 200, the student's show `nativeLanguage` "ru", the admin's have no `nativeLanguage` property, and the new names are saved
 
 #### Scenario: accounts/R9-S17 A teacher's change does not touch other accounts
 - **GIVEN** a logged-in teacher with native language "en", their student with native language "sr", another teacher with native language "fr" and an admin
@@ -159,7 +160,7 @@ that races a revocation MUST lose: it changes nothing and the session gets 401.
 Name, email, time zone and a teacher's native language SHALL follow the same rules wherever an account is created or
 changed. Whitespace around a name or email SHALL be ignored before they are checked and
 stored, including invisible characters around a name. The native language has the value rule of R5 in
-creation and in the profile (R9); the only difference is that the profile may omit it.
+creation and in the profile (R9); the only difference is that the profile may omit it or send `null`, which keeps the stored value.
 A name MUST contain a letter or
 digit and MUST NOT contain line breaks, control or text-direction characters.
 
