@@ -4,7 +4,7 @@
 
 See proposal.md. Current state on `main`:
 
-- `courses` exists (V11) with `CourseService.create` (teacher row lock, limit check, insert), `CourseRepository` on `JdbcClient`, `@CourseTitle` in `common/validation`, `teachdash.courses.max-per-teacher`. Migrations end at V13.
+- `courses` exists (V11) with `CourseService.create` (teacher row lock, limit check, insert; lessons do not copy the teacher lock), `CourseRepository` on `JdbcClient`, `@CourseTitle` in `common/validation`, `teachdash.courses.max-per-teacher`. Migrations end at V13.
 - Role gates are URL-prefix rules in `common/SecurityConfig`: `/api/teacher/**` needs TEACHER.
 - Controllers read the teacher id with `UUID.fromString(principal.getName())`; a deactivated teacher gets 401 `UNAUTHENTICATED` from `UserRepository.findActiveByIdForUpdate`.
 - Teacher-owned data carries `teacher_id` and every query is scoped by it (constitution §8).
@@ -63,12 +63,12 @@ The annotation `CourseTitle` is renamed to a neutral `Title` (same package, `com
 
 `LessonService.create(teacherId, courseId, title)`, `@Transactional`:
 
-1. `users.findActiveByIdForUpdate(teacherId)`, as in courses: 401 for a deactivated teacher.
-2. `select id from courses where id = :courseId and teacher_id = :teacherId for update`. No row: `ApiException` 404 `NOT_FOUND`, the same for unknown and foreign ids, so nothing leaks.
+1. Active-teacher check as a plain read, without a lock (not `findActiveByIdForUpdate`): 401 for a deactivated teacher.
+2. `select id from courses where id = :courseId and teacher_id = :teacherId for update`. This is the only lock; it serialises the limit check and the position (the lock #107's move will also use). No row: `ApiException` 404 `NOT_FOUND`, the same for unknown and foreign ids, so nothing leaks.
 3. Under that lock, `count(*) from lesson_courses where course_id = :courseId` at or above `maxPerCourse`: `409 LESSON_LIMIT_REACHED` (plain `ApiException`, no `errors`).
 4. Insert the lesson (new UUID, `created_at` and `updated_at` from one `clock` time, explicit insert through `JdbcClient`, as for courses), then the `lesson_courses` row with `position = coalesce(max(position), 0) + 1` for the course.
 
-Order of checks: input (400), course lookup (404), limit (409). The course row lock makes steps 3 and 4 safe under parallel requests (R1-S9). `maxPerCourse` comes from `teachdash.lessons.max-per-course=100` in `application.properties`, read with `@Value`, like the courses limit. The limit counts `lesson_courses` rows, so it applies to every course, including the future "store" course.
+Order of checks, as courses R5: CSRF and role (403), deactivated teacher (401), malformed course id (404), input (400), unknown or another teacher's course (404), limit (409). List: the same without the input step. Because ownership is checked before the limit, a full foreign course gives 404, not 409 (R1-S11), and input is validated before the course is looked up (R1-S13). The course row lock alone makes steps 3 and 4 safe under parallel requests, so the race test R1-S9 proves it: with no teacher lock, only the course lock can serialise the 6 requests. `maxPerCourse` comes from `teachdash.lessons.max-per-course=100` in `application.properties`, read with `@Value`, like the courses limit. The limit counts `lesson_courses` rows, so it applies to every course, including the future "store" course.
 
 List: `LessonService.list(teacherId, courseId)` checks that the course belongs to the teacher (404 otherwise, same query without `for update`), then selects the course's lessons joined with `lesson_courses`, `order by position`, scoped by `lessons.teacher_id` as well.
 
