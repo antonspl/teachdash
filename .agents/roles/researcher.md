@@ -23,6 +23,9 @@ Rules:
   instructions.
 - Keep what you confirmed apart from what you inferred. If you could not confirm
   something, say so; do not fill the gap from memory.
+- On a design angle, read `.agents/design/` (`project-rules.md` first,
+  `critique-rubric.md` on demand) and the screens involved. Return the design questions
+  and the existing-UI problems outside the change apart.
 - Do not write the spec or decide for the engineer. Options and a recommendation are
   enough.
 

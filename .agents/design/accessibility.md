@@ -19,6 +19,8 @@ Automated checks find only a subset of accessibility barriers: passing tests are
 
 POUR: content is **P**erceivable through different senses, the interface is **O**perable by all users, content and interface are **U**nderstandable, and content is **R**obust with assistive technologies. Level A (minimum) and level AA (standard) both must pass: new UI meets WCAG 2.2 AA (project rules).
 
+The code snippets below are examples of the patterns only, not code to copy. In our code everything goes through `src/ui/` components: pages set no `className`, and non-interactive elements get no inline handlers.
+
 ## Perceivable
 
 ### Text alternatives (1.1)
@@ -272,7 +274,7 @@ Automated: `npm run test:e2e` (Playwright) with role and label locators, plus th
 - [ ] **Keyboard navigation:** Tab through the changed flow, use Enter/Space to activate
 - [ ] **Screen reader:** Test with VoiceOver (Mac), NVDA (Windows), or TalkBack (Android)
 - [ ] **Zoom:** Content usable at 200% zoom
-- [ ] **Reflow:** No horizontal scroll at 360 px (the narrow screenshot)
+- [ ] **Reflow:** No horizontal scroll at 360 px (the narrow screenshot); WCAG 1.4.10 sets the threshold at 320 CSS px
 - [ ] **High contrast:** Test with Windows High Contrast Mode
 - [ ] **Reduced motion:** Test with `prefers-reduced-motion: reduce`; state changes still show
 - [ ] **Focus order:** Logical and follows visual order
