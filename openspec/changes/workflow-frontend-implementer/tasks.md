@@ -2,7 +2,22 @@
 
 This is a tooling change with `skip_specs: true`. The spec gate covers the proposal and the design. There is no "Failing tests" section and no test review stop. The proof for each task is recorded in the PR and reviewed at the code gate; the dry run's proof (13.1) is screenshots that the engineer attaches to the PR by hand. All tasks start after the spec gate. Every `openspec` call uses `npx -y @fission-ai/openspec@1.15.0` (as `scripts/flow/change-start`).
 
-Tasks 1-4 were done before the post-gate revision (proposal Clarifications, G-1 to G-11) and stay ticked. Groups 5-12 rework part of them: 6.1 removes the design-angle bullet of 3.3, 6.2 moves the frontend bullet of 3.1 into the `frontend-reviewer`, 8.1 replaces the design-angle text of 4.1, 9.1 replaces the step 2 sentence of 4.2, and 11.2 removes the out-of-scope filing line of 1.2. The dry run, formerly 5.1, is now 13.1.
+Tasks 1-4 were done before the post-gate revision (proposal Clarifications, G-1 to G-11, and G-12 to G-19 after its critique) and stay ticked; their recorded checks are not rewritten. Groups 5-12 rework part of them:
+
+- 5.4 reworks the screenshot trigger of the `frontend-implementer` role written by 2.1 and adds the final screenshot set (G-16, G-17);
+- 6.1 removes the design-angle bullet of 3.3 and changes the `researcher.md` description (G-15);
+- 6.2 moves the frontend bullet of 3.1 into the `frontend-reviewer` (5.3);
+- 7.1 reworks the project-rules bullet of 3.2;
+- 8.1 replaces the design-angle text and the out-of-scope filing text of 4.1, and changes the review-bullet sentence that 4.1's `review | grep` check matched;
+- 9.1 replaces the step 2 sentence of 4.2 and edits the Roles paragraph and step 5, so 4.2's recorded check ("only steps 2 and 10", against `main`) no longer holds after it;
+- 10.1 adds two rules to `openspec/config.yaml`, so 4.3's recorded check ("adds only that one rule", against `main`) no longer holds after it;
+- 11.1 reworks the README of 1.3; 11.2 removes the out-of-scope filing line of 1.2 and 11.4 changes C0 of 1.2;
+- 11.3 reworks the readers named in `checklist.md` (1.4) and `critique-rubric.md` (1.5);
+- 12.1 replaces the generation of 3.4.
+
+The dry run, formerly 5.1, is now 13.1.
+
+Every `git diff` check in groups 5-12 uses base `3355250`, the last commit before these groups (the commits after it and before group 5 touch only `openspec/changes/`), and names the file. Each file so checked is changed by one group only. `main` is not the base, because tasks 1-4 already changed most of these files; it stays the base only for `.agents/roles/implementer.md` and `scripts/setup-agents`, which this change never edits.
 
 ## 1. Design sources and project rules
 
@@ -39,7 +54,7 @@ Tasks 1-4 were done before the post-gate revision (proposal Clarifications, G-1 
 
 ## 4. AGENTS.md, constitution, config, .gitignore
 
-- [x] 4.1 Update `AGENTS.md` (design D4, D5, D7, before the post-gate revision; the design-angle text is replaced by 8.1). Verify, and record in the PR, each of the five points with its own check, followed by reading the matched paragraph. The checks run on the file with line wraps removed, so a wrapped line still matches, and use no repetition count above 255 (the macOS `grep` limit):
+- [x] 4.1 Update `AGENTS.md` (design D4, D5, D6, D7, before the post-gate revision; the design-angle text and the out-of-scope filing text are replaced by 8.1). Verify, and record in the PR, each of the six points with its own check, followed by reading the matched paragraph. The checks run on the file with line wraps removed, so a wrapped line still matches, and use no repetition count above 255 (the macOS `grep` limit):
 
   ```sh
   flat() { tr '\n' ' ' < AGENTS.md | tr -s ' '; }
@@ -49,6 +64,7 @@ Tasks 1-4 were done before the post-gate revision (proposal Clarifications, G-1 
 
   - the commit-before-delegating line names the `frontend-implementer`: `flat | grep -oE 'Before delegating[^.]*frontend-implementer'`;
   - the design angle: `flat | grep -oi '<term>'` finds each of `design angle`, `frontend/src`, `Clarify`, `small task`, `Explore is run` and `existing screens`, and reading shows they belong to the design-angle text;
+  - design and UI problems in existing UI outside the change filed only after the engineer agrees, other findings by step 10: `flat | grep -o '<term>'` finds each of `area:frontend`, `engineer agrees` and `step 10` (superseded by G-3 after the spec gate: 8.1 removes this text, and its check there expects none of these terms);
   - routing of implementation slices touching `frontend/` to `frontend-implementer`: `impl | grep -o 'frontend-implementer'` finds it; and the "Failing tests" (pass 1) text stays with `implementer`: ``impl | grep -oiE 'failing tests[^.]*`implementer`|`implementer`[^.]*failing tests'`` finds it, and reading shows pass 1 is not given to `frontend-implementer`;
   - the frontend review check: `review | grep -oE '\.agents/design/|screenshots'` finds both terms;
   - `flat | grep -o 'implementer or frontend-implementer report'` finds the phrase.
@@ -56,67 +72,86 @@ Tasks 1-4 were done before the post-gate revision (proposal Clarifications, G-1 
 - [x] 4.3 Add the layer-split rule for implementation task groups to `openspec/config.yaml` `rules.tasks` as design D4 says, including the order (in a change with both layers, backend implementation groups come before the frontend groups that call them); the "Section 1 is Failing tests" rule in `rules.tasks` and the "Pass 1 production code" apply guidance are not changed. Verify: `npx -y @fission-ai/openspec@1.15.0 instructions tasks --change workflow-frontend-implementer --json` lists the new rule, and `git diff main -- openspec/config.yaml` adds only that one rule.
 - [x] 4.4 Add `frontend/screenshots/` to `.gitignore` (design D8). Verify: a file saved in `frontend/screenshots/<change-name>/` does not show in `git status`.
 
-## 5. New frontend roles
+## 5. Frontend roles
 
 - [ ] 5.1 Add `.agents/roles/frontend-researcher.md` (design D13, D5). Verify, and record in the PR:
   - the frontmatter has `name: frontend-researcher`, a `description` that says to use it instead of `researcher` for research angles about the UI, class `medium`, access `read`, web `true`;
-  - the body says to read `.agents/roles/researcher.md` and follow it, has the "this file wins" line, and has the reading order `README.md`, `project-rules.md`, `checklist.md`, then `accessibility.md` when the change adds or changes interactive elements, forms or dialogs, the rest on demand;
+  - the body says to read `.agents/roles/researcher.md` and follow it, and has the "this file wins" line;
+  - the reading order starts from the README: ``tr '\n' ' ' < .agents/roles/frontend-researcher.md | tr -s ' ' | grep -oE 'README\.md.{0,120}project-rules\.md.{0,120}checklist\.md'`` finds it, and reading shows `accessibility.md` when the change adds or changes interactive elements, forms or dialogs, and the rest on demand;
   - it always returns design questions on the screens the change touches: `grep -oE` finds each of `layout`, `states`, `copy`, `a11y`, `tokens`, `components`, and reading shows they belong to that rule;
   - `grep -c "'''"` prints 0.
 - [ ] 5.2 Add `.agents/roles/frontend-spec-critic.md` (design D13, D15). Verify, and record in the PR:
   - the frontmatter has `name: frontend-spec-critic`, a `description` that says to use it instead of `spec-critic` for a change touching `frontend/src`, class `medium`, access `read`, web `false`;
   - the body says to read `.agents/roles/spec-critic.md` and follow it and has the "this file wins" line;
-  - the design pass: `grep -oE` finds each of `project-rules.md`, `checklist.md`, `accessibility.md`, `UI design`, `states`, `focus`, `i18n`, `tone` and `design questions`, and reading shows the five checks of D13 (missing states, scenarios without focus behaviour, copy not through i18n or not per the tone rules, contradictions with `project-rules.md`, unanswered design questions);
+  - the reading order starts from the README: ``tr '\n' ' ' < .agents/roles/frontend-spec-critic.md | tr -s ' ' | grep -oE 'README\.md.{0,120}project-rules\.md.{0,120}checklist\.md'`` finds it, and reading shows `accessibility.md` and the rest on demand as D13 says;
+  - the design pass: `grep -oE` finds each of `UI design`, `states`, `focus`, `i18n`, `tone` and `design questions`, and reading shows the five checks of D13 (missing states, scenarios without focus behaviour, copy not through i18n or not per the tone rules, contradictions with `project-rules.md`, unanswered design questions) and the `rules.design` format, including the "UI design: none, <reason>" line;
+  - unanswered design questions (G-18): reading shows they are reported as questions for the engineer, which the main agent asks, with the answers recorded by the spec-writer in the fix round;
+  - one report (G-19): reading shows the report keeps the full `spec-critic` checks, also for a change with both layers, and the "Design" section sits outside the base 25-line limit with its own cap: `grep -n '15 lines'` finds that line;
   - `grep -c "'''"` prints 0.
 - [ ] 5.3 Add `.agents/roles/frontend-reviewer.md` (design D13, D7). Verify, and record in the PR:
   - the frontmatter has `name: frontend-reviewer`, a `description` that says to use it instead of `reviewer` for any slice touching `frontend/`, class `medium`, access `read`, web `false`;
   - the body says to read `.agents/roles/reviewer.md` and follow it and has the "this file wins" line;
+  - the reading order starts from the README: ``tr '\n' ' ' < .agents/roles/frontend-reviewer.md | tr -s ' ' | grep -oE 'README\.md.{0,120}project-rules\.md.{0,120}checklist\.md'`` finds it;
   - the report has a "Logic" and a "Design" section, and the Design section always says what was checked, even with no findings: `grep -nE 'Logic|Design'` and reading;
-  - the Design pass: `grep -oE` finds each of `project-rules.md`, `checklist.md`, `360`, `keyboard`, `focus`, `aria-`, `contrast` and `UI design`, and reading shows that the role opens the screenshot PNGs itself;
+  - the Design section's own cap (G-14): `grep -n '15 lines'` finds it, and reading shows it does not count toward the 25-line limit of `reviewer.md`;
+  - a frontend slice with no screenshots (G-17): `grep -n 'no screenshots: '` finds the line that the Design section then says "no screenshots: <reason>";
+  - the Design pass: `grep -oE` finds each of `checklist.md`, `360`, `keyboard`, `focus`, `aria-`, `contrast` and `UI design`, and reading shows that the role opens the screenshot PNGs itself;
   - the leftover finding: `grep -n 'zshots.spec.ts'` and `grep -n 'frontend/screenshots/'` each find a line;
+  - `grep -c "'''"` prints 0.
+- [ ] 5.4 Rework `.agents/roles/frontend-implementer.md` (design D3, D8; reworks 2.1, G-16, G-17): the screenshot trigger becomes "when the slice changes rendered UI: any change to `frontend/src/**/*.tsx`, `frontend/src/i18n/*.json` or `frontend/src/styles/*.css`", and a bullet adds the final screenshot set: before the code gate, when the main agent asks, take a final set of every screen and state listed in the change's "UI design" section, at desktop and 360 px, into `frontend/screenshots/<change-name>/` by the same steps, and list the paths. Verify, and record in the PR:
+  - the old trigger is gone: `grep -c 'frontend/src/pages/' .agents/roles/frontend-implementer.md` prints 0;
+  - the new trigger: ``tr '\n' ' ' < .agents/roles/frontend-implementer.md | tr -s ' ' | grep -oE 'frontend/src/\*\*/\*\.tsx|frontend/src/i18n/\*\.json|frontend/src/styles/\*\.css'`` finds all three;
+  - the final set: `grep -oE 'UI design|code gate'` finds both, and reading shows the set covers every screen and state of the "UI design" section at both widths and lists the paths;
+  - `git diff 3355250 -- .agents/roles/frontend-implementer.md` changes only the trigger sentence and adds the final-set bullet; the frontmatter is unchanged;
   - `grep -c "'''"` prints 0.
 
 ## 6. Generic researcher and reviewer
 
-- [ ] 6.1 Remove the design-angle bullet from `.agents/roles/researcher.md` (design D5, D6). Verify: `grep -cE '\.agents/design|design angle|critique-rubric' .agents/roles/researcher.md` prints 0, and `git diff` of the file shows only that bullet removed.
-- [ ] 6.2 Remove the frontend Check bullet from `.agents/roles/reviewer.md` (design D7). Verify, and record in the PR: `grep -cE 'zshots|frontend/screenshots|critique-rubric|frontend-implementer' .agents/roles/reviewer.md` prints 0; `.agents/design/` is still on the "no unrequested changes" list (`grep -n '\.agents/design/'` finds that line only); and the triage check of 3.1 still finds the own-UI case.
+- [ ] 6.1 Remove the design-angle bullet from `.agents/roles/researcher.md` and change its description to: for all investigation, except UI angles, which go to `frontend-researcher` (design D5, D6; G-15). Verify, and record in the PR:
+  - the design bullet is gone: `grep -cE '\.agents/design|design angle|critique-rubric' .agents/roles/researcher.md` prints 0;
+  - the description: `grep -nE '^description:.*except UI angles.*frontend-researcher' .agents/roles/researcher.md` finds it;
+  - `git diff 3355250 -- .agents/roles/researcher.md` shows only that bullet removed and the description line changed.
+- [ ] 6.2 Remove the frontend Check bullet from `.agents/roles/reviewer.md` (design D7). Verify, and record in the PR: `grep -cE 'zshots|frontend/screenshots|critique-rubric|frontend-implementer' .agents/roles/reviewer.md` prints 0; `.agents/design/` is still on the "no unrequested changes" list (`grep -n '\.agents/design/'` finds that line only); the triage check of 3.1 still finds the own-UI case; and `git diff 3355250 -- .agents/roles/reviewer.md` shows only the frontend Check bullet removed.
 
 ## 7. code-gate-reviewer
 
-- [ ] 7.1 Strengthen the frontend bullet of `.agents/roles/code-gate-reviewer.md` (design D7). Verify, and record in the PR, on the file with line wraps removed (`tr '\n' ' ' < .agents/roles/code-gate-reviewer.md | tr -s ' '`):
-  - for a PR touching `frontend/src` it reads `README.md`, `project-rules.md`, `checklist.md` and `accessibility.md` (for forms and dialogs): `grep -oE` finds each name;
-  - it checks against the "UI design" section of `design.md` and the screenshots from the frontend slices: `grep -oE 'UI design|screenshots'` finds both;
+- [ ] 7.1 Strengthen the frontend bullet of `.agents/roles/code-gate-reviewer.md` (design D7, D8; reworks 3.2). Verify, and record in the PR, on the file with line wraps removed (`tr '\n' ' ' < .agents/roles/code-gate-reviewer.md | tr -s ' '`):
+  - for a PR touching `frontend/src` it reads `README.md` first, then `project-rules.md`, `checklist.md`, and `accessibility.md` for forms and dialogs: `grep -oE 'README\.md.{0,120}project-rules\.md.{0,120}checklist\.md'` finds the order, and `grep -o 'accessibility.md'` finds it;
+  - it checks against the "UI design" section of `design.md` and the final screenshot set (G-16): `grep -oE 'UI design|final screenshot set'` finds both, and reading shows the main agent passes the paths in `frontend/screenshots/<change-name>/`;
   - its report gets a "Design" section that says what was checked: reading;
   - the leftover `zshots.spec.ts` / `frontend/screenshots/` finding, `.agents/design/` on the "no unrequested changes" list and the triage check of 3.2 are still there;
-  - `git diff` of the file leaves the frontmatter (class `strong`) unchanged.
+  - `git diff 3355250 -- .agents/roles/code-gate-reviewer.md` leaves the frontmatter (class `strong`), the other Check bullets and the triage line unchanged.
 
-## 8. AGENTS.md routing
+## 8. AGENTS.md and CONTRIBUTING.md routing
 
-- [ ] 8.1 Update "Main agent is an orchestrator" in `AGENTS.md` (design D5, D6, D7, D13). Verify, and record in the PR, each point with its own check on the file with line wraps removed (the `flat` helper of 4.1), followed by reading the matched paragraph:
+- [ ] 8.1 Update "Main agent is an orchestrator" in `AGENTS.md` (design D5, D6, D7, D8, D13; reworks 4.1). Verify, and record in the PR, each point with its own check on the file with line wraps removed (the `flat`, `impl` and `review` helpers of 4.1, plus `spec() { flat | grep -oE '\*\*Spec critique\*\*.*- \*\*Implementation'; }`), followed by reading the matched paragraph:
   - the design-angle text and the out-of-scope filing text are gone: `flat | grep -ciE 'design angle|area:frontend|engineer agrees'` prints 0;
   - research: a change touching `frontend/src` gets at least one `frontend-researcher` at Clarify, angles about the UI go to it, and the rest to `researcher`: `flat | grep -o '<term>'` finds each of `frontend-researcher`, `frontend/src` and `Clarify`;
   - the design questions go to the engineer, and the answers into the proposal's Clarifications and the "UI design" section of `design.md`: `flat | grep -o 'UI design'` finds it;
-  - spec critique: `frontend-spec-critic` instead of `spec-critic` when the change touches `frontend/src`: ``flat | grep -oE 'Spec critique\*\*.{0,200}frontend-spec-critic'`` finds it;
-  - review: slices touching `frontend/` go to `frontend-reviewer`, and the `code-gate-reviewer` runs once per PR: `review | grep -oE 'frontend-reviewer|code-gate-reviewer'` (the `review` helper of 4.1) finds both;
-  - the Implementation bullet is unchanged: `git diff` shows no change in it.
+  - spec critique: `frontend-spec-critic` instead of `spec-critic` when the change touches `frontend/src`, and its unanswered design questions go to the engineer through the main agent, with the answers recorded by the spec-writer in the fix round (G-18): `spec | grep -oE 'frontend-spec-critic|design question|spec-writer|fix round'` finds all four;
+  - review: slices touching `frontend/` go to `frontend-reviewer` after every implementation slice (pass 2 of a change with both layers, or the single pass of a frontend-only change), and the `code-gate-reviewer` runs once per PR: `review | grep -oE 'frontend-reviewer|code-gate-reviewer|single pass of a frontend-only change'` finds all three; the sentence matched by 4.1's `review | grep -oE '\.agents/design/|screenshots'` check becomes this routing;
+  - the final screenshot set (G-16): for a PR touching `frontend/src`, before the code-gate review the main agent has the `frontend-implementer` take the final set and passes its paths to the `code-gate-reviewer`: `review | grep -o 'final screenshot set'` finds it;
+  - the Implementation bullet is unchanged: ``diff <(git show 3355250:AGENTS.md | tr '\n' ' ' | tr -s ' ' | grep -oE 'Implementation\*\*.*- \*\*Review\*\*') <(impl)`` prints nothing.
+- [ ] 8.2 Update `CONTRIBUTING.md:52`, the "Propose + spec critique" row (design D13; G-15): the agent runs one critic, the `frontend-spec-critic` when the change touches `frontend/src`, otherwise the `spec-critic`. Verify, and record in the PR: `grep -n 'frontend-spec-critic' CONTRIBUTING.md` finds that row, which also names `spec-critic` and `frontend/src`; `git diff 3355250 -- CONTRIBUTING.md` changes only that line.
 
 ## 9. Constitution
 
-- [ ] 9.1 Edit constitution §1 (design D5, D13): in step 2, replace the design-angle sentence with one saying that a change touching `frontend/src` gets at least one `frontend-researcher` at Clarify (AGENTS.md); where the spec critic is named (the Roles paragraph and step 5), the `frontend-spec-critic` runs instead of the `spec-critic` for a change touching `frontend/src`. Verify, and record in the PR: `grep -c 'design angle' openspec/constitution.md` prints 0; `grep -n 'frontend-researcher\|frontend-spec-critic' openspec/constitution.md` shows step 2, the Roles paragraph and step 5; `git diff` of the file touches only those three places, and step 10 is unchanged.
+- [ ] 9.1 Edit constitution §1 (design D5, D13; reworks 4.2): in step 2, replace the design-angle sentence with one saying that a change touching `frontend/src` gets at least one `frontend-researcher` at Clarify (AGENTS.md); where the spec critic is named (the Roles paragraph and step 5), the `frontend-spec-critic` runs instead of the `spec-critic` for a change touching `frontend/src`. Verify, and record in the PR: `grep -c 'design angle' openspec/constitution.md` prints 0; `grep -n 'frontend-researcher\|frontend-spec-critic' openspec/constitution.md` shows step 2, the Roles paragraph and step 5; `git diff 3355250 -- openspec/constitution.md` touches only those three places, and step 10 is unchanged.
 
 ## 10. Spec format rules
 
-- [ ] 10.1 Add the `rules.design` and `rules.specs` rules of design D15 to `openspec/config.yaml`. Verify, and record in the PR: `npx -y @fission-ai/openspec@1.15.0 instructions design --change workflow-frontend-implementer --json` lists the "UI design" rule with all six headings and the ASCII sketch, `npx -y @fission-ai/openspec@1.15.0 instructions specs --change workflow-frontend-implementer --json` lists the design-affecting scenarios rule, and `git diff` of the file adds only these two rules.
+- [ ] 10.1 Add the `rules.design` and `rules.specs` rules of design D15 to `openspec/config.yaml`. Verify, and record in the PR: `npx -y @fission-ai/openspec@1.15.0 instructions design --change workflow-frontend-implementer --json` lists the "UI design" rule with all six headings, the ASCII sketch and the one-line "UI design: none, <reason>" option for a change with no rendered UI change (G-18); `npx -y @fission-ai/openspec@1.15.0 instructions specs --change workflow-frontend-implementer --json` lists the design-affecting scenarios rule; and `git diff 3355250 -- openspec/config.yaml` adds only these two rules.
 
 ## 11. Design sources
 
-- [ ] 11.1 Update `.agents/design/README.md` (design D14): the precedence (design code from #171, not yet written, then `project-rules.md`, then the vendored community sources) and the list of readers (the four frontend roles and the `code-gate-reviewer`). Verify: `grep -nE 'design code.*project-rules\.md.*sources'` finds the precedence line; `grep -oE 'frontend-(implementer|researcher|spec-critic|reviewer)|code-gate-reviewer'` finds all five names; `grep -c 'design-angle'` prints 0.
+- [ ] 11.1 Update `.agents/design/README.md` (design D14; reworks 1.3): the precedence (the change's spec, then design code from #171, not yet written, then `project-rules.md`, then the vendored community sources; G-12) and the list of readers (the four frontend roles and the `code-gate-reviewer`). Verify: `grep -nE 'spec.*design code.*project-rules\.md.*sources'` finds the precedence line; `grep -oE 'frontend-(implementer|researcher|spec-critic|reviewer)|code-gate-reviewer'` finds all five names; `grep -c 'design-angle'` prints 0; the reading order still starts with `README.md`.
 - [ ] 11.2 Remove the out-of-scope filing line from `project-rules.md` C13 (design D2, D6). Verify: `grep -cE 'area:frontend|engineer agrees' .agents/design/project-rules.md` prints 0, and `grep -n 'UI the change adds or edits'` still finds the own-UI rule.
-- [ ] 11.3 In `checklist.md` and `critique-rubric.md`, name the `frontend-reviewer` and the `frontend-researcher` where they name the reviewer and the design-angle researcher (design D14). Verify: `grep -niE 'design-angle|the reviewer' .agents/design/checklist.md .agents/design/critique-rubric.md` finds nothing, and `grep -n 'frontend-reviewer'` finds a line in both files.
+- [ ] 11.3 Name the readers in `checklist.md` and `critique-rubric.md` (design D14; reworks 1.4 and 1.5): `checklist.md:5-6` names all its readers, the `frontend-implementer`, the `frontend-reviewer`, the `frontend-spec-critic` and the `code-gate-reviewer`; `critique-rubric.md` names the `frontend-reviewer` and the `frontend-researcher` where it names the reviewer and the design-angle researcher. Verify: `grep -niE 'design-angle|the reviewer' .agents/design/checklist.md .agents/design/critique-rubric.md` finds nothing; `grep -oE 'frontend-implementer|frontend-reviewer|frontend-spec-critic|code-gate-reviewer' .agents/design/checklist.md | sort -u` prints all four names; `grep -oE 'frontend-reviewer|frontend-researcher' .agents/design/critique-rubric.md | sort -u` prints both.
+- [ ] 11.4 Change `project-rules.md` C0 to the precedence of design D14 (the change's spec, then design code from #171, then `project-rules.md`, then the vendored sources), or to a pointer to the README, which states it (design D2; G-12). Verify: `grep -n 'C0' .agents/design/project-rules.md` shows the line, and either `grep -nE 'C0.*spec.*design code.*sources'` or `grep -nE 'C0.*README'` finds it.
 
 ## 12. Generate the roles
 
-- [ ] 12.1 After 5.1-5.3, 6.1, 6.2 and 7.1, run `scripts/setup-agents`. Verify, and record in the PR: it generates `frontend-researcher`, `frontend-spec-critic` and `frontend-reviewer` for Claude Code, opencode and Codex without script changes; `scripts/setup-agents --check` prints `ok`; `git diff main -- .agents/roles/implementer.md scripts/setup-agents` is empty.
+- [ ] 12.1 After 5.1-5.4, 6.1, 6.2 and 7.1, run `scripts/setup-agents` (replaces 3.4). Verify, and record in the PR: it generates `frontend-researcher`, `frontend-spec-critic` and `frontend-reviewer` for Claude Code, opencode and Codex without script changes, and regenerates `frontend-implementer`; `scripts/setup-agents --check` prints `ok`; `git diff main -- .agents/roles/implementer.md scripts/setup-agents` is empty.
 
 ## 13. Proof
 
@@ -127,9 +162,10 @@ Tasks 1-4 were done before the post-gate revision (proposal Clarifications, G-1 
   - the `spec-writer` writes a minimal proposal (Clarifications with the answers), `design.md` with the "UI design" section, one spec delta and a minimal `tasks.md`;
   - the `frontend-spec-critic` attacks it;
   - the `frontend-implementer` builds the slice and lists its screenshot paths in `frontend/screenshots/ui-required-fields/`: each page the slice touches and each state it changes (for example the error shown after an empty submit, or a dialog open), at desktop and 360 px;
-  - the `frontend-reviewer` reviews it, with a Logic and a Design section; design-rule and WCAG 2.2 AA violations in UI the slice adds or edits are fixed on the throwaway branch.
+  - the `frontend-reviewer` reviews it, with a Logic and a Design section; design-rule and WCAG 2.2 AA violations in UI the slice adds or edits are fixed on the throwaway branch;
+  - the `frontend-implementer` takes the final screenshot set of every screen and state in the scratch change's "UI design" section into `frontend/screenshots/ui-required-fields/`, and the main agent passes those paths to the `code-gate-reviewer`, which reviews the throwaway slice (its diff against `workflow-frontend-implementer`) with its "Design" section (G-13, G-16).
 
-  Verify (design D12): the proof is screenshots only. The engineer attaches screenshots to PR #169 by hand, showing how the new flow works (for example the design questions asked before any spec or code, and the frontend-spec-critic's, the frontend-implementer's and the frontend-reviewer's work) and what result it gives (the UI). They are also the proof for 5.1-5.3, 6.1 and 6.2. No throwaway-branch SHA, no pushed branch and no text logs are required. The throwaway branch is not pushed and is deleted right after the run, with the scratch change and the code; no #165 code or spec survives. opencode and Codex (including whether they can read screenshot images) are not run, and routing in a change with both layers is not exercised (#165 is frontend-only); the PR states both are unverified.
+  Verify (design D12): the proof is screenshots only. The engineer attaches screenshots to PR #169 by hand, showing how the new flow works (for example the design questions asked before any spec or code, and the frontend-spec-critic's, the frontend-implementer's, the frontend-reviewer's and the code-gate-reviewer's work) and what result it gives (the UI). They are also the proof for 5.1-5.4, 6.1, 6.2 and 7.1, next to their text checks. No throwaway-branch SHA, no pushed branch and no text logs are required. The throwaway branch is not pushed and is deleted right after the run, with the scratch change and the code; no #165 code or spec survives. opencode and Codex (including whether they can read screenshot images) are not run, and routing in a change with both layers is not exercised (#165 is frontend-only); the PR states both are unverified.
 
 ## Workflow follow-up
 
