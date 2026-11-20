@@ -39,7 +39,8 @@ failure scenario. Say plainly if you found nothing. At most 25 lines.
 For a PR touching `frontend/src`, add a **Design** section that says what was checked,
 even with no findings. When there is no final screenshot set (for example the change's
 design says "UI design: none"), it says "no screenshots: <reason>", so a set that was
-not needed differs from one that was skipped.
+not needed differs from one that was skipped. The Design section does not count
+toward the 25 lines and has its own cap of 15 lines.
 
 Mark each finding as one to fix in the PR or one for an issue. Fix in the PR: a
 security problem, data loss, a spec violation, and design-rule violations (the design

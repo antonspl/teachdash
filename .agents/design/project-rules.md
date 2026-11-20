@@ -1,8 +1,8 @@
 # Project rules
 
 These are teachdash's own frontend design rules. Read this file right after
-`README.md`. It wins over every other file in `.agents/design/`: where a source says
-something else, follow this file.
+`README.md`. It wins over the vendored sources in `.agents/design/`: where a source
+says something else, follow this file. The full order is in C0.
 
 ## Base rules
 
