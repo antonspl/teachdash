@@ -38,11 +38,11 @@ public class TeacherAdminService {
 
 	/** Creates a teacher without a password; returns the id and the set-password link. */
 	@Transactional
-	public CreatedAccount createTeacher(String name, String email, String timeZone, UUID adminId) {
+	public CreatedAccount createTeacher(String name, String email, String timeZone, String nativeLanguage, UUID adminId) {
 		if (users.findByEmailIgnoreCase(email).isPresent()) {
 			throw emailTaken();
 		}
-		return accounts.createPasswordlessUser(Role.TEACHER, name, email, timeZone, null, adminId);
+		return accounts.createPasswordlessUser(Role.TEACHER, name, email, timeZone, nativeLanguage, adminId);
 	}
 
 	/**

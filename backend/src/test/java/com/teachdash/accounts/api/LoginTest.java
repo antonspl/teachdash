@@ -141,7 +141,7 @@ class LoginTest extends ApiTest {
 		// given a deactivated teacher who never set a password
 		TestClient admin = loggedInAdmin();
 		var created = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		UUID teacherId = UUID.fromString(created.path("id"));
 		admin.post("/api/admin/teachers/" + teacherId + "/deactivate");
 

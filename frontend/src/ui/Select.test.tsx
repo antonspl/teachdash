@@ -46,3 +46,34 @@ test('inputRef points at the select element', () => {
   )
   expect(ref.current).toBe(screen.getByLabelText('Time zone'))
 })
+
+test('labels are shown instead of values, with a fallback to the value', () => {
+  render(
+    <Select
+      label="Language"
+      value="de"
+      onChange={() => {}}
+      options={['de', 'xx']}
+      labels={{ de: 'German' }}
+    />,
+  )
+  expect(screen.getByRole('option', { name: 'German' })).toBeTruthy()
+  expect(screen.queryByRole('option', { name: 'de' })).toBeNull()
+  expect(screen.getByRole('option', { name: 'xx' })).toBeTruthy()
+})
+
+test('placeholder is not a selectable option and nothing is preselected', () => {
+  render(
+    <Select
+      label="Language"
+      value=""
+      onChange={() => {}}
+      options={['de']}
+      placeholder="Choose"
+    />,
+  )
+  expect(screen.queryByRole('option', { name: 'Choose' })).toBeNull()
+  expect((screen.getByLabelText('Language') as HTMLSelectElement).value).toBe(
+    '',
+  )
+})

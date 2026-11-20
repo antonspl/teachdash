@@ -62,12 +62,23 @@ function teacher(over: Record<string, unknown> = {}) {
 
 type Handler = () => Response | Promise<Response>
 
+function languagesResponse(codes = ['de', 'en', 'ru']) {
+  return json(codes.map((code) => ({ code, content: false })))
+}
+
 // Answers /api/me as the admin, the teachers list from `list` and create from `create`.
-function backend(handlers: { list: Handler; create?: Handler }) {
+function backend(handlers: {
+  list: Handler
+  create?: Handler
+  languages?: Handler
+}) {
   fetchMock.mockImplementation((url: string, init?: RequestInit) => {
     const method = init?.method ?? 'GET'
     if (url.endsWith('/api/me')) {
       return Promise.resolve(json(admin))
+    }
+    if (url.endsWith('/api/languages')) {
+      return Promise.resolve(handlers.languages?.() ?? languagesResponse())
     }
     if (url.endsWith('/api/admin/teachers')) {
       const handler = method === 'POST' ? handlers.create : handlers.list
@@ -110,7 +121,20 @@ async function openDialog() {
   return screen.findByRole('dialog')
 }
 
-async function fillForm(name: string, email: string) {
+function languageSelect() {
+  return screen.getByLabelText<HTMLSelectElement>(
+    en.adminTeachers.create.nativeLanguage,
+  )
+}
+
+function languageOptions() {
+  return within(languageSelect())
+    .getAllByRole('option')
+    .filter((option) => !(option as HTMLOptionElement).hidden)
+    .map((option) => option.textContent)
+}
+
+async function fillForm(name: string, email: string, language = 'de') {
   await openDialog()
   fireEvent.change(await field(en.adminTeachers.create.name), {
     target: { value: name },
@@ -118,6 +142,16 @@ async function fillForm(name: string, email: string) {
   fireEvent.change(screen.getByLabelText(en.adminTeachers.create.email), {
     target: { value: email },
   })
+  if (language !== '') {
+    await screen.findByRole('option', { name: 'German' })
+    fireEvent.change(languageSelect(), { target: { value: language } })
+  }
+}
+
+function sentBody() {
+  return JSON.parse(
+    (calls('POST')[0][1] as RequestInit).body as string,
+  ) as Record<string, unknown>
 }
 
 function submitButton() {
@@ -258,6 +292,7 @@ test('[web-admin-teachers/R2-S3] Email already in use', async () => {
     screen.getByLabelText<HTMLSelectElement>(en.adminTeachers.create.timeZone)
       .value,
   ).toBe('UTC')
+  expect(languageSelect().value).toBe('de')
 })
 
 test('[web-admin-teachers/R2-S4] Backend rejects the fields', async () => {
@@ -277,6 +312,7 @@ test('[web-admin-teachers/R2-S4] Backend rejects the fields', async () => {
     await screen.findByText(en.adminTeachers.create.validationFailed),
   ).toBeTruthy()
   expect(en.adminTeachers.create.validationFailed).toMatch(/time zone/i)
+  expect(en.adminTeachers.create.validationFailed).toMatch(/language/i)
   expect(
     screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.name).value,
   ).toBe('Anna Smith')
@@ -284,6 +320,7 @@ test('[web-admin-teachers/R2-S4] Backend rejects the fields', async () => {
     screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.email)
       .value,
   ).toBe('anna@example.com')
+  expect(languageSelect().value).toBe('de')
 })
 
 test('[web-admin-teachers/R2-S5] The form is not sent twice', async () => {
@@ -329,6 +366,7 @@ test('[web-admin-teachers/R2-S6] Network failure on create', async () => {
     screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.email)
       .value,
   ).toBe('anna@example.com')
+  expect(languageSelect().value).toBe('de')
   expect(submitButton().disabled).toBe(false)
 })
 
@@ -718,6 +756,9 @@ test('[web-admin-teachers/R1-S5] Session ends during an action', async () => {
     }
     if (path === 'me') {
       return Promise.resolve(json(admin))
+    }
+    if (path === 'languages') {
+      return Promise.resolve(languagesResponse())
     }
     if (path === 'admin/teachers' && method === 'GET') {
       return Promise.resolve(json([teacher()]))
@@ -1296,4 +1337,189 @@ test('[web-client/R18-S1] Editing a field removes only its error in the Add teac
   expect(screen.queryByText(en.fieldErrors.REQUIRED)).toBeNull()
   expect(nameInput.getAttribute('aria-invalid')).toBeNull()
   release(json({ id: '5', link: 'http://x/y' }, 201))
+})
+
+test('[web-admin-teachers/R2-S9] The language select starts empty', async () => {
+  // given
+  backend({ list: () => json([]) })
+  open()
+
+  // when
+  await openDialog()
+  await screen.findByRole('option', { name: 'German' })
+
+  // then
+  expect(languageSelect().value).toBe('')
+  expect(languageSelect().getAttribute('aria-required')).toBe('true')
+  expect(languageSelect().required).toBe(false)
+  expect(languageOptions()).toEqual(['German', 'English', 'Russian'])
+})
+
+test('[web-admin-teachers/R2-S10] No language, no request', async () => {
+  // given
+  backend({ list: () => json([]) })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com', '')
+  await screen.findByRole('option', { name: 'German' })
+
+  // when
+  fireEvent.click(submitButton())
+
+  // then
+  expect(await screen.findByText(en.languages.required)).toBeTruthy()
+  expect(languageSelect().getAttribute('aria-describedby')).toBeTruthy()
+  expect(
+    document.getElementById(
+      languageSelect().getAttribute('aria-describedby') as string,
+    )?.textContent,
+  ).toBe(en.languages.required)
+  expect(screen.queryByText(en.fieldErrors.REQUIRED)).toBeNull()
+  expect(calls('POST')).toHaveLength(0)
+})
+
+test('Submitting without a language clears the errors of the previous submit', async () => {
+  // given a failed submit that left a message and a field error
+  backend({
+    list: () => json([]),
+    create: () =>
+      validationFailed([{ field: 'email', code: 'INVALID_FORMAT' }]),
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+  fireEvent.click(submitButton())
+  await screen.findByText(en.fieldErrors.INVALID_FORMAT)
+
+  // when the language is cleared and the dialog is submitted again
+  fireEvent.change(languageSelect(), { target: { value: '' } })
+  fireEvent.click(submitButton())
+
+  // then only the language message is left
+  expect(await screen.findByText(en.languages.required)).toBeTruthy()
+  expect(screen.queryByText(en.fieldErrors.INVALID_FORMAT)).toBeNull()
+  expect(
+    screen.queryByText(en.adminTeachers.create.validationFailed),
+  ).toBeNull()
+  expect(calls('POST')).toHaveLength(1)
+})
+
+test('[web-admin-teachers/R2-S11] The request carries the language', async () => {
+  // given
+  backend({
+    list: () => json([]),
+    create: () =>
+      json({ id: '2', setPasswordLink: 'https://x.test/s#t=1' }, 201),
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com', 'de')
+
+  // when
+  fireEvent.click(submitButton())
+
+  // then
+  await waitFor(() => expect(calls('POST')).toHaveLength(1))
+  expect(sentBody().nativeLanguage).toBe('de')
+})
+
+test('[web-admin-teachers/R2-S12] A language the backend rejects', async () => {
+  // given
+  backend({
+    list: () => json([]),
+    create: () =>
+      new Response(
+        JSON.stringify({
+          status: 400,
+          code: 'VALIDATION_FAILED',
+          errors: [{ field: 'nativeLanguage', code: 'INVALID_FORMAT' }],
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
+      ),
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com', 'de')
+
+  // when
+  fireEvent.click(submitButton())
+
+  // then
+  expect(await screen.findByText(en.fieldErrors.INVALID_FORMAT)).toBeTruthy()
+  expect(screen.getByRole('dialog')).toBeTruthy()
+  expect(
+    document.getElementById(
+      languageSelect().getAttribute('aria-describedby') as string,
+    )?.textContent,
+  ).toBe(en.fieldErrors.INVALID_FORMAT)
+  expect(languageSelect().value).toBe('de')
+  expect(
+    screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.name).value,
+  ).toBe('Anna Smith')
+  expect(
+    screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.email)
+      .value,
+  ).toBe('anna@example.com')
+})
+
+test('[web-admin-teachers/R2-S13] The language list does not load', async () => {
+  // given
+  let attempt = 0
+  backend({
+    list: () => json([]),
+    languages: () =>
+      attempt++ === 0 ? problem(500, 'INTERNAL_ERROR') : languagesResponse(),
+  })
+  open()
+
+  // when
+  await fillForm('Anna Smith', 'anna@example.com', '')
+  expect(await screen.findByText(en.languages.loadFailed)).toBeTruthy()
+  fireEvent.click(submitButton())
+  await screen.findByText(en.languages.required)
+  fireEvent.click(screen.getByRole('button', { name: en.ui.tryAgain }))
+
+  // then
+  expect(calls('POST')).toHaveLength(0)
+  await screen.findByRole('option', { name: 'German' })
+  expect(screen.queryByText(en.languages.loadFailed)).toBeNull()
+  expect(
+    screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.name).value,
+  ).toBe('Anna Smith')
+  expect(
+    screen.getByLabelText<HTMLInputElement>(en.adminTeachers.create.email)
+      .value,
+  ).toBe('anna@example.com')
+  expect(languageOptions()).toEqual(['German', 'English', 'Russian'])
+})
+
+test('[web-admin-teachers/R2-S14] A language with no name shows its code', async () => {
+  // given
+  backend({
+    list: () => json([]),
+    languages: () => languagesResponse(['de', 'sv']),
+  })
+  open()
+
+  // when
+  await openDialog()
+  await screen.findByRole('option', { name: 'German' })
+
+  // then
+  expect(languageOptions()).toEqual(['German', 'sv'])
+})
+
+test('A blank name and a missing language are shown together', async () => {
+  // given
+  backend({ list: () => json([]) })
+  open()
+  await fillForm('', 'anna@example.com', '')
+  await screen.findByRole('option', { name: 'German' })
+
+  // when
+  fireEvent.click(submitButton())
+
+  // then both errors are shown and nothing is sent
+  expect(await screen.findByText(en.languages.required)).toBeTruthy()
+  expect(screen.getByText(en.fieldErrors.REQUIRED)).toBeTruthy()
+  expect(calls('POST')).toHaveLength(0)
 })

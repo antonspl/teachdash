@@ -1,7 +1,12 @@
 import { apiRequest } from './client'
 import type { User } from '../auth/AuthProvider'
 
-export type ProfileUpdate = { name: string; timeZone: string }
+// Without a native language the field is left out of the request.
+export type ProfileUpdate = {
+  name: string
+  timeZone: string
+  nativeLanguage?: string
+}
 export type PasswordChange = { currentPassword: string; newPassword: string }
 
 export async function updateProfile(update: ProfileUpdate): Promise<User> {

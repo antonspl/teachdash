@@ -2,7 +2,7 @@
 
 ## Purpose
 The profile page of the web client, where a logged-in user of any role changes their
-own name, time zone and password.
+own name, time zone and password, and a teacher also changes their native language.
 
 ## Requirements
 
@@ -53,10 +53,17 @@ SHALL come from the translation resources.
 ### Requirement: R2 Change name and time zone
 
 The profile form SHALL have a name field and a time zone select, filled with the user's
-current values, and a "Save" button. Both fields are required. On success the form and
-the header SHALL show the values the backend returned, and a translated success message
+current values, and a "Save" button. Both fields are required. For a teacher the form
+SHALL also have a required native language select, filled with the stored language. Its
+options SHALL be the codes returned by `GET /api/languages`, shown with names from the
+translation resources (a code with no name is shown as the code itself), and the select
+SHALL always include the stored language. If the list cannot be loaded, a translated error
+with a "Try again" button SHALL be shown next to the select, and the rest of the form SHALL
+keep working. The request SHALL carry the language for a teacher and SHALL NOT for a
+student or an admin, whose form has no such select. On success the form, the header and
+the app's current-user state SHALL show the values the backend returned, and a translated success message
 SHALL stay until the next edit of the form. If the save fails, a translated message
-SHALL say so and the header SHALL not change. The select SHALL always include the
+SHALL say so and the header SHALL not change. The time zone select SHALL always include the
 user's stored time zone.
 
 #### Scenario: web-profile/R2-S1 Saved profile survives a reload
@@ -68,7 +75,7 @@ user's stored time zone.
 - **GIVEN** a logged-in teacher on `/profile`, and the backend answers a save with name "Anna S." and time zone "Asia/Dubai"
 - **WHEN** the teacher types "  Anna S.  " as the name and presses "Save"
 - **THEN** the name field and the header show "Anna S." without a reload, and a translated success message is shown
-- **AND** the request carried both the name and the time zone
+- **AND** the request carried the name, the time zone and the native language
 
 #### Scenario: web-profile/R2-S3 Success message goes away on the next edit
 - **GIVEN** the success message is shown after a save
@@ -80,10 +87,10 @@ user's stored time zone.
 - **THEN** no request is sent
 
 #### Scenario: web-profile/R2-S5 Values the backend rejects
-- **GIVEN** the backend answers a save with status 400 and code `VALIDATION_FAILED`
-- **WHEN** the teacher presses "Save"
-- **THEN** a translated message asks to check the name and the time zone
-- **AND** the fields keep what the teacher typed, the header keeps the old name, and the form can be submitted again
+- **GIVEN** a logged-in teacher on `/profile`, and in a second run a logged-in student, and the backend answers a save with status 400 and code `VALIDATION_FAILED`
+- **WHEN** the user presses "Save"
+- **THEN** for the teacher a translated message asks to check the name, the time zone and the native language, and for the student it asks to check the name and the time zone
+- **AND** the fields keep what the user typed, the header keeps the old name, and the form can be submitted again
 
 #### Scenario: web-profile/R2-S6 Save that fails for another reason
 - **GIVEN** a save fails with a network error, a 500, or a 403 with code `CSRF_INVALID`, one at a time
@@ -99,6 +106,42 @@ user's stored time zone.
 - **GIVEN** a save request is still running
 - **WHEN** "Save" is pressed again
 - **THEN** only one request is sent
+
+#### Scenario: web-profile/R2-S9 A teacher changes the native language
+- **GIVEN** a logged-in teacher with native language "ru" on `/profile`, and the backend lists the languages "de", "en" and "ru"
+- **WHEN** the page is rendered, the teacher selects the language named "German" and presses "Save", and the page is reloaded
+- **THEN** before the change the select has the language named "Russian" selected and offers exactly "German", "English" and "Russian"
+- **AND** the request carried the native language "de", and after the reload the select has "German" selected
+
+#### Scenario: web-profile/R2-S10 Students and admins have no language select
+- **GIVEN** a logged-in student with native language "ru", and a logged-in admin, one at a time
+- **WHEN** each opens `/profile`, changes the name and presses "Save"
+- **THEN** neither page has a native language select, and each request carried the name and the time zone and no native language
+
+#### Scenario: web-profile/R2-S11 A language the backend rejects
+- **GIVEN** a logged-in teacher on `/profile`, and the backend answers a save with status 400, code `VALIDATION_FAILED` and `errors` `[{field: "nativeLanguage", code: "INVALID_FORMAT"}]`
+- **WHEN** the teacher presses "Save"
+- **THEN** the translated message for `INVALID_FORMAT` is shown at the language select (web-client R17), the select keeps the value the teacher chose, and the form can be submitted again
+
+#### Scenario: web-profile/R2-S12 The language list does not load
+- **GIVEN** a logged-in teacher with native language "ru" on `/profile`, and loading the languages fails
+- **WHEN** the page is rendered, and the teacher changes the name and presses "Save"
+- **THEN** a translated error with a "Try again" button is shown, the select offers only the stored language "ru", the rest of the form works, and the request carries the native language "ru"
+
+#### Scenario: web-profile/R2-S13 Try again loads the list
+- **GIVEN** a logged-in teacher with native language "ru" on `/profile`, loading the languages fails once and then lists "de", "en" and "ru"
+- **WHEN** the page is rendered and the teacher presses "Try again"
+- **THEN** the error is gone and the select offers exactly "German", "English" and "Russian", with "Russian" selected
+
+#### Scenario: web-profile/R2-S14 A language with no name shows its code
+- **GIVEN** a logged-in teacher with native language "sv" on `/profile`, the backend lists the languages "de" and "sv", and the translation resources have no name for "sv"
+- **WHEN** the page is rendered
+- **THEN** the select offers "German" and "sv", with "sv" selected
+
+#### Scenario: web-profile/R2-S15 The current-user state gets the new language
+- **GIVEN** a logged-in teacher with native language "ru" on `/profile`, the backend lists "de", "en" and "ru" and answers a save with native language "de"
+- **WHEN** the teacher selects "German", presses "Save", leaves `/profile` by a link inside the app and comes back, without a page reload
+- **THEN** the select has "German" selected, and no new current-user request was made
 
 ### Requirement: R3 Change password
 
@@ -156,7 +199,7 @@ is sending, the other's button SHALL be disabled.
 #### Scenario: web-profile/R3-S10 The two forms do not affect each other
 - **GIVEN** the backend answered the password change with status 400, code `WRONG_PASSWORD` and `errors` `[{field: "currentPassword", code: "WRONG_PASSWORD"}]`, so the password form shows the `WRONG_PASSWORD` message under the current password field, and the form holds typed passwords
 - **WHEN** the teacher changes the name and presses "Save"
-- **THEN** the save request carries only the name and the time zone, the profile form shows its success message, and the password form keeps its message and its values
+- **THEN** the save request carries only the name, the time zone and the native language, the profile form shows its success message, and the password form keeps its message and its values
 - **AND** editing the new password field afterwards keeps the `WRONG_PASSWORD` message, editing the current password field removes it, and both leave the profile form's success message
 
 #### Scenario: web-profile/R3-S11 One form waits while the other is sending

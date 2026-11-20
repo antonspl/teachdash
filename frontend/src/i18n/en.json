@@ -38,6 +38,21 @@
     "tryAgain": "Try again",
     "loading": "Loading..."
   },
+  "languages": {
+    "choose": "Choose a language",
+    "required": "Please choose a native language.",
+    "loadFailed": "The list of languages could not be loaded.",
+    "de": "German",
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "it": "Italian",
+    "pl": "Polish",
+    "pt": "Portuguese",
+    "ru": "Russian",
+    "sr": "Serbian",
+    "uk": "Ukrainian"
+  },
   "login": {
     "title": "Sign in",
     "email": "Email",
@@ -102,8 +117,9 @@
       "name": "Name",
       "email": "Email",
       "timeZone": "Time zone",
+      "nativeLanguage": "Native language",
       "submit": "Create teacher",
-      "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and email, or try another time zone."
+      "validationFailed": "Hmm, the backend didn't accept those values. Please check the name, the email, the time zone and the native language."
     },
     "actions": {
       "deactivate": "Deactivate",
@@ -125,9 +141,11 @@
     "passwordHeading": "Password",
     "name": "Name",
     "timeZone": "Time zone",
+    "nativeLanguage": "Native language",
     "save": "Save",
     "saved": "Saved, all done!",
     "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and the time zone.",
+    "validationFailedTeacher": "Hmm, the backend didn't accept those values. Please check the name, the time zone and the native language.",
     "currentPassword": "Current password",
     "newPassword": "New password",
     "repeatPassword": "Repeat the new password",

@@ -1,9 +1,9 @@
 package com.teachdash.accounts.api;
 
-import java.security.Principal;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +15,7 @@ import com.teachdash.accounts.api.dto.ChangePasswordRequest;
 import com.teachdash.accounts.api.dto.UpdateProfileRequest;
 import com.teachdash.accounts.api.dto.UserResponse;
 import com.teachdash.accounts.domain.AccountService;
+import com.teachdash.accounts.domain.Role;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,24 +34,30 @@ class MeController {
 	}
 
 	@GetMapping
-	UserResponse me(Principal principal) {
-		return UserResponse.of(accounts.get(UUID.fromString(principal.getName())));
+	UserResponse me(Authentication authentication) {
+		return UserResponse.of(accounts.get(UUID.fromString(authentication.getName())));
 	}
 
 	@PatchMapping
-	UserResponse updateProfile(@Valid @RequestBody UpdateProfileRequest request, Principal principal) {
-		UUID userId = UUID.fromString(principal.getName());
-		return UserResponse.of(accounts.updateProfile(userId, request.name(), request.timeZone()));
+	UserResponse updateProfile(@Valid @RequestBody UpdateProfileRequest request, Authentication authentication) {
+		String nativeLanguage = isTeacher(authentication) ? request.nativeLanguage() : null;
+		return UserResponse.of(accounts.updateProfile(
+				UUID.fromString(authentication.getName()), request.name(), request.timeZone(), nativeLanguage));
+	}
+
+	private static boolean isTeacher(Authentication authentication) {
+		String authority = "ROLE_" + Role.TEACHER.name();
+		return authentication.getAuthorities().stream().anyMatch(granted -> authority.equals(granted.getAuthority()));
 	}
 
 	@PostMapping("/password")
 	ResponseEntity<Void> changePassword(
 			@Valid @RequestBody ChangePasswordRequest request,
-			Principal principal,
+			Authentication authentication,
 			HttpServletRequest httpRequest,
 			HttpServletResponse httpResponse) {
 		var changed = accounts.changePassword(
-				UUID.fromString(principal.getName()),
+				UUID.fromString(authentication.getName()),
 				request.currentPassword(),
 				request.newPassword(),
 				SessionRevocationFilter.versionOf(httpRequest.getSession()));

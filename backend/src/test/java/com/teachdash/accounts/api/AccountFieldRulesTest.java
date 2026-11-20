@@ -28,17 +28,17 @@ class AccountFieldRulesTest extends ApiTest {
 
 		// when the admin creates a teacher with each of these invalid values
 		var longName = admin.post(TEACHERS,
-				Map.of("name", "a".repeat(201), "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", "a".repeat(201), "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var longEmail = admin.post(TEACHERS,
-				Map.of("name", "Anna", "email", "a".repeat(309) + "@example.com", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", "a".repeat(309) + "@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		var blankEmail = admin.post(TEACHERS,
-				Map.of("name", "Anna", "email", " ", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", " ", "timeZone", "UTC", "nativeLanguage", "en"));
 		var blankTimeZone = admin.post(TEACHERS,
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", " "));
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", " ", "nativeLanguage", "en"));
 		var noTimeZone = admin.post(TEACHERS,
-				Map.of("name", "Anna", "email", "anna@example.com"));
+				Map.of("name", "Anna", "email", "anna@example.com", "nativeLanguage", "en"));
 		var invisibleName = admin.post(TEACHERS,
-				Map.of("name", " ", "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", " ", "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then each response is 400 with code VALIDATION_FAILED
 		longName.then().statusCode(400).body("code", equalTo("VALIDATION_FAILED"));
@@ -90,7 +90,7 @@ class AccountFieldRulesTest extends ApiTest {
 
 		// when the admin creates a teacher with a 199-character name followed by two spaces and email " anna@example.com ", and the teacher updates the profile with a 199-character name followed by two spaces
 		var created = admin.post(TEACHERS,
-				Map.of("name", name + "  ", "email", " anna@example.com ", "timeZone", "UTC"));
+				Map.of("name", name + "  ", "email", " anna@example.com ", "timeZone", "UTC", "nativeLanguage", "en"));
 		var updated = teacher.patch("/api/me", Map.of("name", name + "  ", "timeZone", "UTC"));
 
 		// then both responses are successful
@@ -116,7 +116,7 @@ class AccountFieldRulesTest extends ApiTest {
 
 		// when the admin creates a teacher with the name "\u00A0Анна\u200B\u202F"
 		var response = admin.post(TEACHERS,
-				Map.of("name", "\u00A0Анна\u200B\u202F", "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", "\u00A0Анна\u200B\u202F", "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 201 and the stored name is "Анна"
 		response.then().statusCode(201);
@@ -139,7 +139,7 @@ class AccountFieldRulesTest extends ApiTest {
 		Map<String, String> codes = new LinkedHashMap<>();
 		for (int i = 0; i < names.size(); i++) {
 			var response = admin.post(TEACHERS,
-					Map.of("name", names.get(i), "email", "name" + i + "@example.com", "timeZone", "UTC"));
+					Map.of("name", names.get(i), "email", "name" + i + "@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 			statuses.put(escape(names.get(i)), response.statusCode());
 			codes.put(escape(names.get(i)), response.path("code"));
 		}

@@ -118,7 +118,7 @@ class PasswordLinkTest extends ApiTest {
 		// given an admin created a teacher and got a set-password link
 		TestClient admin = loggedInAdmin();
 		var created = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		String token = tokenFrom(created.path("setPasswordLink"));
 		UUID teacherId = UUID.fromString(created.path("id"));
 		TestClient holder = newClient();

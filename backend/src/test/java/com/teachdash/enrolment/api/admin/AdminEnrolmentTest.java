@@ -59,7 +59,7 @@ class AdminEnrolmentTest extends ApiTest {
 	@DisplayName("[student-enrolment/R3-S3] Admin lists a student's teacher")
 	void adminListsAStudentsTeacher() {
 		// given a student assigned to teacher A, and teacher C with another student
-		UUID teacherA = createUser("TEACHER", "Zoe", "a@example.com", "teacher-pass-1", true);
+		UUID teacherA = createUser("TEACHER", "Zoe", "a@example.com", "teacher-pass-1", true, "fr");
 		UUID teacherC = createUser("TEACHER", "Adam", "c@example.com", "teacher-pass-1", true);
 		UUID student = createUser("STUDENT", "Student", "student@example.com", "student-pass-1", true);
 		UUID other = createUser("STUDENT", "Other", "other@example.com", "student-pass-1", true);
@@ -70,12 +70,14 @@ class AdminEnrolmentTest extends ApiTest {
 		// when the admin lists the student's teachers
 		var response = admin.get("/api/admin/students/" + student + "/teachers");
 
-		// then the response is 200 and the list contains A only, with id, name, email and time zone
+		// then the response is 200 and the list contains A only, with id, name, email, time zone, active flag and nativeLanguage
 		response.then().statusCode(200)
 				.body("id", contains(teacherA.toString()))
 				.body("name", contains("Zoe"))
 				.body("email", contains("a@example.com"))
-				.body("timeZone", contains("UTC"));
+				.body("timeZone", contains("UTC"))
+				.body("active", contains(true))
+				.body("nativeLanguage", contains("fr"));
 	}
 
 	@Test

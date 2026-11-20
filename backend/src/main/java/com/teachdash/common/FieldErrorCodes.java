@@ -7,6 +7,7 @@ import java.util.TreeMap;
 
 import com.teachdash.common.validation.MaxUtf8Bytes;
 import com.teachdash.languages.api.validation.ContentLanguage;
+import com.teachdash.languages.api.validation.NativeLanguage;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.constraints.NotBlank;
@@ -36,6 +37,9 @@ final class FieldErrorCodes {
 		}
 		if (constraint == MaxUtf8Bytes.class) {
 			return TOO_LONG;
+		}
+		if (constraint == NativeLanguage.class && violation.getInvalidValue() instanceof String text && text.isBlank()) {
+			return REQUIRED;
 		}
 		if (constraint == ContentLanguage.class) {
 			return UNSUPPORTED_COURSE_LANGUAGE;

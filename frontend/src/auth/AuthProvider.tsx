@@ -19,6 +19,8 @@ export type User = {
   email: string
   role: Role
   timeZone: string
+  // Set for a teacher and a student, absent for an admin.
+  nativeLanguage?: string
 }
 
 export type SessionEnded = { path: string }
@@ -34,7 +36,11 @@ export type AuthContextValue = {
   login: (email: string, password: string) => Promise<User>
   logout: () => Promise<void>
   setPasswordWithLink: (token: string, password: string) => Promise<User>
-  updateProfile: (name: string, timeZone: string) => Promise<User>
+  updateProfile: (
+    name: string,
+    timeZone: string,
+    nativeLanguage?: string,
+  ) => Promise<User>
   retry: () => void
 }
 
@@ -110,14 +116,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  const updateProfile = useCallback(async (name: string, timeZone: string) => {
-    const user = await sendProfile({ name, timeZone })
-    // A late answer must not bring back a user who has logged out meanwhile.
-    setState((prev) =>
-      prev.status === 'user' ? { status: 'user', user } : prev,
-    )
-    return user
-  }, [])
+  const updateProfile = useCallback(
+    async (name: string, timeZone: string, nativeLanguage?: string) => {
+      const user = await sendProfile({ name, timeZone, nativeLanguage })
+      // A late answer must not bring back a user who has logged out meanwhile.
+      setState((prev) =>
+        prev.status === 'user' ? { status: 'user', user } : prev,
+      )
+      return user
+    },
+    [],
+  )
 
   const logout = useCallback(async () => {
     try {

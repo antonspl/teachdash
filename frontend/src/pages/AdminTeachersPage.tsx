@@ -25,6 +25,7 @@ import { CabinetPage } from './CabinetPage'
 import { Dialog } from '../ui/Dialog'
 import { ErrorWithRetry } from '../ui/ErrorWithRetry'
 import { Form } from '../ui/Form'
+import { LanguageSelect } from '../ui/LanguageSelect'
 import { IssuedLink, type CopyStatus } from '../ui/IssuedLink'
 import { List, ListItem } from '../ui/List'
 import { Select } from '../ui/Select'
@@ -147,6 +148,7 @@ function CreateDialog({
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [timeZone, setTimeZone] = useState(defaultTimeZone)
+  const [nativeLanguage, setNativeLanguage] = useState('')
   const [error, setError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
@@ -155,10 +157,16 @@ function CreateDialog({
   const nameRef = useRef<HTMLInputElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
   const timeZoneRef = useRef<HTMLSelectElement>(null)
+  const nativeLanguageRef = useRef<HTMLSelectElement>(null)
   const fieldErrors = useFieldErrors([
     { key: 'name', backend: 'name', ref: nameRef },
     { key: 'email', backend: 'email', ref: emailRef },
     { key: 'timeZone', backend: 'timeZone', ref: timeZoneRef },
+    {
+      key: 'nativeLanguage',
+      backend: 'nativeLanguage',
+      ref: nativeLanguageRef,
+    },
   ])
   const { errors } = fieldErrors
 
@@ -174,11 +182,30 @@ function CreateDialog({
     if (inFlight.current) {
       return
     }
-    inFlight.current = true
-    setSubmitting(true)
     setError(undefined)
     fieldErrors.clearAll()
-    const submitted = { name, email, timeZone }
+    const missing: Partial<
+      Record<'name' | 'email' | 'timeZone' | 'nativeLanguage', string>
+    > = {}
+    if (name.trim() === '') {
+      missing.name = t('fieldErrors.REQUIRED')
+    }
+    if (email.trim() === '') {
+      missing.email = t('fieldErrors.REQUIRED')
+    }
+    if (timeZone === '') {
+      missing.timeZone = t('fieldErrors.REQUIRED')
+    }
+    if (nativeLanguage === '') {
+      missing.nativeLanguage = t('languages.required')
+    }
+    if (Object.keys(missing).length > 0) {
+      fieldErrors.show(missing)
+      return
+    }
+    inFlight.current = true
+    setSubmitting(true)
+    const submitted = { name, email, timeZone, nativeLanguage }
     try {
       const { id, link } = await createTeacher(submitted)
       onCreated({ id, name: submitted.name, link })
@@ -217,7 +244,7 @@ function CreateDialog({
       onClose={onCancel}
       busy={submitting}
     >
-      <Form onSubmit={(event) => void onSubmit(event)}>
+      <Form noValidate onSubmit={(event) => void onSubmit(event)}>
         <TextInput
           label={t('adminTeachers.create.name')}
           required
@@ -252,6 +279,17 @@ function CreateDialog({
           error={errors.timeZone}
           inputRef={timeZoneRef}
           options={zones}
+        />
+        <LanguageSelect
+          label={t('adminTeachers.create.nativeLanguage')}
+          ariaRequired
+          value={nativeLanguage}
+          onChange={(value) => {
+            setNativeLanguage(value)
+            fieldErrors.clear('nativeLanguage')
+          }}
+          error={errors.nativeLanguage}
+          inputRef={nativeLanguageRef}
         />
         {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}
         <ButtonRow>

@@ -5,6 +5,7 @@ import { useAuth, type User } from '../auth/AuthProvider'
 import { Button } from '../ui/Button'
 import { ButtonRow } from '../ui/ButtonRow'
 import { Form } from '../ui/Form'
+import { LanguageSelect } from '../ui/LanguageSelect'
 import { Select } from '../ui/Select'
 import { StatusMessage } from '../ui/StatusMessage'
 import { TextInput } from '../ui/TextInput'
@@ -27,15 +28,25 @@ export function ProfileForm({
   const { updateProfile } = useAuth()
   const [name, setName] = useState(user.name)
   const [timeZone, setTimeZone] = useState(user.timeZone)
+  const isTeacher = user.role === 'TEACHER'
+  const [nativeLanguage, setNativeLanguage] = useState(
+    user.nativeLanguage ?? '',
+  )
   const [message, setMessage] = useState<Message>()
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
   const zones = useMemo(() => timeZoneOptions(user.timeZone), [user.timeZone])
   const nameRef = useRef<HTMLInputElement>(null)
   const timeZoneRef = useRef<HTMLSelectElement>(null)
+  const nativeLanguageRef = useRef<HTMLSelectElement>(null)
   const fieldErrors = useFieldErrors([
     { key: 'name', backend: 'name', ref: nameRef },
     { key: 'timeZone', backend: 'timeZone', ref: timeZoneRef },
+    {
+      key: 'nativeLanguage',
+      backend: 'nativeLanguage',
+      ref: nativeLanguageRef,
+    },
   ])
   const { errors } = fieldErrors
 
@@ -44,22 +55,50 @@ export function ProfileForm({
     if (inFlight.current) {
       return
     }
+    setMessage(undefined)
+    fieldErrors.clearAll()
+    const missing: Partial<
+      Record<'name' | 'timeZone' | 'nativeLanguage', string>
+    > = {}
+    if (name.trim() === '') {
+      missing.name = t('fieldErrors.REQUIRED')
+    }
+    if (timeZone === '') {
+      missing.timeZone = t('fieldErrors.REQUIRED')
+    }
+    if (isTeacher && nativeLanguage === '') {
+      missing.nativeLanguage = t('languages.required')
+    }
+    if (Object.keys(missing).length > 0) {
+      fieldErrors.show(missing)
+      return
+    }
     inFlight.current = true
     setSubmitting(true)
     onSendingChange?.(true)
-    setMessage(undefined)
-    fieldErrors.clearAll()
     try {
-      const saved = await updateProfile(name, timeZone)
+      const saved = await updateProfile(
+        name,
+        timeZone,
+        isTeacher ? nativeLanguage : undefined,
+      )
       setName(saved.name)
       setTimeZone(saved.timeZone)
+      setNativeLanguage(saved.nativeLanguage ?? '')
       setMessage({ tone: 'success', text: t('profile.saved') })
     } catch (failure) {
       if (failure instanceof ApiError && fieldErrors.place(failure)) {
         return
       }
       if (failure instanceof ApiError && failure.code === 'VALIDATION_FAILED') {
-        setMessage({ tone: 'danger', text: t('profile.validationFailed') })
+        setMessage({
+          tone: 'danger',
+          text: t(
+            isTeacher
+              ? 'profile.validationFailedTeacher'
+              : 'profile.validationFailed',
+          ),
+        })
       } else {
         setMessage({
           tone: 'danger',
@@ -75,7 +114,7 @@ export function ProfileForm({
   }
 
   return (
-    <Form onSubmit={(event) => void onSubmit(event)}>
+    <Form noValidate onSubmit={(event) => void onSubmit(event)}>
       <TextInput
         label={t('profile.name')}
         autoComplete="name"
@@ -104,6 +143,21 @@ export function ProfileForm({
           setTimeZone(value)
         }}
       />
+      {isTeacher ? (
+        <LanguageSelect
+          label={t('profile.nativeLanguage')}
+          ariaRequired
+          disabled={submitting}
+          inputRef={nativeLanguageRef}
+          error={errors.nativeLanguage}
+          value={nativeLanguage}
+          onChange={(value) => {
+            setMessage(undefined)
+            fieldErrors.clear('nativeLanguage')
+            setNativeLanguage(value)
+          }}
+        />
+      ) : null}
       {message ? (
         <StatusMessage tone={message.tone}>{message.text}</StatusMessage>
       ) : null}

@@ -14,6 +14,9 @@ test('[web-client/R17-S5] Taken email against the real backend', async ({
   await dialog.getByLabel(en.adminTeachers.create.name).fill('Taken Owner')
   await dialog.getByLabel(en.adminTeachers.create.email).fill(email)
   await dialog
+    .getByLabel(en.adminTeachers.create.nativeLanguage)
+    .selectOption('de')
+  await dialog
     .getByRole('button', { name: en.adminTeachers.create.submit })
     .click()
   await expect(dialog).toBeHidden()
@@ -24,6 +27,9 @@ test('[web-client/R17-S5] Taken email against the real backend', async ({
   await dialog.getByLabel(en.adminTeachers.create.name).fill('Анна')
   const emailField = dialog.getByLabel(en.adminTeachers.create.email)
   await emailField.fill(email)
+  await dialog
+    .getByLabel(en.adminTeachers.create.nativeLanguage)
+    .selectOption('de')
   await dialog
     .getByRole('button', { name: en.adminTeachers.create.submit })
     .click()

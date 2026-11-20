@@ -32,7 +32,7 @@ class FieldRejectionErrorsTest extends ApiTest {
 
 		// when the admin creates another teacher with the email " T@example.com "
 		var response = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", " T@example.com ", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", " T@example.com ", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 409 EMAIL_TAKEN naming the email field
 		response.then().statusCode(409)

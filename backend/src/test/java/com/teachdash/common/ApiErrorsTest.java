@@ -39,9 +39,9 @@ class ApiErrorsTest extends ApiTest {
 
 		// when the admin creates a teacher with a blank name and no email, and once more with a null email and a blank time zone
 		var blankNameNoEmail = admin.post(TEACHERS, """
-				{"name": "   ", "timeZone": "Europe/Berlin"}""");
+				{"name": "   ", "timeZone": "Europe/Berlin", "nativeLanguage": "en"}""");
 		var nullEmailBlankZone = admin.post(TEACHERS, """
-				{"name": "Anna", "email": null, "timeZone": " "}""");
+				{"name": "Anna", "email": null, "timeZone": " ", "nativeLanguage": "en"}""");
 
 		// then both responses are 400 VALIDATION_FAILED with the required fields named
 		blankNameNoEmail.then().statusCode(400)
@@ -66,7 +66,7 @@ class ApiErrorsTest extends ApiTest {
 
 		// when the admin creates a teacher with a long Cyrillic name and a long email, the teacher updates the profile with a long Latin name, and someone logs in with a long email
 		var created = admin.post(TEACHERS,
-				Map.of("name", "Я".repeat(201), "email", longEmail, "timeZone", "UTC"));
+				Map.of("name", "Я".repeat(201), "email", longEmail, "timeZone", "UTC", "nativeLanguage", "en"));
 		var updated = teacher.patch("/api/me", Map.of("name", "a".repeat(201), "timeZone", "UTC"));
 		var loggedIn = newClient().post(LOGIN, Map.of("email", longEmail, "password", "password-1"));
 
@@ -216,9 +216,9 @@ class ApiErrorsTest extends ApiTest {
 
 		// when the admin creates a teacher with an array as the name, and once more with an object as the email
 		var arrayName = admin.post(TEACHERS, """
-				{"name": ["Anna"], "email": "anna@example.com", "timeZone": "Europe/Berlin"}""");
+				{"name": ["Anna"], "email": "anna@example.com", "timeZone": "Europe/Berlin", "nativeLanguage": "en"}""");
 		var objectEmail = admin.post(TEACHERS, """
-				{"name": "Анна", "email": {"value": "anna@example.com"}, "timeZone": "Europe/Berlin"}""");
+				{"name": "Анна", "email": {"value": "anna@example.com"}, "timeZone": "Europe/Berlin", "nativeLanguage": "en"}""");
 
 		// then both responses are 400 VALIDATION_FAILED with the field named as a wrong type
 		arrayName.then().statusCode(400)

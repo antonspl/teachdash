@@ -3,7 +3,8 @@
 ## Purpose
 
 Lets admins, teachers and students have accounts with one role each, sign in with
-email and password, and manage passwords through single-use links sent by hand.
+email and password, and manage passwords through single-use links sent by hand. A teacher also has a
+native language.
 
 ## Requirements
 
@@ -186,14 +187,19 @@ one.
 - **WHEN** the admin requests the list and saving the session fails
 
 ### Requirement: R5 Admin creates teacher accounts
-An admin SHALL be able to create a teacher account with name, email and time zone.
-The account has no password yet; the response SHALL contain a single-use set-password
-link. Emails MUST be unique across all accounts, case-insensitive.
+An admin SHALL be able to create a teacher account with name, email, time zone and a
+native language. The native language is required: a code from the language list
+(languages R1) with whitespace around it ignored. Missing, `null` or blank is `REQUIRED`,
+an array, object, number or boolean `INVALID_TYPE`, any other value not in the list
+`INVALID_FORMAT`; it is checked together with the other fields, so all failing validation fields are
+reported at once (a JSON type error stops at the first field, as in api-errors). The account has no password yet; the response SHALL contain a single-use
+set-password link and does not return the language. Emails MUST be unique across all
+accounts, case-insensitive.
 
 #### Scenario: accounts/R5-S1 Admin creates a teacher
 - **GIVEN** a logged-in admin
-- **WHEN** the admin creates a teacher with a new email
-- **THEN** the response is 201 with the teacher's id and a set-password link that starts with the configured base URL (`APP_BASE_URL`) and carries the token in the URL fragment, and a login before the password is set gets 401 with code `INVALID_CREDENTIALS`
+- **WHEN** the admin creates a teacher with a new email and the native language " pl ", and then lists teachers
+- **THEN** the response is 201 with the teacher's id and a set-password link that starts with the configured base URL (`APP_BASE_URL`) and carries the token in the URL fragment, and has no `nativeLanguage` property, the teacher's list item has `nativeLanguage` "pl", and a login before the password is set gets 401 with code `INVALID_CREDENTIALS`
 
 #### Scenario: accounts/R5-S2 Duplicate email is rejected
 - **GIVEN** an account with email "anna@example.com"
@@ -204,6 +210,21 @@ link. Emails MUST be unique across all accounts, case-insensitive.
 - **GIVEN** a logged-in admin
 - **WHEN** the admin creates a teacher and the returned set-password link is used to set the password "new-password-1"
 - **THEN** the creation returns 201, setting the password returns 200, and the teacher logs in with "new-password-1"
+
+#### Scenario: accounts/R5-S4 Creation needs a listed native language
+- **GIVEN** a logged-in admin
+- **WHEN** the admin creates teachers with the name "Anna", a new email, the time zone "Europe/Berlin" and, in turn: no native language; `null`; ""; "  "; "xx"; "SR"; "srp"
+- **THEN** the responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "nativeLanguage", code: "REQUIRED"}]` for the first four and `[{field: "nativeLanguage", code: "INVALID_FORMAT"}]` for the others, no body contains "xx" or "srp", and no account is created
+
+#### Scenario: accounts/R5-S5 All failing fields are reported together
+- **GIVEN** a logged-in admin
+- **WHEN** the admin creates a teacher with a blank name, a new email, the time zone "Europe/Berlin" and the native language "xx"
+- **THEN** the response is 400 with `errors` exactly `[{field: "name", code: "REQUIRED"}, {field: "nativeLanguage", code: "INVALID_FORMAT"}]`
+
+#### Scenario: accounts/R5-S6 A wrong JSON type is reported
+- **GIVEN** a logged-in admin
+- **WHEN** the admin creates teachers with the name "Anna", a new email, the time zone "Europe/Berlin" and, in turn, the native language `["sr"]`, `{"code": "sr"}`, `5` and `true`
+- **THEN** all four responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "nativeLanguage", code: "INVALID_TYPE"}]`, and no account is created
 
 ### Requirement: R6 Admin deactivates and reactivates teachers
 An admin SHALL be able to deactivate and reactivate a teacher account. Deactivation
@@ -340,6 +361,15 @@ version; a session started under an older version MUST NOT work.
 ### Requirement: R9 Profile
 A logged-in user SHALL be able to change their name and time zone, and change their
 password by giving the current one. The time zone MUST be a valid IANA zone name.
+A teacher MAY also change their native language through `PATCH /api/me`. The field is
+optional: a request without it, or with JSON `null`, keeps the stored value, for every role.
+When present it has the rules of creation (R5), for every role: whitespace around it is
+ignored; "" or a blank string is `REQUIRED`, an array, object, number or boolean
+`INVALID_TYPE`, a code not in the list `INVALID_FORMAT`; it is checked with name and time zone
+and all failing validation fields are reported at once (a JSON type error stops at the first
+field, as in api-errors), and a failed request changes nothing. A valid code is saved for a
+teacher; for a student or an admin it is ignored: no error, the stored value does not change
+(an admin stays without a language). A teacher's change never touches another account's language.
 A successful password change MUST end the account's other sessions and invalidate its
 unused password links; the session that made the change stays valid under a new session
 id, so a copy of the old id stops working. A password change
@@ -400,6 +430,36 @@ that races a revocation MUST lose: it changes nothing and the session gets 401.
 - **WHEN** the teacher sets the name to a single U+2003 space
 - **THEN** the response is 400 and the name does not change
 
+#### Scenario: accounts/R9-S12 A teacher changes their native language
+- **GIVEN** a logged-in teacher with native language "en"
+- **WHEN** the teacher updates the profile with the name "Anna S.", the time zone "Asia/Dubai" and the native language " ru ", and then reads the current user
+- **THEN** the update returns 200 with `nativeLanguage` "ru", and the current user shows "ru", "Anna S." and "Asia/Dubai"
+
+#### Scenario: accounts/R9-S13 Omitting the native language or sending null keeps it
+- **GIVEN** a logged-in teacher with native language "pl"
+- **WHEN** the teacher updates the profile with a new name and time zone and, in turn, no native language and the native language `null`
+- **THEN** both responses are 200 with `nativeLanguage` "pl", and the new name and time zone are saved
+
+#### Scenario: accounts/R9-S14 An invalid language changes nothing
+- **GIVEN** a logged-in teacher with the name "Anna" and native language "en", a logged-in student with native language "ru" and a logged-in admin
+- **WHEN** each updates the profile with a valid new name and time zone and, in turn, the native language: ""; "  "; "xx"; "SR"; `["sr"]`; `{"code": "sr"}`; `5`; `true`
+- **THEN** all responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "nativeLanguage", code: "REQUIRED"}]` for the first two, `INVALID_FORMAT` for "xx" and "SR", and `INVALID_TYPE` for the last four, and the names are unchanged, the teacher's native language is still "en", the student's "ru" and the admin has none
+
+#### Scenario: accounts/R9-S15 All failing fields are reported together
+- **GIVEN** a logged-in teacher
+- **WHEN** the teacher updates the profile with a blank name, a valid time zone and the native language "xx"
+- **THEN** the response is 400 with `errors` exactly `[{field: "name", code: "REQUIRED"}, {field: "nativeLanguage", code: "INVALID_FORMAT"}]`
+
+#### Scenario: accounts/R9-S16 A student's or an admin's valid language is ignored
+- **GIVEN** a logged-in student with native language "ru" and a logged-in admin
+- **WHEN** each updates the profile with a valid new name and time zone and, in turn, the native language: none; `null`; "de"
+- **THEN** all six responses are 200, the student's show `nativeLanguage` "ru", the admin's have no `nativeLanguage` property, and the new names are saved
+
+#### Scenario: accounts/R9-S17 A teacher's change does not touch other accounts
+- **GIVEN** a logged-in teacher with native language "en", their student with native language "sr", another teacher with native language "fr" and an admin
+- **WHEN** the teacher updates the profile with the native language "de"
+- **THEN** the response is 200 with the native language "de", the teacher has "de", and the student, the other teacher and the admin still have "sr", "fr" and no language
+
 ### Requirement: R10 Login timing does not reveal accounts
 Response time MUST NOT reveal whether an email has an account or whether the account has
 a password. Every login request that passes validation SHALL run exactly one password hash
@@ -411,9 +471,11 @@ check, at the cost used for new passwords, even when there is no stored hash to 
 - **THEN** each login runs exactly one password hash check, at the cost used for new passwords
 
 ### Requirement: R11 Account fields have one rule
-Name, email and time zone SHALL follow the same rules wherever an account is created or
+Name, email, time zone and a teacher's native language SHALL follow the same rules wherever an account is created or
 changed. Whitespace around a name or email SHALL be ignored before they are checked and
-stored, including invisible characters around a name. A name MUST contain a letter or
+stored, including invisible characters around a name. The native language has the value rule of R5 in
+creation and in the profile (R9); the only difference is that the profile may omit it or send `null`, which keeps the stored value.
+A name MUST contain a letter or
 digit and MUST NOT contain line breaks, control or text-direction characters.
 
 #### Scenario: accounts/R11-S1 Limits apply to teacher creation
@@ -441,8 +503,13 @@ digit and MUST NOT contain line breaks, control or text-direction characters.
 - **WHEN** the admin creates a teacher with each of the names "\u3164", "\u2800", "\u034F", "Anna\u202Exyz" and "A\nB"
 - **THEN** each response is 400 with code `VALIDATION_FAILED`, and no account is created
 
+#### Scenario: accounts/R11-S6 The native language has one rule in creation and in the profile
+- **GIVEN** a logged-in admin and a logged-in teacher with native language "en"
+- **WHEN** the admin creates teachers and the teacher updates the profile, each with the native language "xx", then "SR", then "  ", then `["sr"]`, and otherwise valid fields
+- **THEN** the creation and the profile responses are 400 with the same `errors` for each value (`INVALID_FORMAT`, `INVALID_FORMAT`, `REQUIRED`, `INVALID_TYPE`), and nothing is created or changed
+
 ### Requirement: R12 Teacher list shows whether a password is set
-Each item of the admin's teacher list SHALL have a boolean `hasPassword`: `false` until
+Each item of the admin's teacher list SHALL have the teacher's `nativeLanguage` and a boolean `hasPassword`: `false` until
 the teacher sets a password, `true` afterwards. It does not depend on whether the teacher
 is active. The list MUST NOT return the password hash.
 
@@ -454,9 +521,19 @@ is active. The list MUST NOT return the password hash.
 #### Scenario: accounts/R12-S2 Admin sees a password has been set
 - **GIVEN** a logged-in admin and a teacher the admin created, who set a password with the set-password link from the creation
 - **WHEN** the admin lists teachers
-- **THEN** the teacher's list item has `hasPassword` equal to `true`, and its fields are exactly `id`, `name`, `email`, `role`, `timeZone`, `active` and `hasPassword`
+- **THEN** the teacher's list item has `hasPassword` equal to `true`, and its fields are exactly `id`, `name`, `email`, `role`, `timeZone`, `nativeLanguage`, `active` and `hasPassword`
 
 #### Scenario: accounts/R12-S3 Deactivated teachers keep their password status
 - **GIVEN** a logged-in admin, a deactivated teacher with a password and a deactivated teacher who never set one
 - **WHEN** the admin lists teachers
 - **THEN** `hasPassword` is `true` for the first teacher and `false` for the second
+
+### Requirement: R13 A teacher's native language is enforced by the database
+The database SHALL enforce who has a native language: none for an admin, one from the
+language list (languages R1) for every student and every teacher. The migration SHALL give
+existing teachers `en` and leave students' and admins' values as they are.
+
+#### Scenario: accounts/R13-S1 The database enforces who has a language
+- **GIVEN** the migrated database
+- **WHEN** rows are inserted directly for a teacher with no language, a student with no language, an admin with the language "en", a teacher with the language "xx", and then for a teacher with "en", a student with "en" and an admin with no language
+- **THEN** the first four inserts are rejected and the last three succeed

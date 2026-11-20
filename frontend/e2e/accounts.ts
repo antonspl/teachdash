@@ -96,7 +96,7 @@ export async function createTeacher(
   const email = `e2e-${Date.now()}-${counter++}-${Math.random().toString(36).slice(2, 8)}@example.com`
   const created = await request.post('/api/admin/teachers', {
     headers: afterLogin,
-    data: { name, email, timeZone },
+    data: { name, email, timeZone, nativeLanguage: 'en' },
   })
   expect(created.status(), 'creating a teacher').toBe(201)
   const { setPasswordLink } = (await created.json()) as {

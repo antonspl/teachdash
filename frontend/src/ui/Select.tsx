@@ -6,8 +6,11 @@ export function Select({
   value,
   onChange,
   options,
+  labels,
+  placeholder,
   error,
   required,
+  ariaRequired,
   disabled,
   inputRef,
 }: {
@@ -15,8 +18,14 @@ export function Select({
   value: string
   onChange: (value: string) => void
   options: string[]
+  // Shown instead of the option value, where given.
+  labels?: Record<string, string>
+  // An empty first option, so the select can start with nothing chosen.
+  placeholder?: string
   error?: string
   required?: boolean
+  // Announces the field as required without the native validation bubble.
+  ariaRequired?: boolean
   disabled?: boolean
   // Lets a form move the focus to the select.
   inputRef?: Ref<HTMLSelectElement>
@@ -35,14 +44,20 @@ export function Select({
           className={`${styles.input} ${styles.select} ${error ? styles.invalid : ''}`}
           value={value}
           required={required}
+          aria-required={ariaRequired ? true : undefined}
           disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           onChange={(event) => onChange(event.target.value)}
         >
+          {placeholder === undefined ? null : (
+            <option value="" disabled hidden>
+              {placeholder}
+            </option>
+          )}
           {options.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {labels?.[option] ?? option}
             </option>
           ))}
         </select>

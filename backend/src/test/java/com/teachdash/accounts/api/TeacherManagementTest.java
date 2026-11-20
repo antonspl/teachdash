@@ -1,7 +1,9 @@
 package com.teachdash.accounts.api;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,20 +27,27 @@ class TeacherManagementTest extends ApiTest {
 		// given a logged-in admin
 		TestClient admin = loggedInAdmin();
 
-		// when the admin creates a teacher with a new email
+		// when the admin creates a teacher with a new email and the native language " pl ", and then lists teachers
 		var response = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "Europe/Moscow"));
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "Europe/Moscow",
+						"nativeLanguage", " pl "));
+		var list = admin.get("/api/admin/teachers");
+		var login = newClient().login("anna@example.com", "any-password-1");
 
-		// then the response is 201 with the teacher's id and a set-password link
+		// then the response is 201 with the teacher's id and a set-password link that starts with the configured base URL and carries the token in the URL fragment
 		response.then().statusCode(201)
 				.body("id", notNullValue())
 				.body("setPasswordLink", startsWith(APP_BASE_URL + "/set-password#token="));
 		// and the id is the id of the stored account
 		assertEquals(jdbc.sql("select id from users where lower(email) = 'anna@example.com'")
 				.query(UUID.class).single().toString(), response.path("id"));
+		// and the response has no nativeLanguage property
+		response.then().body("$", not(hasKey("nativeLanguage")));
+		// and the teacher's list item has nativeLanguage "pl"
+		list.then().statusCode(200)
+				.body("find { it.email == 'anna@example.com' }.nativeLanguage", equalTo("pl"));
 		// and a login before the password is set gets 401 with code INVALID_CREDENTIALS
-		newClient().login("anna@example.com", "any-password-1").then()
-				.statusCode(401).body("code", equalTo("INVALID_CREDENTIALS"));
+		login.then().statusCode(401).body("code", equalTo("INVALID_CREDENTIALS"));
 	}
 
 	@Test
@@ -49,7 +58,7 @@ class TeacherManagementTest extends ApiTest {
 
 		// when the admin creates a teacher and the returned link is used to set the password "new-password-1"
 		var created = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		String link = created.getContentType() != null && created.getContentType().contains("json")
 				? created.path("setPasswordLink") : null;
 		String token = link == null ? "no-link" : tokenFrom(link);
@@ -73,7 +82,7 @@ class TeacherManagementTest extends ApiTest {
 
 		// when the admin creates a teacher with email "ANNA@example.com"
 		var response = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna 2", "email", "ANNA@example.com", "timeZone", "UTC"));
+				Map.of("name", "Anna 2", "email", "ANNA@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// then the response is 409 and no account is created
 		response.then().statusCode(409);
@@ -177,7 +186,7 @@ class TeacherManagementTest extends ApiTest {
 		// given a logged-in admin and a teacher the admin created, who has not set a password
 		TestClient admin = loggedInAdmin();
 		var created = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 
 		// when the admin lists teachers
 		var response = admin.get("/api/admin/teachers");
@@ -195,7 +204,7 @@ class TeacherManagementTest extends ApiTest {
 		// given a logged-in admin and a teacher the admin created, who set a password with the set-password link from the creation
 		TestClient admin = loggedInAdmin();
 		var created = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		String token = tokenFrom(created.path("setPasswordLink"));
 		var linkUsed = newClient().post("/api/password-links",
 				Map.of("token", token, "password", "new-password-1"));
@@ -209,9 +218,11 @@ class TeacherManagementTest extends ApiTest {
 		response.then()
 				.statusCode(200)
 				.body("find { it.email == 'anna@example.com' }.hasPassword", equalTo(true));
-		// and its fields are exactly id, name, email, role, timeZone, active and hasPassword
+		// and its fields are exactly id, name, email, role, timeZone, nativeLanguage, active and hasPassword
 		Map<String, Object> item = response.path("find { it.email == 'anna@example.com' }");
-		assertEquals(Set.of("id", "name", "email", "role", "timeZone", "active", "hasPassword"), item.keySet());
+		assertEquals(
+				Set.of("id", "name", "email", "role", "timeZone", "nativeLanguage", "active", "hasPassword"),
+				item.keySet());
 	}
 
 	@Test
@@ -257,7 +268,7 @@ class TeacherManagementTest extends ApiTest {
 		// given a logged-in admin and a deactivated teacher who never set a password
 		TestClient admin = loggedInAdmin();
 		var created = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		UUID teacherId = UUID.fromString(created.path("id"));
 		admin.post("/api/admin/teachers/" + teacherId + "/deactivate");
 
@@ -284,7 +295,7 @@ class TeacherManagementTest extends ApiTest {
 		// given a logged-in admin and an active teacher with an unused set-password link
 		TestClient admin = loggedInAdmin();
 		var created = admin.post("/api/admin/teachers",
-				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC"));
+				Map.of("name", "Anna", "email", "anna@example.com", "timeZone", "UTC", "nativeLanguage", "en"));
 		String link = created.getContentType() != null && created.getContentType().contains("json")
 				? created.path("setPasswordLink") : null;
 		String token = link == null ? "no-link" : tokenFrom(link);
