@@ -160,7 +160,7 @@ Every `git diff` check in groups 5-12 uses base `3355250`, the last commit befor
 
 ## 12. Generate the roles
 
-- [ ] 12.1 After 5.1-5.4, 6.1-6.3, 7.1 and 7.2, run `scripts/setup-agents` (replaces 3.4). Verify, and record in the PR: it generates `frontend-researcher`, `frontend-spec-critic` and `frontend-reviewer` for Claude Code, opencode and Codex without script changes, and regenerates `frontend-implementer`; `scripts/setup-agents --check` prints `ok`; `git diff main -- .agents/roles/implementer.md scripts/setup-agents` is empty.
+- [x] 12.1 After 5.1-5.4, 6.1-6.3, 7.1 and 7.2, run `scripts/setup-agents` (replaces 3.4). Verify, and record in the PR: it generates `frontend-researcher`, `frontend-spec-critic` and `frontend-reviewer` for Claude Code, opencode and Codex without script changes, and regenerates `frontend-implementer`; `scripts/setup-agents --check` prints `ok`; `git diff main -- .agents/roles/implementer.md scripts/setup-agents` is empty.
 
 ## 13. Proof
 
