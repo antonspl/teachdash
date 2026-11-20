@@ -10,7 +10,8 @@ Roles:
 - **Engineer** — the team member who took the task. The engineer answers the
   clarifying questions, agrees the research angles, decides trade-offs and approves
   the gates: at each gate the engineer checks what the agent produced, helped by the
-  spec-critic (spec gate) and the code-gate review (code gate).
+  spec-critic, or the frontend-spec-critic for a change touching `frontend/src`
+  (spec gate), and the code-gate review (code gate).
 - **Code owner** — a team member listed in `.github/CODEOWNERS`. A code owner other
   than the engineer gives the final approval.
 - **Owner** — the project owner. The only one who may merge into `main` without an
@@ -35,8 +36,8 @@ with its own issue, spec and PR.
 2. **Clarify** — before writing a proposal, restate the task in plain words, list
    open questions and ambiguities, and propose research angles. Get the engineer's
    answers and agreement on the angles, or agreement that a small task needs none.
-   For a change to UI under `frontend/src`, the proposed angles always include a
-   design angle (AGENTS.md).
+   A change touching `frontend/src` gets at least one frontend-researcher at
+   Clarify (AGENTS.md).
    Record the answers in the proposal. Keep it short: ask only what the issue and
    the exploration do not already answer.
 3. **Research** — one researcher agent per agreed angle. If the findings raise new
@@ -44,6 +45,7 @@ with its own issue, spec and PR.
 4. **Propose** — proposal, spec deltas, design, tasks. Every requirement has at
    least one Given/When/Then scenario. No code. Push the branch, open a draft PR.
 5. **Spec critique** — the spec-critic agent attacks the draft, on every change.
+   For a change touching `frontend/src`, the frontend-spec-critic runs instead.
    Fix what has a clear answer, ask the engineer about real trade-offs, and turn
    findings outside the change into issues. Run it again if a fix was non-trivial.
    Its report is not an approval; the gate request summarises what it found.
@@ -62,9 +64,10 @@ with its own issue, spec and PR.
 9. **Green** — implement until all tests pass. Approved tests MUST NOT be changed;
    if a test looks wrong, stop and ask the engineer.
 10. **Code review** — the code-gate review runs, then the engineer approves the code in the PR. Security problems,
-   data loss and spec violations are fixed in the PR. Design-rule
-   (`.agents/design/project-rules.md`) and WCAG 2.2 AA violations in UI the change
-   adds or edits (its markup, CSS, copy or behaviour) are fixed in the PR too. Every
+   data loss and spec violations are fixed in the PR. Design-rule violations (the
+   design rules in `.agents/design/`, in the precedence order of its README) and WCAG
+   2.2 AA violations in UI the change adds or edits (its markup, CSS, copy or
+   behaviour) are fixed in the PR too. Every
    other finding becomes an issue, so rare edge cases do not add more review rounds.
 11. **Archive** — merge spec deltas into `openspec/specs/`, in the same PR.
 12. **Final review** — mark the PR ready. A code owner other than the engineer
