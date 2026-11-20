@@ -15,6 +15,6 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
 
 ## 2. Workflow follow-up
 
-- [ ] 2.1 Code review gate: run the `code-gate-reviewer`, fix findings, post the range with `gate-request`.
+- [x] 2.1 Code review gate: run the `code-gate-reviewer`, fix findings, post the range with `gate-request`.
 - [ ] 2.2 Archive the change in the same PR.
 - [ ] 2.3 Mark the PR ready for the final code owner review.
