@@ -5,10 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.springframework.validation.FieldError;
-
 import com.teachdash.common.validation.MaxUtf8Bytes;
 import com.teachdash.languages.api.validation.ContentLanguage;
+import com.teachdash.languages.api.validation.NativeLanguage;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.constraints.NotBlank;
@@ -28,21 +27,6 @@ final class FieldErrorCodes {
 	private FieldErrorCodes() {
 	}
 
-	static String codeOf(FieldError error) {
-		if (error.contains(ConstraintViolation.class)) {
-			return codeOf(error.unwrap(ConstraintViolation.class));
-		}
-		String code = error.getCode();
-		boolean fieldCode = REQUIRED.equals(code) || INVALID_TYPE.equals(code) || INVALID_FORMAT.equals(code);
-		return fieldCode ? code : INVALID_FORMAT;
-	}
-
-	static List<FieldErrorDetail> fromFieldErrors(Collection<FieldError> errors) {
-		return reduce(errors.stream()
-				.map(error -> new FieldErrorDetail(error.getField(), codeOf(error)))
-				.toList());
-	}
-
 	static String codeOf(ConstraintViolation<?> violation) {
 		Class<?> constraint = violation.getConstraintDescriptor().getAnnotation().annotationType();
 		if (constraint == NotBlank.class || constraint == NotNull.class || constraint == NotEmpty.class) {
@@ -53,6 +37,9 @@ final class FieldErrorCodes {
 		}
 		if (constraint == MaxUtf8Bytes.class) {
 			return TOO_LONG;
+		}
+		if (constraint == NativeLanguage.class && violation.getInvalidValue() instanceof String text && text.isBlank()) {
+			return REQUIRED;
 		}
 		if (constraint == ContentLanguage.class) {
 			return UNSUPPORTED_COURSE_LANGUAGE;

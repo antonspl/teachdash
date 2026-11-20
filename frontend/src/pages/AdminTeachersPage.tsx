@@ -149,7 +149,6 @@ function CreateDialog({
   const [email, setEmail] = useState('')
   const [timeZone, setTimeZone] = useState(defaultTimeZone)
   const [nativeLanguage, setNativeLanguage] = useState('')
-  const [languageMissing, setLanguageMissing] = useState(false)
   const [error, setError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
@@ -183,18 +182,29 @@ function CreateDialog({
     if (inFlight.current) {
       return
     }
+    setError(undefined)
+    fieldErrors.clearAll()
+    const missing: Partial<
+      Record<'name' | 'email' | 'timeZone' | 'nativeLanguage', string>
+    > = {}
+    if (name.trim() === '') {
+      missing.name = t('fieldErrors.REQUIRED')
+    }
+    if (email.trim() === '') {
+      missing.email = t('fieldErrors.REQUIRED')
+    }
+    if (timeZone === '') {
+      missing.timeZone = t('fieldErrors.REQUIRED')
+    }
     if (nativeLanguage === '') {
-      // Not the native `required` (untranslated bubble); the select has aria-required.
-      setError(undefined)
-      fieldErrors.clearAll()
-      setLanguageMissing(true)
-      nativeLanguageRef.current?.focus()
+      missing.nativeLanguage = t('languages.required')
+    }
+    if (Object.keys(missing).length > 0) {
+      fieldErrors.show(missing)
       return
     }
     inFlight.current = true
     setSubmitting(true)
-    setError(undefined)
-    fieldErrors.clearAll()
     const submitted = { name, email, timeZone, nativeLanguage }
     try {
       const { id, link } = await createTeacher(submitted)
@@ -234,7 +244,7 @@ function CreateDialog({
       onClose={onCancel}
       busy={submitting}
     >
-      <Form onSubmit={(event) => void onSubmit(event)}>
+      <Form noValidate onSubmit={(event) => void onSubmit(event)}>
         <TextInput
           label={t('adminTeachers.create.name')}
           required
@@ -276,12 +286,9 @@ function CreateDialog({
           value={nativeLanguage}
           onChange={(value) => {
             setNativeLanguage(value)
-            setLanguageMissing(false)
             fieldErrors.clear('nativeLanguage')
           }}
-          error={
-            languageMissing ? t('languages.required') : errors.nativeLanguage
-          }
+          error={errors.nativeLanguage}
           inputRef={nativeLanguageRef}
         />
         {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}

@@ -106,6 +106,18 @@ export function useFieldErrors<K extends string>(
     return true
   }
 
+  // Shows errors found by the form itself, all at once, and focuses the first field.
+  function show(shown: Partial<Record<K, string>>) {
+    const first = fields.find((field) => shown[field.key] !== undefined)
+    const active =
+      submitActive.current === undefined
+        ? document.activeElement
+        : submitActive.current
+    submitActive.current = undefined
+    pendingFocus.current = first ? { key: first.key, active } : null
+    setErrors(shown)
+  }
+
   function clear(key: K) {
     if (pendingFocus.current?.key === key) {
       pendingFocus.current = null
@@ -126,5 +138,5 @@ export function useFieldErrors<K extends string>(
     setErrors((current) => (Object.keys(current).length === 0 ? current : {}))
   }
 
-  return { errors, place, clear, clearAll }
+  return { errors, place, show, clear, clearAll }
 }

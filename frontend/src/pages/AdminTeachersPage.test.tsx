@@ -1507,3 +1507,19 @@ test('[web-admin-teachers/R2-S14] A language with no name shows its code', async
   // then
   expect(languageOptions()).toEqual(['German', 'sv'])
 })
+
+test('A blank name and a missing language are shown together', async () => {
+  // given
+  backend({ list: () => json([]) })
+  open()
+  await fillForm('', 'anna@example.com', '')
+  await screen.findByRole('option', { name: 'German' })
+
+  // when
+  fireEvent.click(submitButton())
+
+  // then both errors are shown and nothing is sent
+  expect(await screen.findByText(en.languages.required)).toBeTruthy()
+  expect(screen.getByText(en.fieldErrors.REQUIRED)).toBeTruthy()
+  expect(calls('POST')).toHaveLength(0)
+})

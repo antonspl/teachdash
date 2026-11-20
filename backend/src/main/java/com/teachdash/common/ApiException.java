@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.BindingResult;
 
 import jakarta.validation.ConstraintViolation;
 
@@ -34,17 +33,6 @@ public class ApiException extends RuntimeException {
 				HttpStatus.BAD_REQUEST,
 				"VALIDATION_FAILED",
 				FieldErrorCodes.fromViolations(violations));
-	}
-
-	public static ApiException validation(BindingResult result) {
-		if (!result.getGlobalErrors().isEmpty()) {
-			throw new IllegalStateException("Class-level constraints are not supported, object: " + result.getObjectName());
-		}
-		List<FieldErrorDetail> details = FieldErrorCodes.fromFieldErrors(result.getFieldErrors());
-		if (details.isEmpty()) {
-			throw new IllegalStateException("Validation failed with no field errors, object: " + result.getObjectName());
-		}
-		return new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", details);
 	}
 
 	public static ApiException field(HttpStatus status, String code, String field) {

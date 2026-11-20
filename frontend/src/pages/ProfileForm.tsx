@@ -32,7 +32,6 @@ export function ProfileForm({
   const [nativeLanguage, setNativeLanguage] = useState(
     user.nativeLanguage ?? '',
   )
-  const [languageMissing, setLanguageMissing] = useState(false)
   const [message, setMessage] = useState<Message>()
   const [submitting, setSubmitting] = useState(false)
   const inFlight = useRef(false)
@@ -58,10 +57,20 @@ export function ProfileForm({
     }
     setMessage(undefined)
     fieldErrors.clearAll()
+    const missing: Partial<
+      Record<'name' | 'timeZone' | 'nativeLanguage', string>
+    > = {}
+    if (name.trim() === '') {
+      missing.name = t('fieldErrors.REQUIRED')
+    }
+    if (timeZone === '') {
+      missing.timeZone = t('fieldErrors.REQUIRED')
+    }
     if (isTeacher && nativeLanguage === '') {
-      // Not the native `required` (untranslated bubble); the select has aria-required.
-      setLanguageMissing(true)
-      nativeLanguageRef.current?.focus()
+      missing.nativeLanguage = t('languages.required')
+    }
+    if (Object.keys(missing).length > 0) {
+      fieldErrors.show(missing)
       return
     }
     inFlight.current = true
@@ -105,7 +114,7 @@ export function ProfileForm({
   }
 
   return (
-    <Form onSubmit={(event) => void onSubmit(event)}>
+    <Form noValidate onSubmit={(event) => void onSubmit(event)}>
       <TextInput
         label={t('profile.name')}
         autoComplete="name"
@@ -140,14 +149,11 @@ export function ProfileForm({
           ariaRequired
           disabled={submitting}
           inputRef={nativeLanguageRef}
-          error={
-            languageMissing ? t('languages.required') : errors.nativeLanguage
-          }
+          error={errors.nativeLanguage}
           value={nativeLanguage}
           onChange={(value) => {
             setMessage(undefined)
             fieldErrors.clear('nativeLanguage')
-            setLanguageMissing(false)
             setNativeLanguage(value)
           }}
         />

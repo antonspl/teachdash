@@ -11,13 +11,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
-import jakarta.validation.constraints.NotBlank;
 
-/** A language code listed in the languages table. */
+/** A language code listed in the languages table; null passes, so pair it with {@code @NotBlank} where required. */
 @Documented
-@NotBlank
-@ListedLanguage
-@Constraint(validatedBy = {})
+@Constraint(validatedBy = NativeLanguageValidator.class)
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)
 public @interface NativeLanguage {

@@ -7,11 +7,13 @@ import com.teachdash.common.validation.PersonName;
 import com.teachdash.common.validation.TimeZoneId;
 import com.teachdash.languages.api.validation.NativeLanguage;
 
+import jakarta.validation.constraints.NotBlank;
+
 public record JoinVisitor(
 		@PersonName String name,
 		@EmailAddress String email,
 		@TimeZoneId String timeZone,
-		@NativeLanguage String nativeLanguage,
+		@NotBlank @NativeLanguage String nativeLanguage,
 		@BcryptPassword String password) {
 
 	public JoinVisitor {

@@ -134,53 +134,59 @@ class TeacherLanguageTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[accounts/R9-S13] Omitting the native language keeps it")
-	void omittingTheNativeLanguageKeepsIt() {
+	@DisplayName("[accounts/R9-S13] Omitting the native language or sending null keeps it")
+	void omittingTheNativeLanguageOrSendingNullKeepsIt() {
 		// given a logged-in teacher with native language "pl"
 		createTeacher("teacher@example.com", "teacher-pass-1", "pl");
 		TestClient teacher = loggedInAs("teacher@example.com");
 
-		// when the teacher updates the profile with a new name and time zone and no native language
-		var update = teacher.patch(ME, profile("Anna S.", "Asia/Dubai", null));
+		// when the teacher updates the profile with a new name and time zone and, in turn, no native language and the native language null
+		var omitted = teacher.patch(ME, profile("Anna S.", "Asia/Dubai", null));
+		var nulled = teacher.patch(ME, profile("Anna T.", "Europe/Paris", "null"));
 		var read = teacher.get(ME);
 
-		// then the response is 200 with nativeLanguage "pl"
-		update.then().statusCode(200).body("nativeLanguage", equalTo("pl"));
+		// then both responses are 200 with nativeLanguage "pl"
+		omitted.then().statusCode(200).body("nativeLanguage", equalTo("pl"));
+		nulled.then().statusCode(200).body("nativeLanguage", equalTo("pl"));
 		// and the new name and time zone are saved
 		read.then().statusCode(200)
-				.body("name", equalTo("Anna S."))
-				.body("timeZone", equalTo("Asia/Dubai"))
+				.body("name", equalTo("Anna T."))
+				.body("timeZone", equalTo("Europe/Paris"))
 				.body("nativeLanguage", equalTo("pl"));
 	}
 
 	@Test
-	@DisplayName("[accounts/R9-S14] A teacher's invalid language changes nothing")
-	void aTeachersInvalidLanguageChangesNothing() {
-		// given a logged-in teacher with the name "Anna" and native language "en"
+	@DisplayName("[accounts/R9-S14] An invalid language changes nothing")
+	void anInvalidLanguageChangesNothing() {
+		// given a logged-in teacher with the name "Anna" and native language "en", a logged-in student with native language "ru" and a logged-in admin
 		UUID teacherId = createUser("TEACHER", "Anna", "teacher@example.com", "teacher-pass-1", true, "en");
 		TestClient teacher = loggedInAs("teacher@example.com");
+		UUID studentId = createStudent("student@example.com", "student-pass-1", "ru");
+		TestClient student = loggedInAs("student@example.com");
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		TestClient admin = loggedInAs("admin@example.com");
 		List<String> languages = List.of(
-				"null", "\"\"", "\"  \"", "\"xx\"", "\"SR\"", "[\"sr\"]", "{\"code\": \"sr\"}", "5", "true");
-
-		// when the teacher updates the profile with a valid new name and time zone and, in turn, each of these languages
-		List<Response> responses = new ArrayList<>();
-		for (String language : languages) {
-			responses.add(teacher.patch(ME, profile("Anna New", "Asia/Dubai", language)));
-		}
-
-		// then the responses are 400 VALIDATION_FAILED with REQUIRED for the first three, INVALID_FORMAT for "xx" and "SR", and INVALID_TYPE for the last four
+				"\"\"", "\"  \"", "\"xx\"", "\"SR\"", "[\"sr\"]", "{\"code\": \"sr\"}", "5", "true");
 		List<String> codes = List.of(
-				"REQUIRED", "REQUIRED", "REQUIRED", "INVALID_FORMAT", "INVALID_FORMAT",
+				"REQUIRED", "REQUIRED", "INVALID_FORMAT", "INVALID_FORMAT",
 				"INVALID_TYPE", "INVALID_TYPE", "INVALID_TYPE", "INVALID_TYPE");
-		for (int i = 0; i < responses.size(); i++) {
-			responses.get(i).then().statusCode(400)
-					.body("code", equalTo("VALIDATION_FAILED"))
-					.body("errors", equalTo(List.of(error("nativeLanguage", codes.get(i)))));
+
+		// when each updates the profile with a valid new name and time zone and, in turn, each of these languages
+		// then all responses are 400 VALIDATION_FAILED with errors exactly nativeLanguage and the code for that value
+		for (TestClient client : List.of(teacher, student, admin)) {
+			for (int i = 0; i < languages.size(); i++) {
+				client.patch(ME, profile("Name New", "Asia/Dubai", languages.get(i))).then().statusCode(400)
+						.body("code", equalTo("VALIDATION_FAILED"))
+						.body("errors", equalTo(List.of(error("nativeLanguage", codes.get(i)))));
+			}
 		}
-		// and the name is still "Anna" and the native language "en"
+		// and the names are unchanged, the teacher's native language is still "en", the student's "ru" and the admin has none
 		assertEquals("Anna", jdbc.sql("select name from users where id = :id")
 				.param("id", teacherId).query(String.class).single());
+		assertEquals(0, jdbc.sql("select count(*) from users where name = 'Name New'").query(Integer.class).single());
 		assertEquals("en", userLanguage(teacherId));
+		assertEquals("ru", userLanguage(studentId));
+		assertEquals(null, userLanguage(adminId));
 	}
 
 	@Test
@@ -199,14 +205,14 @@ class TeacherLanguageTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("[accounts/R9-S16] A student's or an admin's value is ignored")
-	void aStudentsOrAnAdminsValueIsIgnored() {
+	@DisplayName("[accounts/R9-S16] A student's or an admin's valid language is ignored")
+	void aStudentsOrAnAdminsValidLanguageIsIgnored() {
 		// given a logged-in student with native language "ru" and a logged-in admin
 		UUID studentId = createStudent("student@example.com", "student-pass-1", "ru");
 		TestClient student = loggedInAs("student@example.com");
 		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
 		TestClient admin = loggedInAs("admin@example.com");
-		List<String> languages = java.util.Arrays.asList(null, "null", "\"xx\"", "\"de\"", "[\"de\"]", "{\"code\": \"de\"}");
+		List<String> languages = java.util.Arrays.asList(null, "null", "\"de\"");
 
 		// when each updates the profile with a valid new name and time zone and, in turn, each of these languages
 		List<Response> studentResponses = new ArrayList<>();
@@ -216,7 +222,7 @@ class TeacherLanguageTest extends ApiTest {
 			adminResponses.add(admin.patch(ME, profile("Admin New", "Asia/Dubai", language)));
 		}
 
-		// then all twelve responses are 200, the student's show nativeLanguage "ru" and the admin's have no nativeLanguage property
+		// then all six responses are 200, the student's show nativeLanguage "ru" and the admin's have no nativeLanguage property
 		for (Response response : studentResponses) {
 			response.then().statusCode(200).body("nativeLanguage", equalTo("ru"));
 		}

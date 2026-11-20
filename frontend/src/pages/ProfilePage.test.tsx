@@ -1306,3 +1306,37 @@ test('A teacher without a stored language gets a translated message, not a nativ
   fireEvent.change(languageSelect(), { target: { value: 'de' } })
   expect(screen.queryByText(en.languages.required)).toBeNull()
 })
+
+test('A blank name and a missing language are shown together', async () => {
+  // given a teacher without a language
+  fetchMock.mockImplementation((url: string) => {
+    if (url === '/api/languages') {
+      return languagesResponse()
+    }
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          id: '1',
+          name: 'Anna Smith',
+          email: 'anna@example.com',
+          role: 'TEACHER',
+          timeZone: 'UTC',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    )
+  })
+  open()
+  await screen.findByRole('option', { name: 'German' })
+  fireEvent.change(screen.getByLabelText(en.profile.name), {
+    target: { value: '  ' },
+  })
+
+  // when
+  pressSave()
+
+  // then both errors are shown and nothing is saved
+  expect(await screen.findByText(en.languages.required)).toBeTruthy()
+  expect(screen.getByText(en.fieldErrors.REQUIRED)).toBeTruthy()
+  expect(saves()).toHaveLength(0)
+})
