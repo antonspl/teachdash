@@ -9,8 +9,8 @@ See `proposal.md` for the decisions.
 - `.agents/roles/implementer.md:3` describes the role as "Use for all code writing in teachdash."
 - Frontend look rules today: all values are tokens in `frontend/src/styles/tokens.css`; `npm run lint` runs `scripts/check-design-tokens.mjs`, which fails on look values outside that file; pages live in `frontend/src/pages/` and use `src/ui/` components. UI copy tone and spacing rules are recorded only in archived changes.
 - `frontend/playwright.config.ts` hardcodes `baseURL` to `http://localhost:8081`, which serves the built app from `compose.yaml`. Its `outputDir` is `test-results/`, which Playwright empties on each run.
-- A frontend-only change has one pass (`openspec/config.yaml` tasks and apply rules). Constitution step 7 speaks of backend tests only, and `openspec/config.yaml` line 27 says "one backend test per scenario (JUnit 5, Testcontainers, RestAssured)". Yet a change with both layers already writes its frontend tests in pass 1: archived `2026-11-02-login-invalid-credentials`, task 1.5 adds the Vitest test `[web-client/R5-S4]` under "Failing tests". `scripts/check-scenario-coverage.sh` already covers a frontend capability's scenario only by a Vitest or Playwright title.
-- Constitution §1 step 10 and the reviewers' triage: security problems, data loss and spec violations are fixed in the PR; every other finding becomes an issue.
+- A frontend-only change has one pass (`openspec/config.yaml` tasks and apply rules), and each of its task groups lands its own "[<scenario ID>]" tests (line 31). Constitution step 7 speaks of backend tests only, and `openspec/config.yaml` line 27 says "one backend test per scenario (JUnit 5, Testcontainers, RestAssured)". In a change with both layers, archived `2026-11-02-login-invalid-credentials`, task 1.5, adds the Vitest test `[web-client/R5-S4]` to the one "Failing tests" section. How frontend tests fit pass 1 (constitution §2, no frontend stubs, coverage by `FRONTEND_CAPABILITIES` in `scripts/check-scenario-coverage.sh`) is #170; this change adds no test rules (decision 3).
+- Constitution §1 step 10 and the reviewers' triage: security problems, data loss and spec violations are fixed in the PR; every other finding becomes an issue. This change adds one sentence to step 10 for UI the change adds or changes (D7).
 
 ## Goals / Non-Goals
 
@@ -25,9 +25,10 @@ See `proposal.md` for the decisions.
 **Non-Goals:**
 
 - Enforcing the design rules by a script, beyond the existing `check-design-tokens.mjs`.
-- Fixing existing UI.
+- Fixing existing UI that the change does not add or change.
+- Test rules for a change with both layers (#170).
 - Keeping the vendored copies in sync with upstream automatically. The README records the pinned commits for a manual re-sync.
-- Proving the role in opencode and Codex.
+- Proving the role in opencode and Codex, and proving routing in a change with both layers (D12).
 
 ## Decisions
 
@@ -83,7 +84,7 @@ It comes first after the index and wins over every source. It holds:
   - **C2** no all-caps or uppercase-small labels;
   - **C3** tokens only; a new value becomes a new role-named token added to `tokens.css`;
   - **C4** `--font-body` system stack, no web fonts, no "distinctive typeface";
-  - **C5** the one `--radius` and `--shadow-card` are ours; changing them, or any existing token's value, is an engineer decision;
+  - **C5** the one `--radius` and `--shadow-card` are ours; changing, renaming or deleting them, or any existing token, is an engineer decision; the frontend-implementer only adds new role-named tokens;
   - **C6** reduced motion removes non-essential motion but keeps state feedback;
   - **C7** native elements first; never add key handlers to a `<button>`;
   - **C8** personal-data fields get autocomplete tokens (WCAG 1.3.5), not `autocomplete="off"`;
@@ -91,7 +92,7 @@ It comes first after the index and wins over every source. It holds:
   - **C10** friendly, second person, no apologies; a message says what happened and how to fix it;
   - **C11** quotes follow each language's typography in the i18n files (ru uses «»);
   - **C12** focus on error follows the specs (web-client R14, R17);
-  - **C13** no scores and no P0-P3. Findings at review are triaged as constitution §1 step 10 says: security problems, data loss and spec violations are fixed in the PR; every other finding, including WCAG 2.2 AA and project-rule findings in existing code, is listed to the engineer and filed as an `area:frontend` issue only after the engineer agrees (D6). That new UI meets the project rules and WCAG 2.2 AA is how the frontend-implementer builds (D3), not a triage rule;
+  - **C13** no scores and no P0-P3. Findings at review are triaged as constitution §1 step 10 says, with this change's step 10 sentence (D7): security problems, data loss, spec violations, and design-rule and WCAG 2.2 AA violations in UI the change itself adds or changes are fixed in the PR. "UI the change adds or changes" means elements the change adds, or whose markup or CSS the change edits; touching an existing component for an unrelated reason does not pull in its existing problems (#168, field border contrast, stays out unless the change edits that border). Design and UI problems in existing UI outside the change are listed to the engineer and filed as `area:frontend` issues only after the engineer agrees (D6); every other finding becomes an issue as step 10 says;
   - **C14** empty states are text plus a `src/ui/` action, no image assets.
 
 ### D3. `frontend-implementer` role
@@ -105,11 +106,11 @@ The body is short, because `setup-agents` copies it verbatim and cannot include 
 1. Read `.agents/roles/implementer.md` and follow it.
 2. Read `.agents/design/` in this order: `README.md`, then `project-rules.md`, then `checklist.md`; `accessibility.md` when the slice adds or changes interactive elements, forms or dialogs; the rest on demand.
 3. One line: where `implementer.md` and this file differ, this file wins.
-4. Passes: in pass 1 it writes its group's frontend failing tests (Vitest or Playwright, "[<scenario ID>]" at the start of the title). In pass 2, or in a frontend-only change's single pass, it writes the code (and, for a frontend-only change, the group's "[<scenario ID>]" tests).
+4. Passes: it works only in pass 2 of a change with both layers, where it writes its group's code, or in the single pass of a frontend-only change, where its group writes its code and its own "[<scenario ID>]" tests (`openspec/config.yaml` line 31). It writes no pass 1 failing tests; the "Failing tests" section of a change with both layers stays with the backend `implementer` (decision 3, #170).
 5. Additions:
    - build new UI to the design sources; new UI meets the project rules and WCAG 2.2 AA;
-   - it may add new role-named tokens to `tokens.css` inside its slice; changing an existing token's value is an engineer decision (C5), so it stops and reports instead;
-   - when the slice changes pages (`frontend/src/pages/`) or `src/ui/` components, take screenshots of the pages it touches as D8 says, and check them against the sources before reporting;
+   - it may only add new role-named tokens to `tokens.css` inside its slice; changing an existing token's value, renaming it or deleting it is an engineer decision (C5), so it stops and reports instead;
+   - when the slice changes pages (`frontend/src/pages/`) or `src/ui/` components, take screenshots of each page it touches and each state the slice changes as D8 says, and check them against the sources before reporting;
    - list the screenshot paths in its report; the list does not count toward `implementer.md`'s 15-line report limit;
    - no new dependencies.
 
@@ -121,10 +122,10 @@ Alternative: one implementer that reads the design sources when a slice touches 
 
 - `AGENTS.md`, in "Main agent is an orchestrator":
   - before delegating, the main agent commits its edits: "the `implementer`" becomes "the `implementer`, the `frontend-implementer`";
-  - the implementation bullet: slices that touch `frontend/` go to `frontend-implementer`, others to `implementer`; in pass 1 of a change with both layers, the frontend group of failing tests goes to `frontend-implementer`;
+  - the implementation bullet: implementation slices that touch `frontend/` go to `frontend-implementer`, others to `implementer`; the "Failing tests" section of a change with both layers stays with `implementer`;
   - the review bullet: "implementer report" becomes "implementer or frontend-implementer report".
-- `openspec/config.yaml` `rules.tasks` gets one layer-split rule: task groups are split by layer; a group touches either `frontend/` or the rest, never both. In a change with both layers, "Failing tests" has a backend group and a frontend group (Vitest or Playwright tests with "[<scenario ID>]" at the start of the title); both are written in pass 1 and reviewed at the test review gate. The spec-writer follows it, so one group is one slice for one role.
-- Line 27 check: line 27 says Section 1 is "Failing tests - one backend test per scenario (JUnit 5, Testcontainers, RestAssured)". Read literally, it asks for a backend test for every scenario, including a frontend capability's scenario, which `check-scenario-coverage.sh` covers only by a Vitest or Playwright title. The new rule's frontend group would contradict it, so line 27 needs a minimal amendment: "one backend test per scenario (JUnit 5, Testcontainers, RestAssured)" becomes "one test per scenario: a backend test (JUnit 5, Testcontainers, RestAssured) for a backend scenario, a Vitest or Playwright test for a frontend scenario". The rest of line 27 stays. It needs the owner's approval with the rest of `config.yaml` (D11). The frontend-only exception (line 31) and the apply guidance stay unchanged.
+- `openspec/config.yaml` `rules.tasks` gets one layer-split rule: implementation task groups (after the test review task, or every group in a frontend-only change) are split by layer; a group touches either code under `frontend/` or code under `backend/`, never both. Repository tooling (`scripts/`, for example adding a capability to `FRONTEND_CAPABILITIES` in `scripts/check-scenario-coverage.sh`, and config files) may go with either group. The spec-writer follows it, so one group is one slice for one role.
+- No test rules change: lines 27 and 38 stay as they are, and the "Failing tests" section of a change with both layers stays one section written by the backend `implementer` (decision 3). The frontend-only exception (line 31) and the rest of the apply guidance stay unchanged. Frontend tests in pass 1 are #170.
 
 ### D5. Design angle
 
@@ -137,9 +138,9 @@ Alternative: one implementer that reads the design sources when a slice touches 
 - Scopes, kept apart: the design angle is for UI under `frontend/src`; routing to `frontend-implementer` is for any slice touching `frontend/`; screenshots are for a slice that changes pages or `src/ui/` components.
 - `researcher.md` gets one rule for the design angle: read `.agents/design/` (project rules first), and `critique-rubric.md` on demand; return the questions and the out-of-scope problems apart.
 
-### D6. Out-of-scope problems in existing UI
+### D6. Out-of-scope design and UI problems in existing UI
 
-`AGENTS.md`: the main agent lists them to the engineer and files each as a separate `area:frontend` issue only after the engineer agrees. They are never added to the current change. #168 is the first expected one; it is already filed and stays out of this change.
+`AGENTS.md`: the main agent lists design and UI problems in existing UI outside the change to the engineer and files each as a separate `area:frontend` issue only after the engineer agrees. They are never added to the current change. This applies only to those findings; every other finding follows constitution §1 step 10 unchanged. #168 is the first expected one; it is already filed and stays out of this change unless a change edits that border.
 
 ### D7. Review
 
@@ -150,8 +151,9 @@ Alternative: one implementer that reads the design sources when a slice touches 
   - one Check bullet: check frontend diffs against `.agents/design/project-rules.md`;
   - `.agents/design/` joins the "no unrequested changes" list.
 - `AGENTS.md` review bullet: a frontend slice is also checked against `.agents/design/` and the screenshots.
+- Constitution §1 step 10 gets one sentence, next to "Security problems, data loss and spec violations are fixed in the PR": design-rule (`.agents/design/project-rules.md`) and WCAG 2.2 AA violations in UI the change adds, or whose markup or CSS it edits, are fixed in the PR too.
 
-Findings are triaged as constitution §1 step 10 and the reviewers' current rule say: security problems, data loss and spec violations are fixed in the PR; everything else is listed to the engineer and filed as an `area:frontend` issue only after the engineer agrees (D6). C13 says the same.
+Findings are triaged as constitution §1 step 10 says, with that sentence: security problems, data loss, spec violations, and design-rule and WCAG 2.2 AA violations in UI the change itself adds or changes are fixed in the PR. "UI the change adds or changes" means elements the change adds, or whose markup or CSS the change edits; touching an existing component for an unrelated reason does not pull in its existing problems (#168 stays out unless the change edits that border). Design and UI problems in existing UI outside the change go through D6; every other finding becomes an issue as step 10 says. C13 says the same.
 
 ### D8. Screenshots
 
@@ -160,16 +162,16 @@ Findings are triaged as constitution §1 step 10 and the reviewers' current rule
 - Method:
   1. `docker compose up --build --wait`, so 8081 serves the slice's code;
   2. clear `frontend/screenshots/<change-name>/`;
-  3. a temporary `frontend/e2e/zshots.spec.ts` that logs in with the `e2e/accounts.ts` helpers, opens each touched page at both widths and saves to that folder;
+  3. a temporary `frontend/e2e/zshots.spec.ts` that logs in with the `e2e/accounts.ts` helpers and captures each page the slice touches and each state the slice changes (for example the error shown after an empty submit, or a dialog open), at both widths, saving to that folder;
   4. `npx playwright test zshots --project=desktop-chromium`;
   5. delete the spec before committing.
 - `docker` and `npx` are in no allow list, so each call prompts the engineer.
 - The report lists the screenshot paths. The engineer attaches images to the PR by hand if wanted; `gh` cannot upload images.
 - No script or Playwright project is added. The method is plain shell and Playwright, meant for all three tools, but only proven in Claude Code (D12).
 
-### D9. Pass 1 in a change with both layers
+### D9. Test phases
 
-Constitution step 7 is not edited and `scripts/check-scenario-coverage.sh` is not changed. Frontend tests are written in pass 1 and go through the test review gate, as today (archived `2026-11-02-login-invalid-credentials`, task 1.5). The "Failing tests" section is split into a backend group (`implementer`) and a frontend group (`frontend-implementer`), as the layer-split rule says (D4). The frontend-only exception (one pass, constitution §2) stays.
+No change to test phases; see #170.
 
 ### D10. Licences and attribution
 
@@ -179,14 +181,15 @@ Constitution step 7 is not edited and `scripts/check-scenario-coverage.sh` is no
 
 ### D11. Approval
 
-The role files, `openspec/config.yaml` and the constitution need the owner's approval (CODEOWNERS). `.agents/design/`, `AGENTS.md` and `.gitignore` do not.
+The role files, `openspec/config.yaml` and the constitution (§1 steps 2 and 10) need the owner's approval (CODEOWNERS). `.agents/design/`, `AGENTS.md` and `.gitignore` do not.
 
-So any engineer can change the design angle's content in `AGENTS.md` and the rules in `.agents/design/` without the owner (constitution §1, Roles). This is accepted: the gate triage is set by constitution §1 step 10, which C13 only points to, and the reviewers flag unrequested changes to `.agents/design/`.
+So any engineer can change the design angle's content in `AGENTS.md` and the rules in `.agents/design/` without the owner (constitution §1, Roles). This is accepted: the gate triage, including the own-UI sentence, is set by constitution §1 step 10, which C13 only points to, and the reviewers flag unrequested changes to `.agents/design/`.
 
 ### D12. Dry run and tool support
 
-- The dry run is in Claude Code, after `scripts/setup-agents` and a restart. #165 (ui-required-fields) goes through Clarify and Research up to the design questions; no spec is written for #165. Then one slice is built on a throwaway branch off this one. The branch's last SHA is recorded in the PR, then the branch is deleted; no #165 code survives. The run proves the `reviewer.md` and `researcher.md` edits.
+- The dry run is in Claude Code, after `scripts/setup-agents` and a restart. #165 (ui-required-fields) goes through Clarify and Research up to the design questions; no spec deltas are written for #165. Then one slice is built on a throwaway branch off this one. On that branch a scratch change `ui-required-fields` is created by `scripts/flow/change-start` or `openspec new change`, never by hand, so the slice has proposal Clarifications for the design answers, a minimal `tasks.md` for the slice, and a name for `frontend/screenshots/ui-required-fields/`. The branch's last SHA is recorded in PR #169; then the branch, the scratch change and the code are deleted; no #165 code survives. The run proves the `reviewer.md` and `researcher.md` edits.
 - opencode and Codex are unverified. The Codex sandbox may block `docker` or Chromium, and whether opencode and Codex can show a PNG to the reviewer is unchecked.
+- Routing in a change with both layers (implementation groups split by layer, both roles in one change) is unproven: #165 is frontend-only, so the dry run does not exercise it.
 
 ## Risks / Trade-offs
 
@@ -195,13 +198,15 @@ So any engineer can change the design angle's content in `AGENTS.md` and the rul
 - **Lost screenshots** in `test-results/`, which Playwright empties. → They go to `frontend/screenshots/<change-name>/`.
 - **The temporary spec gets committed.** → The role says to delete it, and the reviewer sees any `zshots` file in the diff.
 - **A frontend slice goes to `implementer`**, because `implementer.md:3` still says "Use for all code writing in teachdash." → The frontend-implementer's description says "Use instead of implementer for any slice touching frontend/", and `AGENTS.md` routes such slices to it.
-- **Constitution step 7 still says backend tests** while a change with both layers has a frontend group in pass 1. → The practice already exists (login-invalid-credentials), and `config.yaml` states it (D4, D9).
+- **Frontend tests in pass 1 of a change with both layers stay unclear** (constitution §2 and step 7 against practice). → Out of scope, filed as #170; this change adds no test rules (D4, D9).
+- **Routing in a change with both layers is unproven** (the dry run on #165 is frontend-only). → Marked unproven (D12); the first change with both layers shows it.
+- **Where "UI the change adds or changes" ends** may be argued at review. → It is defined as elements the change adds, or whose markup or CSS it edits (D7, C13).
 - **opencode and Codex may not run the screenshot method** (sandbox, PNG display). → Marked unverified (D12); the first frontend change in those tools shows it.
 - **Each `docker` and `npx` call prompts.** → Accepted; no permission change.
 - **Leftover network-tool or Tailwind lines** in a copy, which an agent might follow. → Task 1.7 greps for them.
 - **impeccable build output copied** instead of `skill/`. → D1 names the path; task 1.5 checks it.
 - **A missing "modified by teachdash" header** breaks Apache-2.0 §4(b). → Task 1.6 checks every file.
-- **#168 will be the first design finding** in the dry run. → It is filed already and stays out of this change.
+- **#168 will be the first design finding** in the dry run. → It is filed already and stays out of this change unless a change edits that border.
 - **More reading per frontend slice**, about 3k tokens always. → The rest is read on demand.
 - **The rules are instructions, not checks, and any engineer may change them.** → The reviewers guard `.agents/design/` against unrequested changes; gate triage stays in the constitution (D11).
 
