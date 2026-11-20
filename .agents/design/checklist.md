@@ -5,8 +5,6 @@ Source: vercel-labs/web-interface-guidelines, `command.md` @434b7f9, MIT, licenc
 Check the slice's UI code against the rules below: the frontend-implementer before it
 reports, the reviewer on the diff. `project-rules.md` wins over this file.
 
-Read files, check against rules below. Output concise but comprehensive—sacrifice grammar for brevity. High signal-to-noise.
-
 ## Rules
 
 ### Accessibility
