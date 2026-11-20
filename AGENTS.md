@@ -44,17 +44,29 @@ in English.
 Keep the main agent's context small. It talks to the engineer (whoever took the
 task), decides, and delegates. It does not read large parts of the codebase, write
 production code or draft OpenSpec artifacts itself. Before delegating to the
-`implementer` or the `spec-writer`, it commits its own pending edits, staged by
-path, so no agent commits them. Agents do not push: the main agent pushes their
-commits after reading the report (the flow scripts push too).
+`implementer`, the `frontend-implementer` or the `spec-writer`, it commits its own
+pending edits, staged by path, so no agent commits them. Agents do not push: the
+main agent pushes their commits after reading the report (the flow scripts push
+too).
 
 - **Before a proposal**: the main agent restates the task, proposes research angles
   and agrees them with the engineer. Explore is optional: never ask the engineer to
-  run it first.
+  run it first. For a change to UI under `frontend/src`, the main agent always
+  proposes a design angle at Clarify (at Explore only if Explore is run); the
+  engineer may drop it for a small task. The design angle always covers the existing
+  screens the change touches.
 - **Investigation** (tracing behaviour, comparing options, web research): the
   `researcher` agent (medium model class), one per angle. Give it the task, the
   angle and what you need to decide. A built-in quick-search agent, where the tool
   has one, is only for finding where something is.
+  On a design angle the `researcher` reads `.agents/design/` and the screens
+  involved and returns design questions (layout, states, copy, a11y, tokens and
+  components) and, apart, design and UI problems in existing UI outside the change.
+  The main agent asks the engineer the questions and records the answers in the
+  proposal's Clarifications and `design.md`. It lists the problems outside the
+  change to the engineer and files each as a separate `area:frontend` issue only
+  after the engineer agrees; they are never added to the current change. Every
+  other finding follows constitution §1 step 10.
 - **Writing artifacts** (proposal, spec deltas, design, tasks, and every fix after
   critique or engineer comments): the `spec-writer` agent (medium class). Brief it
   with the change name, the issue and PR, the engineer's decisions as a numbered list,
@@ -67,16 +79,20 @@ commits after reading the report (the flow scripts push too).
   drafted and before asking for the spec gate, on every change.
 - **Implementation** (tests in pass 1, code in pass 2): the `implementer` agent
   (medium class). Give it one coherent slice of `tasks.md` at a time, not the whole
-  change.
+  change. Implementation slices that touch `frontend/` go to the
+  `frontend-implementer` agent (medium class) instead. The "Failing tests" section
+  (pass 1) of a change with both layers stays with the `implementer`.
 - **Review**: the `reviewer` agent (medium class). Run it:
   - after every pass 2 slice;
-  - whenever an implementer report raises doubt (unsure items, unexpected files,
-    failing or changed tests, security-sensitive code);
+  - whenever an implementer or frontend-implementer report raises doubt (unsure
+    items, unexpected files, failing or changed tests, security-sensitive code);
   - once per PR with the `code-gate-reviewer` agent (strong model class), before
     asking for the code gate.
 
-  Fix findings as the Code review step in constitution §1 says, then re-review if
-  the fix was non-trivial.
+  A slice that touches `frontend/` is also checked against `.agents/design/` and
+  the screenshots listed in the frontend-implementer's report. Fix findings as the
+  Code review step in constitution §1 says, then re-review if the fix was
+  non-trivial.
 
 Agents' reports are not shown to the engineer: relay what matters in a few lines.
 

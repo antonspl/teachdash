@@ -6,7 +6,7 @@ Only the line length, restraint, quality floor, screenshots and copy parts of th
 
 ## Line length
 
-Keep lines under about 80 characters. Text and forms sit inside `--content-width`.
+Text and forms sit inside `--content-width`.
 
 ## Restraint and self-critique
 
