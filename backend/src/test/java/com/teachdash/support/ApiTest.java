@@ -302,7 +302,7 @@ public abstract class ApiTest {
 				.single();
 	}
 
-	/** Inserts a lesson and its course link directly; both times are the current clock time. */
+	/** Inserts a lesson into a course directly; both times are the current clock time. */
 	protected UUID createLesson(UUID teacherId, UUID courseId, String title, int position) {
 		return createLesson(teacherId, courseId, title, position, Instant.now(clock));
 	}
@@ -316,19 +316,13 @@ public abstract class ApiTest {
 		UUID id = UUID.randomUUID();
 		Timestamp created = Timestamp.from(createdAt);
 		jdbc.sql("""
-				insert into lessons (id, teacher_id, title, created_at, updated_at)
-				values (:id, :teacher, :title, :created, :created)
+				insert into lessons (id, teacher_id, title, created_at, updated_at, course_id, position)
+				values (:id, :teacher, :title, :created, :created, :course, :position)
 				""")
 				.param("id", id)
 				.param("teacher", teacherId)
 				.param("title", title)
 				.param("created", created)
-				.update();
-		jdbc.sql("""
-				insert into lesson_courses (lesson_id, course_id, position)
-				values (:lesson, :course, :position)
-				""")
-				.param("lesson", id)
 				.param("course", courseId)
 				.param("position", position)
 				.update();
@@ -336,7 +330,7 @@ public abstract class ApiTest {
 	}
 
 	protected long countLessons(UUID courseId) {
-		return jdbc.sql("select count(*) from lesson_courses where course_id = :course")
+		return jdbc.sql("select count(*) from lessons where course_id = :course")
 				.param("course", courseId)
 				.query(Long.class)
 				.single();
@@ -344,7 +338,7 @@ public abstract class ApiTest {
 
 	/** The positions of the course's lessons, ascending. */
 	protected List<Integer> lessonPositions(UUID courseId) {
-		return jdbc.sql("select position from lesson_courses where course_id = :course order by position")
+		return jdbc.sql("select position from lessons where course_id = :course order by position")
 				.param("course", courseId)
 				.query(Integer.class)
 				.list();

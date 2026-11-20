@@ -39,34 +39,25 @@ public class LessonRepository {
 	}
 
 	public int countInCourse(UUID courseId) {
-		return jdbc.sql("select count(*) from lesson_courses where course_id = :courseId")
+		return jdbc.sql("select count(*) from lessons where course_id = :courseId")
 				.param("courseId", courseId)
 				.query(Integer.class)
 				.single();
 	}
 
-	public void insertLesson(Lesson lesson) {
-		jdbc.sql("""
-				insert into lessons (id, teacher_id, title, created_at, updated_at)
-				values (:id, :teacherId, :title, :createdAt, :updatedAt)
+	public int insertAtEnd(Lesson lesson, UUID courseId) {
+		return jdbc.sql("""
+				insert into lessons (id, teacher_id, title, created_at, updated_at, course_id, position)
+				select :id, :teacherId, :title, :createdAt, :updatedAt, :courseId, coalesce(max(position), 0) + 1
+				from lessons
+				where course_id = :courseId
+				returning position
 				""")
 				.param("id", lesson.id())
 				.param("teacherId", lesson.teacherId())
 				.param("title", lesson.title())
 				.param("createdAt", Timestamp.from(lesson.createdAt()))
 				.param("updatedAt", Timestamp.from(lesson.updatedAt()))
-				.update();
-	}
-
-	public int insertAtEnd(UUID lessonId, UUID courseId) {
-		return jdbc.sql("""
-				insert into lesson_courses (lesson_id, course_id, position)
-				select :lessonId, :courseId, coalesce(max(position), 0) + 1
-				from lesson_courses
-				where course_id = :courseId
-				returning position
-				""")
-				.param("lessonId", lessonId)
 				.param("courseId", courseId)
 				.query(Integer.class)
 				.single();
@@ -74,11 +65,10 @@ public class LessonRepository {
 
 	public List<Lesson> findByCourse(UUID courseId, UUID teacherId) {
 		return jdbc.sql("""
-				select l.id, l.teacher_id, l.title, lc.position, l.created_at, l.updated_at
-				from lessons l
-				join lesson_courses lc on lc.lesson_id = l.id
-				where lc.course_id = :courseId and l.teacher_id = :teacherId
-				order by lc.position
+				select id, teacher_id, title, position, created_at, updated_at
+				from lessons
+				where course_id = :courseId and teacher_id = :teacherId
+				order by position
 				""")
 				.param("courseId", courseId)
 				.param("teacherId", teacherId)

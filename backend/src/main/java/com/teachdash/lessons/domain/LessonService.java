@@ -50,8 +50,7 @@ public class LessonService {
 		}
 		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 		UUID id = UUID.randomUUID();
-		lessons.insertLesson(new Lesson(id, teacherId, title, 0, now, now));
-		int position = lessons.insertAtEnd(id, courseId);
+		int position = lessons.insertAtEnd(new Lesson(id, teacherId, title, 0, now, now), courseId);
 		return new Lesson(id, teacherId, title, position, now, now);
 	}
 
