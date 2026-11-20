@@ -13,7 +13,7 @@
 
 ## 2. Test review
 
-- [ ] 2.1 Engineer approves tests in the PR. HARD STOP: no further production code before approval (the migration and the repository rewrite of 1.1 are reviewed here as the stated exception)
+- [x] 2.1 Engineer approves tests in the PR. HARD STOP: no further production code before approval (the migration and the repository rewrite of 1.1 are reviewed here as the stated exception)
 
 ## 3. Implementation
 
