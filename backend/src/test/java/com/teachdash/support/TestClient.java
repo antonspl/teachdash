@@ -100,6 +100,10 @@ public class TestClient {
 		return spec().body(body).patch(path);
 	}
 
+	public Response patch(String path) {
+		return spec().patch(path);
+	}
+
 	public Response delete(String path) {
 		return spec().delete(path);
 	}

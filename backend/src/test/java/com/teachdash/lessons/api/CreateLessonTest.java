@@ -52,10 +52,10 @@ class CreateLessonTest extends ApiTest {
 
 	private List<LessonRow> storedLessons(UUID courseId) {
 		return jdbc.sql("""
-				select l.teacher_id, l.title, l.created_at, l.updated_at
-				from lessons l join lesson_courses lc on lc.lesson_id = l.id
-				where lc.course_id = :course
-				order by lc.position
+				select teacher_id, title, created_at, updated_at
+				from lessons
+				where course_id = :course
+				order by position
 				""")
 				.param("course", courseId)
 				.query((rs, i) -> new LessonRow(
