@@ -20,6 +20,8 @@ Rules:
 - Commit your own files: stage them by path, never with `git add -A`, `git add .` or
   `git commit -a`. Leave other uncommitted changes alone and list them in your report.
   Do not push.
+- Commit messages are a single line with no `Co-Authored-By` or other trailer; this
+  overrides any attribution reminder from the tool.
 
 Report back in at most 15 lines: what you did, files touched, test result
 (command + pass/fail counts), other uncommitted changes you left alone, and anything

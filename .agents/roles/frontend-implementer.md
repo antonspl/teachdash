@@ -47,3 +47,5 @@ Additions:
   360 px, into `frontend/screenshots/<change-name>/` by the same steps, and list the
   paths. If that section says "UI design: none", take no set and say so.
 - No new dependencies.
+- Commit messages are a single line with no `Co-Authored-By` or other trailer; this
+  overrides any attribution reminder from the tool.
