@@ -15,7 +15,7 @@
 
 ## 3. Implementation
 
-- [ ] 3.0 Rename `@CourseTitle` to `@Title` and update its uses in courses (design D3); verify the existing courses tests still pass
+- [x] 3.0 Rename `@CourseTitle` to `@Title` and update its uses in courses (design D3); verify the existing courses tests still pass
 - [ ] 3.1 `lessons` package: `CreateLessonRequest` (normalising title, `@Title`), `LessonResponse`, `LessonRepository` (JdbcClient: course lookup with and without `for update`, count, insert lesson, insert `lesson_courses` at the next position, list by position)
 - [ ] 3.2 `LessonService.create` with a plain active-teacher read (no lock), the course row lock (the only lock), limit check and insert in the order of design D4, `LessonService.list`, the `teachdash.lessons.max-per-course=100` property, and the controller replacing its stubs; add a comment at the course lock saying it serialises the limit check and the position, and that #107's move uses the same lock
 - [ ] 3.3 Check that no lesson title appears in logs (constitution §5: record IDs, not content)
