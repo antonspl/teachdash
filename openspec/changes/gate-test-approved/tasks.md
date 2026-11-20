@@ -9,7 +9,7 @@ This is a tooling change with `skip_specs: true`. The spec gate covers the propo
   - `approval-singular-test-question`: comment "Test approved?". Expected: all three gates `no approving comment; box not ticked`.
   - `approval-no-d`: three comments "Spec approve", "Code approve" and "Test approve". Expected: all three gates `no approving comment; box not ticked`.
   Plural "tests approved" is already covered by the live-mode check "gate-status reads paginated comments and reviews" in `scripts/flow/test` (a review "Tests approved" approves the tests gate); no new fixture is needed for it. The existing `marker-comment` fixture must keep passing. Verify, and record in the PR: before 1.2, `scripts/flow/test` fails on `approval-singular-test` (the singular case) and passes on the other new fixtures; after 1.2 all pass.
-- [ ] 1.2 In `scripts/flow/gate-status`, let the tests gate match "test approved" as well as "tests approved" (decisions 1 and 2), special-casing only the tests gate. The spec and code patterns, the flow-marker match and the PR-description box parser do not change. Verify, and record in the PR:
+- [x] 1.2 In `scripts/flow/gate-status`, let the tests gate match "test approved" as well as "tests approved" (decisions 1 and 2), special-casing only the tests gate. The spec and code patterns, the flow-marker match and the PR-description box parser do not change. Verify, and record in the PR:
   - `scripts/flow/test` passes, including the new fixtures and all existing ones (`marker-comment` among them) with unchanged output;
   - `shellcheck` passes as in CI.
 
