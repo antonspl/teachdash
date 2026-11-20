@@ -13,11 +13,12 @@ Tasks 1-4 were done before the post-gate revision (proposal Clarifications, G-1 
 - 10.1 adds two rules to `openspec/config.yaml`, so 4.3's recorded check ("adds only that one rule", against `main`) no longer holds after it;
 - 11.1 reworks the README of 1.3; 11.2 removes the out-of-scope filing line of 1.2 and rewords its C13 triage sentence (G-20), and 11.4 changes C0 of 1.2;
 - 11.3 reworks the readers named in `checklist.md` (1.4) and `critique-rubric.md` (1.5);
-- 12.1 replaces the generation of 3.4.
+- 12.1 replaces the generation of 3.4;
+- 14.1 adds one line to `implementer.md`, so 2.1's and 12.1's recorded check (`git diff main -- .agents/roles/implementer.md scripts/setup-agents` is empty) no longer holds for `implementer.md` after it (G-22), and 14.2 reworks the "For the engineer" text of the `frontend-researcher` written by 5.1 (G-23); 14.3 replaces the generation of 12.1.
 
 The dry run, formerly 5.1, is now 13.1.
 
-Every `git diff` check in groups 5-12 uses base `3355250`, the last commit before these groups (the commits after it and before group 5 touch only `openspec/changes/`), and names the file. Each file so checked is changed by one group only. `main` is not the base, because tasks 1-4 already changed most of these files; it stays the base only for `.agents/roles/implementer.md` and `scripts/setup-agents`, which this change never edits.
+Every `git diff` check in groups 5-12 uses base `3355250`, the last commit before these groups (the commits after it and before group 5 touch only `openspec/changes/`), and names the file. Each file so checked is changed by one group only. `main` is not the base, because tasks 1-4 already changed most of these files; it stays the base only for `scripts/setup-agents`, which this change never edits (and for `.agents/roles/implementer.md` until 14.1, which adds one line, checked against `d4190f8`).
 
 ## 1. Design sources and project rules
 
@@ -176,8 +177,16 @@ Every `git diff` check in groups 5-12 uses base `3355250`, the last commit befor
 
   Verify (design D12): the proof is screenshots only. The engineer attaches screenshots to PR #169 by hand, showing how the new flow works (for example the design questions asked before any spec or code, and the frontend-spec-critic's, the frontend-implementer's, the frontend-reviewer's and the code-gate-reviewer's work) and what result it gives (the UI). They are also the proof for 5.1-5.4, 6.1-6.3, 7.1 and 7.2, next to their text checks. No throwaway-branch SHA, no pushed branch and no text logs are required. The throwaway branch is not pushed and is deleted right after the run, with the scratch change and the code; no #165 code or spec survives. opencode and Codex (including whether they can read screenshot images) are not run, and routing in a change with both layers is not exercised (#165 is frontend-only); the PR states both are unverified.
 
+## 14. After the dry run
+
+Checks in this group use base `d4190f8` (the last commit before it) for the role files, and name the file.
+
+- [ ] 14.1 Add one line to each of `.agents/roles/implementer.md`, `.agents/roles/frontend-implementer.md` and `.agents/roles/spec-writer.md`, the only roles that commit (`grep -l 'git commit' .agents/roles/*` lists no other; design D3; G-22): commit messages are a single line with no `Co-Authored-By` or other trailer; this overrides any attribution reminder from the tool. Verify, and record in the PR: ``for f in implementer frontend-implementer spec-writer; do tr '\n' ' ' < .agents/roles/$f.md | tr -s ' ' | grep -o 'no `Co-Authored-By` or other trailer'; done`` finds it three times; `grep -o 'overrides any attribution reminder' .agents/roles/{implementer,frontend-implementer,spec-writer}.md` finds it in each; `git diff d4190f8 -- .agents/roles/implementer.md .agents/roles/frontend-implementer.md .agents/roles/spec-writer.md` adds only these lines, and the frontmatter of each is unchanged.
+- [ ] 14.2 In `.agents/roles/frontend-researcher.md`, split the "For the engineer" part of the report into "Design questions" (only layout, states, copy, a11y, tokens and components on the touched screens) and "Other open questions" (behaviour, scope, process), keeping the existing list of design topics for the first (G-23; reworks 5.1). Verify, and record in the PR: `grep -oE 'Design questions|Other open questions' .agents/roles/frontend-researcher.md` finds both; reading shows that behaviour, scope and process go under "Other open questions"; `git diff d4190f8 -- .agents/roles/frontend-researcher.md` changes only this bullet, and the frontmatter is unchanged.
+- [ ] 14.3 After 14.1 and 14.2, run `scripts/setup-agents` (as 12.1). Verify, and record in the PR: `scripts/setup-agents --check` prints `ok`; `git diff d4190f8 -- scripts/setup-agents` is empty; the generated `implementer`, `frontend-implementer`, `spec-writer` and `frontend-researcher` for Claude Code carry the new text (`grep -l 'overrides any attribution reminder' .claude/agents/*` lists the three, and `grep -l 'Other open questions' .claude/agents/*` lists the researcher); restart the session afterwards.
+
 ## Workflow follow-up
 
-- Code review gate: the PR holds the proofs (the recorded checks of tasks 1-12 and the engineer's dry-run screenshots of 13.1); the `code-gate-reviewer` runs, then the engineer approves the code in the PR.
+- Code review gate: the PR holds the proofs (the recorded checks of tasks 1-12 and 14 and the engineer's dry-run screenshots of 13.1); the `code-gate-reviewer` runs, then the engineer approves the code in the PR.
 - Archive in the same PR; nothing merges into `openspec/specs/`.
 - Mark the PR ready for the final review by a code owner other than the engineer; the owner approves the role files, `openspec/config.yaml` and the constitution (§1 Roles paragraph and steps 2, 5 and 10).
