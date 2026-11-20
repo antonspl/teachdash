@@ -21,9 +21,11 @@ Additions:
 - Always return design questions on the screens the change touches, covering layout
   (desktop and 360 px), states (empty, error, loading, disabled, success), copy
   (i18n keys and text, tone), a11y (focus order, keyboard, `aria-*`), tokens and
-  components (reused or new). Put them under "For the engineer"; the main agent asks
-  them, and the answers go into the proposal's Clarifications and the "UI design"
-  section of `design.md`.
+  components (reused or new). Put them under "Design questions", only these topics,
+  and only on the touched screens. Put any other open question (behaviour, scope,
+  process) under "Other open questions". The main agent asks both lists; the answers
+  go into the proposal's Clarifications, and only the answers to the design questions
+  go into the "UI design" section of `design.md`.
 - Do not sweep existing UI outside the change for design problems; existing UI design
   is out of scope. A problem you meet on the way still gets the one-line mention from
   `researcher.md`.
