@@ -41,7 +41,7 @@ public class LessonService {
 	@Transactional
 	public Lesson create(UUID teacherId, UUID courseId, String title) {
 		requireActiveTeacher(teacherId);
-		// The course row lock serialises the limit check and the position; #107's move uses the same lock.
+		// The course row lock serialises the limit check and the position.
 		if (!lessons.lockCourse(courseId, teacherId)) {
 			throw ApiException.notFound();
 		}
