@@ -55,7 +55,7 @@ SHALL include `nativeLanguage`. So SHALL a teacher's current-user data (the same
 endpoints), the admin's teacher list (accounts R12) and every entry for a teacher in the
 admin's lists (R3), which extends R3's entry fields. Responses about an admin, and the
 response to creating a teacher (accounts R5), MUST NOT include it. The student MUST NOT be
-able to change it through the profile (accounts R9: the field is ignored); a teacher
+able to change it through the profile (accounts R9: a valid code is ignored); a teacher
 changes their own through it.
 
 #### Scenario: student-enrolment/R15-S1 The teacher sees it

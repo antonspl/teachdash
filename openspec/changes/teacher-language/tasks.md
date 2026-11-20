@@ -20,7 +20,7 @@
 - [x] 3.4 Frontend: language select in `ProfileForm` for teachers, `User` type, `updateProfile`; Vitest tests `[web-profile/R2-S9]` to `[web-profile/R2-S15]`, the reworded `[web-profile/R2-S2]` and `[web-profile/R2-S5]`, and `[web-profile/R3-S10]` (updated)
 - [x] 3.5 Frontend: language field in the "Add teacher" dialog, `NewTeacher`; Vitest tests `[web-admin-teachers/R2-S9]` to `[web-admin-teachers/R2-S14]`, and existing R2 tests updated to choose a language
 - [x] 3.6 Constitution §9 edit: exactly the four sentences listed in design D4; §8 is not changed
-- [ ] 3.7 Rework `PATCH /api/me` (proposal Clarifications 15, design D2, D6): `UpdateProfileRequest.nativeLanguage` becomes a plain `String` with `@NativeLanguage`; remove the `JsonNode`, `BindingResult`, `ApiException.validation` and `FieldErrorCodes` pass-through code; the service saves a valid code for a teachers only; update the tests of accounts R9-S13, S14 and S16 to the new text
+- [ ] 3.7 Rework `PATCH /api/me` (proposal Clarifications 15, design D2, D6): `UpdateProfileRequest.nativeLanguage` becomes a plain `String` with `@NativeLanguage`; remove the `JsonNode`, `BindingResult`, `ApiException.validation` and `FieldErrorCodes` pass-through code; the service saves a valid code for a teacher only; update the tests of accounts R9-S13, S14 and S16 to the new text
 - [x] 3.8 Run `./gradlew cleanTest test`, the frontend tests and lint, and `scripts/check-scenario-coverage.sh`; verify everything is green and the approved backend tests are unchanged
 
 ## Workflow follow-up
