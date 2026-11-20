@@ -74,13 +74,13 @@ Every `git diff` check in groups 5-12 uses base `3355250`, the last commit befor
 
 ## 5. Frontend roles
 
-- [ ] 5.1 Add `.agents/roles/frontend-researcher.md` (design D13, D5). Verify, and record in the PR:
+- [x] 5.1 Add `.agents/roles/frontend-researcher.md` (design D13, D5). Verify, and record in the PR:
   - the frontmatter has `name: frontend-researcher`, a `description` that says to use it instead of `researcher` for research angles about the UI, class `medium`, access `read`, web `true`;
   - the body says to read `.agents/roles/researcher.md` and follow it, and has the "this file wins" line;
   - the reading order starts from the README: ``tr '\n' ' ' < .agents/roles/frontend-researcher.md | tr -s ' ' | grep -oE 'README\.md.{0,120}project-rules\.md.{0,120}checklist\.md'`` finds it, and reading shows `accessibility.md` when the change adds or changes interactive elements, forms or dialogs, and the rest on demand;
   - it always returns design questions on the screens the change touches: `grep -oE` finds each of `layout`, `states`, `copy`, `a11y`, `tokens`, `components`, and reading shows they belong to that rule;
   - `grep -c "'''"` prints 0.
-- [ ] 5.2 Add `.agents/roles/frontend-spec-critic.md` (design D13, D15). Verify, and record in the PR:
+- [x] 5.2 Add `.agents/roles/frontend-spec-critic.md` (design D13, D15). Verify, and record in the PR:
   - the frontmatter has `name: frontend-spec-critic`, a `description` that says to use it instead of `spec-critic` for a change touching `frontend/src`, class `medium`, access `read`, web `false`;
   - the body says to read `.agents/roles/spec-critic.md` and follow it and has the "this file wins" line;
   - the reading order starts from the README: ``tr '\n' ' ' < .agents/roles/frontend-spec-critic.md | tr -s ' ' | grep -oE 'README\.md.{0,120}project-rules\.md.{0,120}checklist\.md'`` finds it, and reading shows `accessibility.md` and the rest on demand as D13 says;
@@ -88,7 +88,7 @@ Every `git diff` check in groups 5-12 uses base `3355250`, the last commit befor
   - unanswered design questions (G-18): reading shows they are reported as questions for the engineer, which the main agent asks, with the answers recorded by the spec-writer in the fix round;
   - one report (G-19): reading shows the report keeps the full `spec-critic` checks, also for a change with both layers, and the "Design" section sits outside the base 25-line limit with its own cap: `grep -n '15 lines'` finds that line;
   - `grep -c "'''"` prints 0.
-- [ ] 5.3 Add `.agents/roles/frontend-reviewer.md` (design D13, D7). Verify, and record in the PR:
+- [x] 5.3 Add `.agents/roles/frontend-reviewer.md` (design D13, D7). Verify, and record in the PR:
   - the frontmatter has `name: frontend-reviewer`, a `description` that says to use it instead of `reviewer` for any slice touching `frontend/`, class `medium`, access `read`, web `false`;
   - the body says to read `.agents/roles/reviewer.md` and follow it and has the "this file wins" line;
   - the reading order starts from the README: ``tr '\n' ' ' < .agents/roles/frontend-reviewer.md | tr -s ' ' | grep -oE 'README\.md.{0,120}project-rules\.md.{0,120}checklist\.md'`` finds it;
@@ -98,7 +98,7 @@ Every `git diff` check in groups 5-12 uses base `3355250`, the last commit befor
   - the Design pass: `grep -oE` finds each of `checklist.md`, `360`, `keyboard`, `focus`, `aria-`, `contrast` and `UI design`, and reading shows that the role opens the screenshot PNGs itself;
   - the leftover finding: `grep -n 'zshots.spec.ts'` and `grep -n 'frontend/screenshots/'` each find a line;
   - `grep -c "'''"` prints 0.
-- [ ] 5.4 Rework `.agents/roles/frontend-implementer.md` (design D3, D8; reworks 2.1, G-16, G-17, F7): the screenshot trigger becomes "when the slice changes rendered UI: any change to `frontend/src/**/*.tsx` except `*.test.tsx`, `frontend/src/**/*.css`, or `frontend/src/i18n/*.json`" (so CSS modules such as `frontend/src/ui/*.module.css` count), and a bullet adds the final screenshot set: before the code gate, when the main agent asks, take a final set of every screen and state listed in the change's "UI design" section, at desktop and 360 px, into `frontend/screenshots/<change-name>/` by the same steps, and list the paths. Verify, and record in the PR:
+- [x] 5.4 Rework `.agents/roles/frontend-implementer.md` (design D3, D8; reworks 2.1, G-16, G-17, F7): the screenshot trigger becomes "when the slice changes rendered UI: any change to `frontend/src/**/*.tsx` except `*.test.tsx`, `frontend/src/**/*.css`, or `frontend/src/i18n/*.json`" (so CSS modules such as `frontend/src/ui/*.module.css` count), and a bullet adds the final screenshot set: before the code gate, when the main agent asks, take a final set of every screen and state listed in the change's "UI design" section, at desktop and 360 px, into `frontend/screenshots/<change-name>/` by the same steps, and list the paths. Verify, and record in the PR:
   - the old trigger is gone: `grep -c 'frontend/src/pages/' .agents/roles/frontend-implementer.md` prints 0;
   - the new trigger: ``tr '\n' ' ' < .agents/roles/frontend-implementer.md | tr -s ' ' | grep -oE 'frontend/src/\*\*/\*\.tsx|\*\.test\.tsx|frontend/src/\*\*/\*\.css|frontend/src/i18n/\*\.json' | sort -u`` prints all four, and reading shows `*.test.tsx` is the exception;
   - the final set: `grep -oE 'UI design|code gate'` finds both, and reading shows the set covers every screen and state of the "UI design" section at both widths and lists the paths;
