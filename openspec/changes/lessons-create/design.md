@@ -4,7 +4,7 @@
 
 See proposal.md. Current state on `main`:
 
-- `courses` exists (V11) with `CourseService.create` (teacher row lock, limit check, insert; lessons do not copy the teacher lock), `CourseRepository` on `JdbcClient`, `@CourseTitle` in `common/validation`, `teachdash.courses.max-per-teacher`. Migrations end at V13.
+- `courses` exists (V11) with `CourseService.create` (teacher row lock, limit check, insert; lessons use the same teacher row lock first, see D4), `CourseRepository` on `JdbcClient`, `@CourseTitle` in `common/validation`, `teachdash.courses.max-per-teacher`. Migrations end at V13.
 - Role gates are URL-prefix rules in `common/SecurityConfig`: `/api/teacher/**` needs TEACHER.
 - Controllers read the teacher id with `UUID.fromString(principal.getName())`; a deactivated teacher gets 401 `UNAUTHENTICATED` from `UserRepository.findActiveByIdForUpdate`.
 - Teacher-owned data carries `teacher_id` and every query is scoped by it (constitution §8).
@@ -63,12 +63,12 @@ The annotation `CourseTitle` is renamed to a neutral `Title` (same package, `com
 
 `LessonService.create(teacherId, courseId, title)`, `@Transactional`:
 
-1. Active-teacher check as a plain read, without a lock (not `findActiveByIdForUpdate`): 401 for a deactivated teacher.
-2. `select id from courses where id = :courseId and teacher_id = :teacherId for update`. This is the only lock; it serialises the limit check and the position (the lock #107's move will also use). No row: `ApiException` 404 `NOT_FOUND`, the same for unknown and foreign ids, so nothing leaks.
-3. Under that lock, `count(*) from lesson_courses where course_id = :courseId` at or above `maxPerCourse`: `409 LESSON_LIMIT_REACHED` (plain `ApiException`, no `errors`).
+1. `UserRepository.findActiveByIdForUpdate(teacherId)`: locks the teacher's user row; none (deactivated or missing): 401 `UNAUTHENTICATED`. This comes first because the insert into `lessons` takes a KEY SHARE lock on the user row through the `teacher_id` foreign key, and `CourseService.rename` locks the user row and then the course row. Locking the course row first would be the opposite order and could deadlock (a code review found this). It also stops a teacher deactivated mid-request from creating a lesson.
+2. `select id from courses where id = :courseId and teacher_id = :teacherId for update`. Second lock, after the user row; it scopes the lookup by teacher and keeps the position correct (the lock #107's move will also use). No row: `ApiException` 404 `NOT_FOUND`, the same for unknown and foreign ids, so nothing leaks.
+3. Under both locks, `count(*) from lesson_courses where course_id = :courseId` at or above `maxPerCourse`: `409 LESSON_LIMIT_REACHED` (plain `ApiException`, no `errors`).
 4. Insert the lesson (new UUID, `created_at` and `updated_at` from one `clock` time, explicit insert through `JdbcClient`, as for courses), then the `lesson_courses` row with `position = coalesce(max(position), 0) + 1` for the course.
 
-Order of checks, as courses R5: CSRF and role (403), deactivated teacher (401), malformed course id (404), input (400), unknown or another teacher's course (404), limit (409). List: the same without the input step. Because ownership is checked before the limit, a full foreign course gives 404, not 409 (R1-S11), and input is validated before the course is looked up (R1-S13). The course row lock alone makes steps 3 and 4 safe under parallel requests, so the race test R1-S9 proves it: with no teacher lock, only the course lock can serialise the 6 requests. `maxPerCourse` comes from `teachdash.lessons.max-per-course=100` in `application.properties`, read with `@Value`, like the courses limit. The limit counts `lesson_courses` rows, so it applies to every course, including the future "store" course.
+Order of checks, as courses R5: CSRF and role (403), deactivated teacher (401), malformed course id (404), input (400), unknown or another teacher's course (404), limit (409). List: the same without the input step. Because ownership is checked before the limit, a full foreign course gives 404, not 409 (R1-S11), and input is validated before the course is looked up (R1-S13). The user row lock serialises all of one teacher's creates, which makes steps 3 and 4 safe under parallel requests. So the race test R1-S9 no longer proves the course lock alone; the course lock stays for the 404 scoping, for position correctness and for writes that do not go through the user lock path. `maxPerCourse` comes from `teachdash.lessons.max-per-course=100` in `application.properties`, read with `@Value`, like the courses limit. The limit counts `lesson_courses` rows, so it applies to every course, including the future "store" course.
 
 List: `LessonService.list(teacherId, courseId)` checks that the course belongs to the teacher (404 otherwise, same query without `for update`), then selects the course's lessons joined with `lesson_courses`, `order by position`, scoped by `lessons.teacher_id` as well.
 
@@ -76,7 +76,7 @@ No payload limit beyond the title length: a lesson has no other field. Content c
 
 ### D5. Positions and reordering (designed now, built later)
 
-Invariant: in one course the positions are 1..n without gaps. Every writer takes the course row lock (`for update`) first. The deferrable unique constraint is a safety net, not the mechanism: a violation at commit can only come from a bug (the lock forgotten) and surfaces as a 500; no error code is mapped.
+Invariant: in one course the positions are 1..n without gaps. Every writer takes the teacher's user row lock first and the course row lock (`for update`) second. General rule for teacher-content writes: lock users, then the parent row (course, then lesson, and so on) in that order; a write touching several courses locks the course rows in `id` order after the user row (#107's move follows this). The order matters because the foreign key on `teacher_id` puts a KEY SHARE lock on the user row into every lesson write, and `CourseService.rename` locks the user row before the course row. The deferrable unique constraint is a safety net, not the mechanism: a violation at commit can only come from a bug (the lock forgotten) and surfaces as a 500; no error code is mapped.
 
 Why deferrable: Postgres checks a non-deferrable unique constraint row by row, so one `UPDATE` that shifts a range of positions can fail halfway on a temporary duplicate. A deferrable constraint is checked at commit, so the shift is allowed. A deferrable constraint cannot be an `ON CONFLICT` arbiter; this change does not need that.
 
@@ -99,7 +99,7 @@ None added.
 ## Risks / Trade-offs
 
 - **Owner consistency.** Nothing in the database forces `lessons.teacher_id` to equal the owner of the linked courses. Today only create inserts, with the owner taken from the locked course row; later linking changes must check both owners.
-- **Deadlock on multi-course delete.** Avoided by locking course rows in `id` order (D5); the future change must follow it.
+- **Deadlock on multi-course delete.** Avoided by locking the user row first and then the course rows in `id` order (D5); the future change must follow it.
 - **Limit is a guess.** 100 per course is an estimate, held in a property so it can change by PR.
 - **Lowering the limit** leaves courses above it; they only cannot get more lessons.
 - **Unicode and length.** As for course titles: `@Size` counts UTF-16 units, titles are not NFC-normalised, and invisible format characters inside a title give `INVALID_FORMAT`.

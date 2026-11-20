@@ -43,7 +43,7 @@
 - **WHEN** teacher A creates the lesson "Lesson 101" in "Full", then a lesson with a blank title in "Full", and then the lesson "Lesson 100" in "Other"
 - **THEN** the first response is 409 with code `LESSON_LIMIT_REACHED` and no `errors` property, the second is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "REQUIRED"}]`, the third is 201 with `position` 100, "Full" has 100 lessons and "Other" has 100 lessons
 
-#### Scenario: lessons/R1-S9 Parallel requests keep positions distinct and the limit (the course row lock alone serialises them)
+#### Scenario: lessons/R1-S9 Parallel requests keep positions distinct and the limit (the teacher and course row locks serialise them)
 - **GIVEN** a logged-in teacher A with a course with 97 lessons
 - **WHEN** teacher A sends 6 create requests at the same time with the titles "New 1" to "New 6"
 - **THEN** exactly 3 responses are 201 with the distinct positions 98, 99 and 100, the other 3 are 409 `LESSON_LIMIT_REACHED`, and the course has exactly 100 lessons with the positions 1 to 100 without gaps
