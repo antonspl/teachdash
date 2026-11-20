@@ -1,6 +1,6 @@
 # Design sources
 
-Frontend design guidance for the `frontend-implementer`, the `reviewer`, the `code-gate-reviewer` and the design-angle `researcher`. Roles read these files by path; no tool lists them.
+Frontend design guidance. Its readers are the four frontend roles (`frontend-implementer`, `frontend-researcher`, `frontend-spec-critic`, `frontend-reviewer`) and the `code-gate-reviewer` for a PR touching `frontend/src`; each reads this file first. Roles read these files by path; no tool lists them.
 
 ## Reading order
 
@@ -12,7 +12,7 @@ Frontend design guidance for the `frontend-implementer`, the `reviewer`, the `co
 
 ## Precedence
 
-The spec wins, then `project-rules.md`, then the sources (C0). Where a source says something else, follow `project-rules.md`. The sources are adapted copies: their own Title Case, uppercase labels, web fonts, raw values and scores are already removed.
+The change's spec wins, then the design code (from #171, not yet written), then `project-rules.md`, then the vendored community sources (C0). Where a source says something else, follow `project-rules.md`. The sources are adapted copies: their own Title Case, uppercase labels, web fonts, raw values and scores are already removed.
 
 ## Sources
 

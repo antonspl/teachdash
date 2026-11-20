@@ -26,7 +26,8 @@ something else, follow this file.
 
 ## Resolved conflicts
 
-- **C0** Precedence: the spec, then these project rules, then the sources.
+- **C0** Precedence: as the README states it, the change's spec, then the design
+  code (#171), then these project rules, then the vendored sources.
 - **C1** Sentence case, not Title Case, for headings, buttons, labels and messages.
 - **C2** No all-caps or uppercase-small labels.
 - **C3** Tokens only. A new value becomes a new role-named token added to
@@ -57,13 +58,12 @@ something else, follow this file.
   (R14-S12) and R17 (R17-S3).
 - **C13** No scores and no P0-P3 priorities. Findings at review are triaged as
   constitution §1 step 10 says: security problems, data loss, spec violations, and
-  design-rule and WCAG 2.2 AA violations in UI the change itself adds or edits are
-  fixed in the PR.
+  design-rule violations (the design rules in `.agents/design/`, in the precedence
+  order of its README) and WCAG 2.2 AA violations in UI the change itself adds or
+  edits are fixed in the PR.
   - "UI the change adds or edits" means markup, CSS, copy (i18n strings) or behaviour
     (handlers, focus, states) that the change adds or edits. Touching an existing
     component for an unrelated reason does not pull in its existing problems (#168,
     field border contrast, stays out unless the change edits that border).
-  - Design and UI problems in existing UI outside the change are listed to the
-    engineer and filed as `area:frontend` issues only after the engineer agrees.
   - Every other finding becomes an issue, as step 10 says.
 - **C14** Empty states are text plus a `src/ui/` action. No image assets.

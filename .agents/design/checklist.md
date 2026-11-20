@@ -2,8 +2,9 @@ Source: vercel-labs/web-interface-guidelines, `command.md` @434b7f9, MIT, licenc
 
 # Web interface checklist
 
-Check the slice's UI code against the rules below: the frontend-implementer before it
-reports, the reviewer on the diff. `project-rules.md` wins over this file.
+Check the slice's UI code against the rules below: the `frontend-implementer` before it
+reports, the `frontend-reviewer` and the `code-gate-reviewer` on the diff, the `frontend-spec-critic` on the spec.
+`project-rules.md` wins over this file.
 
 ## Rules
 
