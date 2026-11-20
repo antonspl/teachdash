@@ -30,6 +30,8 @@ set course_id = lc.course_id, position = lc.position
 from lesson_courses lc
 where lc.lesson_id = l.id;
 
+delete from lessons where id not in (select lesson_id from lesson_courses);
+
 alter table lessons alter column course_id set not null;
 alter table lessons alter column position set not null;
 alter table lessons add constraint lessons_position_check check (position >= 1);
@@ -42,10 +44,12 @@ drop table lesson_courses;
 - `teacher_id` stays on `lessons` (§8): queries scope by it without a join.
 - `lessons_teacher_idx` stays. The unique constraint's index starts with `course_id`, so it serves "lessons of a course in order" and `max(position)`.
 - `on delete cascade` on `course_id` means deleting a course deletes its lessons; there is no course delete endpoint today.
-- Only V14 is on `main`, with no teachers yet (M2), so the backfill is a safety step for development databases. It is not tested (project rule: no tests that only prove a migration ran); the existing R1 and R2 tests prove the new columns work.
+- The `delete` guards development databases against lessons without a link, which would break `set not null`. A lesson linked to several courses (not possible through the API today) keeps an arbitrary one of its links: the `update ... from` picks one row. Only V14 is on `main`, with no teachers yet (M2), so the backfill is a safety step for development databases. It is not tested (project rule: no tests that only prove a migration ran); the existing R1 and R2 tests prove the new columns work.
 - The version is `V15` now and is renumbered at merge if needed (#98).
 
 Migrations this change adds: `V15__lessons_one_course.sql`.
+
+**Pass 1 exception.** Constitution §1 limits pass 1 production code to stubs and schema migrations. This migration drops `lesson_courses`, so the create and list queries in `LessonRepository` (and the test helpers) cannot stay on the old schema and cannot be split from the migration. The engineer chose to rewrite those queries in pass 1 as a required exception. The repository diff is production code: the test-gate request lists it for review (task 1.1, 1.8).
 
 ### D2. Endpoints and requests
 
@@ -59,7 +63,7 @@ Path ids are `UUID`; a malformed id is 404 `NOT_FOUND`, as in create and list (c
 
 ### D3. `position` input
 
-`MoveLessonRequest.position` is a `@NotNull` integer that accepts any JSON integer, however large. A plain `int` or `Long` would reject a huge value with a type error, but the engineer decided that every integer is clamped, so the field is a `BigInteger` and is clamped in the service (`min(max(p, 1), count)`, using `BigInteger` comparison before narrowing to `int`). Jackson coercion of floats and strings to integers must be off for this field (`1.5` and `"2"` give `INVALID_TYPE`); the implementer checks the existing coercion config and the `INVALID_TYPE` mapping used for `title`, and makes the field follow it. Missing and `null` give `REQUIRED` through `@NotNull`. Broken JSON and an empty body are `MALFORMED_REQUEST` (api-errors R1) by the existing handler. No new error code.
+`MoveLessonRequest.position` is a `@NotNull` integer that accepts any JSON integer, however large. A plain `int` or `Long` would reject a huge value with a type error, but the engineer decided that every integer is clamped, so the field is a `BigInteger` and is clamped in the service (`min(max(p, 1), count)`, using `BigInteger` comparison before narrowing to `int`). Coercion is configured in `StrictStringJsonConfig` or a sibling customizer in `common`: `builder.withCoercionConfig(BigInteger.class, ...)` with `CoercionAction.Fail` for the `String`, `Float` and `Boolean` input shapes, mapped to `INVALID_TYPE` like the title coercion. All JSON floats are rejected, including `2.0` and `1e2`, as well as `1.5` and `"2"` (R4-S4). A number longer than Jackson's number-length limit (1000 digits) is rejected by the parser and gives `MALFORMED_REQUEST`; there is no scenario for it, and R4 says "any integer within the JSON number-length limit". Missing and `null` give `REQUIRED` through `@NotNull`. Broken JSON and an empty body are `MALFORMED_REQUEST` (api-errors R1) by the existing handler. No new error code.
 
 ### D4. Locks and flows
 
@@ -83,6 +87,8 @@ Rename takes the same two locks even though it does not change a position: it ke
 The create flow keeps its order and checks. Its limit check and `insertAtEnd` move onto the new columns: `count(*) from lessons where course_id = :c`, and one `insert into lessons (..., course_id, position) select ..., coalesce(max(position), 0) + 1 from lessons where course_id = :c`. `findByCourse` selects from `lessons` where `course_id = :c and teacher_id = :t order by position`. Behaviour of R1 and R2 does not change. `insertLesson` and `insertAtEnd` become one repository method, since a lesson cannot exist without a course.
 
 A lesson of the same teacher addressed under another course of hers is 404 for the same reason as a foreign one: the lesson lookup is always scoped by `course_id` and `teacher_id` together, and nothing in the response tells them apart.
+
+Accepted race: the session filter rejects a deactivated teacher first (401). Only when deactivation happens mid-request does step 1 give 401, after input validation, so in that race a 400 can come before the 401. Accepted risk, same as create.
 
 Order of checks, as courses R5 and lessons R1: CSRF and role (403), deactivated (401, from step 1 or the session filter), malformed id (404), input (400), unknown or foreign (404). Input validation runs in the controller before the service, so a blank title or a missing position on an unknown lesson id gives 400 and a malformed id gives 404 first.
 
