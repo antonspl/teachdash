@@ -1,7 +1,7 @@
 # languages Specification
 
 ## Purpose
-Defines the languages the platform knows, as configured data: which may be a student's
+Defines the languages the platform knows, as configured data: which may be a student's or teacher's
 native language and which may also be a course language.
 
 ## Requirements
@@ -10,7 +10,7 @@ native language and which may also be a course language.
 `GET /api/languages` SHALL return 200 to any caller, with or without a session, with the
 known languages as a list of `{code, content}` sorted by code. `code` is a lowercase
 ISO 639-1 code; `content` is true when the language may be a course language. Every
-listed language may be a student's native language. The list is prefilled by a database
+listed language may be a student's or a teacher's native language. The list is prefilled by a database
 migration; names are not returned.
 
 #### Scenario: languages/R1-S1 A visitor reads the list prefilled by the DB migration
