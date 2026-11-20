@@ -13,6 +13,9 @@ test('[web-admin-teachers/R1-S4] The page fits a phone screen', async ({
   await page.getByRole('button', { name: en.adminTeachers.add }).click()
   await page.getByLabel(en.adminTeachers.create.name).fill('Long Email Teacher')
   await page.getByLabel(en.adminTeachers.create.email).fill(email)
+  await page
+    .getByLabel(en.adminTeachers.create.nativeLanguage)
+    .selectOption('de')
 
   // when the link is shown
   await page
