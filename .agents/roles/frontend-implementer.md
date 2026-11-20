@@ -34,7 +34,9 @@ Additions:
   2. clear `frontend/screenshots/<change-name>/`, so no stale PNG survives;
   3. write a temporary `frontend/e2e/zshots.spec.ts` that logs in with the
      `e2e/accounts.ts` helpers and saves each screenshot to that folder;
-  4. run `npx playwright test zshots --project=desktop-chromium` in `frontend/`;
+  4. run `npx playwright test zshots --project=desktop-chromium` in `frontend/`; if
+     step 1 or this run fails, stop and report instead of skipping the screenshots
+     or reusing old ones;
   5. check the screenshots against the design sources and fix what fails;
   6. delete `frontend/e2e/zshots.spec.ts` before committing.
 - List the screenshot paths in your report. The list does not count toward the

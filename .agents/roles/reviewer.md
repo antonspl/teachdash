@@ -20,7 +20,8 @@ Check:
 - Correctness bugs, security issues, missing error cases.
 - For a slice that touches `frontend/`: read `.agents/design/` (`project-rules.md`
   wins), then check the diff and the screenshots listed in the frontend-implementer's
-  report; `critique-rubric.md` on demand.
+  report; `critique-rubric.md` on demand. A leftover `frontend/e2e/zshots.spec.ts`
+  or any file under `frontend/screenshots/` in the diff is a finding.
 - No unrequested changes to `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/`, `.agents/design/` or the
   permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`).
 

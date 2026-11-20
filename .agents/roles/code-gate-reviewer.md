@@ -20,7 +20,9 @@ Check:
 - Constitution rules: per-teacher data scoping, Flyway-only schema changes, no
   secrets in code or logs, no unjustified dependencies.
 - Correctness bugs, security issues, missing error cases.
-- Frontend diffs against `.agents/design/project-rules.md`.
+- Frontend diffs against `.agents/design/project-rules.md`; a leftover
+  `frontend/e2e/zshots.spec.ts` or any file under `frontend/screenshots/` in the diff
+  is a finding.
 - No unrequested changes to `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/`, `.agents/design/` or the
   permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`).
 
