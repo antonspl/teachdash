@@ -8,8 +8,8 @@
 - [x] 1.4 Write tests for lessons R4-S1 to R4-S10 in `lessons/api/MoveLessonTest`, same rules. R4-S8 uses `Parallel.run`
 - [x] 1.5 Write tests for lessons R5-S1 to R5-S7 in `lessons/api/DeleteLessonTest`, same rules. R5-S7 uses `Parallel.run`
 - [x] 1.6 The stubs answer 501 to any request shape: `PATCH` with a JSON body, `PATCH .../position` with a JSON body, `DELETE` without a body, for any ids. Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Some tests may pass against the stubs: pure 400 input checks (if validation runs before the stub), 403/401/CSRF scenarios (R3-S6, R4-S6, R4-S7 in part, R5-S5, R5-S6) and malformed-id 404s. Report each new test that passes against the stubs, with the reason; do not claim that every other test fails
-- [ ] 1.7 List the stubs (temporary), `V15__lessons_one_course.sql` and the rewritten `LessonRepository` queries (both permanent) in the PR description
-- [ ] 1.8 In the test-gate request list the `LessonRepository` diff for review as production code, next to the migration
+- [x] 1.7 List the stubs (temporary), `V15__lessons_one_course.sql` and the rewritten `LessonRepository` queries (both permanent) in the PR description
+- [x] 1.8 In the test-gate request list the `LessonRepository` diff for review as production code, next to the migration
 
 ## 2. Test review
 
