@@ -112,9 +112,11 @@ printf '%s\n' "$data" | awk -F'\t' -v marker="$MARKER" '
     is_question = (text ~ /\?[ \t\r]*$/)
     for (i = 1; i <= n; i++) {
       g = gates[i]
+      # "test approved" also approves the tests gate; other gates need their own name.
+      approve = (g == "tests") ? "tests?" : g
       if (is_flow) {
         if (text ~ ("^" tolower(marker) " " g " gate") && $3 > requested[g]) requested[g] = $3
-      } else if (!is_question && text ~ ("^[ ]*" g " approved") && $3 >= when[g]) {
+      } else if (!is_question && text ~ ("^[ ]*" approve " approved") && $3 >= when[g]) {
         who[g] = $2
         when[g] = $3
       }
