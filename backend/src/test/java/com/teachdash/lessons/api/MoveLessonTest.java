@@ -104,13 +104,13 @@ class MoveLessonTest extends ApiTest {
 		// and the second is 200 with the title "Четыре", position 1 and updatedAt T plus one hour
 		second.then().statusCode(200).body("title", equalTo("Четыре")).body("position", equalTo(1));
 		assertEquals(later, Instant.parse(second.path("updatedAt")));
-		// and the final order is "Четыре", "Два", "Один", "Три" at the positions 1, 2, 3, 4
-		assertEquals(List.of("Четыре", "Два", "Один", "Три"), titles(course));
+		// and the final order is "Четыре", "Два", "Три", "Один" at the positions 1, 2, 3, 4
+		assertEquals(List.of("Четыре", "Два", "Три", "Один"), titles(course));
 		assertEquals(List.of(1, 2, 3, 4), lessonPositions(course));
 		// and the lessons "Два" and "Три" have updatedAt T
 		var stored = storedLessons(course);
 		assertEquals(created, stored.get(1).updatedAt());
-		assertEquals(created, stored.get(3).updatedAt());
+		assertEquals(created, stored.get(2).updatedAt());
 		// and the updatedAt of the course is unchanged
 		assertEquals(created, readCourse(course).updatedAt());
 	}

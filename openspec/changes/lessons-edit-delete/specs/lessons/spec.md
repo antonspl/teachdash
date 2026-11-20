@@ -119,7 +119,7 @@
 #### Scenario: lessons/R4-S1 Move a lesson down and up
 - **GIVEN** a logged-in teacher A with the course "Литература 9 класс" (instruction "ru") with the lessons "Один", "Два", "Три" and "Четыре" at the positions 1 to 4 created at a time T, and the clock advanced by one hour
 - **WHEN** teacher A moves "Один" to position 3, and then moves "Четыре" to position 1
-- **THEN** the first response is 200 with the title "Один", `position` 3 and `updatedAt` T plus one hour, the second is 200 with the title "Четыре", `position` 1 and `updatedAt` T plus one hour, the final order is "Четыре", "Два", "Один", "Три" at the positions 1, 2, 3, 4, the lessons "Два" and "Три" have `updatedAt` T, and the `updatedAt` of the course is unchanged
+- **THEN** the first response is 200 with the title "Один", `position` 3 and `updatedAt` T plus one hour, the second is 200 with the title "Четыре", `position` 1 and `updatedAt` T plus one hour, the final order is "Четыре", "Два", "Три", "Один" at the positions 1, 2, 3, 4, the lessons "Два" and "Три" have `updatedAt` T, and the `updatedAt` of the course is unchanged
 
 #### Scenario: lessons/R4-S2 Moving to the same position bumps updatedAt
 - **GIVEN** a logged-in teacher A with a course "English B1" with the lessons "One", "Two" and "Three" created at a time T, and the clock advanced by one hour
