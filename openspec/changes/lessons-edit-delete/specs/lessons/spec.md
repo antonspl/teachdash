@@ -133,8 +133,8 @@
 
 #### Scenario: lessons/R4-S4 The position must be an integer
 - **GIVEN** a logged-in teacher A with a course with the lessons "A" and "B"
-- **WHEN** teacher A moves "A" with the body `{}`, with `{"position": null}`, with the position `"2"`, with `{"position": {"n": 2}}`, with the positions `1.5`, `2.0` and `1e2`, with the position `true`, and with the bodies `{"position":` and no body
-- **THEN** the first and the second responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "position", code: "REQUIRED"}]`, the third to the eighth are 400 with `errors` exactly `[{field: "position", code: "INVALID_TYPE"}]`, the ninth and the tenth are 400 with code `MALFORMED_REQUEST` and no `errors` property, and the order is still "A", "B"
+- **WHEN** teacher A moves "A" with the body `{}`, with `{"position": null}`, with the position `"2"`, with the position `""`, with `{"position": {"n": 2}}`, with the positions `1.5`, `2.0` and `1e2`, with the position `true`, and with the bodies `{"position":` and no body
+- **THEN** the first and the second responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "position", code: "REQUIRED"}]`, the third to the ninth are 400 with `errors` exactly `[{field: "position", code: "INVALID_TYPE"}]`, the tenth and the eleventh are 400 with code `MALFORMED_REQUEST` and no `errors` property, and the order is still "A", "B"
 
 #### Scenario: lessons/R4-S5 Another teacher's, unknown, malformed and wrong-course ids are not found
 - **GIVEN** teacher A logged in with the courses "English B1" and "Maths" and the lessons "Fractions" and "Decimals" in "Maths", and a course "Грамматика" of teacher B with the lessons "Падежи" and "Роды"

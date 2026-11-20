@@ -17,7 +17,7 @@
 
 ## 3. Implementation
 
-- [ ] 3.1 Repository and requests: `LessonRepository` methods lookups of a lesson and its position scoped by course and teacher, `updateTitle`, `shiftRange`, `setPosition`, `deleteReturningPosition`, `closeGap` (design D4); `RenameLessonRequest` (`@Title`, `Normalize.name`) and `MoveLessonRequest` (`BigInteger position`, `@NotNull`) with the `BigInteger` coercion config: `Fail` for String, Float and Boolean input in `StrictStringJsonConfig` or a sibling customizer (design D3)
+- [ ] 3.1 Repository and requests: `LessonRepository` methods lookups of a lesson and its position scoped by course and teacher, `updateTitle`, `shiftRange`, `setPosition`, `deleteReturningPosition`, `closeGap` (design D4); `RenameLessonRequest` (`@Title`, `Normalize.name`) and `MoveLessonRequest` (`BigInteger position`, `@NotNull`) with the `BigInteger` coercion config: `Fail` for String, Float, Boolean and EmptyString input in the new `StrictIntegerJsonConfig` customizer (design D3)
 - [ ] 3.2 `LessonService.rename`, `move` and `delete`: user row lock first (`findActiveByIdForUpdate`, none gives 401), then the course row lock scoped by teacher (none gives 404), then the flow of design D4; the controller replaces its stubs (`PATCH`, `PATCH .../position`, `DELETE` 204). Add a comment at the locks saying the user row comes first to avoid a deadlock with `CourseService.rename`
 - [ ] 3.3 Check that no lesson title appears in logs (constitution §5: record IDs, not content)
 - [ ] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
