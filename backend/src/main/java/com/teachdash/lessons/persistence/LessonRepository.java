@@ -104,6 +104,31 @@ public class LessonRepository {
 				.update();
 	}
 
+	public int shiftRange(UUID courseId, int from, int to, int delta) {
+		return jdbc.sql("""
+				update lessons set position = position + :delta
+				where course_id = :courseId and position >= :from and position <= :to
+				""")
+				.param("delta", delta)
+				.param("courseId", courseId)
+				.param("from", from)
+				.param("to", to)
+				.update();
+	}
+
+	public int setPosition(UUID lessonId, UUID courseId, UUID teacherId, int position, Instant now) {
+		return jdbc.sql("""
+				update lessons set position = :position, updated_at = :now
+				where id = :lessonId and course_id = :courseId and teacher_id = :teacherId
+				""")
+				.param("position", position)
+				.param("now", Timestamp.from(now))
+				.param("lessonId", lessonId)
+				.param("courseId", courseId)
+				.param("teacherId", teacherId)
+				.update();
+	}
+
 	private static Lesson mapLesson(ResultSet rs, int rowNum) throws SQLException {
 		return new Lesson(
 				rs.getObject("id", UUID.class),

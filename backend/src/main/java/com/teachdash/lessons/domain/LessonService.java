@@ -1,5 +1,6 @@
 package com.teachdash.lessons.domain;
 
+import java.math.BigInteger;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -56,17 +57,39 @@ public class LessonService {
 
 	@Transactional
 	public Lesson rename(UUID teacherId, UUID courseId, UUID lessonId, String title) {
+		lockForWrite(teacherId, courseId);
+		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
+		if (lessons.updateTitle(lessonId, courseId, teacherId, title, now) == 0) {
+			throw ApiException.notFound();
+		}
+		return lessons.findByIdInCourse(lessonId, courseId, teacherId).orElseThrow(ApiException::notFound);
+	}
+
+	@Transactional
+	public Lesson move(UUID teacherId, UUID courseId, UUID lessonId, BigInteger requested) {
+		lockForWrite(teacherId, courseId);
+		int old = lessons.findByIdInCourse(lessonId, courseId, teacherId)
+				.orElseThrow(ApiException::notFound)
+				.position();
+		int count = lessons.countInCourse(courseId);
+		int target = requested.max(BigInteger.ONE).min(BigInteger.valueOf(count)).intValueExact();
+		if (target > old) {
+			lessons.shiftRange(courseId, old + 1, target, -1);
+		} else if (target < old) {
+			lessons.shiftRange(courseId, target, old - 1, 1);
+		}
+		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
+		lessons.setPosition(lessonId, courseId, teacherId, target, now);
+		return lessons.findByIdInCourse(lessonId, courseId, teacherId).orElseThrow(ApiException::notFound);
+	}
+
+	private void lockForWrite(UUID teacherId, UUID courseId) {
 		// The user row is locked before the course row, as in CourseService.rename, to avoid a deadlock.
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
 		if (!lessons.lockCourse(courseId, teacherId)) {
 			throw ApiException.notFound();
 		}
-		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
-		if (lessons.updateTitle(lessonId, courseId, teacherId, title, now) == 0) {
-			throw ApiException.notFound();
-		}
-		return lessons.findByIdInCourse(lessonId, courseId, teacherId).orElseThrow(ApiException::notFound);
 	}
 
 	@Transactional(readOnly = true)

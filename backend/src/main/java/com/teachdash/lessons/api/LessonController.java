@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.teachdash.lessons.api.dto.CreateLessonRequest;
 import com.teachdash.lessons.api.dto.LessonResponse;
+import com.teachdash.lessons.api.dto.MoveLessonRequest;
 import com.teachdash.lessons.api.dto.RenameLessonRequest;
 import com.teachdash.lessons.domain.LessonService;
 
@@ -57,10 +58,14 @@ class LessonController {
 		return LessonResponse.from(lessons.rename(teacherId, courseId, lessonId, request.title()));
 	}
 
-	// STUB: replaced in pass 2 (lessons-edit-delete 3.2)
 	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/position")
-	LessonResponse move(@PathVariable UUID courseId, @PathVariable UUID lessonId) {
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED);
+	LessonResponse move(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@Valid @RequestBody MoveLessonRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return LessonResponse.from(lessons.move(teacherId, courseId, lessonId, request.position()));
 	}
 
 	// STUB: replaced in pass 2 (lessons-edit-delete 3.2)
