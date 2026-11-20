@@ -39,6 +39,6 @@
 - **THEN** the 3 delete responses are 204, the 4 move responses are 200, and the course has exactly 7 lessons with the positions 1 to 7 without gaps and without duplicates
 
 #### Scenario: lessons/R5-S8 Deleting a lesson deletes its parts
-- **GIVEN** a logged-in teacher A with a course with the lessons "Present Simple" and "Падежи", where "Present Simple" has the parts "Warm-up" and "Grammar" and "Падежи" has the part "Разминка"
+- **GIVEN** a logged-in teacher A with a course with the lessons "Present Simple" and "Падежи", where "Present Simple" has the parts "Warm-up" and "Grammar" and "Падежи" has the part "Разминка", and a teacher B with a lesson with the parts "Warm-up" and "Text"
 - **WHEN** teacher A deletes "Present Simple"
-- **THEN** the response is 204, no part of "Present Simple" is stored, and the lesson "Падежи" still has its part "Разминка" at position 1
+- **THEN** the response is 204, no part of "Present Simple" is stored, the lesson "Падежи" still has its part "Разминка" at position 1, and teacher B's lesson still has both its parts

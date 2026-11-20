@@ -20,7 +20,7 @@
 
 #### Scenario: parts/R1-S4 The title is normalised
 - **GIVEN** a logged-in teacher A with a lesson
-- **WHEN** teacher A creates a part with the title "  Грамматика​  " (ending in a zero-width space)
+- **WHEN** teacher A creates a part with the title "  Грамматика&#8203;  " (the text `&#8203;` stands for a zero-width space, U+200B, written before the two trailing spaces)
 - **THEN** the response is 201 with the title "Грамматика", and the stored part has the same title
 
 #### Scenario: parts/R1-S5 A title must have 1-200 characters and a letter or digit
@@ -31,7 +31,7 @@
 #### Scenario: parts/R1-S6 Wrong JSON types and a number or a boolean are rejected
 - **GIVEN** a logged-in teacher A with a lesson
 - **WHEN** teacher A creates a part with the title `["Grammar"]`, then with the title `123`, then with the title `true`
-- **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "INVALID_TYPE"}]`, no body contains "Grammar", or "123" or "true" as a value, and the lesson has no part
+- **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly the array `[{field: "title", code: "INVALID_TYPE"}]`, no body has a `rejectedValue`, and the lesson has no part
 
 #### Scenario: parts/R1-S7 Titles are not unique
 - **GIVEN** a logged-in teacher A with the lessons "Grammar" and "Reading", where "Grammar" has the part "Warm-up"
@@ -50,7 +50,7 @@
 
 #### Scenario: parts/R1-S10 Another teacher's, unknown, malformed and wrong-course ids are not found
 - **GIVEN** teacher A logged in with the courses "English B1" and "Maths" and the lesson "Fractions" in "Maths", and a course "Грамматика" of teacher B with a lesson "Падежи" that has 20 parts
-- **WHEN** teacher A creates a part with the title "Intruder" in teacher B's lesson (under teacher B's course, and under "English B1"), in a lesson with an unknown id, in the lesson "not-a-uuid", in "Fractions" under "English B1", and in "Fractions" under the course "not-a-uuid" and under an unknown course id
+- **WHEN** teacher A creates a part with the title "Intruder" in teacher B's lesson (under teacher B's course, and under "English B1"), in a lesson with an unknown id, in the lesson "not-a-uuid", in "Fractions" under "English B1", in "Fractions" under teacher B's course, and in "Fractions" under the course "not-a-uuid" and under an unknown course id
 - **THEN** all responses are 404 with code `NOT_FOUND` and no `errors` property (so ownership is checked before the limit), none contains "Грамматика" or "Падежи", teacher B's lesson still has exactly 20 parts, and "Fractions" has no part
 
 #### Scenario: parts/R1-S11 Only active teachers create parts
@@ -59,9 +59,14 @@
 - **THEN** the admin's and the student's responses are 403 with code `FORBIDDEN`, the deactivated teacher's and the client's responses are 401 with code `UNAUTHENTICATED`, teacher B's is 403 with code `CSRF_INVALID`, and the lesson has no part
 
 #### Scenario: parts/R1-S12 Checks run in a fixed order
-- **GIVEN** teacher A logged in with a lesson, and a lesson "Падежи" of teacher B
-- **WHEN** teacher A creates a part with a blank title in the lesson "not-a-uuid", and then a part with a blank title in teacher B's lesson
-- **THEN** the first response is 404 with code `NOT_FOUND` and no `errors` property, the second is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "REQUIRED"}]` and does not contain "Падежи", and teacher B's lesson has no new part
+- **GIVEN** teacher A logged in with a lesson, a lesson "Падежи" of teacher B, a logged-in admin, and a logged-in teacher A2 who is then deactivated
+- **WHEN** teacher A creates a part with a blank title in the lesson "not-a-uuid", then a part with a blank title in teacher B's lesson, then a part with a blank title in the lesson of a course "not-a-uuid"; and the admin and the deactivated teacher A2 each create a part with a blank title in the lesson "not-a-uuid" of the course "not-a-uuid"
+- **THEN** teacher A's first response is 404 with code `NOT_FOUND` and no `errors` property, the second is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "REQUIRED"}]` and does not contain "Падежи", the third is 404 with code `NOT_FOUND`, the admin's response is 403 with code `FORBIDDEN` and the deactivated teacher's is 401 with code `UNAUTHENTICATED` (neither is 404 or 400), and teacher B's lesson has no new part
+
+#### Scenario: parts/R1-S13 Creating parts while the lesson is deleted
+- **GIVEN** a logged-in teacher A with a lesson with 5 parts
+- **WHEN** 1 request deleting the lesson and 4 requests creating a part in it are sent at the same time (`support.Parallel.run`)
+- **THEN** the delete response is 204, each create response is 201 or 404 and none is 500, the lesson is not stored, and no part row references it
 
 ### Requirement: R2 A teacher lists the parts of a lesson
 `GET /api/teacher/courses/{courseId}/lessons/{lessonId}/parts` SHALL return 200 with the parts of the caller's lesson only, as an unpaginated JSON array ordered by `position`, each with the fields R1 returns. No parts gives an empty array; a foreign, unknown or malformed course or lesson, or a lesson of another course of the caller, gives 404 `NOT_FOUND`. Checks run in order as R1, without the input and limit steps.
@@ -88,7 +93,7 @@
 
 #### Scenario: parts/R2-S5 Another teacher's, unknown, malformed and wrong-course ids are not found
 - **GIVEN** teacher A logged in with the courses "English B1" and "Maths" and the lesson "Fractions" in "Maths", and a course "Грамматика" of teacher B with the lesson "Падежи" that has the part "Разминка"
-- **WHEN** teacher A lists the parts of teacher B's lesson (under teacher B's course, and under "English B1"), of a lesson with an unknown id, of the lesson "not-a-uuid", of "Fractions" under "English B1", and of "Fractions" under the course "not-a-uuid" and under an unknown course id
+- **WHEN** teacher A lists the parts of teacher B's lesson (under teacher B's course, and under "English B1"), of a lesson with an unknown id, of the lesson "not-a-uuid", of "Fractions" under "English B1", of "Fractions" under teacher B's course, and of "Fractions" under the course "not-a-uuid" and under an unknown course id
 - **THEN** all responses are 404 with code `NOT_FOUND` and no `errors` property, and none contains "Грамматика", "Падежи" or "Разминка"
 
 #### Scenario: parts/R2-S6 Only active teachers list parts
