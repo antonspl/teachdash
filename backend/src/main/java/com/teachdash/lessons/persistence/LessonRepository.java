@@ -129,6 +129,26 @@ public class LessonRepository {
 				.update();
 	}
 
+	public Optional<Integer> deleteReturningPosition(UUID lessonId, UUID courseId, UUID teacherId) {
+		return jdbc.sql("""
+				delete from lessons
+				where id = :lessonId and course_id = :courseId and teacher_id = :teacherId
+				returning position
+				""")
+				.param("lessonId", lessonId)
+				.param("courseId", courseId)
+				.param("teacherId", teacherId)
+				.query(Integer.class)
+				.optional();
+	}
+
+	public int closeGap(UUID courseId, int deletedPosition) {
+		return jdbc.sql("update lessons set position = position - 1 where course_id = :courseId and position > :position")
+				.param("courseId", courseId)
+				.param("position", deletedPosition)
+				.update();
+	}
+
 	private static Lesson mapLesson(ResultSet rs, int rowNum) throws SQLException {
 		return new Lesson(
 				rs.getObject("id", UUID.class),

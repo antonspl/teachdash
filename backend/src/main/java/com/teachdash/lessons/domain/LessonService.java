@@ -83,6 +83,13 @@ public class LessonService {
 		return lessons.findByIdInCourse(lessonId, courseId, teacherId).orElseThrow(ApiException::notFound);
 	}
 
+	@Transactional
+	public void delete(UUID teacherId, UUID courseId, UUID lessonId) {
+		lockForWrite(teacherId, courseId);
+		int old = lessons.deleteReturningPosition(lessonId, courseId, teacherId).orElseThrow(ApiException::notFound);
+		lessons.closeGap(courseId, old);
+	}
+
 	private void lockForWrite(UUID teacherId, UUID courseId) {
 		// The user row is locked before the course row, as in CourseService.rename, to avoid a deadlock.
 		users.findActiveByIdForUpdate(teacherId)

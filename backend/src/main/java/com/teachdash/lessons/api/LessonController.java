@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.teachdash.lessons.api.dto.CreateLessonRequest;
 import com.teachdash.lessons.api.dto.LessonResponse;
@@ -68,9 +67,10 @@ class LessonController {
 		return LessonResponse.from(lessons.move(teacherId, courseId, lessonId, request.position()));
 	}
 
-	// STUB: replaced in pass 2 (lessons-edit-delete 3.2)
 	@DeleteMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}")
-	void delete(@PathVariable UUID courseId, @PathVariable UUID lessonId) {
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED);
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void delete(@PathVariable UUID courseId, @PathVariable UUID lessonId, Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		lessons.delete(teacherId, courseId, lessonId);
 	}
 }
