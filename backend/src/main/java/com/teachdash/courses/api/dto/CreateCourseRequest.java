@@ -1,13 +1,13 @@
 package com.teachdash.courses.api.dto;
 
-import com.teachdash.common.validation.CourseTitle;
 import com.teachdash.common.validation.Normalize;
+import com.teachdash.common.validation.Title;
 import com.teachdash.languages.api.validation.CourseLanguage;
 
 import jakarta.validation.constraints.NotBlank;
 
 public record CreateCourseRequest(
-		@CourseTitle String title,
+		@Title String title,
 		@NotBlank @CourseLanguage String instructionLanguage,
 		@CourseLanguage String targetLanguage) {
 

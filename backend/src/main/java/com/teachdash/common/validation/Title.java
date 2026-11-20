@@ -17,14 +17,14 @@ import jakarta.validation.constraints.Size;
 
 @Documented
 @NotBlank
-@Size(max = CourseTitle.MAX_LENGTH)
+@Size(max = Title.MAX_LENGTH)
 @Pattern(
 		regexp = "(?!.*[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}])(?=.*[\\p{L}\\p{Nd}&&[^\\u3164\\uFFA0\\u115F\\u1160]]).*",
 		flags = Pattern.Flag.DOTALL)
 @Constraint(validatedBy = {})
 @Target({ FIELD, PARAMETER, RECORD_COMPONENT })
 @Retention(RUNTIME)
-public @interface CourseTitle {
+public @interface Title {
 
 	int MAX_LENGTH = 200;
 
