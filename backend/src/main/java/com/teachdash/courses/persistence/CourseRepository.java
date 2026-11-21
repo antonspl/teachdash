@@ -29,6 +29,15 @@ public class CourseRepository {
 				.single();
 	}
 
+	public boolean lockCourse(UUID courseId, UUID teacherId) {
+		return jdbc.sql("select id from courses where id = :courseId and teacher_id = :teacherId for update")
+				.param("courseId", courseId)
+				.param("teacherId", teacherId)
+				.query(UUID.class)
+				.optional()
+				.isPresent();
+	}
+
 	public void insert(Course course) {
 		jdbc.sql("""
 				insert into courses (
