@@ -1,5 +1,6 @@
 package com.teachdash.items.api;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -122,10 +123,10 @@ class ItemPayloadTest extends ItemApiTest {
 	void thePayloadSizeLimitIs64KiBOfUtf8Bytes() {
 		// given a logged-in teacher A with a part, a payload A of exactly 65536 bytes, a payload B of 65537 bytes, and a payload C of 65537 bytes with no text
 		var setup = teacherWithPart();
-		String hintA = padding(65536 - "{\"text\":\"Я\",\"hint\":\"\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+		String hintA = padding(65536 - "{\"text\":\"Я\",\"hint\":\"\"}".getBytes(UTF_8).length);
 		String payloadA = "{\"text\":\"Я\",\"hint\":\"" + hintA + "\"}";
 		String payloadB = "{\"text\":\"Я\",\"hint\":\"" + hintA + "a\"}";
-		String hintC = padding(65537 - "{\"hint\":\"\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+		String hintC = padding(65537 - "{\"hint\":\"\"}".getBytes(UTF_8).length);
 		String payloadC = "{\"hint\":\"" + hintC + "\"}";
 
 		// when teacher A adds an item of the type test-note with payload A, then B, then C
@@ -133,7 +134,11 @@ class ItemPayloadTest extends ItemApiTest {
 		var b = setup.client().post(setup.items(), raw("test-note", payloadB));
 		var c = setup.client().post(setup.items(), raw("test-note", payloadC));
 
-		// then the first response is 201 with the stored hint equal to the sent one
+		// then the payloads are exactly 65536, 65537 and 65537 UTF-8 bytes
+		assertEquals(65536, payloadA.getBytes(UTF_8).length);
+		assertEquals(65537, payloadB.getBytes(UTF_8).length);
+		assertEquals(65537, payloadC.getBytes(UTF_8).length);
+		// and the first response is 201 with the stored hint equal to the sent one
 		a.then().statusCode(201).body("payload.hint", equalTo(hintA));
 		String storedHint = jdbc.sql("select payload->>'hint' from items where part_id = :part")
 				.param("part", setup.part())
