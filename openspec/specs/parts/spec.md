@@ -1,7 +1,8 @@
 # parts Specification
 
 ## Purpose
-TBD - created by archiving change parts-create. Update Purpose after archive.
+Defines parts: the ordered sections of a lesson that hold its content, which a
+teacher creates and lists.
 
 ## Requirements
 
