@@ -76,7 +76,7 @@ None added.
 
 ## Risks / Trade-offs
 
-- **User row lock for rename.** It serialises a teacher's renames with her other writes. Accepted: one teacher, one editor, one lock order.
+- **User row lock for rename.** It serialises a teacher's renames with the teacher's other writes. Accepted: one teacher, one editor, one lock order.
 - **No cascade test beyond the part itself.** Child tables do not exist yet; their changes test their own cascade from a part delete.
 - **`BigInteger` for `position`.** As for lessons; float and string rejection depends on the existing Jackson coercion, so R4-S4 is the proof.
 
