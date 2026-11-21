@@ -35,6 +35,10 @@ public class ApiException extends RuntimeException {
 				FieldErrorCodes.fromViolations(violations));
 	}
 
+	public static ApiException fields(List<FieldErrorDetail> details) {
+		return new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", FieldErrorCodes.reduce(details));
+	}
+
 	public static ApiException field(HttpStatus status, String code, String field) {
 		return new ApiException(status, code, List.of(new FieldErrorDetail(field, code)));
 	}
