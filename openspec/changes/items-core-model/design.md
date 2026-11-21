@@ -112,7 +112,7 @@ returning payload, position
 
 ### D7. Add flow, locks and position
 
-`ItemService.create(teacherId, courseId, lessonId, partId, type, payload)`, `@Transactional`. The validation of D4 runs before it, in the controller (or a small validator it calls). In the service:
+`ItemService.create(teacherId, courseId, lessonId, partId, itemType, payload)` with the resolved `ItemType` and the validated `ObjectNode`, `@Transactional`. The validation of D4 runs before it, in the controller (or a small validator it calls). In the service:
 
 1. `UserRepository.findActiveByIdForUpdate(teacherId)`; none gives 401 `UNAUTHENTICATED`.
 2. The course row `for update`, scoped by teacher; no row gives 404.
