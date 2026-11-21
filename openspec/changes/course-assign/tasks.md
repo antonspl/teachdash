@@ -8,7 +8,7 @@
 - [ ] 1.4 Write tests for course-assignment R1-S1 to R1-S8 in `courseassignment/api/AssignCourseTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`. Create courses, students, assignments and sessions in GIVEN with the helpers, never through the endpoints under test. GIVEN has no asserts. The WHEN step only captures responses, so each test fails in THEN. R1-S8 uses `Parallel.run`; the anonymous client fetches a CSRF cookie first (R1-S6)
 - [ ] 1.5 Write tests for R2-S1 to R2-S6 in `courseassignment/api/CourseStudentsTest`, same rules
 - [ ] 1.6 Write tests for R3-S1 to R3-S7 in `courseassignment/api/UnassignCourseTest`, same rules. R3-S6 removes the student with the existing endpoint and R3-S7 deactivates the teacher with the existing admin endpoint, as in student-enrolment R4 and R7
-- [ ] 1.7 The stubs answer 501 to any request shape. Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Against the stubs the 403 and 401 steps pass, because security runs before the controller; the cascade scenarios R3-S6 and R3-S7 use existing endpoints and the `V17` cascade, so they may pass against the stubs: report each new test that passes against the stubs, with the reason
+- [ ] 1.7 The stubs answer 501 to any request shape. Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Against the stubs the 403 and 401 steps pass, because security runs before the controller; row-level cascade assertions (R3-S6, R3-S7) may pass at pass 1, because the migration is pass-1 production code, while list assertions fail on the 501; record both in the PR and report each new test that passes against the stubs, with the reason
 - [ ] 1.8 List the stubs (temporary) and the migration `V17` (permanent) in the PR description
 
 ## 2. Test review
@@ -17,7 +17,7 @@
 
 ## 3. Implementation
 
-- [ ] 3.1 `courseassignment/persistence`: repository on `JdbcClient` with `insertIfAbsent`, `delete` (returns whether a row was removed), `findStudentsOfCourse`, `studentOfTeacherExists`, and the course row lock (reuse `LessonRepository.lockCourse` or move it to `CourseRepository`, design D3); the response record `CourseStudentResponse(id, name, assignedAt)`
+- [ ] 3.1 `courseassignment/persistence`: repository on `JdbcClient` with `insertIfAbsent`, `delete` (returns whether a row was removed), `findStudentsOfCourse`, `studentOfTeacherExists`, and the course row lock (`CourseRepository.lockCourse`, design D3; the copies in `LessonRepository` and `PartRepository` stay); the response record `CourseStudentResponse(id, name, assignedAt)`
 - [ ] 3.2 `CourseAssignmentService.assign` and `unassign` in the lock order teacher row, course row, student check (design D3), and `list`; the controller replaces its stubs (`PUT` 204, `DELETE` 204, `GET` 200). Add a comment at the locks saying the teacher row comes first as in `LessonService` and `StudentRemovalService`
 - [ ] 3.3 Check that no course title or student name appears in logs (constitution section 5: record IDs, not content)
 - [ ] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged

@@ -4,9 +4,9 @@
 `PUT /api/teacher/courses/{courseId}/students/{studentId}` SHALL assign the caller's course to the caller's student and return 204 with no body, also when already assigned (the original assignment time is kept). No request body, no limit beyond the teacher's own students. A foreign, unknown or malformed course, and an unknown, foreign, malformed or non-student id, give 404 `NOT_FOUND`. Checks run in order: CSRF and role (403), deactivated (401), malformed id (404), course (404), student (404).
 
 #### Scenario: course-assignment/R1-S1 Assign an English course to a student
-- **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") and the student "Anna Smith"
+- **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") and the student "Anna Smith", and the clock fixed
 - **WHEN** teacher A assigns the course to the student
-- **THEN** the response is 204 with an empty body, and exactly one assignment is stored, for that course and that student, owned by teacher A, with a creation time
+- **THEN** the response is 204 with an empty body, and exactly one assignment is stored, for that course and that student, owned by teacher A, with a creation time equal to the fixed clock value
 
 #### Scenario: course-assignment/R1-S2 Assign a Russian course to a student with a Cyrillic name
 - **GIVEN** a logged-in teacher A with the course "Литература 9 класс" (instruction "ru", no target) and the student "Анна Иванова"
@@ -47,9 +47,9 @@
 `GET /api/teacher/courses/{courseId}/students` SHALL return 200 with the students assigned to the caller's course, as an unpaginated array of `{id, name, assignedAt}` and no other property, ordered by name as student-enrolment R2, then by id. No students gives an empty array; a foreign, unknown or malformed course gives 404 `NOT_FOUND`. Checks run in order: role (403), deactivated (401), malformed id (404), course (404); a GET has no CSRF check.
 
 #### Scenario: course-assignment/R2-S1 Students are listed by name, in English and Russian
-- **GIVEN** a logged-in teacher A with the course "English B1" and the students "Boris", "anna", "Ёлка", "Анна" and "яна" assigned to it, inserted in that order
+- **GIVEN** a logged-in teacher A with the course "English B1" and the students "Boris", "anna", "Ёлка", "Анна", "яна" and two students both named "Zed" assigned to it, inserted in that order
 - **WHEN** teacher A lists the students of the course
-- **THEN** the response is 200 with the names "anna", "Boris", "Анна", "Ёлка", "яна" in that order
+- **THEN** the response is 200 with the names "anna", "Boris", "Zed", "Zed", "Анна", "Ёлка", "яна" in that order, with the two "Zed" items ordered by id
 
 #### Scenario: course-assignment/R2-S2 A list item has only the student's id, name and assignment time
 - **GIVEN** a logged-in teacher A with the course "Литература 9 класс" and the student "Анна Иванова" with an email, assigned at a time T
@@ -110,6 +110,6 @@
 - **THEN** the removal response is 204, no assignment of "Anna" is stored, "Анна" is still assigned to both courses, "Глеб" is still assigned to teacher B's course, and teacher A's lists of the students of both courses do not contain "Anna"
 
 #### Scenario: course-assignment/R3-S7 Deactivating a teacher deletes the assignments of the teacher's courses
-- **GIVEN** teacher A with the courses "English B1" and "Литература 9 класс" and the students "Anna" and "Анна" assigned to them, and teacher B with a course and the student "Глеб" assigned to it
+- **GIVEN** teacher A with a password, the courses "English B1" and "Литература 9 класс" and the students "Anna" and "Анна" assigned to them, and teacher B with a course and the student "Глеб" assigned to it
 - **WHEN** the admin deactivates teacher A and then reactivates teacher A
-- **THEN** the deactivation response is 204, no assignment of teacher A's courses is stored, teacher A's course list still has both courses, teacher B's student "Глеб" is still assigned to teacher B's course, and after the reactivation teacher A has no student and the lists of the students of both courses are empty
+- **THEN** the deactivation response is 204, no assignment of teacher A's courses is stored, teacher A's course list still has both courses, teacher B's student "Глеб" is still assigned to teacher B's course, and after the reactivation teacher A can log in again, has no student, and the lists of the students of both courses are empty

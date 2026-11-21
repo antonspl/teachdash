@@ -15,6 +15,7 @@ Issue #122. The engineer's decisions, as given:
 | 7 | Locks? | Assign and unassign lock the teacher row (`findActiveByIdForUpdate`, none gives 401), then the course row (scoped by `teacher_id`, none gives 404), then check the student through `teacher_students` (none gives 404). Same order as `LessonService` and `StudentRemovalService` (teacher row first), so an assign racing a student removal runs either before (the cascade removes the row) or after (it gets 404). A parallel scenario proves that the race ends with no assignment of a removed student. |
 | 8 | Requirements and scenarios? | R1 a teacher assigns an own course to an own student (idempotency, scoping at course and student level, race with removal, check order). R2 a teacher reads the students assigned to an own course (`en` and `ru` names, order, only that course, empty list, no leak of another teacher's data). R3 a teacher unassigns; assignments also end with the student's removal and the teacher's deactivation (removal deletes all assignments of that student; deactivation deletes all assignments of the teacher's courses; other teachers' data is untouched). Scenarios cover `en` and `ru` content: course titles and student names in Cyrillic. Target about 20 scenarios; the change has 21. |
 | 9 | Out of scope? | Lesson access (#123), student endpoints (#124), answers (#126, #128), course delete (#131), frontend (#132, #121). |
+| 10 | Spec critique decisions? | `lockCourse` is added to `CourseRepository`. R3-S7 logs teacher A in again after reactivation. The cascade is proven by R3-S6; R1-S8 proves no 500 and no orphan row under either order. Row-level cascade assertions may pass at pass 1, list assertions fail on the 501; recorded in the PR. R2-S1 has two students with the same name to prove the id tie-break. DELETE of a not-assigned pair is deliberately 404, as student removal (student-enrolment R4). R1-S1 asserts `created_at` equals the fixed clock value. No DELETE-versus-removal race scenario: delete is teacher-scoped and removal makes it 404. |
 
 ## Research angles
 
@@ -23,7 +24,7 @@ The engineer agreed no separate research was needed. The research conclusions ca
 - `courses` (`V11`) has `id`, `teacher_id` (foreign key to `users`, `on delete cascade`); nothing deletes courses yet. A unique `(id, teacher_id)` is needed as the target of the composite foreign key.
 - `teacher_students` (`V3`, `V4`) has primary key `(teacher_id, student_id)`, unique `student_id`, and no cascades. `AssignmentEnding.end` and `endAll` are its only deleters, and their callers hold the teacher row lock.
 - `GET /api/teacher/students` orders by `name collate "und-x-icu", id`; a foreign student is 404 (student-enrolment R2).
-- `lockCourse(courseId, teacherId)` exists in `LessonRepository` and `PartRepository`; the new code reuses the lessons one rather than adding a third copy (design D3).
+- `lockCourse(courseId, teacherId)` exists in `LessonRepository` and `PartRepository`; the new code adds `lockCourse` to `CourseRepository` (design D3); the copies stay, and consolidating them is out of scope.
 - Test helpers in `support/ApiTest`: `createTeacher`, `createStudent`, `createAdmin`, `assignStudent`, `createCourse`, `loggedInAs`, `countRows`; `assignCourse` and a read of the assignment rows are added.
 
 ## Why
@@ -55,7 +56,8 @@ None. `student-enrolment` R4 and R7 keep their text; their effect on assignments
 
 ## Impact
 
-- Backend: new package `courseassignment` (controller, service, repository, one response record); `LessonRepository.lockCourse` is reused.
+- Backend: new package `courseassignment` (controller, service, repository, one response record); `CourseRepository` gets `lockCourse`.
+- Behaviour of other capabilities: `student-enrolment` R4 and R7 now also delete course assignments (stated in `course-assignment` R3, no MODIFIED requirement); a future course delete (#131) cascades through the course foreign key.
 - Database: `V17` adds `course_assignments` and `courses_id_teacher_uq`.
 - API: three new endpoints under `/api/teacher/courses/{courseId}/students`; no `SecurityConfig` change.
 - No new dependencies.

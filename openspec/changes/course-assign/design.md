@@ -59,7 +59,7 @@ New package `com.teachdash.courseassignment` (api, domain, persistence), one con
 Assign and unassign run in one `@Transactional` method with this order:
 
 1. `UserRepository.findActiveByIdForUpdate(teacherId)`; none gives 401 `UNAUTHENTICATED`.
-2. The course row `for update`, scoped by `teacher_id` (`LessonRepository.lockCourse` is reused instead of a third copy; if a cross-package dependency on `lessons` is unwanted, the helper moves to `CourseRepository`, task 3.1); none gives 404.
+2. The course row `for update`, scoped by `teacher_id` (`lockCourse` is added to `CourseRepository`; the copies in `LessonRepository` and `PartRepository` stay, and consolidating them is out of scope); none gives 404.
 3. The student check through `teacher_students` by `(teacher_id, student_id)`; none gives 404. This covers an unknown id, another teacher's student, a student without a teacher and an id that is not a student, with the same 404.
 
 Teacher row first matches `LessonService` and `StudentRemovalService`, so there is no deadlock cycle, and an assign racing a removal of the same student either runs before it (the cascade then removes the row) or after it (step 3 gives 404). Removal by `StudentRemovalService` runs under the same teacher row lock, so the two are serialised; the parallel scenario proves the end state, not the lock alone. A deactivation in mid-request gives 401 from step 1 (accepted race, as for lessons).
@@ -69,6 +69,10 @@ The read takes no lock: one `select` for the course (scoped by `teacher_id`, 404
 No limit on the students of a course: the number is bounded by the teacher's own students.
 
 Order of checks: CSRF and role (403), deactivated (401), malformed id (404), unknown or foreign course (404), student (404). A GET has no CSRF check and no student step.
+
+Unassign of a pair that is not assigned is 404 on purpose, as student removal of a non-student (student-enrolment R4). No DELETE-versus-removal race scenario is needed: delete is teacher-scoped, and a removal makes it 404.
+
+The cascade itself is proven by R3-S6; R1-S8 proves that an assign racing a removal gives no 500 and leaves no orphan row, in either order.
 
 ### D4. Tests and helpers
 
@@ -82,7 +86,6 @@ None added.
 
 - **Cascade is invisible in code.** The behaviour lives in the schema; R3-S6 and R3-S7 are its proof, and a reviewer should check the `V17` foreign keys, not Java.
 - **`V17` clash with #181.** Renumbering is mechanical; Flyway fails on a duplicate, and #98 catches it.
-- **Reusing `lockCourse` from `lessons`.** A small coupling; accepted over a third copy.
 
 ## Migrations
 
