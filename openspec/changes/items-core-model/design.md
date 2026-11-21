@@ -81,7 +81,7 @@ Input validation runs before the service, so a bad payload on an unknown part gi
 
 1. `type` missing, null or blank gives `REQUIRED`; an unregistered code gives `UNKNOWN_TYPE` (a new constant in `FieldErrorCodes`).
 2. `payload` missing or `null` gives `REQUIRED`; a payload that is not an object gives `INVALID_TYPE`.
-3. Size: the payload is serialised once, compact, to bytes with Jackson; more than 65536 bytes gives `payload` `TOO_LONG`. The same bytes are written to the database, so the check applies to what is stored. The check runs again on the payload that the type's `validate` returns; the bytes measured last are the bytes written to the database (serialised once).
+3. Size: the payload is serialised compact with Jackson; more than 65536 UTF-8 bytes gives `payload` `TOO_LONG`. After the type's `validate` (step 5), its result is serialised and checked against the same limit, and that compact JSON string is what the controller passes on and the database stores, so the limit applies to what is stored.
 4. NUL: a walk over the tree rejects U+0000 in any string value and any field name, giving `payload` `INVALID_FORMAT`.
 5. The type's `validate`, only if steps 1 to 4 passed; its errors are reported as they are.
 
@@ -91,7 +91,7 @@ The 64 KiB limit is a guess that fits text exercises with options and a few long
 
 ### D5. Why the NUL walk, and the other values jsonb cannot keep
 
-`NulRejectingJsonConfig` registers a deserializer for `String` targets. A `JsonNode` tree is built by Jackson's own node deserializers, so string values inside `payload` never go through it, and object keys use key deserializers that it does not cover either. Postgres rejects U+0000 in jsonb text (`unsupported Unicode escape sequence`), so without the walk a NUL in a payload would reach the database and give a 500. The walk is a small recursive method over `ObjectNode`, `ArrayNode` and `TextNode`, run after the size check so that it runs on a bounded tree. A NUL in the `type` string is already covered by the typed String deserializer. Besides NUL, the same walk rejects a lone (unpaired) surrogate in any string value or object key and a non-finite or out-of-range number (for example `1e400`) as `payload` `INVALID_FORMAT`: jsonb cannot store them losslessly, so they would give a 500 or a silent change. In practice Jackson already rejects an unpaired surrogate escape while parsing (400 `MALFORMED_REQUEST`), so the surrogate check is a second line of defence. Tests without scenario IDs cover them.
+`NulRejectingJsonConfig` registers a deserializer for `String` targets. A `JsonNode` tree is built by Jackson's own node deserializers, so string values inside `payload` never go through it, and object keys use key deserializers that it does not cover either. Postgres rejects U+0000 in jsonb text (`unsupported Unicode escape sequence`), so without the walk a NUL in a payload would reach the database and give a 500. The walk is a small recursive method over `ObjectNode`, `ArrayNode` and `TextNode`, run after the size check so that it runs on a bounded tree. A NUL in the `type` string is already covered by the typed String deserializer. Besides NUL, the same walk rejects a lone (unpaired) surrogate in any string value or object key and a non-finite or out-of-range number (for example `1e400`) as `payload` `INVALID_FORMAT`: jsonb cannot store them losslessly (a number that underflows to 0, such as `1e-400`, or loses precision as a double is accepted as parsed), so they would give a 500 or a silent change. In practice Jackson already rejects an unpaired surrogate escape while parsing (400 `MALFORMED_REQUEST`), so the surrogate check is a second line of defence. Tests without scenario IDs cover them.
 
 ### D6. JSONB without JPA
 
@@ -112,7 +112,7 @@ returning payload, position
 
 ### D7. Add flow, locks and position
 
-`ItemService.create(teacherId, courseId, lessonId, partId, itemType, payload)` with the resolved `ItemType` and the validated `ObjectNode`, `@Transactional`. The validation of D4 runs before it, in the controller (or a small validator it calls). In the service:
+`ItemService.create(teacherId, courseId, lessonId, partId, itemType, payload)` with the resolved `ItemType` and the validated payload as its compact JSON string (D4 step 3), `@Transactional`. The validation of D4 runs before it, in the controller (or a small validator it calls). In the service:
 
 1. `UserRepository.findActiveByIdForUpdate(teacherId)`; none gives 401 `UNAUTHENTICATED`.
 2. The course row `for update`, scoped by teacher; no row gives 404.
