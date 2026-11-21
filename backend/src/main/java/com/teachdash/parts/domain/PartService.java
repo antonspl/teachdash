@@ -40,15 +40,7 @@ public class PartService {
 
 	@Transactional
 	public Part create(UUID teacherId, UUID courseId, UUID lessonId, String title) {
-		// The user row is locked first, as in CourseService.rename, to avoid a deadlock.
-		users.findActiveByIdForUpdate(teacherId)
-				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
-		if (!parts.lockCourse(courseId, teacherId)) {
-			throw ApiException.notFound();
-		}
-		if (!parts.lockLesson(lessonId, courseId, teacherId)) {
-			throw ApiException.notFound();
-		}
+		lockForWrite(teacherId, courseId, lessonId);
 		if (parts.countInLesson(lessonId) >= maxPerLesson) {
 			throw new ApiException(HttpStatus.CONFLICT, "PART_LIMIT_REACHED");
 		}
