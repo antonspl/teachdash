@@ -27,6 +27,7 @@ Additions:
   - scenarios without focus behaviour, for example where focus goes after an error;
   - copy not through i18n, or not per the tone rules of `project-rules.md`;
   - contradictions with `project-rules.md`;
+  - a spec delta that changes behaviour stated in `.agents/design/` without a task updating that file;
   - unanswered design questions.
 - Report unanswered design questions as questions for the engineer. The main agent
   asks them, and the spec-writer records the answers in the fix round.

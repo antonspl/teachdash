@@ -14,6 +14,8 @@ Frontend design guidance. Its readers are the four frontend roles (`frontend-imp
 
 The change's spec wins, then the design code (from #171, not yet written), then `project-rules.md`, then the vendored community sources (C0). Where a source says something else, follow `project-rules.md`. The sources are adapted copies: their own Title Case, uppercase labels, web fonts, raw values and scores are already removed.
 
+A change which alters a behaviour stated in a `.agents/design/` file updates that file in the same PR.
+
 ## Sources
 
 Each vendored file starts with a header line naming its source, path, commit, licence and licence file, and says it was modified by teachdash. To re-sync, fetch the path at a newer commit and adapt it again; nothing syncs automatically.
