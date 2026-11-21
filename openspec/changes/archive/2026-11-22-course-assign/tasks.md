@@ -17,7 +17,7 @@
 
 ## 3. Implementation
 
-- [x] 3.1 `courseassignment/persistence`: repository on `JdbcClient` with `insertIfAbsent`, `delete` (returns whether a row was removed), `findStudentsOfCourse`, `studentOfTeacherExists`, and the course row lock (`CourseRepository.lockCourse`, design D3; the copies in `LessonRepository` and `PartRepository` stay); the response record `CourseStudentResponse(id, name, assignedAt)`
+- [x] 3.1 `courseassignment/persistence`: repository on `JdbcClient` with `insertIfAbsent`, `delete` (returns whether a row was removed), `findStudentsOfCourse`, `studentOfTeacherExists`, and the course row lock (`CourseRepository.lockCourse`, design D3; the copies in `LessonRepository` and `PartRepository` stay); the domain record `CourseStudent`; the response record `CourseStudentResponse(id, name, assignedAt)` lives in `api/dto`
 - [x] 3.2 `CourseAssignmentService.assign` and `unassign` in the lock order teacher row, course row, student check (design D3), and `list`; the controller replaces its stubs (`PUT` 204, `DELETE` 204, `GET` 200). Add a comment at the locks saying the teacher row comes first as in `LessonService` and `StudentRemovalService`
 - [x] 3.3 Check that no course title or student name appears in logs (constitution section 5: record IDs, not content)
 - [x] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
