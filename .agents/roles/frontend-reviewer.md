@@ -19,7 +19,7 @@ Additions:
 - Design pass: check the diff against `project-rules.md`, `checklist.md` and the
   change's "UI design" section in `design.md`, and a11y: keyboard, focus, `aria-*`,
   contrast.
-- Open the screenshot PNGs listed in the frontend-implementer's report yourself, at
+- Open the screenshot PNGs listed in the brief from the main agent yourself, at
   desktop and 360 px, and check them against the "UI design" section and the design
   sources. Missing screenshots for a slice that changes rendered UI are a finding.
 - A leftover `frontend/e2e/zshots.spec.ts` in the diff is a finding.
