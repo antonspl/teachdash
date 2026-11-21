@@ -209,7 +209,7 @@ a teacher creates, lists, renames, moves and deletes.
 - **THEN** the first response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "position", code: "REQUIRED"}]`, the second is 400 with `errors` exactly `[{field: "position", code: "INVALID_TYPE"}]`, neither contains "Грамматика" or "Падежи", and teacher B's course is unchanged
 
 ### Requirement: R5 A teacher deletes a lesson
-`DELETE /api/teacher/courses/{courseId}/lessons/{lessonId}` SHALL delete the lesson of the caller's course and return 204 with no body. Lessons above it move down by one and keep their `updatedAt`, so positions stay 1..count. A second delete gives 404, and a deletion frees a slot under the R1 limit. Not found cases and the order of checks are as R3, without the input step.
+`DELETE /api/teacher/courses/{courseId}/lessons/{lessonId}` SHALL delete the lesson of the caller's course and return 204 with no body. Lessons above it move down by one and keep their `updatedAt`, so positions stay 1..count. A second delete gives 404, and a deletion frees a slot under the R1 limit. Not found cases and the order of checks are as R3, without the input step. Deleting a lesson also deletes its parts.
 
 #### Scenario: lessons/R5-S1 Delete a lesson in the middle
 - **GIVEN** a logged-in teacher A with the course "English B1" with the lessons "One", "Two", "Three" and "Four" at the positions 1 to 4 created at a time T, and the clock advanced by one hour
@@ -245,3 +245,8 @@ a teacher creates, lists, renames, moves and deletes.
 - **GIVEN** a logged-in teacher A with a course with 10 lessons at the positions 1 to 10
 - **WHEN** teacher A sends at the same time 3 delete requests for the lessons at the positions 2, 5 and 8, and 4 move requests for the lessons at the positions 1, 3, 6 and 10, each to position 1
 - **THEN** the 3 delete responses are 204, the 4 move responses are 200, and the course has exactly 7 lessons with the positions 1 to 7 without gaps and without duplicates
+
+#### Scenario: lessons/R5-S8 Deleting a lesson deletes its parts
+- **GIVEN** a logged-in teacher A with a course with the lessons "Present Simple" and "Падежи", where "Present Simple" has the parts "Warm-up" and "Grammar" and "Падежи" has the part "Разминка", and a teacher B with a lesson with the parts "Warm-up" and "Text"
+- **WHEN** teacher A deletes "Present Simple"
+- **THEN** the response is 204, no part of "Present Simple" is stored, the lesson "Падежи" still has its part "Разминка" at position 1, and teacher B's lesson still has both its parts

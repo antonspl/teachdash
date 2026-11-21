@@ -344,6 +344,39 @@ public abstract class ApiTest {
 				.list();
 	}
 
+	/** Inserts a part into a lesson directly; both times are the current clock time. */
+	protected UUID createPart(UUID teacherId, UUID lessonId, String title, int position) {
+		UUID id = UUID.randomUUID();
+		Timestamp now = Timestamp.from(Instant.now(clock));
+		jdbc.sql("""
+				insert into parts (id, teacher_id, lesson_id, title, position, created_at, updated_at)
+				values (:id, :teacher, :lesson, :title, :position, :now, :now)
+				""")
+				.param("id", id)
+				.param("teacher", teacherId)
+				.param("lesson", lessonId)
+				.param("title", title)
+				.param("position", position)
+				.param("now", now)
+				.update();
+		return id;
+	}
+
+	protected long countParts(UUID lessonId) {
+		return jdbc.sql("select count(*) from parts where lesson_id = :lesson")
+				.param("lesson", lessonId)
+				.query(Long.class)
+				.single();
+	}
+
+	/** The positions of the lesson's parts, ascending. */
+	protected List<Integer> partPositions(UUID lessonId) {
+		return jdbc.sql("select position from parts where lesson_id = :lesson order by position")
+				.param("lesson", lessonId)
+				.query(Integer.class)
+				.list();
+	}
+
 	protected TestClient loggedInAdmin() {
 		createAdmin("admin@example.com", "admin-password-1");
 		return loggedInAs("admin@example.com");

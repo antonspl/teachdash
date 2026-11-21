@@ -284,4 +284,39 @@ class DeleteLessonTest extends ApiTest {
 		assertEquals(7, countLessons(course));
 		assertEquals(IntStream.rangeClosed(1, 7).boxed().toList(), lessonPositions(course));
 	}
+
+	@Test
+	@DisplayName("[lessons/R5-S8] Deleting a lesson deletes its parts")
+	void deletingALessonDeletesItsParts() {
+		// given a logged-in teacher A with a course with the lessons "Present Simple" and "Падежи", where "Present Simple" has the parts "Warm-up" and "Grammar" and "Падежи" has the part "Разминка", and a teacher B with a lesson with the parts "Warm-up" and "Text"
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
+		UUID course = createCourse(teacherA, "English B1", "en", "en");
+		UUID present = createLesson(teacherA, course, "Present Simple", 1);
+		UUID cases = createLesson(teacherA, course, "Падежи", 2);
+		createPart(teacherA, present, "Warm-up", 1);
+		createPart(teacherA, present, "Grammar", 2);
+		createPart(teacherA, cases, "Разминка", 1);
+		UUID courseB = createCourse(teacherB, "English B1", "en", "en");
+		UUID lessonB = createLesson(teacherB, courseB, "Present Simple", 1);
+		createPart(teacherB, lessonB, "Warm-up", 1);
+		createPart(teacherB, lessonB, "Text", 2);
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A deletes "Present Simple"
+		var response = teacher.delete(lesson(course, present));
+
+		// then the response is 204
+		response.then().statusCode(204);
+		// and no part of "Present Simple" is stored
+		assertEquals(0, countParts(present));
+		// and the lesson "Падежи" still has its part "Разминка" at position 1
+		assertEquals(List.of(1), partPositions(cases));
+		assertEquals(List.of("Разминка"), jdbc.sql("select title from parts where lesson_id = :lesson")
+				.param("lesson", cases)
+				.query(String.class)
+				.list());
+		// and teacher B's lesson still has both its parts
+		assertEquals(2, countParts(lessonB));
+	}
 }
