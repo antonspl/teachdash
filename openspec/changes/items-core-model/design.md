@@ -81,7 +81,7 @@ Input validation runs before the service, so a bad payload on an unknown part gi
 
 1. `type` missing, null or blank gives `REQUIRED`; an unregistered code gives `UNKNOWN_TYPE` (a new constant in `FieldErrorCodes`).
 2. `payload` missing or `null` gives `REQUIRED`; a payload that is not an object gives `INVALID_TYPE`.
-3. Size: the payload is serialised once, compact, to bytes with Jackson; more than 65536 bytes gives `payload` `TOO_LONG`. The same bytes are written to the database, so the check applies to what is stored.
+3. Size: the payload is serialised once, compact, to bytes with Jackson; more than 65536 bytes gives `payload` `TOO_LONG`. The same bytes are written to the database, so the check applies to what is stored. The check runs again on the payload that the type's `validate` returns; the bytes measured last are the bytes written to the database (serialised once).
 4. NUL: a walk over the tree rejects U+0000 in any string value and any field name, giving `payload` `INVALID_FORMAT`.
 5. The type's `validate`, only if steps 1 to 4 passed; its errors are reported as they are.
 
@@ -89,9 +89,9 @@ Errors of the steps 1 and 2 about different fields are reported together (a body
 
 The 64 KiB limit is a guess that fits text exercises with options and a few long explanations; it is a constant of the items package that a later change can move to a property. 64 KiB is checked on the parsed tree, so a request body is parsed in full before the check: a server-level body limit would protect against huge bodies, but it is outside this change (see Risks).
 
-### D5. Why the NUL walk
+### D5. Why the NUL walk, and the other values jsonb cannot keep
 
-`NulRejectingJsonConfig` registers a deserializer for `String` targets. A `JsonNode` tree is built by Jackson's own node deserializers, so string values inside `payload` never go through it, and object keys use key deserializers that it does not cover either. Postgres rejects U+0000 in jsonb text (`unsupported Unicode escape sequence`), so without the walk a NUL in a payload would reach the database and give a 500. The walk is a small recursive method over `ObjectNode`, `ArrayNode` and `TextNode`, run after the size check so that it runs on a bounded tree. A NUL in the `type` string is already covered by the typed String deserializer.
+`NulRejectingJsonConfig` registers a deserializer for `String` targets. A `JsonNode` tree is built by Jackson's own node deserializers, so string values inside `payload` never go through it, and object keys use key deserializers that it does not cover either. Postgres rejects U+0000 in jsonb text (`unsupported Unicode escape sequence`), so without the walk a NUL in a payload would reach the database and give a 500. The walk is a small recursive method over `ObjectNode`, `ArrayNode` and `TextNode`, run after the size check so that it runs on a bounded tree. A NUL in the `type` string is already covered by the typed String deserializer. Besides NUL, the same walk rejects a lone (unpaired) surrogate in any string value or object key and a non-finite or out-of-range number (for example `1e400`) as `payload` `INVALID_FORMAT`: jsonb cannot store them losslessly, so they would give a 500 or a silent change. Tests without scenario IDs cover them.
 
 ### D6. JSONB without JPA
 
@@ -101,7 +101,7 @@ There is no JPA in the project and no converter. `ItemRepository` writes with `J
 insert into items (id, teacher_id, part_id, type, payload, schema_version, version, position, created_at, updated_at)
 select :id, :teacherId, :partId, :type, cast(:payload as jsonb), :schemaVersion, 1,
        coalesce(max(position), 0) + 1, :now, :now
-from items where part_id = :partId
+from items where part_id = :partId and teacher_id = :teacherId
 returning payload, position
 ```
 
@@ -118,10 +118,10 @@ returning payload, position
 2. The course row `for update`, scoped by teacher; no row gives 404.
 3. The lesson row `for update`, scoped by course and teacher; no row gives 404.
 4. The part row `for update`, scoped by lesson and teacher; no row gives 404. A part of another lesson or course of the same teacher is 404 for the same reason as a foreign part: the lookup is scoped by all the parents and the teacher together.
-5. `count(*) from items where part_id = :partId` at or above `teachdash.items.max-per-part` (50, read with `@Value`) gives 409 `ITEM_LIMIT_REACHED` (a plain `ApiException`, no `errors`).
+5. `count(*) from items where part_id = :partId and teacher_id = :teacherId` at or above `teachdash.items.max-per-part` (50, read with `@Value`) gives 409 `ITEM_LIMIT_REACHED` (a plain `ApiException`, no `errors`).
 6. Insert as in D6: position is `coalesce(max(position), 0) + 1`, which is count + 1 because positions are dense.
 
-`PartRepository` already has `lockCourse` and `lockLesson`; the part lock is new (in the items repository or `PartRepository`). The lock order extends the one of `PartService`: user, course, lesson, then part. A part delete takes user, course and lesson, then deletes the part row and the cascade deletes the items, so no cycle forms: an add racing a part delete queues behind the user and course locks, and either runs first (its item is cascaded) or finds no part and gets 404 (R1-S10). The user row comes first because the `teacher_id` foreign key puts a KEY SHARE lock on it into every write, and `CourseService.rename` locks it before the course row.
+`PartRepository` already has `lockCourse` and `lockLesson`; the part lock is new (in the items repository or `PartRepository`). The lock order extends the one of `PartService`: user, course, lesson, then part. A part delete takes user, course and lesson, then deletes the part row and the cascade deletes the items, so no cycle forms: an add racing a part delete queues behind the user and course locks, and either runs first (its item is cascaded) or finds no part and gets 404 (R1-S10). The user row comes first because the `teacher_id` foreign key puts a KEY SHARE lock on it into every write, and `CourseService.rename` locks it before the course row. `countInPart` and the `max(position)` subquery are scoped by `teacher_id` as well as `part_id`. `ItemService.create` receives the resolved `ItemType` and the validated `ObjectNode` from the controller (no second registry lookup). The part lock lives in `ItemRepository`; the course and lesson locks reuse `PartRepository`.
 
 The user row lock already serialises all of one teacher's writes, so the race scenarios do not prove the part lock alone. The part lock stays for 404 scoping and for position correctness; R1-S10 (a part delete racing adds) is the scenario that covers the part lock, R1-S5 proves the lock chain as a whole. The deferrable unique constraint is a safety net: a violation at commit would be a bug and surfaces as a 500; no code is mapped. Reordering items (#112) uses the same locks and one range shift, which a deferrable constraint allows.
 
