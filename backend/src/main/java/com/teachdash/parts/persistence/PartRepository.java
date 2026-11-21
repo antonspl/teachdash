@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -93,6 +94,77 @@ public class PartRepository {
 				.param("teacherId", teacherId)
 				.query(PartRepository::mapPart)
 				.list();
+	}
+
+	public Optional<Part> findInLesson(UUID partId, UUID lessonId, UUID teacherId) {
+		return jdbc.sql("""
+				select id, teacher_id, title, position, created_at, updated_at
+				from parts
+				where id = :partId and lesson_id = :lessonId and teacher_id = :teacherId
+				""")
+				.param("partId", partId)
+				.param("lessonId", lessonId)
+				.param("teacherId", teacherId)
+				.query(PartRepository::mapPart)
+				.optional();
+	}
+
+	public int updateTitle(UUID partId, UUID lessonId, UUID teacherId, String title, Instant now) {
+		return jdbc.sql("""
+				update parts set title = :title, updated_at = :now
+				where id = :partId and lesson_id = :lessonId and teacher_id = :teacherId
+				""")
+				.param("title", title)
+				.param("now", Timestamp.from(now))
+				.param("partId", partId)
+				.param("lessonId", lessonId)
+				.param("teacherId", teacherId)
+				.update();
+	}
+
+	public int shiftRange(UUID lessonId, int from, int to, int delta) {
+		return jdbc.sql("""
+				update parts set position = position + :delta
+				where lesson_id = :lessonId and position >= :from and position <= :to
+				""")
+				.param("delta", delta)
+				.param("lessonId", lessonId)
+				.param("from", from)
+				.param("to", to)
+				.update();
+	}
+
+	public int setPosition(UUID partId, UUID lessonId, UUID teacherId, int position, Instant now) {
+		return jdbc.sql("""
+				update parts set position = :position, updated_at = :now
+				where id = :partId and lesson_id = :lessonId and teacher_id = :teacherId
+				""")
+				.param("position", position)
+				.param("now", Timestamp.from(now))
+				.param("partId", partId)
+				.param("lessonId", lessonId)
+				.param("teacherId", teacherId)
+				.update();
+	}
+
+	public Optional<Integer> deleteReturningPosition(UUID partId, UUID lessonId, UUID teacherId) {
+		return jdbc.sql("""
+				delete from parts
+				where id = :partId and lesson_id = :lessonId and teacher_id = :teacherId
+				returning position
+				""")
+				.param("partId", partId)
+				.param("lessonId", lessonId)
+				.param("teacherId", teacherId)
+				.query(Integer.class)
+				.optional();
+	}
+
+	public int closeGap(UUID lessonId, int deletedPosition) {
+		return jdbc.sql("update parts set position = position - 1 where lesson_id = :lessonId and position > :position")
+				.param("lessonId", lessonId)
+				.param("position", deletedPosition)
+				.update();
 	}
 
 	private static Part mapPart(ResultSet rs, int rowNum) throws SQLException {

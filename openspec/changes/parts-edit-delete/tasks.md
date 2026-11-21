@@ -16,10 +16,10 @@
 
 ## 3. Implementation
 
-- [ ] 3.1 `PartRepository`: lookup of a part and its position scoped by lesson and teacher, `updateTitle`, `shiftRange`, `setPosition`, delete returning the position, `closeGap` (design D3); `RenamePartRequest` (`@Title`, `Normalize.name`) and `MovePartRequest` (`BigInteger position`, `@NotNull`; the strict coercion already exists, design D2)
-- [ ] 3.2 `PartService.rename`, `move` and `delete`: one lock helper in the order user row (`findActiveByIdForUpdate`, none gives 401), course row, lesson row, then the part lookup (design D3); the controller replaces its stubs (`PATCH`, `PATCH .../position`, `DELETE` 204). Add a comment at the locks saying the user row comes first to avoid a deadlock with `CourseService.rename`
-- [ ] 3.3 Check that no part title appears in logs (constitution §5: record IDs, not content)
-- [ ] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `PartRepository`: lookup of a part and its position scoped by lesson and teacher, `updateTitle`, `shiftRange`, `setPosition`, delete returning the position, `closeGap` (design D3); `RenamePartRequest` (`@Title`, `Normalize.name`) and `MovePartRequest` (`BigInteger position`, `@NotNull`; the strict coercion already exists, design D2)
+- [x] 3.2 `PartService.rename`, `move` and `delete`: one lock helper in the order user row (`findActiveByIdForUpdate`, none gives 401), course row, lesson row, then the part lookup (design D3); the controller replaces its stubs (`PATCH`, `PATCH .../position`, `DELETE` 204). Add a comment at the locks saying the user row comes first to avoid a deadlock with `CourseService.rename`
+- [x] 3.3 Check that no part title appears in logs (constitution §5: record IDs, not content)
+- [x] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

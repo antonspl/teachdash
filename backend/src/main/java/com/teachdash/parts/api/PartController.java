@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.teachdash.parts.api.dto.CreatePartRequest;
+import com.teachdash.parts.api.dto.MovePartRequest;
 import com.teachdash.parts.api.dto.PartResponse;
+import com.teachdash.parts.api.dto.RenamePartRequest;
 import com.teachdash.parts.domain.PartService;
 
 import jakarta.validation.Valid;
@@ -46,21 +48,36 @@ class PartController {
 		return parts.list(teacherId, courseId, lessonId).stream().map(PartResponse::from).toList();
 	}
 
-	// STUB: temporary, answers 501 to any request until the implementation slice
 	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void rename() {
+	PartResponse rename(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId,
+			@Valid @RequestBody RenamePartRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return PartResponse.from(parts.rename(teacherId, courseId, lessonId, partId, request.title()));
 	}
 
-	// STUB: temporary, answers 501 to any request until the implementation slice
 	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/position")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void move() {
+	PartResponse move(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId,
+			@Valid @RequestBody MovePartRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return PartResponse.from(parts.move(teacherId, courseId, lessonId, partId, request.position()));
 	}
 
-	// STUB: temporary, answers 501 to any request until the implementation slice
 	@DeleteMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void delete() {
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void delete(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		parts.delete(teacherId, courseId, lessonId, partId);
 	}
 }
