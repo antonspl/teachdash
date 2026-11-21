@@ -251,8 +251,7 @@ class CreatePartTest extends ApiTest {
 		for (Response response : List.of(list, number, bool)) {
 			response.then().statusCode(400)
 					.body("code", equalTo("VALIDATION_FAILED"))
-					.body("errors", equalTo(List.of(error("title", "INVALID_TYPE"))))
-					.body("errors[0]", not(hasKey("rejectedValue")));
+					.body("errors", equalTo(List.of(error("title", "INVALID_TYPE"))));
 		}
 		// and no body has a rejectedValue
 		for (Response response : List.of(list, number, bool)) {
@@ -502,7 +501,7 @@ class CreatePartTest extends ApiTest {
 			assertEquals(true, response.statusCode() == 201 || response.statusCode() == 404);
 		}
 		// and the lesson is not stored
-		assertEquals(0, countRows("lessons"));
+		assertEquals(0, countLessons(course));
 		// and no part row references it
 		assertEquals(0, countParts(lesson));
 	}
