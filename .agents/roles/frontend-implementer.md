@@ -38,7 +38,9 @@ Additions:
   4. run `npx playwright test zshots --project=desktop-chromium` in `frontend/`; if
      step 1 or this run fails, stop and report instead of skipping the screenshots
      or reusing old ones;
-  5. check the screenshots against the design sources and fix what fails;
+  5. check the screenshots against the design sources and fix what fails; after any
+     fix that changes the UI, take the affected screenshots again; the report lists
+     only screenshots taken after the last change;
   6. delete `frontend/e2e/zshots.spec.ts` before committing.
 - List the screenshot paths in your report. The list does not count toward the
   15-line report limit.

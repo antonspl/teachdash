@@ -92,9 +92,11 @@ too).
   A slice that touches `frontend/` goes to the `frontend-reviewer` agent (medium
   class) instead of the `reviewer`. For a PR touching `frontend/src`, before the
   code-gate review the main agent has the `frontend-implementer` take the final
-  screenshot set and passes its paths to the `code-gate-reviewer`. Fix findings as
-  the Code review step in constitution §1 says, then re-review if the fix was
-  non-trivial.
+  screenshot set and passes its paths to the `code-gate-reviewer`. For a slice
+  review, the main agent passes the slice's screenshot paths from the
+  `frontend-implementer`'s report (or its "no screenshots: <reason>" line) to the
+  `frontend-reviewer`. Fix findings as the Code review step in constitution §1
+  says, then re-review if the fix was non-trivial.
 
 Agents' reports are not shown to the engineer: relay what matters in a few lines.
 
