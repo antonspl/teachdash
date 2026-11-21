@@ -41,8 +41,13 @@ class CourseStudentsTest extends ApiTest {
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID course = createCourse(teacherA, "English B1", "en", "en");
 		String[] names = { "Boris", "anna", "Ёлка", "Анна", "яна", "Zed", "Zed" };
+		UUID larger = UUID.fromString("ffffffff-0000-0000-0000-000000000001");
+		UUID smaller = UUID.fromString("00000000-0000-0000-0000-000000000001");
 		for (int i = 0; i < names.length; i++) {
-			assignCourse(course, student(teacherA, names[i], "s" + i + "@example.com"));
+			UUID id = i == 5 ? larger : i == 6 ? smaller : UUID.randomUUID();
+			createUser(id, "STUDENT", names[i], "s" + i + "@example.com", "student-pass-1", true, "en");
+			assignStudent(teacherA, id);
+			assignCourse(course, id);
 		}
 		TestClient teacher = loggedInAs("a@example.com");
 

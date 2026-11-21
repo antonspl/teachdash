@@ -127,7 +127,17 @@ public abstract class ApiTest {
 			String password,
 			boolean active,
 			String nativeLanguage) {
-		UUID id = UUID.randomUUID();
+		return createUser(UUID.randomUUID(), role, name, email, password, active, nativeLanguage);
+	}
+
+	protected UUID createUser(
+			UUID id,
+			String role,
+			String name,
+			String email,
+			String password,
+			boolean active,
+			String nativeLanguage) {
 		jdbc.sql("""
 				insert into users (id, email, name, role, password_hash, time_zone, active, created_at, native_language)
 				values (:id, :email, :name, :role, :hash, 'UTC', :active, :now, :language)

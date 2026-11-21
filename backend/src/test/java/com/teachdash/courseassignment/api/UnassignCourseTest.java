@@ -198,7 +198,8 @@ class UnassignCourseTest extends ApiTest {
 		UUID literature = createCourse(teacherA, "Литература 9 класс", "ru", null);
 		UUID latinAnna = createUser("STUDENT", "Anna", "anna@example.com", null, true);
 		assignStudent(teacherA, latinAnna);
-		UUID cyrillicAnna = student(teacherA, "Анна", "anna.ru@example.com");
+		UUID cyrillicAnna = createUser("STUDENT", "Анна", "anna.ru@example.com", null, true);
+		assignStudent(teacherA, cyrillicAnna);
 		for (UUID course : List.of(english, literature)) {
 			assignCourse(course, latinAnna);
 			assignCourse(course, cyrillicAnna);
