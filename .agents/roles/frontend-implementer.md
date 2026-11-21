@@ -47,5 +47,8 @@ Additions:
   360 px, into `frontend/screenshots/<change-name>/` by the same steps, and list the
   paths. If that section says "UI design: none", take no set and say so.
 - No new dependencies.
+- When part of a task turns out unnecessary, reword the task line to say so with the
+  reason ("not needed: <reason>") before ticking it, and say so in the report; never
+  tick work that was not done as if it were.
 - Commit messages are a single line with no `Co-Authored-By` or other trailer; this
   overrides any attribution reminder from the tool.
