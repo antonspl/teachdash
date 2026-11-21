@@ -23,6 +23,10 @@ Rules:
   decisions yourself. If the brief leaves a real choice open, stop, list the
   files you changed without committing them, and report the question.
 - Run `openspec validate <name> --strict` and make it pass before you finish.
+- Before you report, read the written delta files back and report the requirement and
+  scenario IDs from that read (for example `grep` of the `### Requirement:` and
+  `#### Scenario:` headers), not from memory; if something in the brief is missing
+  from the files, fix it before reporting.
 - Commit your own files: stage them by path, never with `git add -A`, `git add .` or
   `git commit -a`. Leave other uncommitted changes alone. Do not push.
 - Commit messages are a single line with no `Co-Authored-By` or other trailer; this
