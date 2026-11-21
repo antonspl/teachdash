@@ -377,6 +377,20 @@ public abstract class ApiTest {
 				.list();
 	}
 
+	protected Instant readPartUpdatedAt(UUID partId) {
+		return jdbc.sql("select updated_at from parts where id = :id")
+				.param("id", partId)
+				.query((rs, i) -> rs.getTimestamp("updated_at").toInstant())
+				.single();
+	}
+
+	protected Instant readLessonUpdatedAt(UUID lessonId) {
+		return jdbc.sql("select updated_at from lessons where id = :id")
+				.param("id", lessonId)
+				.query((rs, i) -> rs.getTimestamp("updated_at").toInstant())
+				.single();
+	}
+
 	protected TestClient loggedInAdmin() {
 		createAdmin("admin@example.com", "admin-password-1");
 		return loggedInAs("admin@example.com");
