@@ -1,25 +1,46 @@
 package com.teachdash.parts.api;
 
+import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
-// STUB: pass 2 replaces this controller with the real create and list
+import com.teachdash.parts.api.dto.CreatePartRequest;
+import com.teachdash.parts.api.dto.PartResponse;
+import com.teachdash.parts.domain.PartService;
+
+import jakarta.validation.Valid;
+
 @RestController
 class PartController {
 
+	private final PartService parts;
+
+	PartController(PartService parts) {
+		this.parts = parts;
+	}
+
 	@PostMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts")
-	Object create(@PathVariable UUID courseId, @PathVariable UUID lessonId) {
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED);
+	@ResponseStatus(HttpStatus.CREATED)
+	PartResponse create(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@Valid @RequestBody CreatePartRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return PartResponse.from(parts.create(teacherId, courseId, lessonId, request.title()));
 	}
 
 	@GetMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts")
-	Object list(@PathVariable UUID courseId, @PathVariable UUID lessonId) {
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED);
+	List<PartResponse> list(@PathVariable UUID courseId, @PathVariable UUID lessonId, Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return parts.list(teacherId, courseId, lessonId).stream().map(PartResponse::from).toList();
 	}
 }
