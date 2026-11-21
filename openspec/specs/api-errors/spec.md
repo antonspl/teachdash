@@ -10,7 +10,7 @@ show each error next to the field it belongs to, and how a malformed path id is 
 A 400 `VALIDATION_FAILED` response SHALL carry `errors`: one `{field, code}` per failing
 field, sorted as strings by field, then code. `field` is the dotted body path (`[i]` for
 list items) or the query parameter name. Several broken rules give the first of
-`REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`/`UNSUPPORTED_COURSE_LANGUAGE`.
+`REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`/`UNSUPPORTED_COURSE_LANGUAGE`/`UNKNOWN_TYPE`.
 NUL is `INVALID_FORMAT`, a wrong type `INVALID_TYPE`; in a body these stop reading, so
 only that field is listed. Rejected values MUST NOT be in the response.
 
@@ -63,6 +63,11 @@ only that field is listed. Rejected values MUST NOT be in the response.
 - **GIVEN** a logged-in teacher, and the language list with "de" marked `content` false
 - **WHEN** the teacher creates a course with the title "Course", the instruction language "de" and the target language "xx"
 - **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "instructionLanguage", code: "UNSUPPORTED_COURSE_LANGUAGE"}, {field: "targetLanguage", code: "INVALID_FORMAT"}]`, the body does not contain "xx", and no course is created
+
+#### Scenario: api-errors/R1-S11 An unregistered item type is rejected with its own code
+- **GIVEN** a logged-in teacher with a part, and no item type `poll` registered
+- **WHEN** the teacher adds an item with the type "poll" and the payload `{"text": "Hi"}`
+- **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "type", code: "UNKNOWN_TYPE"}]`, the body does not contain "poll" as a value, and no item is created
 
 ### Requirement: R2 Single-field rejections name the field
 An `EMAIL_TAKEN`, `WRONG_PASSWORD` or `TITLE_TAKEN` response SHALL keep its status and
