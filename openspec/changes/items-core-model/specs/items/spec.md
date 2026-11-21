@@ -58,8 +58,8 @@
 
 #### Scenario: items/R2-S1 A missing, null, blank, wrongly typed or unknown type is rejected
 - **GIVEN** a logged-in teacher A with a part, and the item type `test-note` (no type `poll` is registered)
-- **WHEN** teacher A adds items with the body `{"payload": {"text": "Hi"}}`, with `{"type": null, "payload": {"text": "Hi"}}`, with the types "" and "  ", with the type `123`, with the type "poll", and with the body `{}`
-- **THEN** all responses are 400 with code `VALIDATION_FAILED`, `errors` are exactly `[{field: "type", code: "REQUIRED"}]` for the first four, `[{field: "type", code: "INVALID_TYPE"}]` for `123`, `[{field: "type", code: "UNKNOWN_TYPE"}]` for "poll", and `[{field: "payload", code: "REQUIRED"}, {field: "type", code: "REQUIRED"}]` for `{}` (sorted by field), and the part has no item
+- **WHEN** teacher A adds items with the body `{"payload": {"text": "Hi"}}`, with `{"type": null, "payload": {"text": "Hi"}}`, with the types "" and "  ", with the type `123`, with the type "poll", with the body `{}`, and with the type "poll" and the payload `[]`
+- **THEN** all responses are 400 with code `VALIDATION_FAILED`, `errors` are exactly `[{field: "type", code: "REQUIRED"}]` for the first four, `[{field: "type", code: "INVALID_TYPE"}]` for `123`, `[{field: "type", code: "UNKNOWN_TYPE"}]` for "poll", `[{field: "payload", code: "REQUIRED"}, {field: "type", code: "REQUIRED"}]` for `{}`, and `[{field: "payload", code: "INVALID_TYPE"}, {field: "type", code: "UNKNOWN_TYPE"}]` for the last (sorted by field), and the part has no item
 
 #### Scenario: items/R2-S2 A missing or null payload is rejected, a broken body is malformed
 - **GIVEN** a logged-in teacher A with a part
