@@ -9,7 +9,7 @@
 - [x] 1.5 Write tests for items R1-S1 to R1-S10 in `items/api/AddItemTest` and R2-S1 to R2-S9 in `items/api/ItemPayloadTest` and api-errors R1-S11 in `items/api/ItemTypeErrorTest`, with the scenario ID in `@DisplayName` (`[items/R1-S1] ...`) and `// given`, `// when`, `// then`. Create courses, lessons, parts, items and sessions in GIVEN with the helpers, never through the stubbed endpoint. GIVEN has no asserts. The WHEN step only captures responses, so each test fails in THEN. R1-S5 and R1-S10 use `Parallel.run`; R1-S10 deletes the part with a direct SQL or the existing part delete endpoint. In R1-S8 the anonymous client fetches a CSRF cookie first
 - [x] 1.6 Write unit tests with no scenario ID: the registry fails startup on a duplicate code, and the `test-note` projection returns `{text}` only and drops `hint` (design D3), and one database test: inserting an item with teacher B's id on teacher A's part fails with an integrity error (design D1)
 - [x] 1.7 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test fails at its THEN step (not in setup). Against the 501 stub only the 403 role and CSRF cases and the 401 cases pass, because security runs before the controller (the whole of R1-S8 and the 403 and 401 steps of R1-S9); the unit tests may pass or fail as their subject exists. Report each new test that passes against the stub, with the reason
-- [ ] 1.8 List the stub (temporary) and `V17__items.sql` (permanent) in the PR description
+- [x] 1.8 List the stub (temporary) and `V17__items.sql` (permanent) in the PR description
 
 ## 2. Test review
 
