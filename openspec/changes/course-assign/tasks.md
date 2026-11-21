@@ -9,7 +9,7 @@
 - [x] 1.5 Write tests for R2-S1 to R2-S6 in `courseassignment/api/CourseStudentsTest`, same rules
 - [x] 1.6 Write tests for R3-S1 to R3-S7 in `courseassignment/api/UnassignCourseTest`, same rules. R3-S6 removes the student with the existing endpoint and R3-S7 deactivates the teacher with the existing admin endpoint, as in student-enrolment R4 and R7
 - [x] 1.7 The stubs answer 501 to any request shape. Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Against the stubs the 403 and 401 steps pass, because security runs before the controller; row-level cascade assertions (R3-S6, R3-S7) may pass at pass 1, because the migration is pass-1 production code, while list assertions fail on the 501; record both in the PR and report each new test that passes against the stubs, with the reason
-- [ ] 1.8 List the stubs (temporary) and the migration `V17` (permanent) in the PR description
+- [x] 1.8 List the stubs (temporary) and the migration `V17` (permanent) in the PR description
 
 ## 2. Test review
 
