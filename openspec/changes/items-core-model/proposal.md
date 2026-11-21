@@ -16,6 +16,9 @@ Issue #110. The engineer's decisions, as given:
 | 8 | JSONB handling? | No JPA converter. Write with `cast(:payload as jsonb)` from the string serialised by Jackson 3 (`tools.jackson`), read with `readTree`. The design notes that jsonb keeps no key order and no duplicate keys (the last wins) and drops whitespace, so the response shows the stored form, and why a String cast is used rather than `PGobject`. |
 | 9 | Non-goals? | List, edit, reorder and delete items (#111, #112); answers (edit keeps old results, delete deletes answers: #126, #128; the `part_id` cascade is ready for it); student endpoints; a list-of-types endpoint; HTTP body size limits at the server level (noted as a risk). |
 | 10 | Requirements and scenarios? | Only `items` R1 and R2. R1: a teacher adds an item to a part (endpoint, end position, limit, locks and parallel requests, scoping 404 at course, lesson and part level including a part of another lesson or course of the same teacher, deactivated 401, check order). R2: a payload follows the generic rules and its type's rules (unknown type, required, not an object, the 64 KiB boundary, NUL in a value and in a key, type validator errors with the path `payload.text`, `schema_version` stored). Scenarios cover `en` and `ru` content: Cyrillic payload text is stored and returned exactly. About 20 scenarios. |
+| 11 | After the spec critique? | `api-errors` R1 is MODIFIED (`UNKNOWN_TYPE` in the same priority tier as `INVALID_FORMAT`; scenario R1-S11). `common` gets a public `ApiException` factory for a list of field errors and a public constant for `UNKNOWN_TYPE` (design D3). Scenarios added: both `type` and `payload` missing, blank and wrongly typed `type`, extra body fields ignored (the item is owned by the caller), a payload over the limit without `text` gives only `TOO_LONG`. R1-S5 claims only that the lock chain serialises; R1-S10 covers the part lock. Owner consistency is enforced in the schema: unique `(id, teacher_id)` on `parts` and a composite foreign key from `items`; the same gap from `parts` to `lessons` stays, out of scope. The missing server-level body limit stays an accepted risk. |
+
+The change has 20 scenarios: `items` R1 10, R2 9, and `api-errors` R1-S11.
 
 ## Research angles
 
@@ -43,7 +46,7 @@ A part is a container; its content is made of items (exercises, text blocks and 
 - `items`: items owned by a teacher, ordered inside a part (R1 add, R2 payload rules).
 
 ### Modified Capabilities
-None.
+- `api-errors`: R1 (the priority sentence names `UNKNOWN_TYPE`; new scenario R1-S11).
 
 ## Out of scope
 
@@ -58,6 +61,6 @@ None.
 ## Impact
 
 - Backend: new `items` feature package (`api`, `api/dto`, `domain` with `ItemType` and the registry, `persistence`); a new field code in `common/FieldErrorCodes`; one property in `application.properties`.
-- Database: migration `V17__items.sql`, renumbered at merge if needed.
-- API: one new endpoint, one new response code, one new field code (`api-errors` lists field codes; the main spec line is updated at archive).
+- Database: migration `V17__items.sql` (table `items`, plus a unique `(id, teacher_id)` on `parts`), renumbered at merge if needed.
+- API: one new endpoint, one new response code, one new field code `UNKNOWN_TYPE` (`api-errors` R1 MODIFIED).
 - No new dependencies.

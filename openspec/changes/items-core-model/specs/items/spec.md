@@ -4,9 +4,9 @@
 `POST /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items` with `{type, payload}` SHALL add an item at the end of the caller's part and return 201 with `{id, type, payload, position, version, createdAt, updatedAt}`, `version` 1. A 51st item gives 409 `ITEM_LIMIT_REACHED`; a foreign, unknown, malformed or mismatched id gives 404. Checks run in order: CSRF and role (403), deactivated (401), malformed id (404), input (400, R2), unknown or foreign id (404), limit (409).
 
 #### Scenario: items/R1-S1 Add an English item
-- **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with the lesson "Present Simple" that has the part "Warm-up", and the item type `test-note`
-- **WHEN** teacher A adds an item with the type `test-note` and the payload `{"text": "Read the story aloud."}` to the part
-- **THEN** the response is 201 with a new `id`, the type `test-note`, the payload `{"text": "Read the story aloud."}`, `position` 1, `version` 1, a `createdAt` time and an `updatedAt` equal to `createdAt`, exactly these properties and no `partId`, `lessonId`, `courseId`, `teacherId` or `title`, and the item is stored owned by teacher A in that part at position 1
+- **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with the lesson "Present Simple" that has the part "Warm-up", the item type `test-note`, and another teacher B
+- **WHEN** teacher A adds an item with the type `test-note` and the payload `{"text": "Read the story aloud."}` to the part, with the extra body fields `teacherId` (teacher B's id) and `title` ("Ignored")
+- **THEN** the response is 201 with a new `id`, the type `test-note`, the payload `{"text": "Read the story aloud."}`, `position` 1, `version` 1, a `createdAt` time and an `updatedAt` equal to `createdAt`, exactly these properties and no `partId`, `lessonId`, `courseId`, `teacherId` or `title`, and the item is stored owned by teacher A (not teacher B) in that part at position 1
 
 #### Scenario: items/R1-S2 Add a Russian item, Cyrillic text is kept exactly
 - **GIVEN** a logged-in teacher A with the course "Литература 9 класс" (instruction "ru", no target) with the lesson "Падежи" that has the part "Разминка"
@@ -23,7 +23,7 @@
 - **WHEN** teacher A adds an item to "Full", then an item with the payload `{}` to "Full", and then an item to "Other"
 - **THEN** the first response is 409 with code `ITEM_LIMIT_REACHED` and no `errors` property, the second is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.text", code: "REQUIRED"}]` (input is checked before the limit), the third is 201 with `position` 50, "Full" has 50 items and "Other" has 50 items
 
-#### Scenario: items/R1-S5 Parallel requests keep positions distinct and the limit (the teacher, course, lesson and part row locks serialise them)
+#### Scenario: items/R1-S5 Parallel requests keep positions distinct and the limit (the lock chain serialises them)
 - **GIVEN** a logged-in teacher A with a part with 47 items
 - **WHEN** teacher A sends 6 add requests at the same time with the texts "New 1" to "New 6"
 - **THEN** exactly 3 responses are 201 with the distinct positions 48, 49 and 50, the other 3 are 409 `ITEM_LIMIT_REACHED`, and the part has exactly 50 items with the positions 1 to 50 without gaps
@@ -56,10 +56,10 @@
 ### Requirement: R2 An item payload follows the generic rules and its type's rules
 `type` SHALL be a registered code and `payload` a JSON object, else 400 `VALIDATION_FAILED`: `type` missing `REQUIRED`, unregistered `UNKNOWN_TYPE`; `payload` missing `REQUIRED`, not an object `INVALID_TYPE`, over 65536 UTF-8 bytes `TOO_LONG`, a NUL in any value or key `INVALID_FORMAT`. Then the type's validator runs, with errors under `payload.`. The response `payload` is read back from jsonb.
 
-#### Scenario: items/R2-S1 A missing, null or unknown type is rejected
+#### Scenario: items/R2-S1 A missing, null, blank, wrongly typed or unknown type is rejected
 - **GIVEN** a logged-in teacher A with a part, and the item type `test-note` (no type `poll` is registered)
-- **WHEN** teacher A adds items with the body `{"payload": {"text": "Hi"}}`, with `{"type": null, "payload": {"text": "Hi"}}`, and with `{"type": "poll", "payload": {"text": "Hi"}}`
-- **THEN** all responses are 400 with code `VALIDATION_FAILED`, `errors` are exactly `[{field: "type", code: "REQUIRED"}]`, `[{field: "type", code: "REQUIRED"}]` and `[{field: "type", code: "UNKNOWN_TYPE"}]`, and the part has no item
+- **WHEN** teacher A adds items with the body `{"payload": {"text": "Hi"}}`, with `{"type": null, "payload": {"text": "Hi"}}`, with the types "" and "  ", with the type `123`, with the type "poll", and with the body `{}`
+- **THEN** all responses are 400 with code `VALIDATION_FAILED`, `errors` are exactly `[{field: "type", code: "REQUIRED"}]` for the first four, `[{field: "type", code: "INVALID_TYPE"}]` for `123`, `[{field: "type", code: "UNKNOWN_TYPE"}]` for "poll", and `[{field: "payload", code: "REQUIRED"}, {field: "type", code: "REQUIRED"}]` for `{}` (sorted by field), and the part has no item
 
 #### Scenario: items/R2-S2 A missing or null payload is rejected, a broken body is malformed
 - **GIVEN** a logged-in teacher A with a part
@@ -72,9 +72,9 @@
 - **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_TYPE"}]` (no `payload.text` entry), no body contains "Hi" as a value, and the part has no item
 
 #### Scenario: items/R2-S4 The payload size limit is 64 KiB of UTF-8 bytes
-- **GIVEN** a logged-in teacher A with a part, a payload A `{"text": "Я", "hint": "<padding>"}` whose compact serialisation is exactly 65536 bytes, where the padding is Cyrillic letters ("Я", 2 bytes each) and one ASCII letter so that the size counts bytes and not characters, and a payload B that is the same with one more ASCII letter (65537 bytes)
-- **WHEN** teacher A adds an item of the type `test-note` with payload A, then one with payload B
-- **THEN** the first response is 201 with the stored `hint` equal to the sent one, the second is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "TOO_LONG"}]`, and the part has exactly one item
+- **GIVEN** a logged-in teacher A with a part, a payload A `{"text": "Я", "hint": "<padding>"}` whose compact serialisation is exactly 65536 bytes, where the padding is Cyrillic letters ("Я", 2 bytes each) and one ASCII letter so that the size counts bytes and not characters, a payload B that is the same with one more ASCII letter (65537 bytes), and a payload C of 65537 bytes with no `text` (only `hint`)
+- **WHEN** teacher A adds an item of the type `test-note` with payload A, then one with payload B, then one with payload C
+- **THEN** the first response is 201 with the stored `hint` equal to the sent one, the second and the third are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "TOO_LONG"}]` (the third has no `payload.text` entry: the type's rules do not run), and the part has exactly one item
 
 #### Scenario: items/R2-S5 A NUL character in a string value is rejected at any depth
 - **GIVEN** a logged-in teacher A with a part
