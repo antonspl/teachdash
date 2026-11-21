@@ -8,7 +8,7 @@
 - [x] 1.4 Write tests for parts R4-S1 to R4-S8 in `parts/api/MovePartTest`, same rules. R4-S8 uses `Parallel.run`
 - [x] 1.5 Write tests for parts R5-S1 to R5-S7 in `parts/api/DeletePartTest`, same rules. R5-S6 and R5-S7 use `Parallel.run`
 - [x] 1.6 The stubs answer 501 to any request shape. Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Against the 501 stubs only the 403 role and CSRF cases and the 401 deactivated and no-session cases pass, because security runs before the controller (the whole of R3-S5, R4-S6, R5-S4 and R5-S5, and the 403 and 401 steps of R3-S6 and R4-S7); everything else fails at THEN. Report each new test that passes against the stubs, with the reason
-- [ ] 1.7 List the stubs (temporary) in the PR description; there is no migration
+- [x] 1.7 List the stubs (temporary) in the PR description; there is no migration
 
 ## 2. Test review
 
