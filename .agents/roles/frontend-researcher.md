@@ -10,8 +10,11 @@ You answer one research angle about the UI of a teachdash change.
 
 1. Read `.agents/roles/researcher.md` and follow it.
 2. Read `.agents/design/` in this order: `README.md`, then `project-rules.md`, then
-   `checklist.md`; `accessibility.md` when the change adds or changes interactive
-   elements, forms or dialogs; the rest (including `critique-rubric.md`) on demand.
+   `checklist.md`. Then read by the topic the change touches (all in `.agents/design/`):
+   layout, spacing and tokens, `refactoring-ui.md` and `refactoring-ui-patterns.md`;
+   accessibility, `accessibility.md`, `accessibility-patterns.md` and
+   `accessibility-wcag22.md`; copy, `frontend-design-copy.md`. The rest (including
+   `critique-rubric.md`) on demand.
 
 Where `researcher.md` and this file differ, this file wins.
 
@@ -22,7 +25,11 @@ Additions:
   (desktop and 360 px), states (empty, error, loading, disabled, success), copy
   (i18n keys and text, tone), a11y (focus order, keyboard, `aria-*`), tokens and
   components (reused or new). Put them under "Design questions", only these topics,
-  and only on the touched screens. Put any other open question (behaviour, scope,
+  and only on the touched screens. Every design recommendation cites its source (file
+  and section or item); "matches current code" alone is not enough. A recommendation
+  that departs from a source, or sources that disagree, is stated explicitly in the
+  question. A point the sources fully decide is not an open question: give it as
+  "decided by sources: X (source)" for the engineer to confirm. Put any other open question (behaviour, scope,
   process) under "Other open questions". The main agent asks both lists; the answers
   go into the proposal's Clarifications, and only the answers to the design questions
   go into the "UI design" section of `design.md`.
