@@ -56,7 +56,8 @@ public class TeacherStudentRepository {
 		return rows > 0;
 	}
 
-	public boolean delete(UUID teacherId, UUID studentId) {
+	/** Package-private on purpose: callers use {@link AssignmentEnding}, which also voids the links. */
+	boolean delete(UUID teacherId, UUID studentId) {
 		int rows = jdbc.sql("""
 				delete from teacher_students
 				where teacher_id = :teacherId and student_id = :studentId
@@ -67,7 +68,8 @@ public class TeacherStudentRepository {
 		return rows > 0;
 	}
 
-	public List<UUID> deleteAllOfTeacher(UUID teacherId) {
+	/** Package-private on purpose: callers use {@link AssignmentEnding}, which also voids the links. */
+	List<UUID> deleteAllOfTeacher(UUID teacherId) {
 		return jdbc.sql("""
 				delete from teacher_students
 				where teacher_id = :teacherId

@@ -180,4 +180,43 @@ class TeacherDeactivationTest extends ApiTest {
 		// and the student is still in teacher B's list
 		b.get(STUDENTS).then().statusCode(200).body("id", contains(student.toString()));
 	}
+
+	@Test
+	@DisplayName("Deactivation voids only the teacher's links for the teacher's students")
+	void deactivationVoidsOnlyTheTeachersLinksForItsStudents() {
+		// given teacher A with students S1 and S2 who have unused links issued by A, an unassigned user with a link issued by A, a link for S1 issued by an admin, and teacher B with a student S3 with a link issued by B
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
+		UUID adminId = createAdmin("admin@example.com", "admin-password-1");
+		UUID s1 = createUser("STUDENT", "Student 1", "s1@example.com", null, true);
+		UUID s2 = createUser("STUDENT", "Student 2", "s2@example.com", null, true);
+		UUID s3 = createUser("STUDENT", "Student 3", "s3@example.com", null, true);
+		UUID unassigned = createUser("STUDENT", "Unassigned", "u@example.com", null, true);
+		assignStudent(teacherA, s1);
+		assignStudent(teacherA, s2);
+		assignStudent(teacherB, s3);
+		String tokenS1 = createToken(s1, "SET_PASSWORD", false, teacherA);
+		String tokenS2 = createToken(s2, "SET_PASSWORD", false, teacherA);
+		String tokenUnassigned = createToken(unassigned, "SET_PASSWORD", false, teacherA);
+		String adminTokenS1 = createToken(s1, "RESET_PASSWORD", false, adminId);
+		String tokenS3 = createToken(s3, "SET_PASSWORD", false, teacherB);
+		TestClient admin = loggedInAs("admin@example.com");
+
+		// when the admin deactivates teacher A and every link is then used
+		var deactivation = admin.post(deactivate(teacherA));
+		var linkS1 = newClient().post("/api/password-links", Map.of("token", tokenS1, "password", "new-password-1"));
+		var linkS2 = newClient().post("/api/password-links", Map.of("token", tokenS2, "password", "new-password-2"));
+		var linkUnassigned = newClient().post("/api/password-links", Map.of("token", tokenUnassigned, "password", "new-password-4"));
+		var adminLinkS1 = newClient().post("/api/password-links", Map.of("token", adminTokenS1, "password", "new-password-5"));
+		var linkS3 = newClient().post("/api/password-links", Map.of("token", tokenS3, "password", "new-password-3"));
+
+		// then the links A issued for S1 and S2 are void
+		deactivation.then().statusCode(204);
+		linkS1.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		linkS2.then().statusCode(410).body("code", equalTo("LINK_INVALID"));
+		// and the link A issued for the unassigned user, the admin's link and B's link still work
+		linkUnassigned.then().statusCode(200);
+		adminLinkS1.then().statusCode(200);
+		linkS3.then().statusCode(200);
+	}
 }

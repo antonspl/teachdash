@@ -1,6 +1,7 @@
 package com.teachdash.accounts.persistence;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.UUID;
 
 import org.springframework.data.jdbc.repository.query.Modifying;
@@ -24,6 +25,15 @@ public interface OneTimeTokenRepository extends CrudRepository<OneTimeToken, Str
 			where user_id = :userId and issued_by = :issuerId and used_at is null""")
 	int markUnusedIssuedByAsUsed(
 			@Param("userId") UUID userId,
+			@Param("issuerId") UUID issuerId,
+			@Param("now") Instant now);
+
+	@Modifying
+	@Query("""
+			update one_time_tokens set used_at = :now
+			where user_id in (:userIds) and issued_by = :issuerId and used_at is null""")
+	int markUnusedIssuedByAsUsedForAll(
+			@Param("userIds") Collection<UUID> userIds,
 			@Param("issuerId") UUID issuerId,
 			@Param("now") Instant now);
 

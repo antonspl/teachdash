@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.HexFormat;
 import java.util.UUID;
 
@@ -109,9 +110,12 @@ public class PasswordLinkService {
 		tokens.markUnusedAsUsed(userId, clock.instant());
 	}
 
-	/** Makes the account's unused links that the given account issued unusable. */
-	public void invalidateLinksIssuedBy(UUID userId, UUID issuerId) {
-		tokens.markUnusedIssuedByAsUsed(userId, issuerId, clock.instant());
+	/** Makes the unused links that the issuer issued for any of the accounts unusable. */
+	public void invalidateLinksIssuedBy(Collection<UUID> userIds, UUID issuerId) {
+		if (userIds.isEmpty()) {
+			return;
+		}
+		tokens.markUnusedIssuedByAsUsedForAll(userIds, issuerId, clock.instant());
 	}
 
 	/**
