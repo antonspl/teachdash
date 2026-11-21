@@ -17,12 +17,12 @@
 
 ## 3. Implementation
 
-- [ ] 3.1 `ItemTypeRegistry`: collect the `ItemType` beans, fail startup on a duplicate code (design D3)
-- [ ] 3.2 `CreateItemRequest` (`String type`, `JsonNode payload`) and `ItemResponse`; the payload check of design D4 (type, required, object, 64 KiB size on the compact serialisation, NUL walk over values and keys, then the type's `validate`) in the controller before the service, using the `common` additions of design D3 (`ApiException.fields`, the public `FieldErrorCodes.UNKNOWN_TYPE` in the default priority tier)
-- [ ] 3.3 `ItemRepository` on `JdbcClient`: part lock scoped by lesson and teacher, count, insert at the end with `cast(:payload as jsonb)` returning the stored payload and the position, read back with `readTree` (design D6)
-- [ ] 3.4 `ItemService.create` in the lock order of design D7 (user row, course, lesson, part, limit check, insert) with the limit from `teachdash.items.max-per-part`; the controller replaces its stub (201). Add a comment at the locks saying the user row comes first to avoid a deadlock with `CourseService.rename`
-- [ ] 3.5 Check that no payload content appears in logs (constitution §5: record IDs, not content)
-- [ ] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `ItemTypeRegistry`: collect the `ItemType` beans, fail startup on a duplicate code (design D3)
+- [x] 3.2 `CreateItemRequest` (`String type`, `JsonNode payload`) and `ItemResponse`; the payload check of design D4 (type, required, object, 64 KiB size on the compact serialisation, NUL walk over values and keys, then the type's `validate`) in the controller before the service, using the `common` additions of design D3 (`ApiException.fields`, the public `FieldErrorCodes.UNKNOWN_TYPE` in the default priority tier)
+- [x] 3.3 `ItemRepository` on `JdbcClient`: part lock scoped by lesson and teacher, count, insert at the end with `cast(:payload as jsonb)` returning the stored payload and the position, read back with `readTree` (design D6)
+- [x] 3.4 `ItemService.create` in the lock order of design D7 (user row, course, lesson, part, limit check, insert) with the limit from `teachdash.items.max-per-part`; the controller replaces its stub (201). Add a comment at the locks saying the user row comes first to avoid a deadlock with `CourseService.rename`
+- [x] 3.5 Check that no payload content appears in logs (constitution §5: record IDs, not content)
+- [x] 3.6 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

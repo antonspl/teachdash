@@ -1,20 +1,117 @@
 package com.teachdash.items.api;
 
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.teachdash.common.ApiException;
+import com.teachdash.common.FieldErrorCodes;
+import com.teachdash.common.FieldErrorDetail;
+import com.teachdash.items.api.dto.CreateItemRequest;
+import com.teachdash.items.api.dto.ItemResponse;
+import com.teachdash.items.domain.ItemService;
+import com.teachdash.items.domain.ItemType;
+import com.teachdash.items.domain.ItemTypeRegistry;
+
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 @RestController
 class ItemController {
 
-	// STUB: replaced by the real endpoint in pass 2 (tasks 3.2 to 3.4)
+	private static final int MAX_PAYLOAD_BYTES = 65536;
+
+	private final ItemService items;
+
+	private final ItemTypeRegistry registry;
+
+	private final ObjectMapper mapper;
+
+	ItemController(ItemService items, ItemTypeRegistry registry, ObjectMapper mapper) {
+		this.items = items;
+		this.registry = registry;
+		this.mapper = mapper;
+	}
+
 	@PostMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items")
-	void create(@PathVariable UUID courseId, @PathVariable UUID lessonId, @PathVariable UUID partId) {
-		throw new ApiException(HttpStatus.NOT_IMPLEMENTED, "STUB");
+	@ResponseStatus(HttpStatus.CREATED)
+	ItemResponse create(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId,
+			@RequestBody CreateItemRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		ItemType type = checkType(request);
+		ObjectNode payload = checkPayload(request.payload(), type);
+		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type, payload));
+	}
+
+	/** Steps 1 and 2 of the payload rules are reported together; steps 3 to 5 run only if both passed. */
+	private ItemType checkType(CreateItemRequest request) {
+		List<FieldErrorDetail> errors = new ArrayList<>();
+		ItemType type = null;
+		if (request.type() == null || request.type().isBlank()) {
+			errors.add(new FieldErrorDetail("type", FieldErrorCodes.REQUIRED));
+		} else {
+			Optional<ItemType> found = registry.find(request.type());
+			if (found.isPresent()) {
+				type = found.get();
+			} else {
+				errors.add(new FieldErrorDetail("type", FieldErrorCodes.UNKNOWN_TYPE));
+			}
+		}
+		JsonNode payload = request.payload();
+		if (payload == null || payload.isNull()) {
+			errors.add(new FieldErrorDetail("payload", FieldErrorCodes.REQUIRED));
+		} else if (!payload.isObject()) {
+			errors.add(new FieldErrorDetail("payload", FieldErrorCodes.INVALID_TYPE));
+		}
+		if (!errors.isEmpty()) {
+			throw ApiException.fields(errors);
+		}
+		return type;
+	}
+
+	private ObjectNode checkPayload(JsonNode node, ItemType type) {
+		ObjectNode payload = (ObjectNode) node;
+		if (mapper.writeValueAsBytes(payload).length > MAX_PAYLOAD_BYTES) {
+			throw ApiException.fields(List.of(new FieldErrorDetail("payload", FieldErrorCodes.TOO_LONG)));
+		}
+		if (containsNul(payload)) {
+			throw ApiException.fields(List.of(new FieldErrorDetail("payload", FieldErrorCodes.INVALID_FORMAT)));
+		}
+		return type.validate(payload);
+	}
+
+	/** Jackson's node deserializers bypass the NUL-rejecting String deserializer, and jsonb refuses U+0000. */
+	private static boolean containsNul(JsonNode node) {
+		if (node.isString()) {
+			return node.stringValue().indexOf('\u0000') >= 0;
+		}
+		if (node.isObject()) {
+			for (var field : node.properties()) {
+				if (field.getKey().indexOf('\u0000') >= 0 || containsNul(field.getValue())) {
+					return true;
+				}
+			}
+		} else if (node.isArray()) {
+			for (JsonNode element : node) {
+				if (containsNul(element)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }
