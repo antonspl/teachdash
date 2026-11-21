@@ -64,7 +64,7 @@ create index items_teacher_idx on items (teacher_id);
 public interface ItemType {
     String code();
     int schemaVersion();
-    ItemPayload validate(ObjectNode payload);   // the normalised payload, or field errors
+    ObjectNode validate(ObjectNode payload);    // the normalised payload, or field errors
     JsonNode studentProjection(ObjectNode payload);
 }
 ```
