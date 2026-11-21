@@ -2,13 +2,13 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add migration `V17__course_assignments.sql` (design D1) so the tests compile against the real schema; renumber if `main` already has a `V17` at the time
-- [ ] 1.2 Add stubs returning 501, marked `STUB`, for `PUT`, `GET` and `DELETE` under `/api/teacher/courses/{courseId}/students` (design D3)
-- [ ] 1.3 Add `ApiTest` helpers `assignCourse` (direct insert) and a read of the assignment rows with `created_at` (design D4)
-- [ ] 1.4 Write tests for course-assignment R1-S1 to R1-S8 in `courseassignment/api/AssignCourseTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`. Create courses, students, assignments and sessions in GIVEN with the helpers, never through the endpoints under test. GIVEN has no asserts. The WHEN step only captures responses, so each test fails in THEN. R1-S8 uses `Parallel.run`; the anonymous client fetches a CSRF cookie first (R1-S6)
-- [ ] 1.5 Write tests for R2-S1 to R2-S6 in `courseassignment/api/CourseStudentsTest`, same rules
-- [ ] 1.6 Write tests for R3-S1 to R3-S7 in `courseassignment/api/UnassignCourseTest`, same rules. R3-S6 removes the student with the existing endpoint and R3-S7 deactivates the teacher with the existing admin endpoint, as in student-enrolment R4 and R7
-- [ ] 1.7 The stubs answer 501 to any request shape. Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Against the stubs the 403 and 401 steps pass, because security runs before the controller; row-level cascade assertions (R3-S6, R3-S7) may pass at pass 1, because the migration is pass-1 production code, while list assertions fail on the 501; record both in the PR and report each new test that passes against the stubs, with the reason
+- [x] 1.1 Add migration `V17__course_assignments.sql` (design D1) so the tests compile against the real schema; renumber if `main` already has a `V17` at the time
+- [x] 1.2 Add stubs returning 501, marked `STUB`, for `PUT`, `GET` and `DELETE` under `/api/teacher/courses/{courseId}/students` (design D3)
+- [x] 1.3 Add `ApiTest` helpers `assignCourse` (direct insert) and a read of the assignment rows with `created_at` (design D4)
+- [x] 1.4 Write tests for course-assignment R1-S1 to R1-S8 in `courseassignment/api/AssignCourseTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`. Create courses, students, assignments and sessions in GIVEN with the helpers, never through the endpoints under test. GIVEN has no asserts. The WHEN step only captures responses, so each test fails in THEN. R1-S8 uses `Parallel.run`; the anonymous client fetches a CSRF cookie first (R1-S6)
+- [x] 1.5 Write tests for R2-S1 to R2-S6 in `courseassignment/api/CourseStudentsTest`, same rules
+- [x] 1.6 Write tests for R3-S1 to R3-S7 in `courseassignment/api/UnassignCourseTest`, same rules. R3-S6 removes the student with the existing endpoint and R3-S7 deactivates the teacher with the existing admin endpoint, as in student-enrolment R4 and R7
+- [x] 1.7 The stubs answer 501 to any request shape. Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Against the stubs the 403 and 401 steps pass, because security runs before the controller; row-level cascade assertions (R3-S6, R3-S7) may pass at pass 1, because the migration is pass-1 production code, while list assertions fail on the 501; record both in the PR and report each new test that passes against the stubs, with the reason
 - [ ] 1.8 List the stubs (temporary) and the migration `V17` (permanent) in the PR description
 
 ## 2. Test review

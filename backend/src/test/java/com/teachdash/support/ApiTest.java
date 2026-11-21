@@ -302,6 +302,39 @@ public abstract class ApiTest {
 				.single();
 	}
 
+	/** Inserts a course assignment directly for the course's teacher, created at the current clock time. */
+	protected void assignCourse(UUID courseId, UUID studentId) {
+		assignCourse(courseId, studentId, Instant.now(clock));
+	}
+
+	protected void assignCourse(UUID courseId, UUID studentId, Instant createdAt) {
+		jdbc.sql("""
+				insert into course_assignments (course_id, student_id, teacher_id, created_at)
+				select id, :student, teacher_id, :created from courses where id = :course
+				""")
+				.param("course", courseId)
+				.param("student", studentId)
+				.param("created", Timestamp.from(createdAt))
+				.update();
+	}
+
+	/** A course assignment row as stored, read by direct SQL. */
+	public record AssignmentRow(UUID courseId, UUID studentId, UUID teacherId, Instant createdAt) {
+	}
+
+	protected List<AssignmentRow> readAssignments() {
+		return jdbc.sql("""
+				select course_id, student_id, teacher_id, created_at
+				from course_assignments order by created_at, course_id, student_id
+				""")
+				.query((rs, i) -> new AssignmentRow(
+						rs.getObject("course_id", UUID.class),
+						rs.getObject("student_id", UUID.class),
+						rs.getObject("teacher_id", UUID.class),
+						rs.getTimestamp("created_at").toInstant()))
+				.list();
+	}
+
 	/** Inserts a lesson into a course directly; both times are the current clock time. */
 	protected UUID createLesson(UUID teacherId, UUID courseId, String title, int position) {
 		return createLesson(teacherId, courseId, title, position, Instant.now(clock));
