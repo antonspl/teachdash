@@ -13,6 +13,8 @@ Issue #90. The engineer's decisions, as given:
 | 5 | Tests? | `TeacherDeactivationFailureTest` mocks `links.invalidateLinksIssuedBy` to throw and checks the rollback; it is updated so that the new set-based void fails instead, with the same assertion. This is the only change to an existing test. One small new test (no scenario ID) proves that the set-based void touches only the teacher's own links for the teacher's own students when the teacher has several students, unless R7 already covers it. |
 | 6 | Out of scope? | #93 (void on password change), the #94 items (an index on `issued_by`, the lock helper), and any database trigger or foreign key cascade. A cascade is rejected: tokens are marked used, not deleted; admin links have no assignment; the project has no triggers. |
 
+Why `skip_specs` fits a product refactor (spec critique, decision of the engineer): the §1 criterion is "does not change product behaviour", and the listed examples (CI, scripts, repository tooling) are examples of it, not its limit. This change changes no behaviour, so there is no scenario that could fail first; the behaviour it protects already has scenarios (R4, R7). The constitution is not edited. The owner may want to clarify §1 later so that the criterion names behaviour-neutral product refactors.
+
 Spec-writer's check for decision 5, and one finding:
 
 - R7-S1 has teacher A with two students (S1 with a password, S2 with a teacher-A link) and teacher B with a student and a link; R7-S5 covers an admin's link, R7-S7 the teacher's reset link, R4-S11 a teacher's other students. None has a link issued by the teacher for a user who is not the teacher's student. The new test covers that case together with two students with links, so it is not fully covered by R7.
@@ -35,7 +37,7 @@ An assignment and the links its teacher issued for the student must end together
 - New `AssignmentEnding` in the enrolment feature: `end(teacherId, studentId)` and `endAll(teacherId)`.
 - `StudentRemovalService` and `TeacherDeactivationListener` call it; the per-student loop goes away.
 - `TeacherStudentRepository.delete` and `deleteAllOfTeacher` become usable only by `AssignmentEnding`.
-- `PasswordLinkService.invalidateLinksIssuedBy` and its repository query take a set of student ids, so the void is one update.
+- `PasswordLinkService.invalidateLinksIssuedBy` takes a set of student ids, backed by a new set-based repository method, so the void is one update. `markUnusedIssuedByAsUsed` keeps its single-user form for `PasswordLinkService.store()` (the one-live-link rule).
 - No API, database or behaviour change. No migration.
 
 ## Capabilities
@@ -54,6 +56,6 @@ None. This is a refactor with no product behaviour change, so `.openspec.yaml` s
 
 ## Impact
 
-- Backend: `enrolment` (`AssignmentEnding`, `StudentRemovalService`, `TeacherDeactivationListener`, `TeacherStudentRepository`), `accounts` (`PasswordLinkService`, `OneTimeTokenRepository`).
+- Backend: `enrolment` (`AssignmentEnding`, `StudentRemovalService`, `TeacherDeactivationListener`, `TeacherStudentRepository`), `accounts` (`PasswordLinkService.invalidateLinksIssuedBy`, a new method in `OneTimeTokenRepository`; `store()` is unchanged).
 - Tests: `TeacherDeactivationFailureTest` and `TeacherDeactivationJoinLinkFailureTest` mocks; one new test.
 - Database, API, dependencies: none.
