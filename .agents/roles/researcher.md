@@ -1,6 +1,6 @@
 ---
 name: researcher
-description: Answers one agreed research angle for a teachdash change, from the code, specs, issues or the web, and reports evidence and options. Use for all investigation in teachdash. Read-only.
+description: Answers one agreed research angle for a teachdash change, from the code, specs, issues or the web, and reports evidence and options. Use for all investigation in teachdash, except UI angles, which go to frontend-researcher. Read-only.
 class: medium
 access: read
 web: true

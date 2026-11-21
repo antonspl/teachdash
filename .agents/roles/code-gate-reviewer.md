@@ -20,11 +20,30 @@ Check:
 - Constitution rules: per-teacher data scoping, Flyway-only schema changes, no
   secrets in code or logs, no unjustified dependencies.
 - Correctness bugs, security issues, missing error cases.
-- No unrequested changes to `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/` or the
+- For a PR touching `frontend/src`: read `.agents/design/` in this order: `README.md`,
+  then `project-rules.md`, then `checklist.md`, and `accessibility.md` when the PR adds
+  or changes forms, dialogs or other interactive elements. Check the diff against them
+  and against the "UI design" section of the change's `design.md`. The main agent
+  passes you the paths of the final screenshot set in
+  `frontend/screenshots/<change-name>/`, taken after all slices and their review
+  fixes; open the PNGs yourself, at desktop and 360 px, and check them against the
+  "UI design" section and the design sources. Do not use per-slice screenshots.
+- A leftover `frontend/e2e/zshots.spec.ts` or any file under `frontend/screenshots/`
+  in the diff is a finding.
+- No unrequested changes to `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/`, `.agents/design/` or the
   permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`).
 
 Report findings most severe first, each with file:line, the problem and a concrete
 failure scenario. Say plainly if you found nothing. At most 25 lines.
 
-Mark each finding as one to fix in the PR (security problem, data loss, spec
-violation) or one for an issue (everything else).
+For a PR touching `frontend/src`, add a **Design** section that says what was checked,
+even with no findings. When there is no final screenshot set (for example the change's
+design says "UI design: none"), it says "no screenshots: <reason>", so a set that was
+not needed differs from one that was skipped. The Design section does not count
+toward the 25 lines and has its own cap of 15 lines.
+
+Mark each finding as one to fix in the PR or one for an issue. Fix in the PR: a
+security problem, data loss, a spec violation, and design-rule violations (the design
+rules in `.agents/design/`, in the precedence order of its README) and WCAG 2.2 AA
+violations in UI the change adds or edits (its markup, CSS, copy or behaviour).
+Everything else is for an issue.
