@@ -166,7 +166,7 @@ Every `git diff` check in groups 5-12 uses base `3355250`, the last commit befor
 
 ## 13. Proof
 
-- [ ] 13.1 Dry run in Claude Code with all new roles, a full run, after 12.1 and a restart (design D12):
+- [x] 13.1 Dry run in Claude Code with all new roles, a full run, after 12.1 and a restart (design D12):
   - the `frontend-researcher` (and the generic `researcher` only if a non-UI angle exists) returns design questions for #165;
   - the main agent asks them before any spec or code;
   - a throwaway branch is made off this one with `git switch -c <throwaway name, for example dry-run-frontend-implementer> workflow-frontend-implementer` (not `scripts/flow/change-start`, which branches from `origin/main` and would take the real #165 branch name); on it a scratch change is created with `npx -y @fission-ai/openspec@1.15.0 new change ui-required-fields`, never by hand;
