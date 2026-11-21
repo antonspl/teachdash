@@ -35,7 +35,7 @@ create index parts_teacher_idx on parts (teacher_id);
 ```
 
 - Parts hang off `lesson_id` only, never `course_id`: a lesson's course is found through `lessons`, so a future copy of a lesson needs no change here.
-- `teacher_id` is on the part so queries are scoped by the teacher without a join (constitution §8), as for lessons. The service sets `teacher_id` from the locked lesson row. Ownership is checked through the lesson lookup (id, course_id, teacher_id); the `parts.teacher_id` filter in the list query (R2) is defence in depth and is not tested separately. No composite foreign key is added.
+- `teacher_id` is on the part so queries are scoped by the teacher without a join (constitution §8), as for lessons. The service sets `teacher_id` to the caller, which equals the locked lesson row's owner. Ownership is checked through the lesson lookup (id, course_id, teacher_id); the `parts.teacher_id` filter in the list query (R2) is defence in depth and is not tested separately. No composite foreign key is added.
 - `on delete cascade` on `lesson_id` deletes a lesson's parts with it (lessons R5-S8); `on delete cascade` on `teacher_id` covers account deletion.
 - `unique (lesson_id, position)` also serves "parts of a lesson in order" and `max(position)` per lesson.
 - `updated_at` comes from `Clock`; every later change to a part row MUST set it.
@@ -82,7 +82,7 @@ None added.
 
 ## Risks / Trade-offs
 
-- **Owner consistency.** Nothing in the database forces `parts.teacher_id` to equal `lessons.teacher_id`; only create inserts, with the `teacher_id` of the locked lesson row.
+- **Owner consistency.** Nothing in the database forces `parts.teacher_id` to equal `lessons.teacher_id`; only create inserts, with the caller's `teacher_id`, which the lesson lock has matched to the lesson's owner.
 - **No fixing of parts until #109.** Until parts-edit-delete (#109) lands there is no rename, delete or move of a part: a typo or a full lesson can only be fixed by deleting the lesson.
 - **Limit is a guess.** 20 parts per lesson is an estimate, held in a property so it can change by PR. Lowering it leaves lessons above it; they only cannot get more parts.
 - **Unicode and length.** As for lesson titles: `@Size` counts UTF-16 units, titles are not NFC-normalised, invisible format characters inside a title give `INVALID_FORMAT`.

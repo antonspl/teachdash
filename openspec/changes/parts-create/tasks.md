@@ -18,7 +18,7 @@
 - [x] 3.1 `parts` package: `CreatePartRequest` (normalising title, `@Title`), `PartResponse`, `Part`, `PartRepository` (JdbcClient: lock course, lock lesson in course of teacher, lesson-in-course check without lock, count, insert at the end, list by position)
 - [x] 3.2 `PartService.create` in the lock order of design D3 and D4 (user row, course row, lesson row, limit check, insert), `PartService.list` (read-only), the property `teachdash.parts.max-per-lesson=20` added to `application.properties` (and to any test properties file the tests need), and the controller replacing its stubs; add a one-line comment at the locks: the user row comes first to avoid a deadlock with `CourseService.rename`
 - [x] 3.3 Check that no part title appears in logs (constitution §5: record IDs, not content)
-- [x] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.4 Run `./gradlew :backend:cleanTest :backend:test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
