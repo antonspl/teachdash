@@ -69,9 +69,9 @@ public class PartService {
 		int count = parts.countInLesson(lessonId);
 		int target = requested.max(BigInteger.ONE).min(BigInteger.valueOf(count)).intValueExact();
 		if (target > old) {
-			parts.shiftRange(lessonId, old + 1, target, -1);
+			parts.shiftRange(lessonId, teacherId, old + 1, target, -1);
 		} else if (target < old) {
-			parts.shiftRange(lessonId, target, old - 1, 1);
+			parts.shiftRange(lessonId, teacherId, target, old - 1, 1);
 		}
 		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 		parts.setPosition(partId, lessonId, teacherId, target, now);
@@ -82,7 +82,7 @@ public class PartService {
 	public void delete(UUID teacherId, UUID courseId, UUID lessonId, UUID partId) {
 		lockForWrite(teacherId, courseId, lessonId);
 		int old = parts.deleteReturningPosition(partId, lessonId, teacherId).orElseThrow(ApiException::notFound);
-		parts.closeGap(lessonId, old);
+		parts.closeGap(lessonId, teacherId, old);
 	}
 
 	private void lockForWrite(UUID teacherId, UUID courseId, UUID lessonId) {

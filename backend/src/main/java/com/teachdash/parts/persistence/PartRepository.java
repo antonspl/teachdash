@@ -122,13 +122,14 @@ public class PartRepository {
 				.update();
 	}
 
-	public int shiftRange(UUID lessonId, int from, int to, int delta) {
+	public int shiftRange(UUID lessonId, UUID teacherId, int from, int to, int delta) {
 		return jdbc.sql("""
 				update parts set position = position + :delta
-				where lesson_id = :lessonId and position >= :from and position <= :to
+				where lesson_id = :lessonId and teacher_id = :teacherId and position >= :from and position <= :to
 				""")
 				.param("delta", delta)
 				.param("lessonId", lessonId)
+				.param("teacherId", teacherId)
 				.param("from", from)
 				.param("to", to)
 				.update();
@@ -160,9 +161,10 @@ public class PartRepository {
 				.optional();
 	}
 
-	public int closeGap(UUID lessonId, int deletedPosition) {
-		return jdbc.sql("update parts set position = position - 1 where lesson_id = :lessonId and position > :position")
+	public int closeGap(UUID lessonId, UUID teacherId, int deletedPosition) {
+		return jdbc.sql("update parts set position = position - 1 where lesson_id = :lessonId and teacher_id = :teacherId and position > :position")
 				.param("lessonId", lessonId)
+				.param("teacherId", teacherId)
 				.param("position", deletedPosition)
 				.update();
 	}
