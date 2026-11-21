@@ -125,7 +125,7 @@ The body is short, because `setup-agents` copies it verbatim and cannot include 
 
 Task 2.1 wrote the body with the earlier trigger (pages or `src/ui/` components) and without the final set; task 5.4 reworks both.
 
-`implementer.md` stays as it is, apart from the one commit-message line of G-22 (task 14.1) and the one tick-honesty line of G-27 (task 16.3), including line 3 ("Use for all code writing in teachdash."). Routing relies on the frontend-implementer's description and the `AGENTS.md` routing (D4); the remaining line is a risk (see Risks). The body has no three single quotes.
+`implementer.md` stays as it is, apart from the one commit-message line of G-22 and the one tick-honesty line of G-27 (task 14.1) and the one tick-honesty line of G-27 (task 16.3), including line 3 ("Use for all code writing in teachdash."). Routing relies on the frontend-implementer's description and the `AGENTS.md` routing (D4); the remaining line is a risk (see Risks). The body has no three single quotes.
 
 Alternative: one implementer that reads the design sources when a slice touches `frontend/`. Rejected: the backend implementer would carry the rule, and the engineer decided it stays unchanged.
 
