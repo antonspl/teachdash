@@ -29,10 +29,10 @@ Additions:
   and section or item); "matches current code" alone is not enough. A recommendation
   that departs from a source, or sources that disagree, is stated explicitly in the
   question. A point the sources fully decide is not an open question: give it as
-  "decided by sources: X (source)" for the engineer to confirm. Put any other open question (behaviour, scope,
-  process) under "Other open questions". The main agent asks both lists; the answers
-  go into the proposal's Clarifications, and only the answers to the design questions
-  go into the "UI design" section of `design.md`.
+  "decided by sources: X (source)" for the engineer to confirm. Put any other open
+  question (behaviour, scope, process) under "Other open questions". The main agent
+  asks both lists; the answers go into the proposal's Clarifications, and only the
+  answers to the design questions go into the "UI design" section of `design.md`.
 - Do not sweep existing UI outside the change for design problems; existing UI design
   is out of scope. A problem you meet on the way still gets the one-line mention from
   `researcher.md`.
