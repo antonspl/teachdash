@@ -1,5 +1,6 @@
 package com.teachdash.items.api;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,13 +53,13 @@ class ItemController {
 			@RequestBody CreateItemRequest request,
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		ItemType type = checkType(request);
-		ObjectNode payload = checkPayload(request.payload(), type);
-		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type, payload));
+		ItemType type = checkBody(request);
+		String payloadJson = checkPayload(request.payload(), type);
+		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type, payloadJson));
 	}
 
 	/** Steps 1 and 2 of the payload rules are reported together; steps 3 to 5 run only if both passed. */
-	private ItemType checkType(CreateItemRequest request) {
+	private ItemType checkBody(CreateItemRequest request) {
 		List<FieldErrorDetail> errors = new ArrayList<>();
 		ItemType type = null;
 		if (request.type() == null || request.type().isBlank()) {
@@ -83,33 +84,64 @@ class ItemController {
 		return type;
 	}
 
-	private ObjectNode checkPayload(JsonNode node, ItemType type) {
+	/** Returns the compact JSON of the normalised payload: the exact string whose size was checked and that is stored. */
+	private String checkPayload(JsonNode node, ItemType type) {
 		ObjectNode payload = (ObjectNode) node;
-		if (mapper.writeValueAsBytes(payload).length > MAX_PAYLOAD_BYTES) {
-			throw ApiException.fields(List.of(new FieldErrorDetail("payload", FieldErrorCodes.TOO_LONG)));
-		}
-		if (containsNul(payload)) {
+		requireWithinLimit(mapper.writeValueAsBytes(payload));
+		if (isNotStorable(payload)) {
 			throw ApiException.fields(List.of(new FieldErrorDetail("payload", FieldErrorCodes.INVALID_FORMAT)));
 		}
-		return type.validate(payload);
+		byte[] normalised = mapper.writeValueAsBytes(type.validate(payload));
+		requireWithinLimit(normalised);
+		return new String(normalised, StandardCharsets.UTF_8);
 	}
 
-	/** Jackson's node deserializers bypass the NUL-rejecting String deserializer, and jsonb refuses U+0000. */
-	private static boolean containsNul(JsonNode node) {
+	private static void requireWithinLimit(byte[] json) {
+		if (json.length > MAX_PAYLOAD_BYTES) {
+			throw ApiException.fields(List.of(new FieldErrorDetail("payload", FieldErrorCodes.TOO_LONG)));
+		}
+	}
+
+	/**
+	 * Jackson's node deserializers bypass the NUL-rejecting String deserializer, and jsonb cannot store U+0000,
+	 * an unpaired surrogate or a number outside the double range without loss or an error.
+	 */
+	private static boolean isNotStorable(JsonNode node) {
 		if (node.isString()) {
-			return node.stringValue().indexOf('\u0000') >= 0;
+			return isNotStorable(node.stringValue());
+		}
+		if (node.isFloatingPointNumber()) {
+			return !Double.isFinite(node.doubleValue());
 		}
 		if (node.isObject()) {
 			for (var field : node.properties()) {
-				if (field.getKey().indexOf('\u0000') >= 0 || containsNul(field.getValue())) {
+				if (isNotStorable(field.getKey()) || isNotStorable(field.getValue())) {
 					return true;
 				}
 			}
 		} else if (node.isArray()) {
 			for (JsonNode element : node) {
-				if (containsNul(element)) {
+				if (isNotStorable(element)) {
 					return true;
 				}
+			}
+		}
+		return false;
+	}
+
+	private static boolean isNotStorable(String text) {
+		for (int i = 0; i < text.length(); i++) {
+			char c = text.charAt(i);
+			if (c == '\u0000') {
+				return true;
+			}
+			if (Character.isHighSurrogate(c)) {
+				if (i + 1 >= text.length() || !Character.isLowSurrogate(text.charAt(i + 1))) {
+					return true;
+				}
+				i++;
+			} else if (Character.isLowSurrogate(c)) {
+				return true;
 			}
 		}
 		return false;

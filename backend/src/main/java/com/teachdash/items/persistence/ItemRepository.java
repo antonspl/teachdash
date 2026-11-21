@@ -41,9 +41,10 @@ public class ItemRepository {
 				.isPresent();
 	}
 
-	public int countInPart(UUID partId) {
-		return jdbc.sql("select count(*) from items where part_id = :partId")
+	public int countInPart(UUID partId, UUID teacherId) {
+		return jdbc.sql("select count(*) from items where part_id = :partId and teacher_id = :teacherId")
 				.param("partId", partId)
+				.param("teacherId", teacherId)
 				.query(Integer.class)
 				.single();
 	}
@@ -53,24 +54,23 @@ public class ItemRepository {
 			UUID teacherId,
 			UUID partId,
 			String type,
-			JsonNode payload,
+			String payloadJson,
 			int schemaVersion,
 			Instant now) {
-		String json = mapper.writeValueAsString(payload);
 		return jdbc.sql("""
 				insert into items (id, teacher_id, part_id, type, payload, schema_version, version, position,
 				                   created_at, updated_at)
 				select :id, :teacherId, :partId, :type, cast(:payload as jsonb), :schemaVersion, 1,
 				       coalesce(max(position), 0) + 1, :now, :now
 				from items
-				where part_id = :partId
+				where part_id = :partId and teacher_id = :teacherId
 				returning payload::text as payload, position
 				""")
 				.param("id", id)
 				.param("teacherId", teacherId)
 				.param("partId", partId)
 				.param("type", type)
-				.param("payload", json)
+				.param("payload", payloadJson)
 				.param("schemaVersion", schemaVersion)
 				.param("now", Timestamp.from(now))
 				.query((rs, rowNum) -> new Stored(mapper.readTree(rs.getString("payload")), rs.getInt("position")))

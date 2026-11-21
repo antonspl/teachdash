@@ -15,8 +15,6 @@ import com.teachdash.common.ApiException;
 import com.teachdash.items.persistence.ItemRepository;
 import com.teachdash.parts.persistence.PartRepository;
 
-import tools.jackson.databind.node.ObjectNode;
-
 @Service
 public class ItemService {
 
@@ -50,7 +48,7 @@ public class ItemService {
 			UUID lessonId,
 			UUID partId,
 			ItemType type,
-			ObjectNode payload) {
+			String payloadJson) {
 		// The user row is locked first, as in CourseService.rename, to avoid a deadlock.
 		// Then course, lesson and part, the same order as PartService extended by the part.
 		users.findActiveByIdForUpdate(teacherId)
@@ -64,13 +62,13 @@ public class ItemService {
 		if (!items.lockPart(partId, lessonId, teacherId)) {
 			throw ApiException.notFound();
 		}
-		if (items.countInPart(partId) >= maxPerPart) {
+		if (items.countInPart(partId, teacherId) >= maxPerPart) {
 			throw new ApiException(HttpStatus.CONFLICT, "ITEM_LIMIT_REACHED");
 		}
 		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 		UUID id = UUID.randomUUID();
 		ItemRepository.Stored stored = items.insertAtEnd(
-				id, teacherId, partId, type.code(), payload, type.schemaVersion(), now);
+				id, teacherId, partId, type.code(), payloadJson, type.schemaVersion(), now);
 		return new Item(id, type.code(), stored.payload(), stored.position(), 1, now, now);
 	}
 }
