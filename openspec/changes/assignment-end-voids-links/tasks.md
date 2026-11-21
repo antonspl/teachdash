@@ -15,7 +15,7 @@ This is a refactor with no product behaviour change and `skip_specs: true`. The 
 
 - [x] 2.1 Run `../gradlew cleanTest test` from `backend/`: the full suite is green
 - [x] 2.2 Run `scripts/check-scenario-coverage.sh`: it passes
-- [ ] 2.3 List the R4 and R7 tests (`StudentRemovalTest`, `TeacherDeactivationTest`, `TeacherDeactivationFailureTest`) and the R8-S9 test with `git diff main --stat` and `git diff main` over them: only the two mocks in 1.5 and the one added test in 1.6 differ. Also list the existing concurrency tests that touch these paths (none for removal or deactivation; `Parallel` is used only in the join and registration tests) and say no test covers the teacher-lock precondition. Record the list in the PR
+- [x] 2.3 List the R4 and R7 tests (`StudentRemovalTest`, `TeacherDeactivationTest`, `TeacherDeactivationFailureTest`) and the R8-S9 test with `git diff main --stat` and `git diff main` over them: only the two mocks in 1.5 and the one added test in 1.6 differ. Also list the existing concurrency tests that touch these paths (none for removal or deactivation; `Parallel` is used only in the join and registration tests) and say no test covers the teacher-lock precondition. Record the list in the PR
 
 ## Workflow follow-up
 
