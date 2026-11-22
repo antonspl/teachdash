@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,6 +51,18 @@ class ItemController {
 		ItemType<?> type = validateEnvelope(request);
 		String payloadJson = validator.toStoredJson(validator.validate(type, request.payload()));
 		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type.code(), payloadJson));
+	}
+
+	// STUB: replaced in pass 2 (items-reorder-delete)
+	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}/position")
+	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
+	void move() {
+	}
+
+	// STUB: replaced in pass 2 (items-reorder-delete)
+	@DeleteMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}")
+	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
+	void delete() {
 	}
 
 	private ItemType<?> validateEnvelope(CreateItemRequest request) {
