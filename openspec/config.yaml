@@ -24,7 +24,7 @@ rules:
   design:
     - Justify every new dependency
     - List Flyway migrations the change adds
-    - 'A change touching frontend/src has a "UI design" section in design.md with these headings: screens touched; layout (desktop and 360 px); states per screen (empty, error, loading, disabled, success); copy (i18n keys and text); a11y (focus order, keyboard, aria-*); components and tokens (reused or new). Add an ASCII sketch for a new screen or a significant layout change. A change touching frontend/src with no rendered UI change may instead have one line: "UI design: none, <reason>"'
+    - 'A change touching frontend/src has a "UI design" section in design.md with these headings: screens touched; layout (desktop and 360 px); states per screen (empty, error, loading, disabled, success); copy (i18n keys and text); a11y (focus order, keyboard, aria-*); components and tokens (reused or new, and each new token listed, since a token is added only when no existing one fits); a visual plan per screen and state (hierarchy, tokens used and new, layout, density). Add an ASCII sketch for a new screen or a significant layout change. A change touching frontend/src with no rendered UI change may instead have one line: "UI design: none, <reason>"'
   tasks:
     - Section 1 is "Failing tests" - one backend test per scenario (JUnit 5, Testcontainers, RestAssured), plus stubs (501, marked STUB) and schema migrations so tests compile and fail at their THEN step
     - Section 2 is a single task "Engineer approves tests in the PR" - a hard stop
