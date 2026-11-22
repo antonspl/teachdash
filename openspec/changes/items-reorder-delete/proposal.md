@@ -8,7 +8,7 @@ Issue #112. The engineer's decisions, as given:
 |---|---|---|
 | 1 | Move endpoint and `position` input? | `PATCH /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}/position` with `{position}` gives 200 with the moved item (the fields of the create response). `position` is a required strict JSON integer parsed as `BigInteger`, as parts move: missing or null gives `REQUIRED`; a string, a float (also `2.0` and `1e2`) or a boolean gives `INVALID_TYPE`; a broken or absent body gives `MALFORMED_REQUEST`. It is clamped to 1..count; there is no out-of-range error. |
 | 2 | What does a move change? | The shift is one range update, as parts R4. The moved item's `updatedAt` is set, also on a same-position move. Its `version` is NOT changed: `version` guards payload edits only, so a move does not make a pending edit stale. Shifted items keep `updatedAt` and `version`. The `updatedAt` of the part, the lesson and the course is unchanged. The payload is unchanged. |
-| 3 | Position integrity (the issue asks the design to pick)? | Keep both existing mechanisms: the lock chain (user row, course, lesson, part, then the item rows `FOR UPDATE`) enforces density; the existing deferrable unique `(part_id, position)` is the safety net and allows the temporary duplicate during the shift. The design records this and cites parts-edit-delete D5 and items-core-model design D7. |
+| 3 | Position integrity (the issue asks the design to pick)? | Keep both existing mechanisms: the lock chain (user row, course, lesson, part, each `FOR UPDATE`) enforces density; the item lookup after the part lock is a plain select without `FOR UPDATE`, because the user and part locks already serialise all writes; the existing deferrable unique `(part_id, position)` is the safety net and allows the temporary duplicate during the shift. The design records this and cites parts-edit-delete D5 and items-core-model design D7. |
 | 4 | Delete? | `DELETE .../items/{itemId}` gives 204 with no body. A second delete gives 404. Later items shift down by one and keep `updatedAt` and `version`. The `updatedAt` of the part, the lesson and the course is unchanged. A deletion frees a slot under the 50-item limit. |
 | 5 | "Delete of an item deletes its answers"? | No answers table exists yet (#126). The spec says only that the item row is removed. #126 adds its own foreign key to `items` with `ON DELETE CASCADE`, so a delete then removes the answers too. |
 | 6 | Order of checks? | For both requirements: CSRF and role (403), deactivated (401), malformed id (404), input (400, move only), unknown or foreign id (404). |
@@ -44,7 +44,7 @@ Since #110 a teacher can add items to a part but not fix their order or remove o
 None.
 
 ### Modified Capabilities
-- `items`: adds R6 move and R7 delete. R1 and R2 keep their text. A parallel change, items-read-edit (#111), adds R3-R5; this change does not depend on it and its tests set data up directly.
+- `items`: adds R6 move and R7 delete. R1 and R2 keep their text. A parallel change, items-read-edit (#111), adds R3-R5; this change does not depend on it and its tests set data up directly. Both changes edit the `items` Purpose line, so that line may conflict trivially at archive; the one archived second resolves it. Whichever of this PR and items-read-edit (PR #186: `ItemRepository.lockItem`, an item row reader in `support/ApiTest`, `createItem` with a `version` argument) merges second reuses the first one's helpers.
 
 ## Out of scope
 

@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: R6 A teacher moves an item to a position
-`PATCH /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}/position` with `{position}` SHALL move the item and return 200 with the item as in R1. `position` is a required JSON integer, clamped to 1..count; floats and strings are rejected. Shifted items keep `updatedAt` and `version`; the moved item gets a new `updatedAt`, also on a same-position move, but keeps `version` and payload. Checks in order: 403, 401, malformed id 404, input 400, unknown or foreign id 404.
+`PATCH /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}/position` with `{position}` SHALL move the item and return 200 with the item as R1. `position` is a required JSON integer, clamped to 1..count (any integer within the JSON number-length limit); floats and strings are rejected. Shifted items are unchanged; the moved item gets a new `updatedAt`, also on a same-position move, and keeps `version`. Checks: 403, 401, malformed id 404, input 400, unknown id 404.
 
 #### Scenario: items/R6-S1 Move an item down and up, a Russian payload is unchanged
 - **GIVEN** a logged-in teacher A with the course "Литература 9 класс" (instruction "ru") with the lesson "Падежи" that has the parts "Разминка" and "Итоги", where "Разминка" has four items of the type `test-note` with the texts "Один", "Два", "Три" and "Четыре" at the positions 1 to 4, all created at a time T with `version` 1, "Итоги" has four items at the positions 1 to 4 created at T, a teacher B with a part with four items created at T, and the clock advanced by one hour
@@ -34,14 +34,14 @@
 - **THEN** the admin's and the student's responses are 403 with code `FORBIDDEN`, the deactivated teacher's and the client's responses are 401 with code `UNAUTHENTICATED`, teacher B's is 403 with code `CSRF_INVALID`, and the order is still "One", "Two"
 
 #### Scenario: items/R6-S7 Checks run in a fixed order
-- **GIVEN** teacher A logged in with a course C with a lesson L that has the part P with the item I, a course "Грамматика" of teacher B with the lesson "Падежи", the part "Разминка" and its item "Вопрос", a logged-in admin, and a logged-in teacher A2 who is then deactivated
-- **WHEN** teacher A sends the body `{}` for (1) the item "not-a-uuid" under C, L and P, (2) teacher B's item "Вопрос" under teacher B's course, lesson and part, (3) an item with an unknown id under C, L and P, and (4) I under C, L and the part "not-a-uuid"; and the admin and the deactivated teacher A2 each move the item "not-a-uuid" to position 1 under the part "not-a-uuid", the lesson "not-a-uuid" and the course "not-a-uuid"
-- **THEN** teacher A's first response is 404 with code `NOT_FOUND` and no `errors` property, the second and the third are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "position", code: "REQUIRED"}]` and do not contain "Падежи", "Разминка" or "Вопрос", the fourth is 404 with code `NOT_FOUND`, the admin's response is 403 with code `FORBIDDEN` and the deactivated teacher's is 401 with code `UNAUTHENTICATED` (neither is 404 or 400), and teacher B's item is unchanged
+- **GIVEN** teacher A logged in with a course C with a lesson L that has the part P with the item I, a logged-in teacher B with a course "Грамматика" with the lesson "Падежи", the part "Разминка" and its item "Вопрос", a logged-in admin, and a logged-in teacher A2 who is then deactivated
+- **WHEN** teacher A sends the body `{}` for (1) the item "not-a-uuid" under C, L and P, (1a) the body `{"position":` and (1b) no body under the item "not-a-uuid" under C, L and P, (2) teacher B's item "Вопрос" under teacher B's course, lesson and part, (3) an item with an unknown id under C, L and P, and (4) I under C, L and the part "not-a-uuid"; and the admin and the deactivated teacher A2 each move the item "not-a-uuid" to position 1 under the part "not-a-uuid", the lesson "not-a-uuid" and the course "not-a-uuid"
+- **THEN** teacher A's first, (1a) and (1b) responses are 404 with code `NOT_FOUND` and no `errors` property, the second and the third are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "position", code: "REQUIRED"}]` and do not contain "Падежи", "Разминка" or "Вопрос", the fourth is 404 with code `NOT_FOUND`, the admin's response is 403 with code `FORBIDDEN` and the deactivated teacher's is 401 with code `UNAUTHENTICATED` (neither is 404 or 400), teacher B's item is unchanged, and teacher B without a CSRF token moving the item "not-a-uuid" under the part "not-a-uuid", the lesson "not-a-uuid" and the course "not-a-uuid" gets 403 with code `CSRF_INVALID`
 
 #### Scenario: items/R6-S8 Parallel moves keep positions distinct (the lock chain serialises them)
 - **GIVEN** a logged-in teacher A with a part with 10 items at the positions 1 to 10, whose ids are read in GIVEN
 - **WHEN** teacher A sends 10 move requests at the same time (`support.Parallel.run`), each moving a different item, addressed by its id, to position 5, 1, 10, 3, 7, 2, 9, 4, 8 or 6
-- **THEN** every response is 200, and the part has exactly 10 items with the positions 1 to 10 without gaps and without duplicates
+- **THEN** every response is 200, and the part has exactly 10 items with the positions 1 to 10 without gaps and without duplicates, and the final order is a permutation of the original ids
 
 ### Requirement: R7 A teacher deletes an item
 `DELETE /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}` SHALL delete the item of the caller's part and return 204 with no body. Items after it move up by one and keep their `updatedAt` and `version`, so positions stay 1..count; the `updatedAt` of the part, the lesson and the course does not change. A second delete gives 404, and a deletion frees a slot under the R1 limit. Not found cases and the order of checks are as R6, without the input step.
@@ -54,7 +54,7 @@
 #### Scenario: items/R7-S2 A second delete is not found, and a slot is freed
 - **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with a part with 50 items, where the id of the item at position 10 is read in GIVEN, and the item type `test-note`
 - **WHEN** teacher A deletes that item by its id, deletes it again by the same id, and then adds an item of the type `test-note` with the text "Item 51" to the part
-- **THEN** the first response is 204, the second is 404 with code `NOT_FOUND` and no `errors` property, the third is 201 with `position` 50, and the part has 50 items with the positions 1 to 50 without gaps
+- **THEN** the first response is 204, after it the 49 remaining items are at the positions 1 to 49 before the add, the second is 404 with code `NOT_FOUND` and no `errors` property, the third is 201 with `position` 50, and the part has 50 items with the positions 1 to 50 without gaps
 
 #### Scenario: items/R7-S3 Another teacher's, unknown, malformed and misplaced ids are not found
 - **GIVEN** teacher A logged in with the courses "English B1" and "Maths", the lessons "Fractions" and "Decimals" in "Maths" with the parts "Halves" and "Quarters" in "Fractions" and "Tenths" in "Decimals", the items "Half" in "Halves" and "Tenth" in "Tenths", and a course "Грамматика" of teacher B with the lesson "Падежи", the part "Разминка" and its item "Вопрос"
@@ -67,19 +67,19 @@
 - **THEN** the admin's and the student's responses are 403 with code `FORBIDDEN`, the deactivated teacher's and the client's responses are 401 with code `UNAUTHENTICATED`, teacher B's is 403 with code `CSRF_INVALID`, and the item is still stored
 
 #### Scenario: items/R7-S5 Checks run in a fixed order
-- **GIVEN** a logged-in admin, and a logged-in teacher A who is then deactivated
-- **WHEN** the admin and teacher A each delete the item "not-a-uuid" in the part "not-a-uuid" of the lesson "not-a-uuid" of the course "not-a-uuid"
-- **THEN** the admin's response is 403 with code `FORBIDDEN` and teacher A's is 401 with code `UNAUTHENTICATED`, neither is a 404
+- **GIVEN** a logged-in admin, a logged-in teacher A who is then deactivated, and a logged-in teacher B
+- **WHEN** the admin and teacher A each delete the item "not-a-uuid" in the part "not-a-uuid" of the lesson "not-a-uuid" of the course "not-a-uuid", and teacher B does so without a CSRF token
+- **THEN** the admin's response is 403 with code `FORBIDDEN`, teacher A's is 401 with code `UNAUTHENTICATED`, teacher B's is 403 with code `CSRF_INVALID`, and none is a 404
 
 #### Scenario: items/R7-S6 Parallel deletes and moves end with positions dense and no error
 - **GIVEN** a logged-in teacher A with a part with 10 items at the positions 1 to 10, whose ids are read in GIVEN
 - **WHEN** teacher A sends at the same time 3 delete requests for the items that were at the positions 2, 5 and 8, and 4 move requests for the items that were at the positions 1, 3, 6 and 10, each to position 1, all addressed by id
-- **THEN** none of the responses is 500, the delete responses are 204 and the move responses are 200, and the part ends with exactly 7 items with the positions 1 to 7 without gaps and without duplicates
+- **THEN** none of the responses is 500, the delete responses are 204 and the move responses are 200, and the part ends with exactly 7 items with the positions 1 to 7 without gaps and without duplicates, the three deleted ids are gone, and the 7 remaining ids are a permutation of the 7 survivors
 
 #### Scenario: items/R7-S7 Parallel deletes and adds end within the limit, with positions dense and no error
 - **GIVEN** a logged-in teacher A with a part with 50 items, whose ids are read in GIVEN, and the item type `test-note`
 - **WHEN** teacher A sends at the same time 3 delete requests for the items that were at the positions 2, 9 and 15, addressed by id, and 5 add requests of the type `test-note` with the texts "New 1" to "New 5"
-- **THEN** none of the responses is 500, the delete responses are 204, each add response is 201 or 409 `ITEM_LIMIT_REACHED`, the part ends with at most 50 items, and its positions are 1 to the number of its items without gaps and without duplicates
+- **THEN** none of the responses is 500, the delete responses are 204, each add response is 201 or 409 `ITEM_LIMIT_REACHED`, the final count is 47 plus the number of 201 responses and at most 50, every text of a 201 response is in the part, and its positions are 1 to the number of its items without gaps and without duplicates
 
 #### Scenario: items/R7-S8 Deleting items while the part is deleted
 - **GIVEN** a logged-in teacher A with a part with 5 items, whose ids are read in GIVEN
