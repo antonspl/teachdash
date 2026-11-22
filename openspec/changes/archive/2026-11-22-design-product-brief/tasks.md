@@ -12,6 +12,6 @@ This is a tooling change with `skip_specs: true`: no "Failing tests" section and
 
 ## 2. Workflow follow-up
 
-- [ ] 2.1 Code review gate: run the `code-gate-reviewer` on the PR; the engineer approves the code gate.
-- [ ] 2.2 Archive the change in the same PR (`openspec archive`; nothing merges into `openspec/specs/`).
+- [x] 2.1 Code review gate: run the `code-gate-reviewer` on the PR; the engineer approves the code gate.
+- [x] 2.2 Archive the change in the same PR (`openspec archive`; nothing merges into `openspec/specs/`).
 - [ ] 2.3 Mark the PR ready for the final code owner review.
