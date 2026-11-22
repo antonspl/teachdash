@@ -217,7 +217,7 @@ No change to test phases; see #170.
 
 ### D11. Approval
 
-The role files (including the three new ones of D13), `openspec/config.yaml` and the constitution (§1 Roles paragraph and steps 2, 5 and 10) need the owner's approval (CODEOWNERS). `.agents/design/`, `AGENTS.md`, `CONTRIBUTING.md` and `.gitignore` do not.
+The role files (including the three new ones of D13), `openspec/config.yaml` and the constitution (§1 Roles paragraph and steps 2, 3, 5 and 10) need the owner's approval (CODEOWNERS). `.agents/design/`, `AGENTS.md`, `CONTRIBUTING.md` and `.gitignore` do not.
 
 So any engineer can change the frontend routing in `AGENTS.md` and `CONTRIBUTING.md` and the rules in `.agents/design/`, including `project-rules.md` and later the design code of #171, without the owner (constitution §1, Roles), even though step 10 now makes violations of the design rules in `.agents/design/` in the change's own UI fix-in-PR (G-20), so such an edit changes what a gate must fix. The engineer accepted this (proposal decision 11): every PR still needs approval from a code owner other than the author, and the reviewers flag unrequested changes to `.agents/design/`.
 

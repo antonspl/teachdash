@@ -269,4 +269,4 @@ The implementer vendors from a read-only shallow `git clone` of each upstream at
 
 - Code review gate: the PR holds the proofs (the recorded checks of tasks 1-12, 14-22 and the engineer's dry-run screenshots of 13.1); only the `code-gate-reviewer` runs (the PR changes no UI, no `visual-reviewer`, G-45), then the engineer approves the code in the PR. No dry run of the revised roles (G-45).
 - Archive again in the same PR after the code gate; nothing merges into `openspec/specs/`.
-- Mark the PR ready for the final review by a code owner other than the engineer; the owner approves the role files, `openspec/config.yaml` and the constitution (§1 Roles paragraph and steps 2, 5 and 10).
+- Mark the PR ready for the final review by a code owner other than the engineer; the owner approves the role files, `openspec/config.yaml` and the constitution (§1 Roles paragraph and steps 2, 3, 5 and 10).
