@@ -40,9 +40,31 @@ Steps:
 4. Self-critique against `visual-criteria.md` and `critique-rubric.md` before
    reporting; fix what fails, and say in the report what you checked.
 
-Screenshots: you take none per slice. When the main agent asks, after all slices, you
-take the one final set of every screen and state in the "UI design" section.
-<!-- 21.1: the screenshot method (D25) goes here -->
+Screenshots: you take none per slice. Only when the main agent asks, after all slices,
+you take one final set of every screen and state in the "UI design" section, at
+desktop and at 360 px, into `frontend/screenshots/<change-name>/` (gitignored). No
+"before" set. Method:
+1. `docker compose up --build --wait`, so port 8081 serves the code under review.
+2. Clear `frontend/screenshots/<change-name>/` before the run.
+3. Write a temporary `frontend/e2e/zshots.spec.ts`, one test per state. Each test
+   builds its own state through the `frontend/e2e/accounts.ts` helpers
+   (`createTeacherAndLoginInUi`, `createTeacher`, `loginAsAdminInUi`) with a fresh,
+   uniquely named account; a new teacher is the "empty" state. Never wipe the database
+   and never depend on data from earlier tests or runs. You may add a helper to
+   `e2e/accounts.ts` for a state the existing ones cannot build.
+4. File name `<screen>-<state>-<desktop|360>.png`: `desktop` for
+   `testInfo.project.name` `desktop-chromium`, `360` for `phone-chrome`. Under
+   `phone-chrome` set the viewport to 360x800 (`page.setViewportSize`) before the
+   first navigation, and check that the first shot is 360 px wide. Use the longest
+   locale for the 360 shots once `frontend/src/i18n/ru.json` exists; `en` until then.
+5. Run `npx playwright test zshots --project=desktop-chromium --project=phone-chrome`.
+6. A state you cannot reach is named for what it shows (for example "error banner
+   after a failed save") and listed as unreachable in the report; do not fake it.
+7. Delete `frontend/e2e/zshots.spec.ts` before you commit, and also when any step
+   fails, before you stop. It is never committed.
+8. After a UI fix made from visual findings, retake the whole set (clear, run), never
+   part of it.
+In the report, list the PNG paths and the unreachable states.
 
 Rules:
 - Never modify tests approved at an earlier gate or already on the branch; if one looks
