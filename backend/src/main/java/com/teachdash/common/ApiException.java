@@ -37,11 +37,26 @@ public class ApiException extends RuntimeException {
 	}
 
 	public static ApiException validation(Set<? extends ConstraintViolation<?>> violations, String prefix) {
-		throw new UnsupportedOperationException("STUB");
+		return new ApiException(
+				HttpStatus.BAD_REQUEST,
+				"VALIDATION_FAILED",
+				FieldErrorCodes.fromViolations(violations, prefix));
 	}
 
+	/**
+	 * Never gives REQUIRED (a missing property is null and Bean Validation reports it) and never echoes a Map key
+	 * or an unknown property name, because both are user text.
+	 */
 	public static ApiException fromJackson(DatabindException exception, String prefix) {
-		throw new UnsupportedOperationException("STUB");
+		String code = JacksonErrors.codeOf(exception);
+		if (code == null) {
+			code = FieldErrorCodes.INVALID_TYPE;
+		}
+		String field = code.equals(FieldErrorCodes.UNKNOWN_FIELD) ? prefix : JacksonErrors.fieldOf(exception, prefix);
+		return new ApiException(
+				HttpStatus.BAD_REQUEST,
+				"VALIDATION_FAILED",
+				List.of(new FieldErrorDetail(field, code)));
 	}
 
 	public static ApiException fields(List<FieldErrorDetail> details) {

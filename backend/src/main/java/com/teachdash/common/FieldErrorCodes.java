@@ -50,8 +50,15 @@ public final class FieldErrorCodes {
 	}
 
 	static List<FieldErrorDetail> fromViolations(Collection<? extends ConstraintViolation<?>> violations) {
+		return fromViolations(violations, "");
+	}
+
+	static List<FieldErrorDetail> fromViolations(Collection<? extends ConstraintViolation<?>> violations, String prefix) {
+		String separator = prefix.isEmpty() ? "" : ".";
 		return reduce(violations.stream()
-				.map(violation -> new FieldErrorDetail(violation.getPropertyPath().toString(), codeOf(violation)))
+				.map(violation -> new FieldErrorDetail(
+						prefix + separator + violation.getPropertyPath(),
+						codeOf(violation)))
 				.toList());
 	}
 
