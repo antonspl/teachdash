@@ -1,8 +1,10 @@
 package com.teachdash.items.domain.theory;
 
+import org.springframework.stereotype.Component;
+
 import com.teachdash.items.domain.ItemType;
 
-// STUB: not a bean yet, so `theory` stays an unknown type until the implementation pass of items-read-edit
+@Component
 public class TheoryItemType implements ItemType<TheoryPayload> {
 
 	@Override
@@ -17,6 +19,6 @@ public class TheoryItemType implements ItemType<TheoryPayload> {
 
 	@Override
 	public Object studentView(TheoryPayload payload) {
-		throw new UnsupportedOperationException("STUB");
+		return payload;
 	}
 }

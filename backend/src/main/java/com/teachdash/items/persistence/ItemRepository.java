@@ -2,6 +2,7 @@ package com.teachdash.items.persistence;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +20,11 @@ public class ItemRepository {
 	public record Stored(
 			JsonNode payload,
 			int position) {
+	}
+
+	public record Locked(
+			String type,
+			long version) {
 	}
 
 	private final JdbcClient jdbc;
@@ -111,6 +117,64 @@ public class ItemRepository {
 				returning id, type, payload::text as payload, position, version, created_at, updated_at
 				""")
 				.param("position", position)
+				.param("now", Timestamp.from(now))
+				.param("itemId", itemId)
+				.param("partId", partId)
+				.param("teacherId", teacherId)
+				.query((rs, rowNum) -> toItem(rs))
+				.single();
+	}
+
+	public boolean partExists(UUID partId, UUID lessonId, UUID courseId, UUID teacherId) {
+		return jdbc.sql("""
+				select p.id from parts p
+				join lessons l on l.id = p.lesson_id and l.teacher_id = p.teacher_id
+				where p.id = :partId and p.lesson_id = :lessonId and l.course_id = :courseId
+				  and p.teacher_id = :teacherId
+				""")
+				.param("partId", partId)
+				.param("lessonId", lessonId)
+				.param("courseId", courseId)
+				.param("teacherId", teacherId)
+				.query(UUID.class)
+				.optional()
+				.isPresent();
+	}
+
+	public List<Item> findByPart(UUID partId, UUID teacherId) {
+		return jdbc.sql("""
+				select id, type, payload::text as payload, position, version, created_at, updated_at
+				from items
+				where part_id = :partId and teacher_id = :teacherId
+				order by position
+				""")
+				.param("partId", partId)
+				.param("teacherId", teacherId)
+				.query((rs, rowNum) -> toItem(rs))
+				.list();
+	}
+
+	public Optional<Locked> lockItem(UUID itemId, UUID partId, UUID teacherId) {
+		return jdbc.sql("""
+				select type, version from items
+				where id = :itemId and part_id = :partId and teacher_id = :teacherId
+				for update
+				""")
+				.param("itemId", itemId)
+				.param("partId", partId)
+				.param("teacherId", teacherId)
+				.query((rs, rowNum) -> new Locked(rs.getString("type"), rs.getLong("version")))
+				.optional();
+	}
+
+	public Item updatePayload(UUID itemId, UUID partId, UUID teacherId, String payloadJson, Instant now) {
+		return jdbc.sql("""
+				update items
+				set payload = cast(:payload as jsonb), version = version + 1, updated_at = :now
+				where id = :itemId and part_id = :partId and teacher_id = :teacherId
+				returning id, type, payload::text as payload, position, version, created_at, updated_at
+				""")
+				.param("payload", payloadJson)
 				.param("now", Timestamp.from(now))
 				.param("itemId", itemId)
 				.param("partId", partId)

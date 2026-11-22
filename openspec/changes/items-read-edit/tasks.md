@@ -16,11 +16,11 @@
 
 ## 3. Implementation
 
-- [ ] 3.1 `TheoryPayload` and `TheoryItemType` as a registered bean (design D5)
-- [ ] 3.2 `ItemRepository`: `lockItem` (item row `for update`, scoped by item, part and teacher), `updatePayload` (design D3 step 6), `findByPart` ordered by position and a part existence check scoped by course, lesson and teacher (design D4); `EditItemRequest`
-- [ ] 3.3 `ItemService.list` (read-only, no locks) and `edit` (lock order user, course, lesson, part, item; payload validation, then the version check; design D3); the controller replaces its stubs (`GET` 200, `PATCH` 200) with the envelope check of design D2 (`version` and `payload` `REQUIRED` reported together)
-- [ ] 3.4 Check that no payload content and no property name of a rejected payload appears in logs or error responses, and that the 409 body has no payload (constitution §5)
-- [ ] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `TheoryPayload` and `TheoryItemType` as a registered bean (design D5)
+- [x] 3.2 `ItemRepository`: `lockItem` (item row `for update`, scoped by item, part and teacher), `updatePayload` (design D3 step 6), `findByPart` ordered by position and a part existence check scoped by course, lesson and teacher (design D4); `EditItemRequest`
+- [x] 3.3 `ItemService.list` (read-only, no locks) and `edit` (lock order user, course, lesson, part, item; payload validation, then the version check; design D3); the controller replaces its stubs (`GET` 200, `PATCH` 200) with the envelope check of design D2 (`version` and `payload` `REQUIRED` reported together)
+- [x] 3.4 Check that no payload content and no property name of a rejected payload appears in logs or error responses, and that the 409 body has no payload (constitution §5)
+- [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
