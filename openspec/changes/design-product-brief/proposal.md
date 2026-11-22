@@ -4,16 +4,22 @@
 
 Decisions by the engineer for issue #171 (2026-11-22), first of two changes:
 
-1. Start now on top of unmerged PR #169 (#166). The branch is rebased onto `main` before the PR is opened; the draft PR is opened after #169 merges.
+1. Start now on top of unmerged PR #169 (#166). Superseded by decision 11: the draft PR was opened before #169 merged.
 2. #171 is split into two PRs: this one (the product brief) first, then the visual direction with `design-code.md` and the redesign issues.
 3. The later visual directions are static HTML mockups of 2-3 key screens per direction, kept outside the repository. Recorded here for the second change; nothing to do in this one.
 4. Research angles A (brief draft), B (current UI inventory and design questions) and C (baseline screenshots) were run.
 5. The baseline screenshots (70 PNGs: 35 states, desktop and 360 px, `en`) are attached to this change's PR by the main agent, not to the issue. They are local in `frontend/screenshots/design-audit/` (gitignored) and are never committed. This differs from the issue's "attached to this issue" wording: no comment is posted on #171. The engineer accepts the difference; the code owner reviews it at the final review.
-6. Brief facts: the likely readings drafted by research angle A are accepted as written, with these answers: a student's lesson may be open next to a live video call (narrow window, split attention); UI copy stays informal and friendly per `project-rules.md` (it wins over the older "neutral tone in both UI languages" lines in #118-#120, #133 and #138), while the look should be calm rather than playful; there is no logo and no brand colour yet; the working product name is "teachdash" and may change.
+6. Brief facts: the likely readings drafted by research angle A are accepted as written, with these answers: a student's lesson may be open next to a live video call (narrow window, split attention); UI copy stays informal and friendly per `project-rules.md` (it wins over the older "neutral tone in both UI languages" lines in #102, #115–#120, #132, #133 and #138), while the look should be calm rather than playful; there is no logo and no brand colour yet; the working product name is "teachdash" and may change.
 7. This change touches no workflow files: no roles, `project-rules.md`, `README.md`, vendored sources or permission files. Only `.agents/design/product-brief.md` changes, plus the change's own artifacts.
 8. The brief keeps one line of product personality next to voice: "calm, not playful". Every concrete visual choice (palette, type, layout, chrome) belongs in `design-code.md`, not the brief. Principles 1 and 5 state product priorities, not a visual style.
-9. The brief's voice item gets one line: `project-rules.md` (informal, friendly copy) wins over the "neutral tone" lines in #102, #118-#120, #133 and #138.
+9. The brief's voice item gets one line: `project-rules.md` (informal, friendly copy) wins over the "neutral tone" lines in #102, #115–#120, #132, #133 and #138.
 10. Baseline screenshots are attached to this change's PR only, with no comment on #171 (see decision 5).
+
+**Code gate review** (engineer's decisions 11-13, from the code-gate review; the spec was already approved):
+
+11. Decision 1 changed: the draft PR #189 was opened before #169 merged, stacked on `workflow-frontend-implementer` (engineer, 2026-11-22). The branch is rebased onto `main` after #169 merges.
+12. The issue lists in the brief are completed: the "neutral tone" lines are in #102, #115–#120, #132, #133 and #138 (decisions 6 and 9, and the brief's voice line); the desktop-only editor lines are in #115–#120, #132, #133 and #138 (the brief's Devices line).
+13. The brief's Devices line says that teacher editors are designed for desktop, and that every page, editors included, still fits 360 CSS px (`specs/web-client` R7).
 
 The five product principles in `design.md` are proposed, not decided: the engineer agrees them (or changes them) at the spec gate.
 
