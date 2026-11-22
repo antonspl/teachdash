@@ -36,7 +36,18 @@ Steps:
    add a new role-named token to `frontend/src/styles/tokens.css` only when none fits
    and the "UI design" section lists it. Changing an existing token's value, renaming
    or deleting it is an engineer decision: stop and report instead.
-3. Run the relevant test suite and `scripts/check-scenario-coverage.sh`.
+3. Run these commands, all from the repo root, and no other
+   frontend commands:
+   - `npm --prefix frontend run build`
+   - `npm --prefix frontend run lint`
+   - `npm --prefix frontend run format:check`
+   - `npm --prefix frontend run test`
+   - `scripts/check-scenario-coverage.sh`
+   - for the final screenshot run only: `docker compose up --build --wait` and
+     `npm --prefix frontend run test:e2e -- zshots --project=desktop-chromium --project=phone-chrome`
+     (npm runs the script in `frontend/`, where the Playwright config is).
+   If `node_modules` or the Playwright browsers are missing, stop and report; do not
+   install them.
 4. Self-critique against `visual-criteria.md` and `critique-rubric.md` before
    reporting; fix what fails, and say in the report what you checked.
 
@@ -58,7 +69,7 @@ desktop and at 360 px, into `frontend/screenshots/<change-name>/` (gitignored). 
    first navigation, take shots with `scale: 'css'` (the device scale makes a
    Pixel 7 PNG about 945 px wide), and check that the first shot is 360 px wide. Use the longest
    locale for the 360 shots once `frontend/src/i18n/ru.json` exists; `en` until then.
-5. Run `npx playwright test zshots --project=desktop-chromium --project=phone-chrome`.
+5. Run `npm --prefix frontend run test:e2e -- zshots --project=desktop-chromium --project=phone-chrome`.
 6. A state you cannot reach is named for what it shows (for example "error banner
    after a failed save") and listed as unreachable in the report; do not fake it.
 7. Delete `frontend/e2e/zshots.spec.ts` before you commit, and also when any step

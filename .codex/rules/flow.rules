@@ -60,6 +60,49 @@ prefix_rule(
     not_match = ["python3 .agents/design/ui-ux-pro-max/scripts/generate.py"],
 )
 
+# Frontend implementer commands (design D33), run from the repo root. Prefix rules
+# allow trailing arguments on every entry.
+prefix_rule(
+    pattern = ["docker", "compose", "up", "--build", "--wait"],
+    decision = "allow",
+    match = ["docker compose up --build --wait"],
+)
+prefix_rule(
+    pattern = ["npm", "--prefix", "frontend", "run", "build"],
+    decision = "allow",
+    match = ["npm --prefix frontend run build"],
+)
+prefix_rule(
+    pattern = ["npm", "--prefix", "frontend", "run", "lint"],
+    decision = "allow",
+    match = ["npm --prefix frontend run lint"],
+)
+prefix_rule(
+    pattern = ["npm", "--prefix", "frontend", "run", "format:check"],
+    decision = "allow",
+    match = ["npm --prefix frontend run format:check"],
+)
+prefix_rule(
+    pattern = ["npm", "--prefix", "frontend", "run", "test"],
+    decision = "allow",
+    match = ["npm --prefix frontend run test"],
+)
+prefix_rule(
+    pattern = ["npm", "--prefix", "frontend", "run", "test:e2e"],
+    decision = "allow",
+    match = ["npm --prefix frontend run test:e2e -- zshots --project=desktop-chromium --project=phone-chrome"],
+)
+prefix_rule(
+    pattern = ["scripts/check-scenario-coverage.sh"],
+    decision = "allow",
+    match = ["scripts/check-scenario-coverage.sh"],
+)
+prefix_rule(
+    pattern = ["./scripts/check-scenario-coverage.sh"],
+    decision = "allow",
+    match = ["./scripts/check-scenario-coverage.sh"],
+)
+
 # Force flag right after "push" or after the remote.
 prefix_rule(
     pattern = ["git", "push", ["--force", "-f"]],
