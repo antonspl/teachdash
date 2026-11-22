@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -78,6 +79,25 @@ class ItemController {
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		items.delete(teacherId, courseId, lessonId, partId, itemId);
+	}
+
+	// STUB: returns 501 until the implementation pass of items-read-edit
+	@GetMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items")
+	List<ItemResponse> list(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId) {
+		throw new ApiException(HttpStatus.NOT_IMPLEMENTED, "STUB");
+	}
+
+	// STUB: returns 501 until the implementation pass of items-read-edit
+	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}")
+	ItemResponse edit(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId,
+			@PathVariable UUID itemId) {
+		throw new ApiException(HttpStatus.NOT_IMPLEMENTED, "STUB");
 	}
 
 	private ItemType<?> validateEnvelope(CreateItemRequest request) {

@@ -2,12 +2,12 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add stubs returning 501, marked `STUB`, for `GET` and `PATCH .../parts/{partId}/items` and `.../items/{itemId}` (design D1). No migration is needed and no stub for the `theory` type: until it exists, adding a `theory` item gives `UNKNOWN_TYPE` and the tests fail at their THEN step
-- [ ] 1.2 Add or extend `ApiTest` helpers: `createItem` with a `version` argument, a reader of one item row (type, payload as jsonb text, `version`, `updatedAt`), reading the `updatedAt` of a part, a lesson and a course, if the existing helpers do not cover it (design D7)
-- [ ] 1.3 Write tests for items R3-S1 to R3-S5 in `items/api/ListItemsTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`. Create courses, lessons, parts, items and sessions in GIVEN with the helpers, never through the endpoints under test
-- [ ] 1.4 Write tests for items R4-S1 to R4-S10 in `items/api/EditItemTest`, same rules. R4-S9 and R4-S10 use `support.Parallel.run`
-- [ ] 1.5 Write tests for items R5-S1 to R5-S6 in `items/api/TheoryItemTest`, same rules. A `theory` item in GIVEN is inserted with the helper. Write the unit test of the `theory` student view (no scenario ID)
-- [ ] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Against the 501 stubs only the 403 role and CSRF cases and the 401 cases pass, because security runs before the controller (R3-S4, R3-S5, R4-S7 and the admin and deactivated steps of R4-S8)
+- [x] 1.1 Add stubs returning 501, marked `STUB`, for `GET` and `PATCH .../parts/{partId}/items` and `.../items/{itemId}` (design D1). No migration is needed and no stub for the `theory` type: until it exists, adding a `theory` item gives `UNKNOWN_TYPE` and the tests fail at their THEN step
+- [x] 1.2 Add or extend `ApiTest` helpers: `createItem` with a `version` argument, a reader of one item row (type, payload as jsonb text, `version`, `updatedAt`), reading the `updatedAt` of a part, a lesson and a course, if the existing helpers do not cover it (design D7)
+- [x] 1.3 Write tests for items R3-S1 to R3-S5 in `items/api/ListItemsTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`. Create courses, lessons, parts, items and sessions in GIVEN with the helpers, never through the endpoints under test
+- [x] 1.4 Write tests for items R4-S1 to R4-S10 in `items/api/EditItemTest`, same rules. R4-S9 and R4-S10 use `support.Parallel.run`
+- [x] 1.5 Write tests for items R5-S1 to R5-S6 in `items/api/TheoryItemTest`, same rules. A `theory` item in GIVEN is inserted with the helper. Write the unit test of the `theory` student view (no scenario ID)
+- [x] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Against the 501 stubs only the 403 role and CSRF cases and the 401 cases pass, because security runs before the controller (R3-S4, R3-S5, R4-S7 and the admin and deactivated steps of R4-S8)
 - [ ] 1.7 List the stubs (temporary) in the PR description; there is no migration
 
 ## 2. Test review
