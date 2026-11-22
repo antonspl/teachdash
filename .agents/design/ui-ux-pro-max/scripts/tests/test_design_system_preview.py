@@ -10,8 +10,6 @@ or directly:
     python scripts/tests/test_design_system_preview.py
 """
 
-import json
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -30,7 +28,6 @@ from design_system import (  # noqa: E402
 )
 from preview import format_preview_html, write_preview_html  # noqa: E402
 
-SEARCH = SCRIPTS_DIR / "search.py"
 HOSTILE_NAME = '<script>alert(1)</script>'
 DARK_QUERY = "SaaS invoicing fintech B2B professional dark mode"
 
@@ -52,17 +49,6 @@ def _parse(html):
     parser = _TagCollector()
     parser.feed(html)
     return parser
-
-
-def _run_search(*args):
-    return subprocess.run(
-        [sys.executable, str(SEARCH), *map(str, args)],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
 
 
 class TestPreviewStructure(unittest.TestCase):

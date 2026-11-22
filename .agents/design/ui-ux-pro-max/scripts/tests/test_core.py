@@ -12,8 +12,6 @@ or directly:
 """
 
 import os
-import json
-import subprocess
 import sys
 import tempfile
 import unittest
