@@ -18,7 +18,7 @@
 
 ## 3. Implementation
 
-- [ ] 3.1 Reject a lone surrogate in the String deserializer of `NulRejectingJsonConfig` (`INVALID_FORMAT`, all endpoints); make `StrictIntegerJsonConfig` strict for `Integer` and `Long`; enable `USE_BIG_DECIMAL_FOR_FLOATS` globally (design D4)
+- [x] 3.1 Reject a lone surrogate in the String deserializer of `NulRejectingJsonConfig` (`INVALID_FORMAT`, all endpoints); make `StrictIntegerJsonConfig` strict for `Integer` and `Long`; enable `USE_BIG_DECIMAL_FOR_FLOATS` globally (design D4)
 - [ ] 3.2 `ItemTypeRegistry`: collect the `ItemType<?>` beans, fail startup on a duplicate code (design D3)
 - [ ] 3.3 `CreateItemRequest` (`String type`, `Map<String,Object> payload`) and `ItemResponse`; the controller of a few lines and `ItemPayloadValidator` (design D4: convert with unknown properties rejected, Bean Validation, `extraChecks`; the stored payload serialised with `NON_NULL`, D5), the `common` helpers `ApiException.fromJackson` (extracted from `ApiExceptionHandler`; field `payload` for an unknown property and a root mismatch, never `REQUIRED`; the path is cut at the first `Map` key, also in `ApiExceptionHandler.fieldOf`, design D3) and `ApiException.validation` with the prefixed overload, the codes `UNKNOWN_TYPE` and `UNKNOWN_FIELD` in the default priority tier
 - [ ] 3.4 `ItemRepository` on `JdbcClient`: the part lock (in `ItemRepository`, the only place) scoped by lesson and teacher, count, insert at the end with `cast(:payload as jsonb)` taking the serialised record as a String and returning the stored payload and the position (design D5), without `schema_version`
