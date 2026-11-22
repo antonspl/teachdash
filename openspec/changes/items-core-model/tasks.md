@@ -14,7 +14,7 @@
 
 ## 2. Test review
 
-- [ ] 2.1 Engineer approves the reworked tests in the PR (re-approval after the rework). HARD STOP: no production code before approval
+- [x] 2.1 Engineer approves the reworked tests in the PR (re-approval after the rework). HARD STOP: no production code before approval
 
 ## 3. Implementation
 
