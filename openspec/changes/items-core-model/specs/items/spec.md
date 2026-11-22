@@ -20,7 +20,7 @@
 
 #### Scenario: items/R1-S4 At most 50 items per part
 - **GIVEN** a logged-in teacher A with a part "Full" with 50 items and a part "Other" with 49 items
-- **WHEN** teacher A adds an item to "Full", then an item with the payload `{}` to "Full", and then an item to "Other"
+- **WHEN** teacher A adds an item of the type `test-note` with the text "Fifty-one" to "Full", then an item of the type `test-note` with the payload `{}` to "Full", and then an item of the type `test-note` with the text "Fiftieth" to "Other"
 - **THEN** the first response is 409 with code `ITEM_LIMIT_REACHED` and no `errors` property, the second is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.text", code: "REQUIRED"}]` (input is checked before the limit), the third is 201 with `position` 50, "Full" has 50 items and "Other" has 50 items
 
 #### Scenario: items/R1-S5 Parallel requests keep positions distinct and the limit (the lock chain serialises them)
@@ -45,7 +45,7 @@
 
 #### Scenario: items/R1-S9 Checks run in a fixed order
 - **GIVEN** teacher A logged in with a part, a part of teacher B with the lesson "Падежи", a logged-in admin, and a logged-in teacher A2 who is then deactivated
-- **WHEN** teacher A adds an item with the payload `{}` to the part "not-a-uuid", then to teacher B's part, then to the part under the course "not-a-uuid"; and the admin and the deactivated teacher A2 each add an item with the payload `{}` to the part "not-a-uuid" of the lesson "not-a-uuid" of the course "not-a-uuid"
+- **WHEN** teacher A adds an item of the type `test-note` with the payload `{}` to the part "not-a-uuid", then to teacher B's part, then to the part under the course "not-a-uuid"; and the admin and the deactivated teacher A2 each add an item of the type `test-note` with the payload `{}` to the part "not-a-uuid" of the lesson "not-a-uuid" of the course "not-a-uuid"
 - **THEN** teacher A's first response is 404 with code `NOT_FOUND` and no `errors` property, the second is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.text", code: "REQUIRED"}]` and does not contain "Падежи", the third is 404 with code `NOT_FOUND`, the admin's response is 403 with code `FORBIDDEN` and the deactivated teacher's is 401 with code `UNAUTHENTICATED` (neither is 404 or 400), and teacher B's part has no new item
 
 #### Scenario: items/R1-S10 Adding items while the part is deleted
@@ -54,7 +54,7 @@
 - **THEN** the delete response is 204, each add response is 201 or 404 and none is 500, the part is not stored, and no item row references it
 
 ### Requirement: R2 An item payload follows the generic rules and its type's rules
-`type` SHALL be a registered code and `payload` a JSON object, else 400 `VALIDATION_FAILED` with `REQUIRED`, `UNKNOWN_TYPE` or `INVALID_TYPE` (a non-object payload is the only error, `type` is not checked). The payload SHALL be read into the type's record and checked, with errors under `payload.`; an unknown property is `UNKNOWN_FIELD` with the field `payload`. The stored payload is the record serialised without null fields; the response is read back from jsonb.
+`type` SHALL be a registered code and `payload` a JSON object, else 400 `VALIDATION_FAILED` with `REQUIRED`, `UNKNOWN_TYPE` or `INVALID_TYPE`; the first binding error wins (the body is bound in key order). The payload SHALL be read into the type's record and checked, with errors under `payload.`; an unknown property is `UNKNOWN_FIELD`, and a Jackson path is cut at a `Map` key, so both give the field `payload` and no key is echoed. The stored payload is the record serialised without null fields.
 
 #### Scenario: items/R2-S1 A missing, null, blank, wrongly typed or unknown type is rejected
 - **GIVEN** a logged-in teacher A with a part, and the item type `test-note` (no type `poll` is registered)
@@ -66,10 +66,10 @@
 - **WHEN** teacher A adds items with the bodies `{"type": "test-note"}`, `{"type": "test-note", "payload": null}`, `{"type": "test-note", "payload":` and no body
 - **THEN** the first two responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "REQUIRED"}]`, the last two are 400 with code `MALFORMED_REQUEST` and no `errors` property, and the part has no item
 
-#### Scenario: items/R2-S3 A payload that is not an object is rejected before the type is checked
+#### Scenario: items/R2-S3 A payload that is not an object is rejected before the type is checked, the first binding error wins
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `test-note` with the payload `[]`, `["Hi"]`, `"Hi"`, `""`, `123` and `true`, and an item of the type "poll" (not registered) with the payload `[]`, and one with a blank type and the payload `[]`
-- **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_TYPE"}]` (no `payload.text` entry and no `type` entry: the type is not checked), no body contains "Hi" as a value, and the part has no item
+- **WHEN** teacher A adds items of the type `test-note` with the payload `[]`, `["Hi"]`, `"Hi"`, `""`, `123` and `true`, and an item of the type "poll" (not registered) with the payload `[]`, one with a blank type and the payload `[]`, and the body `{"type":123,"payload":[]}` (the `type` key first)
+- **THEN** every response is 400 with code `VALIDATION_FAILED`; all but the last have `errors` exactly `[{field: "payload", code: "INVALID_TYPE"}]` (no `payload.text` entry and no `type` entry: the type is not checked), the last has `errors` exactly `[{field: "type", code: "INVALID_TYPE"}]` (binding stops at the first error, `type`, and `payload` is not reported), no body contains "Hi" as a value, and the part has no item
 
 #### Scenario: items/R2-S5 A NUL character or a lone surrogate in a string is rejected with its field
 - **GIVEN** a logged-in teacher A with a part
@@ -106,7 +106,12 @@
 - **WHEN** teacher A adds an item with the body `{"type": "test-note", "payload": {"text": "Hi"}, "extra": 1}`
 - **THEN** the response is 201 and the payload is `{"text": "Hi"}`
 
-#### Scenario: items/R2-S12 Decimals keep their precision and an integer field is strict
-- **GIVEN** a logged-in teacher A with a part, and the type `test-note` whose optional `rating` is an `Integer` and optional `weight` a `BigDecimal`
-- **WHEN** teacher A adds items of the type `test-note` with the payloads `{"text": "ok", "weight": 0.12345678901234567890, "rating": 3}` and `{"text": "ok", "weight": 1e400}`, and items with the `rating` `1.5`, `1e400` and `"5"`
-- **THEN** the first response is 201 with `weight` numerically equal to 0.12345678901234567890 (all 20 digits) and `rating` 3, the second is 201 with `weight` numerically equal to 1e400 and the stored payload has the same value, the other three are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.rating", code: "INVALID_TYPE"}]`, and the part has exactly 2 items
+#### Scenario: items/R2-S12 Decimals keep their precision, out-of-range decimals and a non-integer rating are rejected
+- **GIVEN** a logged-in teacher A with a part, and the type `test-note` whose optional `rating` is an `Integer` and optional `weight` a `BigDecimal` with `@Digits(integer = 10, fraction = 20)`
+- **WHEN** teacher A adds items of the type `test-note` with the payloads `{"text": "ok", "weight": 0.12345678901234567890, "rating": 3}`, then `{"text": "ok", "weight": 1e400}`, `{"text": "ok", "weight": 1e200000}` and `{"text": "ok", "weight": 1e-200000}`, then `{"text": "ok", "rating": 1.5}`, `{"text": "ok", "rating": 1e400}` and `{"text": "ok", "rating": "5"}`
+- **THEN** the first response is 201 with `weight` numerically equal to 0.12345678901234567890 (all 20 digits), the stored payload has the same value, and `rating` 3, the next three are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.weight", code: "INVALID_FORMAT"}]` (not 500), the last three are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.rating", code: "INVALID_TYPE"}]`, and the part has exactly 1 item
+
+#### Scenario: items/R2-S13 A key is never echoed, even when its value is rejected
+- **GIVEN** a logged-in teacher A with a part
+- **WHEN** teacher A adds items with the bodies `{"type": "test-note", "payload": {"text": "ok", "secretKey": "a\u0000"}}` and `{"type": "test-note", "payload": {"text": "ok", "secretKey": "a\ud800"}}` (JSON escapes: a NUL and a lone high surrogate in the value)
+- **THEN** both responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_FORMAT"}]` (not `payload.secretKey`, not 500), no body contains "secretKey", and the part has no item
