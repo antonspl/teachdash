@@ -401,6 +401,11 @@ Reactivating the teacher SHALL NOT restore the assignments.
 - **WHEN** the admin deactivates teacher A and the link is then used to set the password "new-password-1"
 - **THEN** the deactivation response is 204, the link response is 410 with code `LINK_INVALID`, logging in with "new-password-1" returns 401, and the student logs in with "old-password-1"
 
+#### Scenario: student-enrolment/R7-S8 Release voids only the teacher's links for the teacher's students
+- **GIVEN** teacher A with the students S1 and S2 without a password, each with an unused set-password link issued by teacher A, a student U who is not teacher A's student with an unused set-password link issued by teacher A, an unused reset link for S1 issued by an admin, and teacher B with a student S3 without a password with an unused set-password link issued by teacher B
+- **WHEN** the admin deactivates teacher A, and every link is then used to set a password
+- **THEN** the deactivation response is 204, the responses for the links teacher A issued for S1 and S2 are 410 with code `LINK_INVALID`, and the responses for U's link, the admin's link for S1 and S3's link are 200
+
 ### Requirement: R8 Teacher manages their join link
 A teacher SHALL have at most one join link and SHALL be able to view it (with its expiry),
 generate a new one, which replaces the old, and disable it. Viewing SHALL NOT create a link.

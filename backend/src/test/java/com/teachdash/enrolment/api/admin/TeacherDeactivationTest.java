@@ -182,7 +182,7 @@ class TeacherDeactivationTest extends ApiTest {
 	}
 
 	@Test
-	@DisplayName("Deactivation voids only the teacher's links for the teacher's students")
+	@DisplayName("[student-enrolment/R7-S8] Release voids only the teacher's links for the teacher's students")
 	void deactivationVoidsOnlyTheTeachersLinksForItsStudents() {
 		// given teacher A with students S1 and S2 who have unused links issued by A, an unassigned user with a link issued by A, a link for S1 issued by an admin, and teacher B with a student S3 with a link issued by B
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");

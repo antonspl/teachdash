@@ -18,7 +18,7 @@ See proposal.md. Current state on `main`:
 
 ### D1. The component
 
-`AssignmentEnding`, a Spring `@Component` in `com.teachdash.enrolment.persistence`, next to `TeacherStudentRepository` (reason in D3). Dependencies: `TeacherStudentRepository` and accounts' `PasswordLinkService`. Two public operations:
+`AssignmentEnding`, a Spring `@Service` in `com.teachdash.enrolment.domain` (reason in D3). Dependencies: `TeacherStudentRepository` and accounts' `PasswordLinkService`. Two public operations:
 
 - `boolean end(UUID teacherId, UUID studentId)`: deletes the row; if a row existed, voids the unused links the teacher issued for that student, with the one-element set; returns whether a row existed. When no row existed it voids nothing: the caller answers 404 as before.
 - `void endAll(UUID teacherId)`: deletes every assignment of the teacher with `delete ... returning student_id`, then, if the list is not empty, voids the unused links the teacher issued for those students in one statement.
@@ -33,7 +33,7 @@ Javadoc on the class and both methods: the teacher row must be locked in the cur
 
 ### D3. Only `AssignmentEnding` deletes assignments
 
-Constitution §3 puts repositories in `persistence`, and a Java package-private method is visible only inside its own package. So `TeacherStudentRepository.delete` and `deleteAllOfTeacher` become package-private, and `AssignmentEnding` lives in the same package, `com.teachdash.enrolment.persistence`. This is the simplest Java means: no new dependency (an architecture-test library would fall under §7), no new test infrastructure, and the compiler enforces it. Tests that spy `TeacherStudentRepository` (for example `JoinLinkFailureTest`) must keep working with package-private methods; if the Spring proxy or the spy breaks that, the fallback is a public method on a final class, or a documented convention, and the implementer reports it. Javadoc on both delete methods says they are package-private on purpose and callers use `AssignmentEnding`; there is no reflection test. Cost: a component that coordinates a repository and another feature's service sits in `persistence`, not `domain`. This deviates from §3 (a service in `persistence`) and adds the dependency `enrolment.persistence` to `accounts.domain`; `AssignmentEnding` is the only class in `persistence` allowed to call another feature's service. Both callers stay in `domain` and call the public component.
+Constitution §3 puts repositories in `persistence` and services in `domain`, so `AssignmentEnding` lives in `com.teachdash.enrolment.domain`, next to its two callers. `TeacherStudentRepository.delete` and `deleteAllOfTeacher` stay public, because `domain` and `persistence` are different packages. The "only deleter" rule is a documented convention: Javadoc on both methods says only `AssignmentEnding` calls them. The compiler does not enforce it, and there is no architecture test (a library would fall under §7). Verify with `grep -rn "assignments.delete\|deleteAllOfTeacher" backend/src/main`: only `AssignmentEnding` calls them. The change was first planned with `AssignmentEnding` in `persistence` and package-private delete methods, so that the compiler enforced the rule; code review found that this breaks §3 (a service in `persistence`), so this design follows §3 instead.
 
 ### D4. Callers
 
@@ -49,7 +49,7 @@ Unchanged and owned by the callers. Removal locks the teacher row with `findActi
 No test covers the precondition that the teacher row is locked: the component does not check it, and the Javadoc is the only guard.
 
 - `TeacherDeactivationFailureTest` (R7-S4): the spy on `PasswordLinkService` now throws from the set-based `invalidateLinksIssuedBy`; the assertions are the same (500, the teacher can log in, the student is still listed). `TeacherDeactivationJoinLinkFailureTest` (R8-S9) has the same mock and the same update, so it keeps failing the deactivation. These two are the only edits to existing tests.
-- One new test in `TeacherDeactivationTest`, without a scenario ID (no spec to name): teacher A with two students that have unused set-password links issued by A, a third user with a link issued by A who is not A's student, an admin link for one of A's students, and teacher B with a student and a link. After deactivation, only A's links for A's two students are void; the third user's link, the admin link and B's link still work. R7 alone does not cover the unassigned user's link (see Clarifications).
+- One new test in `TeacherDeactivationTest` for the new scenario R7-S8: teacher A with two students that have unused set-password links issued by A, a third user with a link issued by A who is not A's student, an admin link for one of A's students, and teacher B with a student and a link. After deactivation, only A's links for A's two students are void; the third user's link, the admin link and B's link still work. R7 alone does not cover the unassigned user's link (see Clarifications).
 - The R4 and R7 tests are otherwise untouched; the proof is the green suite and `git diff` over them.
 
 ## Dependencies
@@ -58,7 +58,8 @@ None added.
 
 ## Risks / Trade-offs
 
-- **Component in `persistence`.** It reaches into accounts' service from there. Accepted for a compiler-enforced "only deleter"; moving it to `domain` would need public delete methods and a convention instead.
+- **Convention, not compiler.** The delete methods are public, so a new caller could delete an assignment without voiding the links. The Javadoc and code review are the only guards.
+- **R7-S8 cannot fail first.** The behaviour exists already; the Red step shows instead that its test fails when the void ignores `issued_by`.
 - **Mock-based failure tests.** They depend on the name and the arguments of the spied method; D6 updates the two that do.
 - **Large id sets.** A teacher with very many students sends one `in (...)` list; the limit is far above what one teacher manages, and the old loop issued one statement per student.
 

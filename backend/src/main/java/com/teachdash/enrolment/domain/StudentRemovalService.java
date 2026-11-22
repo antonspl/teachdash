@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
-import com.teachdash.enrolment.persistence.AssignmentEnding;
 
 @Service
 public class StudentRemovalService {

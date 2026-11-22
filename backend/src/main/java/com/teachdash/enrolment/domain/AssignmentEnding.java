@@ -1,12 +1,13 @@
-package com.teachdash.enrolment.persistence;
+package com.teachdash.enrolment.domain;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import com.teachdash.accounts.domain.PasswordLinkService;
+import com.teachdash.enrolment.persistence.TeacherStudentRepository;
 
 /**
  * The only way to delete from {@code teacher_students}: ending an assignment also voids the
@@ -14,7 +15,7 @@ import com.teachdash.accounts.domain.PasswordLinkService;
  * teacher row must already be locked there ({@code select ... for update}); this class does
  * not lock.
  */
-@Component
+@Service
 public class AssignmentEnding {
 
 	private final TeacherStudentRepository assignments;
