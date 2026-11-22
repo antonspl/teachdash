@@ -51,7 +51,7 @@ Always return, on the screens the change touches:
   from a source, or sources that disagree, is stated explicitly in the question. A
   point the sources fully decide is not an open question: give it as "decided by
   sources: X (source)" for the engineer to confirm.
-- **Visual plan**, per screen and state: hierarchy (what is primary, secondary,
+- **Visual plan** (its own section, see the limits below), per screen and state: hierarchy (what is primary, secondary,
   tertiary), tokens used and any new ones (reuse an existing token first; list each new
   token with the reason none fits), layout, and density. After the engineer's answers
   it goes into the "UI design" section of `design.md`.
@@ -59,11 +59,16 @@ Always return, on the screens the change touches:
   main agent asks both lists; the answers go into the proposal's Clarifications, and
   only the answers to the design questions go into "UI design".
 
-Report in at most 40 lines in total, counting every section below (Design questions,
-Visual plan and Other open questions included):
+Report in at most 40 lines in total, counting every section below except the Visual
+plan (Design questions and Other open questions included):
 1. **Answer:** the answer to the angle, first.
 2. **Evidence:** `file:line` or URL for each fact.
 3. **Options:** only if there is a choice, with the cost of each and your recommendation.
 4. **Risks:** what could go wrong, with a concrete failure scenario.
 5. **Design questions**, **Visual plan**, **Other open questions** as above.
 6. **Not checked:** what you did not read or run.
+
+The **Visual plan** is its own section, outside the 40-line limit: about 6 lines per
+screen and state, at most 60 lines in total. The main agent passes it to the
+spec-writer word for word for the "UI design" section, so write it ready to be pasted.
+Do not write it to a file (you are read-only).

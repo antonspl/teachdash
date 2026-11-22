@@ -72,6 +72,8 @@ too).
   the research conclusions and, for a fix, the findings with the decision on each. It
   records decisions as given and does not take new ones. The main agent may make a
   one- or two-line edit in one file itself.
+  The main agent passes the `frontend-researcher`'s visual plan (its own report
+  section, outside the 40 lines) to the spec-writer word for word for "UI design".
   The spec-writer, not the main agent, follows the OpenSpec propose and update skills
   for writing; the main agent uses them only to agree the plan.
 - **Spec critique**: the `spec-critic` agent (medium class), after the spec is
@@ -97,8 +99,8 @@ too).
   `frontend-implementer` report (unsure items, unexpected files, failing or changed
   tests, security-sensitive code) go to the `code-gate-reviewer` as points to check.
   For a PR touching `frontend/src`, after the last slice the main agent
-  asks the `frontend-implementer` for the final screenshot set and passes its paths to
-  the `visual-reviewer`, with its list of unreachable states (or its "no screenshots:
+  asks the `frontend-implementer` for the final screenshot set and passes its folder
+  path and its list of unreachable states to the `visual-reviewer` (or its "no screenshots:
   <reason>" line, which skips it). At the code gate of such a PR the main agent gives
   the engineer the final screenshot folder path (`frontend/screenshots/<change-name>/`);
   the engineer looks and decides whether to attach anything. Fix findings as the Code
