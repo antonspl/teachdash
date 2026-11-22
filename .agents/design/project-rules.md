@@ -30,9 +30,10 @@ says something else, follow this file. The full order is in C0.
   code (#171), then these project rules, then the vendored sources.
 - **C1** Sentence case, not Title Case, for headings, buttons, labels and messages.
 - **C2** No all-caps or uppercase-small labels.
-- **C3** Tokens only. A new value becomes a new role-named token added to
-  `tokens.css` (named for its role, such as `--space-button-gap`, not for its
-  value).
+- **C3** Tokens only. Reuse an existing token first; add a new token only when none
+  fits, as a role-named token in `tokens.css` (named for its role, such as
+  `--space-button-gap`, not for its value), and list each new token in the "UI
+  design" section.
 - **C4** Text uses `--font-body`, the system stack. No web fonts and no "distinctive
   typeface".
 - **C5** The one `--radius` and `--shadow-card` are ours. Changing, renaming or
@@ -57,10 +58,11 @@ says something else, follow this file. The full order is in C0.
 - **C12** Focus on error follows the specs: `openspec/specs/web-client/spec.md` R14
   (R14-S12) and R17 (R17-S3).
 - **C13** No scores and no P0-P3 priorities. Findings at review are triaged as
-  constitution §1 step 10 says: security problems, data loss, spec violations, and
-  design-rule violations (the design rules in `.agents/design/`, in the precedence
-  order of its README) and WCAG 2.2 AA violations in UI the change itself adds or
-  edits are fixed in the PR.
+  constitution §1 step 10 says: security problems, data loss and spec violations are
+  fixed in the PR; so are, in UI the change itself adds or edits, violations of the
+  change's "UI design" section, the design code (#171), `project-rules.md` and WCAG
+  2.2 AA, and `visual-criteria.md` findings where the screenshot departs from the
+  "UI design" visual plan. Findings from the vendored sources become issues.
   - "UI the change adds or edits" means markup, CSS, copy (i18n strings) or behaviour
     (handlers, focus, states) that the change adds or edits. Touching an existing
     component for an unrelated reason does not pull in its existing problems (#168,
