@@ -1,7 +1,7 @@
 # items Specification
 
 ## Purpose
-TBD - created by archiving change items-core-model. Update Purpose after archive.
+A teacher adds items (lesson tasks and content) to a part of a lesson. Each item has a registered type and a JSON payload that the type validates.
 
 ## Requirements
 
