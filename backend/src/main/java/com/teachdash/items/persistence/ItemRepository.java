@@ -104,17 +104,19 @@ public class ItemRepository {
 				.update();
 	}
 
-	public void setPosition(UUID itemId, UUID partId, UUID teacherId, int position, Instant now) {
-		jdbc.sql("""
+	public Item setPosition(UUID itemId, UUID partId, UUID teacherId, int position, Instant now) {
+		return jdbc.sql("""
 				update items set position = :position, updated_at = :now
 				where id = :itemId and part_id = :partId and teacher_id = :teacherId
+				returning id, type, payload::text as payload, position, version, created_at, updated_at
 				""")
 				.param("position", position)
 				.param("now", Timestamp.from(now))
 				.param("itemId", itemId)
 				.param("partId", partId)
 				.param("teacherId", teacherId)
-				.update();
+				.query((rs, rowNum) -> toItem(rs))
+				.single();
 	}
 
 	public Optional<Integer> deleteReturningPosition(UUID itemId, UUID partId, UUID teacherId) {

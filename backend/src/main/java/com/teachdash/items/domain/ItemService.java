@@ -81,8 +81,7 @@ public class ItemService {
 			items.shiftRange(partId, teacherId, target, old - 1, 1);
 		}
 		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
-		items.setPosition(itemId, partId, teacherId, target, now);
-		return items.findInPart(itemId, partId, teacherId).orElseThrow(ApiException::notFound);
+		return items.setPosition(itemId, partId, teacherId, target, now);
 	}
 
 	@Transactional
