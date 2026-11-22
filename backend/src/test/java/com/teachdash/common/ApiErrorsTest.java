@@ -208,6 +208,26 @@ class ApiErrorsTest extends ApiTest {
 	}
 
 	@Test
+	@DisplayName("[api-errors/R1-S13] A lone surrogate is invalid format on every endpoint")
+	void loneSurrogateIsInvalidFormatOnEveryEndpoint() {
+		// given a logged-in admin
+		TestClient admin = loggedInAdmin();
+		long usersBefore = countRows("users");
+
+		// when the admin creates a teacher with a lone high surrogate in the name
+		var response = admin.post(TEACHERS, """
+				{"name": "Анна\\ud800", "email": "anna@example.com", "timeZone": "Europe/Berlin", "nativeLanguage": "en"}""");
+
+		// then the response is 400 VALIDATION_FAILED with name INVALID_FORMAT only
+		response.then().statusCode(400)
+				.body("code", equalTo("VALIDATION_FAILED"))
+				.body("errors", equalTo(List.of(error("name", "INVALID_FORMAT"))))
+				.body(not(containsString("Анна")));
+		// and no account is created
+		assertEquals(usersBefore, countRows("users"));
+	}
+
+	@Test
 	@DisplayName("[api-errors/R1-S7] A wrong JSON type is a validation error")
 	void wrongJsonTypeIsAValidationError() {
 		// given a logged-in admin
