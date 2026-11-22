@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -154,9 +155,9 @@ class AddItemTest extends ItemApiTest {
 		TestClient teacher = loggedInAs("a@example.com");
 
 		// when teacher A adds an item to "Full", then an item with the payload {} to "Full", and then an item to "Other"
-		var over = teacher.post(items(course, lesson, full), note("Item 51"));
+		var over = teacher.post(items(course, lesson, full), note("Fifty-one"));
 		var empty = teacher.post(items(course, lesson, full), body("test-note", Map.of()));
-		var last = teacher.post(items(course, lesson, other), note("Item 50"));
+		var last = teacher.post(items(course, lesson, other), note("Fiftieth"));
 
 		// then the first response is 409 ITEM_LIMIT_REACHED with no errors property
 		over.then().statusCode(409)
@@ -355,8 +356,10 @@ class AddItemTest extends ItemApiTest {
 				.body("code", equalTo("VALIDATION_FAILED"))
 				.body("errors", equalTo(List.of(error("payload.text", "REQUIRED"))))
 				.body(not(containsString("Падежи")));
-		// and the third is 404 NOT_FOUND
-		malformedCourse.then().statusCode(404).body("code", equalTo("NOT_FOUND"));
+		// and the third is 404 NOT_FOUND with no errors property
+		malformedCourse.then().statusCode(404)
+				.body("code", equalTo("NOT_FOUND"))
+				.body("$", not(hasKey("errors")));
 		// and the admin's response is 403 FORBIDDEN and the deactivated teacher's is 401 UNAUTHENTICATED
 		adminResponse.then().statusCode(403).body("code", equalTo("FORBIDDEN"));
 		deactivatedResponse.then().statusCode(401).body("code", equalTo("UNAUTHENTICATED"));
@@ -389,7 +392,7 @@ class AddItemTest extends ItemApiTest {
 		responses.get(0).then().statusCode(204);
 		// and each add response is 201 or 404 and none is 500
 		for (Response response : responses.subList(1, 5)) {
-			assertEquals(true, response.statusCode() == 201 || response.statusCode() == 404);
+			assertTrue(response.statusCode() == 201 || response.statusCode() == 404, "status " + response.statusCode());
 		}
 		// and the part is not stored
 		assertEquals(0, countParts(setup.lesson()));

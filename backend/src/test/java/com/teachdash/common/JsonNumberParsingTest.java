@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.teachdash.support.ApiTest;
 
-import tools.jackson.databind.DatabindException;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.exc.MismatchedInputException;
 
@@ -44,7 +43,7 @@ class JsonNumberParsingTest extends ApiTest {
 		for (String json : new String[] { "\"5\"", "1.5", "1e400" }) {
 			assertThatThrownBy(() -> mapper.readValue(json, Long.class))
 					.as("Long from %s", json)
-					.isInstanceOf(DatabindException.class);
+					.isInstanceOf(MismatchedInputException.class);
 		}
 		assertThat(mapper.readValue("5", Long.class)).isEqualTo(5L);
 	}
