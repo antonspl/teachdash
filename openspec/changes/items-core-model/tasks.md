@@ -13,7 +13,7 @@
 
 ## 2. Test review
 
-- [x] 2.1 Engineer approves tests in the PR. HARD STOP: no production code before approval
+- [ ] 2.1 Engineer approves tests in the PR. HARD STOP: no production code before approval
 
 ## 3. Implementation
 
