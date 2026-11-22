@@ -26,7 +26,7 @@ class NulRejectingJsonConfig {
 		public String deserialize(JsonParser parser, DeserializationContext context) {
 			String value = super.deserialize(parser, context);
 			if (value != null && (value.indexOf('\0') >= 0 || hasLoneSurrogate(value))) {
-				throw new NulCharacterException();
+				throw new InvalidCharacterException();
 			}
 			return value;
 		}
@@ -48,10 +48,10 @@ class NulRejectingJsonConfig {
 		}
 	}
 
-	static class NulCharacterException extends RuntimeException {
+	static class InvalidCharacterException extends RuntimeException {
 
-		NulCharacterException() {
-			super("NUL character in input");
+		InvalidCharacterException() {
+			super("NUL or lone surrogate in input");
 		}
 	}
 }

@@ -52,7 +52,7 @@ final class JacksonErrors {
 
 	private static boolean containsNul(Throwable error) {
 		for (Throwable cause = error; cause != null; cause = cause.getCause()) {
-			if (cause instanceof NulRejectingJsonConfig.NulCharacterException) {
+			if (cause instanceof NulRejectingJsonConfig.InvalidCharacterException) {
 				return true;
 			}
 		}

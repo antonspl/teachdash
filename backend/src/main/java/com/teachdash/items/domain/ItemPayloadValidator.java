@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.teachdash.common.ApiException;
+import com.teachdash.common.FieldErrorCodes;
 import com.teachdash.common.FieldErrorDetail;
 
 import jakarta.validation.ConstraintViolation;
@@ -51,7 +52,11 @@ public class ItemPayloadValidator {
 		}
 		List<FieldErrorDetail> extra = type.extraChecks(record);
 		if (!extra.isEmpty()) {
-			throw ApiException.fields(extra);
+			throw ApiException.fields(extra.stream()
+					.map(detail -> new FieldErrorDetail(
+							FieldErrorCodes.withPrefix(PAYLOAD, detail.field()),
+							detail.code()))
+					.toList());
 		}
 		return record;
 	}

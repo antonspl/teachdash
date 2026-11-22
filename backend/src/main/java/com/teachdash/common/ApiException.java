@@ -76,7 +76,7 @@ public class ApiException extends RuntimeException {
 		return code;
 	}
 
-	List<FieldErrorDetail> errors() {
+	public List<FieldErrorDetail> errors() {
 		return errors;
 	}
 }

@@ -54,12 +54,18 @@ public final class FieldErrorCodes {
 	}
 
 	static List<FieldErrorDetail> fromViolations(Collection<? extends ConstraintViolation<?>> violations, String prefix) {
-		String separator = prefix.isEmpty() ? "" : ".";
 		return reduce(violations.stream()
 				.map(violation -> new FieldErrorDetail(
-						prefix + separator + violation.getPropertyPath(),
+						withPrefix(prefix, violation.getPropertyPath().toString()),
 						codeOf(violation)))
 				.toList());
+	}
+
+	public static String withPrefix(String prefix, String path) {
+		if (prefix.isEmpty()) {
+			return path;
+		}
+		return path.isEmpty() ? prefix : prefix + "." + path;
 	}
 
 	static List<FieldErrorDetail> reduce(Collection<FieldErrorDetail> details) {
