@@ -8,9 +8,12 @@ Decisions by the engineer for issue #171 (2026-11-22), first of two changes:
 2. #171 is split into two PRs: this one (the product brief) first, then the visual direction with `design-code.md` and the redesign issues.
 3. The later visual directions are static HTML mockups of 2-3 key screens per direction, kept outside the repository. Recorded here for the second change; nothing to do in this one.
 4. Research angles A (brief draft), B (current UI inventory and design questions) and C (baseline screenshots) were run.
-5. The baseline screenshots (70 PNGs: 35 states, desktop and 360 px, `en`) are attached to this change's PR by the main agent, not to the issue. They are local in `frontend/screenshots/design-audit/` (gitignored) and are never committed.
+5. The baseline screenshots (70 PNGs: 35 states, desktop and 360 px, `en`) are attached to this change's PR by the main agent, not to the issue. They are local in `frontend/screenshots/design-audit/` (gitignored) and are never committed. This differs from the issue's "attached to this issue" wording: no comment is posted on #171. The engineer accepts the difference; the code owner reviews it at the final review.
 6. Brief facts: the likely readings drafted by research angle A are accepted as written, with these answers: a student's lesson may be open next to a live video call (narrow window, split attention); UI copy stays informal and friendly per `project-rules.md` (it wins over the older "neutral tone in both UI languages" lines in #118-#120, #133 and #138), while the look should be calm rather than playful; there is no logo and no brand colour yet; the working product name is "teachdash" and may change.
 7. This change touches no workflow files: no roles, `project-rules.md`, `README.md`, vendored sources or permission files. Only `.agents/design/product-brief.md` changes, plus the change's own artifacts.
+8. The brief keeps one line of product personality next to voice: "calm, not playful". Every concrete visual choice (palette, type, layout, chrome) belongs in `design-code.md`, not the brief. Principles 1 and 5 state product priorities, not a visual style.
+9. The brief's voice item gets one line: `project-rules.md` (informal, friendly copy) wins over the "neutral tone" lines in #102, #118-#120, #133 and #138.
+10. Baseline screenshots are attached to this change's PR only, with no comment on #171 (see decision 5).
 
 The five product principles in `design.md` are proposed, not decided: the engineer agrees them (or changes them) at the spec gate.
 
@@ -40,3 +43,4 @@ Agreed with the engineer (decision 4):
 - Any edit to roles, `project-rules.md`, `README.md`, vendored sources, `scripts/` or permission files (decision 7).
 - Frontend code, backend code, specs and migrations. This is a tooling change with `skip_specs: true`: no spec deltas, no scenarios, no Red step.
 - Committing the baseline screenshots (decision 5).
+- Closing #171: the PR must not use a closing keyword ("Closes #171"); it says "Part of #171", because the second change completes the issue.

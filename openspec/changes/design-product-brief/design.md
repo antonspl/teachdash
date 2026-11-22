@@ -24,10 +24,10 @@ The implementer writes the file from the text between the markers below, as it s
 
 Three roles: admin, teacher, student (constitution §3).
 
-- Teachers: language teachers, often independent private tutors. Each has a native language, set by the admin at creation and changeable by the teacher (README, §9, `specs/languages`).
-- Students: registered by their teacher or joining through the teacher's join link; at most one teacher; native language set by the teacher or chosen at joining (§8, §9, `specs/student-enrolment`). Mostly adults and teens in private lessons, not children.
-- Admin: creates and manages teacher accounts; reads all data except student answers and results (§8, `specs/web-admin-teachers`).
-- Scale: about 1000 teachers (§8); tens of students per teacher; 1-3 admins.
+- Teachers: language teachers, often independent private tutors. Each has a native language, set by the admin at creation and changeable by the teacher (§9, `specs/web-profile`).
+- Students: registered by their teacher or joining through the teacher's join link; at most one teacher; native language set by the teacher or chosen at joining (§8, §9, `specs/student-enrolment`). Mostly adults and teens in private lessons, not children (engineer, 2026-11-22).
+- Admin: creates and manages teacher accounts; reads all data except student answers and results (§8).
+- Scale: about 1000 teachers (§8); tens of students per teacher; 1-3 admins (engineer, 2026-11-22).
 
 ## Product Purpose
 
@@ -35,30 +35,31 @@ A lightweight teaching platform: lessons, exercises, a shared whiteboard and vid
 
 A teacher builds courses (course > lessons > parts with teacher-chosen names > ordered items), assigns a course to students, and opens or closes each lesson per student. A student reads an open lesson, answers exercises and sees results: correct, wrong or unchecked (#13, #135, #138).
 
-Success: a teacher prepares a lesson once and runs it for many students without leaving the platform; a student always knows what is open and what to do next.
+Success: a teacher prepares a lesson once and runs it for many students without leaving the platform; a student always knows what is open and what to do next (engineer, 2026-11-22).
 
 ## Positioning
 
-- One light place for content, classes and the whiteboard, for independent teachers rather than schools.
+- One light place for content, classes and the whiteboard, for independent teachers rather than schools (engineer, 2026-11-22).
 - Several teachers from day one, each with private data; sharing only by link as a read-only preview plus copy (§8).
 - Subject-independent core; language teaching (en and ru) is the first use (§9).
 
 ## Operating Context
 
-- UI in English and Russian, separate from course languages; Cyrillic must work everywhere; Russian strings are longer (§9). Users on fixed-line internet in Russia and the EU; no third-party CDNs or web fonts (§10, `project-rules.md`).
+- UI in English and Russian, separate from course languages; Cyrillic must work everywhere; Russian strings are longer. Users on fixed-line internet in Russia and the EU; no third-party CDNs or web fonts (§10, `project-rules.md`).
 - Devices: teachers prepare content at a desk on a laptop; teacher editors are desktop-only (#118-#120, #133, #138). Students are phone-first (360 CSS px) or laptop; every page fits at 360 px (`specs/web-client` R7).
 - A student may have a lesson open next to a live video call, in a narrow window with split attention.
-- Frequency: teachers daily; students a few times a week; admins rarely (creating a teacher, issuing a reset link). Admin screens can be plain; teacher screens must be fast.
-- Time zones matter for schedules (a teacher time zone exists).
-- First release focus: content and enrolment. Schedule (#14), whiteboard and video (LiveKit later; a meeting link until then) come later.
+- Frequency: teachers daily; students a few times a week; admins rarely (creating a teacher, issuing a reset link). Admin screens can be plain; teacher screens must be fast (engineer, 2026-11-22).
+- Time zones matter for schedules: teachers and students both have a time zone (`specs/web-profile`, `specs/student-enrolment`).
+- First release focus: content and enrolment. Schedule (#14), whiteboard and video (LiveKit Cloud later, §3; a meeting link until then) come later.
 
 ## Capabilities and Constraints
 
 - Built now: accounts, login and set password, admin teachers, profile, enrolment, courses, lessons, parts, items core model. Current screens: login, set password, cabinet, profile, admin teachers, not found.
 - Planned (backlog, not order): course editors (#115-#120), student course and lesson views (#134, #135), assign and lesson access (#132, #133), results (#138), cabinet tabs (#57), students list (#35), join page (#37), schedule (#14), groups (#54), homework (#56), media (#55), language switch (#102, #103).
-- Exercise types: gap fill, dropdown, free text, matching; images; theory in Markdown with KaTeX maths (#13, #119). Limits: 100 lessons per course, 20 parts per lesson, 50 items per part; course titles 1-200 characters (`specs/lessons` R1, `specs/parts` R1, `specs/items` R1). YouTube embeds in lessons; other video URLs show as links (§10).
+- Exercise types, planned and not built (only gap fill is scheduled so far, #120, #135): gap fill, dropdown, free text, matching; images; theory in Markdown with KaTeX maths (#13, #119). Limits: at most 20 courses per teacher and course titles 1-200 characters (`specs/courses` R1); 100 lessons per course (`specs/lessons` R1), 20 parts per lesson (`specs/parts` R1), 50 items per part (`specs/items` R1). YouTube embeds in lessons; other video URLs show as links (§10).
 - Terminology: lesson = content, class = scheduled call; never mixed (§3).
-- Voice: copy is informal, friendly, sentence case, second person, no apologies (`project-rules.md`). The look should be calm, a quiet tool rather than a playful one.
+- Voice: copy is informal, friendly, sentence case, second person, no apologies (`project-rules.md`). `project-rules.md` wins over the "neutral tone" lines in #102, #118-#120, #133 and #138.
+- Personality: calm, not playful. Every concrete visual choice (palette, type, layout, chrome) belongs in `design-code.md`, not here.
 - Name and brand: no logo and no brand colour yet; the working name "teachdash" may change.
 
 ## Evidence on Hand
@@ -68,18 +69,18 @@ Success: a teacher prepares a lesson once and runs it for many students without 
 
 ## Product Principles
 
-1. Content first: the lesson is the main object; the app's chrome stays out of its way.
+1. Content first: the lesson is the main object; everything else serves it.
 2. Students on small screens never lose the next action.
 3. Every language is first-class: Russian text is as long as it gets, and nothing breaks in either language.
 4. Teacher data is private and its owner is always clear.
-5. Friendly words, calm look.
+5. Friendly words, calm personality.
 
 ## Accessibility & Inclusion
 
-WCAG 2.2 AA, rules in `project-rules.md`. Users are not assumed to be native speakers of the UI language (§9, #102).
+WCAG 2.2 AA, rules in `project-rules.md`.
 <!-- BRIEF END -->
 
-The principles in the block above are proposed; the engineer agrees them at the spec gate. All other facts are as confirmed in proposal decision 6 or taken from the cited sources. The "Voice and assets" material of the draft sits under "Capabilities and Constraints" (voice, name) and "Evidence on Hand" (assets), since the template has no section of its own for them.
+The principles in the block above are proposed; the engineer agrees them at the spec gate (the "proposed" note is not carried into `product-brief.md`). Items marked "(engineer, 2026-11-22)" were shown to the engineer as likely readings and accepted. All other facts are as confirmed in proposal decision 6 or taken from the cited sources. The "Voice and assets" material of the draft sits under "Capabilities and Constraints" (voice, name) and "Evidence on Hand" (assets), since the template has no section of its own for them.
 
 ### D2. Where the file is checked
 
