@@ -54,7 +54,7 @@
 - **THEN** the delete response is 204, each add response is 201 or 404 and none is 500, the part is not stored, and no item row references it
 
 ### Requirement: R2 An item payload follows the generic rules and its type's rules
-`type` SHALL be a registered code and `payload` a JSON object, else 400 `VALIDATION_FAILED`: `type` missing `REQUIRED`, unregistered `UNKNOWN_TYPE`; `payload` missing `REQUIRED`, not an object `INVALID_TYPE`, over 65536 UTF-8 bytes `TOO_LONG`, a NUL in any value or key `INVALID_FORMAT`. Then the type's validator runs, with errors under `payload.`. The response `payload` is read back from jsonb.
+`type` SHALL be a registered code and `payload` a JSON object, else 400 `VALIDATION_FAILED` with `REQUIRED`, `UNKNOWN_TYPE` or `INVALID_TYPE`. The payload SHALL then be read into the type's record and checked, with errors under `payload.` (`INVALID_TYPE`, `INVALID_FORMAT` for a NUL or a lone surrogate, `UNKNOWN_FIELD`, the record's constraints, the type's cross-field checks). The stored payload is the checked record serialised; the response `payload` is read back from jsonb.
 
 #### Scenario: items/R2-S1 A missing, null, blank, wrongly typed or unknown type is rejected
 - **GIVEN** a logged-in teacher A with a part, and the item type `test-note` (no type `poll` is registered)
@@ -71,32 +71,37 @@
 - **WHEN** teacher A adds items of the type `test-note` with the payload `[]`, `["Hi"]`, `"Hi"`, `123` and `true`
 - **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_TYPE"}]` (no `payload.text` entry), no body contains "Hi" as a value, and the part has no item
 
-#### Scenario: items/R2-S4 The payload size limit is 64 KiB of UTF-8 bytes
-- **GIVEN** a logged-in teacher A with a part, a payload A `{"text": "Я", "hint": "<padding>"}` whose compact serialisation is exactly 65536 bytes, where the padding is Cyrillic letters ("Я", 2 bytes each) and one ASCII letter so that the size counts bytes and not characters, a payload B that is the same with one more ASCII letter (65537 bytes), and a payload C of 65537 bytes with no `text` (only `hint`)
-- **WHEN** teacher A adds an item of the type `test-note` with payload A, then one with payload B, then one with payload C
-- **THEN** the first response is 201 with the stored `hint` equal to the sent one, the second and the third are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "TOO_LONG"}]` (the third has no `payload.text` entry: the type's rules do not run), and the part has exactly one item
-
-#### Scenario: items/R2-S5 A NUL character in a string value is rejected at any depth
+#### Scenario: items/R2-S5 A NUL character or a lone surrogate in a string is rejected with its field
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `test-note` with the payloads `{"text": "a\u0000b"}`, `{"text": "ok", "hint": "a\u0000"}` and `{"text": "ok", "extra": {"list": ["fine", {"deep": "x\u0000y"}]}}` (JSON escapes, the NUL is a character of the string)
-- **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_FORMAT"}]` (not 500, and not a `payload.text` error), and the part has no item
+- **WHEN** teacher A adds items of the type `test-note` with the payloads `{"text": "a\u0000b"}`, `{"text": "ok", "hint": "a\u0000"}` and `{"text": "a\ud800b"}` (JSON escapes: the NUL and the lone high surrogate are characters of the string)
+- **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.text", code: "INVALID_FORMAT"}]`, `[{field: "payload.hint", code: "INVALID_FORMAT"}]` and `[{field: "payload.text", code: "INVALID_FORMAT"}]` (not 500), and the part has no item
 
-#### Scenario: items/R2-S6 A NUL character in an object key is rejected
+#### Scenario: items/R2-S6 A NUL character in an object key is an unknown property
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `test-note` with the payloads `{"text": "ok", "ke\u0000y": 1}` and `{"text": "ok", "extra": {"\u0000": true}}`
-- **THEN** both responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_FORMAT"}]`, and the part has no item
+- **WHEN** teacher A adds an item of the type `test-note` with the payload `{"text": "ok", "ke\u0000y": 1}`
+- **THEN** the response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.ke\u0000y", code: "UNKNOWN_FIELD"}]` (not 500), and the part has no item
 
-#### Scenario: items/R2-S7 The type's validator reports errors under `payload.`
-- **GIVEN** a logged-in teacher A with a part, and the type `test-note` whose `text` is required, a string of at most 1000 characters
-- **WHEN** teacher A adds items of the type `test-note` with the payloads `{}`, `{"text": null}`, `{"text": 42}`, `{"text": ["Привет"]}` and `{"text": "<1001 Cyrillic letters>"}`
-- **THEN** the responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.text", code: "REQUIRED"}]`, `[{field: "payload.text", code: "REQUIRED"}]`, `[{field: "payload.text", code: "INVALID_TYPE"}]`, `[{field: "payload.text", code: "INVALID_TYPE"}]` and `[{field: "payload.text", code: "TOO_LONG"}]`, no body contains a `rejectedValue` or "Привет", and the part has no item
+#### Scenario: items/R2-S7 The record's constraints report errors under `payload.`
+- **GIVEN** a logged-in teacher A with a part, and the type `test-note` whose `text` is required, a string of at most 1000 characters, and whose optional `hint` is at most 200 characters
+- **WHEN** teacher A adds items of the type `test-note` with the payloads `{}`, `{"text": null}`, `{"text": 42}`, `{"text": ["Привет"]}`, `{"text": "<1001 Cyrillic letters>"}` and `{"text": "ok", "hint": "<201 Cyrillic letters>"}`
+- **THEN** the responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.text", code: "REQUIRED"}]`, `[{field: "payload.text", code: "REQUIRED"}]`, `[{field: "payload.text", code: "INVALID_TYPE"}]`, `[{field: "payload.text", code: "INVALID_TYPE"}]`, `[{field: "payload.text", code: "TOO_LONG"}]` and `[{field: "payload.hint", code: "TOO_LONG"}]`, no body contains a `rejectedValue` or "Привет", and the part has no item
 
 #### Scenario: items/R2-S8 A payload at the type's limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
 - **WHEN** teacher A adds an item of the type `test-note` with a `text` of 1000 Cyrillic letters ("Я"), then one with a `text` of 1000 English letters ("a")
 - **THEN** both responses are 201 with the `text` exactly as sent and `position` 1 and 2
 
-#### Scenario: items/R2-S9 The stored payload is the normalised jsonb form, with the type's schema version
-- **GIVEN** a logged-in teacher A with a part, and the type `test-note` with the schema version 2
+#### Scenario: items/R2-S9 The stored payload is the serialised record in its jsonb form
+- **GIVEN** a logged-in teacher A with a part, and the type `test-note`
 - **WHEN** teacher A adds an item of the type `test-note` with the body text `{"type": "test-note", "payload": {"hint":  "Ответ: «мышь»", "text":  "Привет", "text": "Мир"}}` (extra spaces, the key `text` twice)
-- **THEN** the response is 201 with the payload equal, as a JSON object, to `{"text": "Мир", "hint": "Ответ: «мышь»"}` (the last duplicate wins, the key order is not specified), `version` 1, and the stored row has the same payload read from jsonb, the type `test-note` and `schema_version` 2
+- **THEN** the response is 201 with the payload equal, as a JSON object, to `{"text": "Мир", "hint": "Ответ: «мышь»"}` (the last duplicate wins, the key order is not specified), `version` 1, and the stored row has the same payload read from jsonb and the type `test-note`
+
+#### Scenario: items/R2-S10 An unknown payload property is rejected and stops further checks
+- **GIVEN** a logged-in teacher A with a part
+- **WHEN** teacher A adds an item of the type `test-note` with the payload `{"hint": "Ok", "extra": {"deep": [1]}}` (no `text`)
+- **THEN** the response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.extra", code: "UNKNOWN_FIELD"}]` (no `payload.text` entry: reading the payload stops at the first Jackson error), the body does not contain "deep", and the part has no item
+
+#### Scenario: items/R2-S11 A property of the request body outside the payload is still ignored
+- **GIVEN** a logged-in teacher A with a part
+- **WHEN** teacher A adds an item with the body `{"type": "test-note", "payload": {"text": "Hi"}, "extra": 1}`
+- **THEN** the response is 201 and the payload is `{"text": "Hi"}`

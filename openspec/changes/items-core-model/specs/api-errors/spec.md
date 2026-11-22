@@ -4,8 +4,8 @@
 A 400 `VALIDATION_FAILED` response SHALL carry `errors`: one `{field, code}` per failing
 field, sorted as strings by field, then code. `field` is the dotted body path (`[i]` for
 list items) or the query parameter name. Several broken rules give the first of
-`REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`/`UNSUPPORTED_COURSE_LANGUAGE`/`UNKNOWN_TYPE`.
-NUL is `INVALID_FORMAT`, a wrong type `INVALID_TYPE`; in a body these stop reading, so
+`REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`/`UNSUPPORTED_COURSE_LANGUAGE`/`UNKNOWN_TYPE`/`UNKNOWN_FIELD`.
+NUL and a lone surrogate are `INVALID_FORMAT`, a wrong type `INVALID_TYPE` (a string or a fraction for an `Integer` or `Long` too); in a body these stop reading, so
 only that field is listed. Rejected values MUST NOT be in the response.
 
 #### Scenario: api-errors/R1-S1 Missing and blank fields are required
@@ -62,3 +62,13 @@ only that field is listed. Rejected values MUST NOT be in the response.
 - **GIVEN** a logged-in teacher with a part, and no item type `poll` registered
 - **WHEN** the teacher adds an item with the type "poll" and the payload `{"text": "Hi"}`
 - **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "type", code: "UNKNOWN_TYPE"}]`, the body does not contain "poll" as a value, and no item is created
+
+#### Scenario: api-errors/R1-S12 An unknown payload property is rejected with its own code
+- **GIVEN** a logged-in teacher with a part, and the item type `test-note`
+- **WHEN** the teacher adds an item with the type `test-note` and the payload `{"text": "Hi", "answer": 42}`
+- **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "payload.answer", code: "UNKNOWN_FIELD"}]`, and no item is created
+
+#### Scenario: api-errors/R1-S13 A lone surrogate is invalid format on every endpoint
+- **GIVEN** a logged-in admin
+- **WHEN** the admin creates a teacher with the name "Анна\ud800" (JSON escape: a lone high surrogate), the email "anna@example.com" and the time zone "Europe/Berlin"
+- **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "name", code: "INVALID_FORMAT"}]`, the body does not contain "Анна", and no account is created

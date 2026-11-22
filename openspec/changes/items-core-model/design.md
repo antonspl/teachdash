@@ -6,14 +6,14 @@ See proposal.md. Current state on `main` (parts-edit-delete):
 
 - `parts` (`V16`) has `lesson_id` (foreign key, `on delete cascade`), `teacher_id`, a dense `position` and `unique (lesson_id, position) deferrable initially deferred`. A part has no child tables yet.
 - `PartService.lockForWrite` locks the user row (`UserRepository.findActiveByIdForUpdate`, none gives 401), then the course row, then the lesson row, each scoped by `teacher_id` and the parent ids; `PartRepository` is `JdbcClient` with hand-written SQL; a limit comes from a property read with `@Value`.
-- `common/FieldErrorCodes` holds the field error codes; `NulRejectingJsonConfig` rejects NUL in typed JSON strings through a String deserializer. Jackson is version 3 (`tools.jackson`).
+- `common/FieldErrorCodes` holds the field error codes; `NulRejectingJsonConfig` rejects NUL in typed JSON strings through a String deserializer (and now a lone surrogate); `StrictIntegerJsonConfig` makes integer parsing strict. Jackson is version 3 (`tools.jackson`).
 - Teacher-owned data carries `teacher_id`; every query is scoped by it (constitution §8).
 
 ## Goals / Non-Goals
 
-**Goals:** an `items` table, a type registry with a mandatory student projection, add an item to an own part, a payload that is checked and stored safely as jsonb, a dense position under parallel requests.
+**Goals:** an `items` table, a generic type registry with a mandatory typed student view, add an item to an own part, a payload that is read into a typed record, checked and stored as jsonb, a dense position under parallel requests.
 
-**Non-Goals:** list, edit, reorder and delete items (#111, #112), answers (#126, #128), student endpoints, a list-of-types endpoint, real item types, server-level HTTP body size limits, frontend, OpenAPI.
+**Non-Goals:** list, edit, reorder and delete items (#111, #112), answers (#126, #128), student endpoints, a list-of-types endpoint, real item types, frontend, OpenAPI.
 
 ## Decisions
 
@@ -23,16 +23,15 @@ See proposal.md. Current state on `main` (parts-edit-delete):
 alter table parts add constraint parts_id_teacher_uq unique (id, teacher_id);
 
 create table items (
-    id             uuid        primary key,
-    teacher_id     uuid        not null references users (id) on delete cascade,
-    part_id        uuid        not null,
-    type           varchar(50) not null,
-    payload        jsonb       not null,
-    schema_version int         not null check (schema_version >= 1),
-    version        bigint      not null check (version >= 1),
-    position       int         not null check (position >= 1),
-    created_at     timestamptz not null,
-    updated_at     timestamptz not null,
+    id          uuid        primary key,
+    teacher_id  uuid        not null references users (id) on delete cascade,
+    part_id     uuid        not null,
+    type        varchar(50) not null check (btrim(type) <> ''),
+    payload     jsonb       not null check (jsonb_typeof(payload) = 'object'),
+    version     bigint      not null check (version >= 1),
+    position    int         not null check (position >= 1),
+    created_at  timestamptz not null,
+    updated_at  timestamptz not null,
     constraint items_part_owner_fk
         foreign key (part_id, teacher_id) references parts (id, teacher_id) on delete cascade,
     constraint items_part_position_uq
@@ -41,11 +40,13 @@ create table items (
 create index items_teacher_idx on items (teacher_id);
 ```
 
+- `V17` is edited in place: it is not on `main` yet, so no new migration is needed.
 - Items hang off `part_id` only, never `lesson_id` or `course_id`: a lesson can be in several courses by copy, and the course and the lesson are found through `parts` and `lessons`.
 - `teacher_id` is on the item so queries are scoped by the teacher without a join (constitution §8). The composite foreign key `(part_id, teacher_id)` to the unique `(id, teacher_id)` of `parts` makes the database refuse an item whose owner differs from its part's owner, so owner consistency does not rest on the service alone. The same gap from `parts` to `lessons` stays as it is (out of scope). No scenario tests the constraint; one database test without a scenario ID inserts an item with teacher B's id on teacher A's part and expects an integrity error (a constraint is tested, a migration run is not).
 - `on delete cascade` on the composite key deletes a part's items with it (the later part delete and lesson delete need no change; answers, #126, add their own foreign key to items). `on delete cascade` on `teacher_id` covers account deletion.
-- `version` starts at 1; the later item edit uses it for the optimistic 409. `schema_version` is the version of the payload schema the type had when the payload was written; a later type version can migrate old payloads by it.
-- `type` is `varchar(50)` and has no check constraint: the set of types is code, not schema.
+- `version` starts at 1; the later item edit uses it for the optimistic 409.
+- There is no `schema_version`: a payload shape never changes after release; a new shape is a new type code (D3).
+- `type` is `varchar(50)`; `check (btrim(type) <> '')` refuses a blank code. The set of types is code, not schema, so there is no check of the values. `check (jsonb_typeof(payload) = 'object')` refuses a payload that is not an object, as the generic rules do.
 - `updated_at` comes from `Clock`; every later change to an item row MUST set it, and an edit MUST increase `version`.
 - Version `V17` is the next on `main`; renumbered at merge if needed (#98).
 
@@ -53,83 +54,91 @@ create index items_teacher_idx on items (teacher_id);
 
 `com.teachdash.items` (`api`, `api/dto`, `domain`, `persistence`):
 
-- `POST /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items`, `@ResponseStatus(CREATED)`, body `CreateItemRequest(String type, JsonNode payload)`. No `SecurityConfig` change: `/api/teacher/**` is already TEACHER.
-- Response `ItemResponse(id, type, payload, position, version, createdAt, updatedAt)`. Unknown body fields such as `teacherId` or `title` are ignored.
+- `POST /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items`, `@ResponseStatus(CREATED)`, body `CreateItemRequest(String type, Map<String,Object> payload)`. No `SecurityConfig` change: `/api/teacher/**` is already TEACHER.
+- Response `ItemResponse(id, type, payload, position, version, createdAt, updatedAt)`. Unknown fields of the request body outside `payload` (such as `teacherId` or `title`) are ignored, as everywhere (R2-S11).
 - Path ids are `UUID`; a malformed id is 404 `NOT_FOUND`, as for courses, lessons and parts.
-- `payload` is read as a `JsonNode` so that "missing", "null" and "not an object" can be told apart and mapped to the codes of R2. `type` is a `String`; the existing strict String coercion applies to it, as for other text fields.
+- `payload` is a `Map`, so "missing", "null" and "not an object" can be told apart (a non-object fails to bind to a `Map`: `payload` `INVALID_TYPE`; missing or null: `REQUIRED`). Map values go through the app's String deserializer. `type` is a `String`; the strict String coercion applies, a blank value is `REQUIRED`.
+- The controller is a few lines: look up the type in the registry (`UNKNOWN_TYPE`), call `ItemPayloadValidator`, serialise the record, call the service.
 
-### D3. Type registry
+### D3. Item types and the registry
 
 ```java
-public interface ItemType {
+public interface ItemType<P> {
     String code();
-    int schemaVersion();
-    ObjectNode validate(ObjectNode payload);    // the normalised payload, or field errors
-    JsonNode studentProjection(ObjectNode payload);
+    Class<P> payloadClass();
+    Object studentView(P payload);
+    default List<FieldErrorDetail> extraChecks(P payload) { return List.of(); }
 }
 ```
 
-- `validate` returns the normalised payload, or throws the field errors (`FieldErrorDetail` with `field` paths under `payload.`, for example `payload.text`). `FieldErrorCodes` is package-private and `ApiException.field` builds one detail, so `common` gets two small public additions (the simplest way, instead of moving the payload checks into `common`): a factory `ApiException.fields(List<FieldErrorDetail>)` that passes the list through `FieldErrorCodes.reduce` (sorted by field, one error per field) and returns a 400 `VALIDATION_FAILED`, and `FieldErrorCodes` itself made `public` (the class and its code constants; the closest change to the existing code, with no new holder class), with the new `UNKNOWN_TYPE` constant added to it, so the items package uses `FieldErrorCodes.REQUIRED`, `INVALID_TYPE`, `TOO_LONG`, `INVALID_FORMAT` and `UNKNOWN_TYPE` by name. The methods stay package-private except what the factory needs. `UNKNOWN_TYPE` falls into the default priority tier in `FieldErrorCodes.priority`, the same as `INVALID_FORMAT`.
-- `studentProjection` is abstract: a type cannot be registered without one. It is an allowlist: it builds a new tree from the fields a student may see; it does not remove teacher-only fields from a copy, so a field added later is hidden until a type's author adds it on purpose. No endpoint calls it in this change; a unit test covers the test type's projection and the rule that the projection does not return the stored tree.
-- Types are Spring beans. `ItemTypeRegistry` collects `List<ItemType>` in its constructor and builds an immutable map by `code()`; a duplicate code fails startup with an `IllegalStateException` naming the code. A unit test builds a registry with two types with one code and expects the failure.
-- No production type is registered. In production the registry is empty and every request gets `UNKNOWN_TYPE` until #111 adds a type; this is accepted and stated in the proposal.
-- The test type `test-note` lives in test sources (`items/support` or next to `QueryParamTestController`, which proves that test-only beans are found by component scan): schema version 2, payload `{text}` with `text` required (missing or null: `payload.text` `REQUIRED`; not a string: `INVALID_TYPE`; over 1000 characters: `TOO_LONG`), other fields such as `hint` and `extra` are kept as they are, and the projection returns `{text}` only.
+- A type is a Spring bean; adding a bean adds a type. `ItemTypeRegistry` collects `List<ItemType<?>>` in its constructor and builds an immutable map by `code()`; a duplicate code fails startup with an `IllegalStateException` naming the code. A unit test builds a registry with two types with one code and expects the failure. In production the registry is empty and every request gets `UNKNOWN_TYPE` until #111 adds a type; this is accepted.
+- `payloadClass()` is a record with Bean Validation annotations. Rules for the records: wrapper types with `@NotNull`, never primitives (a missing field is then null and gives `REQUIRED`); no class-level constraints (cross-field rules go in `extraChecks`, which returns `FieldErrorDetail`s with fields under `payload.`); `@Size` or `@MaxUtf8Bytes` on every String field and every list, so the size of a payload is bounded by its record (D4); lists are declared `List<@Valid X>` so element paths are reported (`answers[0].text`); `Double` and `Float` are forbidden (`1e400` becomes an infinite `Double` that jsonb cannot store); numbers use `Integer`, `Long` or `BigDecimal`. Records need `-parameters`, already used.
+- `studentView(P)` is abstract and typed: a type cannot be registered without one. It builds the student view from the fields a student may see (an allowlist; it does not remove teacher-only fields from a copy), so a field added later is hidden until a type's author adds it on purpose. No endpoint calls it in this change; a unit test covers the test type's view.
+- A new payload shape is a new type code; a released type never changes.
+- `common` gets two small public helpers, extracted from existing code, so `items` does not copy it: `ApiException.fromJackson(DatabindException, String prefix)` (from `ApiExceptionHandler.fieldOf` and `jsonCodeOf`: the field is the Jackson path under the prefix, the code is `INVALID_TYPE`, `INVALID_FORMAT` (NUL detection included), `UNKNOWN_FIELD` for an unrecognised property or `REQUIRED`) and `ApiException.validation(Set<ConstraintViolation<?>>, String prefix)` (from `FieldErrorCodes.fromViolations`: `NotNull` and `NotBlank` give `REQUIRED`, `Size` gives `TOO_SHORT` or `TOO_LONG`, others `INVALID_FORMAT`). The existing handler uses `fromJackson` too. `FieldErrorCodes` stays public in `common` with the new constants `UNKNOWN_TYPE` and `UNKNOWN_FIELD`, both in the default priority tier, the same as `INVALID_FORMAT`. The factory `ApiException.fields(List<FieldErrorDetail>)` (sorted, one error per field) turns the `extraChecks` list into an exception.
+- The test type `test-note` lives in test sources (next to `QueryParamTestController`, which proves that test-only beans are found by component scan): a record `TestNotePayload(@NotNull @Size(max = 1000) String text, @Size(max = 200) String hint)`; `studentView` returns `{text}` only and drops `hint`.
 
-### D4. Generic payload rules and where they run
+### D4. `ItemPayloadValidator` and the order of the payload checks
 
-Input validation runs before the service, so a bad payload on an unknown part gives 400 and a malformed id gives 404 first (as parts R1). The order is:
+Input validation runs before the service, so a bad payload on an unknown part gives 400 and a malformed id gives 404 first (as parts R1). Steps:
 
-1. `type` missing, null or blank gives `REQUIRED`; an unregistered code gives `UNKNOWN_TYPE` (a new constant in `FieldErrorCodes`).
-2. `payload` missing or `null` gives `REQUIRED`; a payload that is not an object gives `INVALID_TYPE`.
-3. Size: the payload is serialised compact with Jackson; more than 65536 UTF-8 bytes gives `payload` `TOO_LONG`. After the type's `validate` (step 5), its result is serialised and checked against the same limit, and that compact JSON string is what the controller passes on and the database stores, so the limit applies to what is stored.
-4. NUL: a walk over the tree rejects U+0000 in any string value and any field name, giving `payload` `INVALID_FORMAT`.
-5. The type's `validate`, only if steps 1 to 4 passed; its errors are reported as they are.
+1. `type` missing, null or blank gives `type` `REQUIRED`; an unregistered code gives `type` `UNKNOWN_TYPE`.
+2. `payload` missing or `null` gives `payload` `REQUIRED`; a payload that is not an object gives `payload` `INVALID_TYPE`.
+3. Only if steps 1 and 2 both passed: `ItemPayloadValidator.validate(ItemType<P>, Map<String,Object>)` (in `items/domain`, reusable by the item edit in #111):
+   a. `objectMapper.convertValue(payload, payloadClass)` with a mapper that rejects unknown properties for this conversion only (a derived mapper built once from the app's mapper, so the custom String deserializer and the strict coercions stay; the global `FAIL_ON_UNKNOWN_PROPERTIES` is not changed). A `DatabindException` becomes `payload.<path>` through `ApiException.fromJackson`. Reading stops at the first Jackson error, so a Jackson error is reported alone (R2-S10).
+   b. The record is checked with `jakarta.validation.Validator`; violations become `payload.<path>` through `ApiException.validation`, all together.
+   c. Only if there are no violations, `extraChecks(record)` runs; its errors are reported as they are.
+4. The controller serialises the record with the app's `ObjectMapper` (`writeValueAsString`, D5) and passes that String on.
 
-Errors of the steps 1 and 2 about different fields are reported together (a body `{}` gives `payload` and `type` `REQUIRED`, sorted by field); an unknown type and a bad payload may be reported together too; steps 3 to 5 (size, NUL, the type's validator) run only if steps 1 and 2 both passed, and each of them stops the check, so a type's error never appears next to a generic payload error.
+Errors of the steps 1 and 2 about different fields are reported together (a body `{}` gives `payload` and `type` `REQUIRED`, sorted by field); an unknown type and a bad payload shape are reported together too; step 3 runs only if both passed, so a type's error never appears next to a generic payload error.
 
-The 64 KiB limit is a guess that fits text exercises with options and a few long explanations; it is a constant of the items package that a later change can move to a property. 64 KiB is checked on the parsed tree, so a request body is parsed in full before the check: a server-level body limit would protect against huge bodies, but it is outside this change (see Risks).
+**Size.** There is no serialised-size check. The size of a payload is bounded by `@Size` or `@MaxUtf8Bytes` on every record field and list (D3). The whole request body is bounded by Caddy (D9).
 
-### D5. Why the NUL walk, and the other values jsonb cannot keep
+**Strings.** The String deserializer in `NulRejectingJsonConfig` runs on Map values and during `convertValue`, so a NUL in a record String field gives `INVALID_FORMAT` with the field as the Jackson path (`payload.text`); the same deserializer now rejects a lone (unpaired) surrogate, on every endpoint: the parser accepts `\ud800`, but writing it escapes it to `\uD800`, which Postgres jsonb refuses (a 500). It does not apply to Map keys; a NUL in a key is an unknown property of the record, `UNKNOWN_FIELD` (R2-S6). The error `field` echoes the key name, which the response treats as a field path, not as a rejected value; its size is bounded by the Caddy body limit.
 
-`NulRejectingJsonConfig` registers a deserializer for `String` targets. A `JsonNode` tree is built by Jackson's own node deserializers, so string values inside `payload` never go through it, and object keys use key deserializers that it does not cover either. Postgres rejects U+0000 in jsonb text (`unsupported Unicode escape sequence`), so without the walk a NUL in a payload would reach the database and give a 500. The walk is a small recursive method over `ObjectNode`, `ArrayNode` and `TextNode`, run after the size check so that it runs on a bounded tree. A NUL in the `type` string is already covered by the typed String deserializer. Besides NUL, the same walk rejects a lone (unpaired) surrogate in any string value or object key and a non-finite or out-of-range number (for example `1e400`) as `payload` `INVALID_FORMAT`: jsonb cannot store them losslessly (a number that underflows to 0, such as `1e-400`, or loses precision as a double is accepted as parsed), so they would give a 500 or a silent change. In practice Jackson already rejects an unpaired surrogate escape while parsing (400 `MALFORMED_REQUEST`), so the surrogate check is a second line of defence. Tests without scenario IDs cover them.
+**Strict integers.** `StrictIntegerJsonConfig` is strict for `BigInteger` only, so today `Integer` and `Long` fields accept "5" and coerce 5.7 to 5. The customizer is extended to `Integer` and `Long` (string, float, boolean and empty string fail: `INVALID_TYPE`). This affects every endpoint; no current body has such a field. A unit test with the app's mapper covers it (no endpoint has an `Integer` or `Long` body field, so there is no scenario). `""` into an `Integer` would otherwise become null (`REQUIRED`); the strict config makes it `INVALID_TYPE`.
 
-### D6. JSONB without JPA
+### D5. JSONB without JPA
 
 There is no JPA in the project and no converter. `ItemRepository` writes with `JdbcClient`:
 
 ```sql
-insert into items (id, teacher_id, part_id, type, payload, schema_version, version, position, created_at, updated_at)
-select :id, :teacherId, :partId, :type, cast(:payload as jsonb), :schemaVersion, 1,
+insert into items (id, teacher_id, part_id, type, payload, version, position, created_at, updated_at)
+select :id, :teacherId, :partId, :type, cast(:payload as jsonb), 1,
        coalesce(max(position), 0) + 1, :now, :now
 from items where part_id = :partId and teacher_id = :teacherId
 returning payload, position
 ```
 
-- `:payload` is the compact string from Jackson 3 (`tools.jackson.databind.ObjectMapper#writeValueAsString`). A String cast is used rather than a `PGobject`: it keeps the repository free of driver types and of a custom `JdbcClient` parameter binding, uses the same one parameter style as the other queries, and the cast checks the text is valid JSON on the database side.
-- The returned `payload` is read as text and parsed with `readTree`. The response shows what the database stored, so the stored and the returned forms are the same by construction.
-- jsonb does not keep key order or whitespace and keeps one value per key (the last one wins); the response reflects this. R2-S9 states it. Numbers keep their value but jsonb may print them in a normalised form (for example `1.0` stays `1.0`, exponents are expanded); types that care about numbers must validate them.
-- A type's `validate` returns the tree that is stored; the registry does not store the request tree directly.
+- `:payload` is the validated record serialised by the app's `ObjectMapper` (`tools.jackson.databind.ObjectMapper#writeValueAsString`), passed as a String. A String cast is used rather than a `PGobject`: it keeps the repository free of driver types and of a custom `JdbcClient` parameter binding, uses the same one parameter style as the other queries, and the cast checks the text is valid JSON on the database side.
+- The returned `payload` is read as text. Later reads use `readValue(json, payloadClass)`; the create response parses the stored text into a generic JSON value, so it shows what the database stored.
+- jsonb does not keep key order or whitespace and keeps one value per key (the last one wins); the response reflects this. R2-S9 states it. Numbers keep their value but jsonb may print them in a normalised form; types use `Integer`, `Long` or `BigDecimal` (D3).
+- The stored value is the serialised record, never the request map, so unknown properties cannot reach the database.
 
 ### D7. Add flow, locks and position
 
-`ItemService.create(teacherId, courseId, lessonId, partId, itemType, payload)` with the resolved `ItemType` and the validated payload as its compact JSON string (D4 step 3), `@Transactional`. The validation of D4 runs before it, in the controller (or a small validator it calls). In the service:
+`ItemService.create(teacherId, courseId, lessonId, partId, type, payloadJson)` with the type code and the validated payload as its JSON String (D4 step 4), `@Transactional`. The validation of D4 runs before it, in the controller through `ItemPayloadValidator`. In the service:
 
 1. `UserRepository.findActiveByIdForUpdate(teacherId)`; none gives 401 `UNAUTHENTICATED`.
 2. The course row `for update`, scoped by teacher; no row gives 404.
 3. The lesson row `for update`, scoped by course and teacher; no row gives 404.
 4. The part row `for update`, scoped by lesson and teacher; no row gives 404. A part of another lesson or course of the same teacher is 404 for the same reason as a foreign part: the lookup is scoped by all the parents and the teacher together.
 5. `count(*) from items where part_id = :partId and teacher_id = :teacherId` at or above `teachdash.items.max-per-part` (50, read with `@Value`) gives 409 `ITEM_LIMIT_REACHED` (a plain `ApiException`, no `errors`).
-6. Insert as in D6: position is `coalesce(max(position), 0) + 1`, which is count + 1 because positions are dense.
+6. Insert as in D5: position is `coalesce(max(position), 0) + 1`, which is count + 1 because positions are dense.
 
-`PartRepository` already has `lockCourse` and `lockLesson`; the part lock is new (in the items repository or `PartRepository`). The lock order extends the one of `PartService`: user, course, lesson, then part. A part delete takes user, course and lesson, then deletes the part row and the cascade deletes the items, so no cycle forms: an add racing a part delete queues behind the user and course locks, and either runs first (its item is cascaded) or finds no part and gets 404 (R1-S10). The user row comes first because the `teacher_id` foreign key puts a KEY SHARE lock on it into every write, and `CourseService.rename` locks it before the course row. `countInPart` and the `max(position)` subquery are scoped by `teacher_id` as well as `part_id`. `ItemService.create` receives the resolved `ItemType` and the validated `ObjectNode` from the controller (no second registry lookup). The part lock lives in `ItemRepository`; the course and lesson locks reuse `PartRepository`.
+`PartRepository` already has `lockCourse` and `lockLesson`; the part lock is new (in the items repository or `PartRepository`). The lock order extends the one of `PartService`: user, course, lesson, then part. A part delete takes user, course and lesson, then deletes the part row and the cascade deletes the items, so no cycle forms: an add racing a part delete queues behind the user and course locks, and either runs first (its item is cascaded) or finds no part and gets 404 (R1-S10). The user row comes first because the `teacher_id` foreign key puts a KEY SHARE lock on it into every write, and `CourseService.rename` locks it before the course row. `countInPart` and the `max(position)` subquery are scoped by `teacher_id` as well as `part_id`. The part lock lives in `ItemRepository`; the course and lesson locks reuse `PartRepository`.
 
 The user row lock already serialises all of one teacher's writes, so the race scenarios do not prove the part lock alone. The part lock stays for 404 scoping and for position correctness; R1-S10 (a part delete racing adds) is the scenario that covers the part lock, R1-S5 proves the lock chain as a whole. The deferrable unique constraint is a safety net: a violation at commit would be a bug and surfaces as a 500; no code is mapped. Reordering items (#112) uses the same locks and one range shift, which a deferrable constraint allows.
 
-No write changes the `updated_at` of the part, the lesson or the course (R1-S3). Order of checks: CSRF and role (403), deactivated (401), malformed id (404), input (400), unknown or foreign id (404), limit (409). Accepted race, as for parts: a deactivation in mid-request gives 401 from step 1 after input validation.
+No write changes the `updated_at` of the part, the lesson or the course (R1-S3). Order of checks: CSRF and role (403), deactivated (401), malformed id (404), input (400: D4), unknown or foreign id (404), limit (409). Accepted race, as for parts: a deactivation in mid-request gives 401 from step 1 after input validation.
 
 ### D8. Tests and helpers
 
-Tests extend `support.ApiTest`. New helpers: `createItem(teacherId, partId, type, payload, position)` (direct SQL, times from the test `Clock`, `schema_version` 2 for `test-note`), `countItems(partId)`, `itemPositions(partId)`, and a reader of one item row (type, payload as jsonb text, `schema_version`, `version`). R1-S5 and R1-S10 use `support.Parallel.run`. The test type and its registry tests live in test sources. The unit tests for the registry (duplicate code fails startup) and the projection (builds `{text}` only, drops `hint`) have no scenario ID, as the proposal says.
+Tests extend `support.ApiTest`. Helpers: `createItem(teacherId, partId, type, payload, position)` (direct SQL, times from the test `Clock`; no `schema_version`), `countItems(partId)`, `itemPositions(partId)`, and a reader of one item row (type, payload as jsonb text, `version`). R1-S5 and R1-S10 use `support.Parallel.run`. The test type and its registry tests live in test sources. `ItemPayloadEdgeTest` is deleted. Unit tests without a scenario ID: duplicate codes fail the registry, the `test-note` view returns `{text}` only, strict `Integer` and `Long` parsing, the composite foreign key.
+
+### D9. Caddy body limit
+
+`infra/Caddyfile` gets `request_body { max_size 1MB }` inside the existing `handle /api/*` block, before `reverse_proxy`. A larger body is refused by Caddy with 413 before the app sees it; the response is Caddy's own (not an app error body), and `handle_errors` leaves `/api` errors alone, so the 413 reaches the client as Caddy writes it. Constitution §6 describes only the deployment (Caddy, Compose, CI), so this is a one-line config change described here and in the proposal Impact. There is no backend scenario (the tests do not run Caddy); it is proven by `caddy validate` and a recorded request with a body over 1 MB in the PR. Caddy is not in the app's test stack and no service is added.
 
 ## Dependencies
 
@@ -137,13 +146,13 @@ None added. Jackson 3 and Postgres jsonb are already available.
 
 ## Risks / Trade-offs
 
-- **No body size limit at the server (accepted).** The 64 KiB limit is applied after the full JSON is parsed. A huge request body is read and parsed before it is refused. No endpoint has a server-level body limit today, so this is not specific to items and no issue is opened. Tomcat's default limits (`max-http-form-post-size` does not apply to JSON) leave this open; a limit at Caddy or in Spring (`server.tomcat.max-swallow-size`, a request-size filter) is a separate change.
+- **Body size.** Bounded by field limits on every payload record (D3) and by the Caddy limit of 1 MB (D9). A type whose record misses a `@Size` on a field is unbounded up to 1 MB; the reviewer checks every record.
 - **Empty registry in production.** Until #111 every add gives `UNKNOWN_TYPE`; the endpoint is not useful to a user before then.
 - **jsonb normalisation.** The response differs from the request in key order, whitespace and duplicate keys. Clients must not rely on key order. A type that needs an order uses an array.
 - **Owner consistency.** Enforced for items by the composite foreign key (D1). Not for `parts` to `lessons`: left as is.
-- **Limits are guesses.** 50 items per part and 64 KiB are estimates; the first is a property, the second a constant.
+- **Limits are guesses.** 50 items per part, 1 MB per body and the field sizes are estimates; the first is a property.
 - **Item type removal.** A type removed from code leaves rows with a type no registry knows. Later reads must treat an unknown stored type explicitly; no read exists in this change.
 
 ## Migrations
 
-- `V17__items.sql`: unique `(id, teacher_id)` on `parts`, table `items` with the composite foreign key, the deferrable unique `(part_id, position)`, the index on `teacher_id`.
+- `V17__items.sql`: unique `(id, teacher_id)` on `parts`, table `items` (no `schema_version`) with the composite foreign key, the two check constraints, the deferrable unique `(part_id, position)`, the index on `teacher_id`.
