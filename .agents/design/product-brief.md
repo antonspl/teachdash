@@ -26,7 +26,7 @@ Success: a teacher prepares a lesson once and runs it for many students without 
 ## Operating Context
 
 - UI in English and Russian, separate from course languages; Cyrillic must work everywhere; Russian strings are longer. Users on fixed-line internet in Russia and the EU; no third-party CDNs or web fonts (§10, `project-rules.md`).
-- Devices: teachers prepare content at a desk on a laptop; teacher editors are desktop-only (#118-#120, #133, #138). Students are phone-first (360 CSS px) or laptop; every page fits at 360 px (`specs/web-client` R7).
+- Devices: teachers prepare content at a desk on a laptop; teacher editors are designed for desktop (#115–#120, #132, #133, #138). Students are phone-first (360 CSS px) or laptop. Every page, editors included, still fits 360 CSS px (`specs/web-client` R7).
 - A student may have a lesson open next to a live video call, in a narrow window with split attention.
 - Frequency: teachers daily; students a few times a week; admins rarely (creating a teacher, issuing a reset link). Admin screens can be plain; teacher screens must be fast (engineer, 2026-11-22).
 - Time zones matter for schedules: teachers and students both have a time zone (`specs/web-profile`, `specs/student-enrolment`).
@@ -38,7 +38,7 @@ Success: a teacher prepares a lesson once and runs it for many students without 
 - Planned (backlog, not order): course editors (#115-#120), student course and lesson views (#134, #135), assign and lesson access (#132, #133), results (#138), cabinet tabs (#57), students list (#35), join page (#37), schedule (#14), groups (#54), homework (#56), media (#55), language switch (#102, #103).
 - Exercise types, planned and not built (only gap fill is scheduled so far, #120, #135): gap fill, dropdown, free text, matching; images; theory in Markdown with KaTeX maths (#13, #119). Limits: at most 20 courses per teacher and course titles 1-200 characters (`specs/courses` R1); 100 lessons per course (`specs/lessons` R1), 20 parts per lesson (`specs/parts` R1), 50 items per part (`specs/items` R1). YouTube embeds in lessons; other video URLs show as links (§10).
 - Terminology: lesson = content, class = scheduled call; never mixed (§3).
-- Voice: copy is informal, friendly, sentence case, second person, no apologies (`project-rules.md`). `project-rules.md` wins over the "neutral tone" lines in #102, #118-#120, #133 and #138.
+- Voice: copy is informal, friendly, sentence case, second person, no apologies (`project-rules.md`). `project-rules.md` wins over the "neutral tone" lines in #102, #115–#120, #132, #133 and #138.
 - Personality: calm, not playful. Every concrete visual choice (palette, type, layout, chrome) belongs in `design-code.md`, not here.
 - Name and brand: no logo and no brand colour yet; the working name "teachdash" may change.
 
