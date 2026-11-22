@@ -6,7 +6,6 @@ create table items (
     part_id        uuid        not null,
     type           varchar(50) not null check (btrim(type) <> ''),
     payload        jsonb       not null check (jsonb_typeof(payload) = 'object'),
-    schema_version int         not null check (schema_version >= 1),
     version        bigint      not null check (version >= 1),
     position       int         not null check (position >= 1),
     created_at     timestamptz not null,

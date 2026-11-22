@@ -257,7 +257,6 @@ class ItemPayloadTest extends ItemApiTest {
 		UUID id = UUID.fromString(response.path("id"));
 		var stored = readItem(id);
 		assertEquals("test-note", stored.type());
-		assertEquals(2, stored.schemaVersion());
 		boolean samePayload = jdbc.sql("select payload = cast(:expected as jsonb) from items where id = :id")
 				.param("expected", "{\"text\": \"Мир\", \"hint\": \"Ответ: «мышь»\"}")
 				.param("id", id)

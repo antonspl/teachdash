@@ -377,13 +377,13 @@ public abstract class ApiTest {
 				.list();
 	}
 
-	/** Inserts an item into a part directly: schema version 2, version 1, both times the clock time. */
+	/** Inserts an item into a part directly: version 1, both times the clock time. */
 	protected UUID createItem(UUID teacherId, UUID partId, String type, String payloadJson, int position) {
 		UUID id = UUID.randomUUID();
 		Timestamp now = Timestamp.from(Instant.now(clock));
 		jdbc.sql("""
-				insert into items (id, teacher_id, part_id, type, payload, schema_version, version, position, created_at, updated_at)
-				values (:id, :teacher, :part, :type, cast(:payload as jsonb), 2, 1, :position, :now, :now)
+				insert into items (id, teacher_id, part_id, type, payload, version, position, created_at, updated_at)
+				values (:id, :teacher, :part, :type, cast(:payload as jsonb), 1, :position, :now, :now)
 				""")
 				.param("id", id)
 				.param("teacher", teacherId)
@@ -417,7 +417,6 @@ public abstract class ApiTest {
 			UUID partId,
 			String type,
 			String payload,
-			int schemaVersion,
 			long version,
 			int position,
 			Instant createdAt,
@@ -426,7 +425,7 @@ public abstract class ApiTest {
 
 	protected ItemRow readItem(UUID id) {
 		return jdbc.sql("""
-				select teacher_id, part_id, type, payload::text as payload, schema_version, version, position,
+				select teacher_id, part_id, type, payload::text as payload, version, position,
 				       created_at, updated_at
 				from items where id = :id
 				""")
@@ -436,7 +435,6 @@ public abstract class ApiTest {
 						rs.getObject("part_id", UUID.class),
 						rs.getString("type"),
 						rs.getString("payload"),
-						rs.getInt("schema_version"),
 						rs.getLong("version"),
 						rs.getInt("position"),
 						rs.getTimestamp("created_at").toInstant(),

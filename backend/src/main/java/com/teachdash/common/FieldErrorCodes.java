@@ -24,6 +24,7 @@ public final class FieldErrorCodes {
 	public static final String INVALID_TYPE = "INVALID_TYPE";
 	public static final String UNSUPPORTED_COURSE_LANGUAGE = "UNSUPPORTED_COURSE_LANGUAGE";
 	public static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
+	public static final String UNKNOWN_FIELD = "UNKNOWN_FIELD";
 
 	private FieldErrorCodes() {
 	}

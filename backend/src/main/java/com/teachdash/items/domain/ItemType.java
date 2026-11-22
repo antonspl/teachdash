@@ -1,17 +1,18 @@
 package com.teachdash.items.domain;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ObjectNode;
+import java.util.List;
 
-public interface ItemType {
+import com.teachdash.common.FieldErrorDetail;
+
+public interface ItemType<P> {
 
 	String code();
 
-	int schemaVersion();
+	Class<P> payloadClass();
 
-	/** Returns the normalised payload to store, or throws field errors under {@code payload.}. */
-	ObjectNode validate(ObjectNode payload);
+	Object studentView(P payload);
 
-	/** Builds a new tree from the fields a student may see; never returns the stored tree. */
-	JsonNode studentProjection(ObjectNode payload);
+	default List<FieldErrorDetail> extraChecks(P payload) {
+		return List.of();
+	}
 }

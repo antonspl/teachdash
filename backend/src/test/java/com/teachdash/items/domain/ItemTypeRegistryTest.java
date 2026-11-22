@@ -16,7 +16,7 @@ class ItemTypeRegistryTest {
 	@DisplayName("Registry fails on a duplicate type code and names the code")
 	void duplicateCodeFails() {
 		// given
-		List<ItemType> types = List.of(new TestNoteType(), new TestNoteType());
+		List<ItemType<?>> types = List.of(new TestNoteType(), new TestNoteType());
 
 		// when / then
 		assertThatThrownBy(() -> new ItemTypeRegistry(types))

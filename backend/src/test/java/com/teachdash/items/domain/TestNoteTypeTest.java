@@ -2,31 +2,27 @@ package com.teachdash.items.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.teachdash.items.support.TestNoteType;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.node.ObjectNode;
 
 class TestNoteTypeTest {
 
-	private final JsonMapper mapper = JsonMapper.builder().build();
-
 	@Test
-	@DisplayName("Student projection returns text only and is a new tree")
-	void projectionDropsTeacherOnlyFields() {
+	@DisplayName("Student view returns text only")
+	void studentViewDropsTeacherOnlyFields() {
 		// given
-		ObjectNode stored = (ObjectNode) mapper.readTree("{\"text\":\"Hello\",\"hint\":\"secret\"}");
+		var stored = new TestNoteType.TestNotePayload("Hello", "secret", 3, new BigDecimal("1.5"));
 
 		// when
-		JsonNode projection = new TestNoteType().studentProjection(stored);
+		Object view = new TestNoteType().studentView(stored);
 
 		// then
-		assertThat(projection).isEqualTo(mapper.readTree("{\"text\":\"Hello\"}"));
-		assertThat(projection).isNotSameAs(stored);
-		assertThat(stored.has("hint")).isTrue();
+		assertThat(view).isEqualTo(Map.of("text", "Hello"));
 	}
 }

@@ -6,6 +6,7 @@ import java.util.Set;
 import org.springframework.http.HttpStatus;
 
 import jakarta.validation.ConstraintViolation;
+import tools.jackson.databind.DatabindException;
 
 public class ApiException extends RuntimeException {
 
@@ -33,6 +34,14 @@ public class ApiException extends RuntimeException {
 				HttpStatus.BAD_REQUEST,
 				"VALIDATION_FAILED",
 				FieldErrorCodes.fromViolations(violations));
+	}
+
+	public static ApiException validation(Set<? extends ConstraintViolation<?>> violations, String prefix) {
+		throw new UnsupportedOperationException("STUB");
+	}
+
+	public static ApiException fromJackson(DatabindException exception, String prefix) {
+		throw new UnsupportedOperationException("STUB");
 	}
 
 	public static ApiException fields(List<FieldErrorDetail> details) {

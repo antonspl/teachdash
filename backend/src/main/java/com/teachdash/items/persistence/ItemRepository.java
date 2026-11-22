@@ -55,12 +55,10 @@ public class ItemRepository {
 			UUID partId,
 			String type,
 			String payloadJson,
-			int schemaVersion,
 			Instant now) {
 		return jdbc.sql("""
-				insert into items (id, teacher_id, part_id, type, payload, schema_version, version, position,
-				                   created_at, updated_at)
-				select :id, :teacherId, :partId, :type, cast(:payload as jsonb), :schemaVersion, 1,
+				insert into items (id, teacher_id, part_id, type, payload, version, position, created_at, updated_at)
+				select :id, :teacherId, :partId, :type, cast(:payload as jsonb), 1,
 				       coalesce(max(position), 0) + 1, :now, :now
 				from items
 				where part_id = :partId and teacher_id = :teacherId
@@ -71,7 +69,6 @@ public class ItemRepository {
 				.param("partId", partId)
 				.param("type", type)
 				.param("payload", payloadJson)
-				.param("schemaVersion", schemaVersion)
 				.param("now", Timestamp.from(now))
 				.query((rs, rowNum) -> new Stored(mapper.readTree(rs.getString("payload")), rs.getInt("position")))
 				.single();

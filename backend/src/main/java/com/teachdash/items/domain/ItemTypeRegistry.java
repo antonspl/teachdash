@@ -10,11 +10,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class ItemTypeRegistry {
 
-	private final Map<String, ItemType> byCode;
+	private final Map<String, ItemType<?>> byCode;
 
-	public ItemTypeRegistry(List<ItemType> types) {
-		Map<String, ItemType> map = new HashMap<>();
-		for (ItemType type : types) {
+	public ItemTypeRegistry(List<ItemType<?>> types) {
+		Map<String, ItemType<?>> map = new HashMap<>();
+		for (ItemType<?> type : types) {
 			if (map.putIfAbsent(type.code(), type) != null) {
 				throw new IllegalStateException("Duplicate item type code: " + type.code());
 			}
@@ -22,7 +22,7 @@ public class ItemTypeRegistry {
 		this.byCode = Map.copyOf(map);
 	}
 
-	public Optional<ItemType> find(String code) {
+	public Optional<ItemType<?>> find(String code) {
 		return Optional.ofNullable(byCode.get(code));
 	}
 }

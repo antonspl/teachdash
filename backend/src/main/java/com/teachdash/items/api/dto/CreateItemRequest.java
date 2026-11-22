@@ -1,8 +1,8 @@
 package com.teachdash.items.api.dto;
 
-import tools.jackson.databind.JsonNode;
+import java.util.Map;
 
 public record CreateItemRequest(
 		String type,
-		JsonNode payload) {
+		Map<String, Object> payload) {
 }
