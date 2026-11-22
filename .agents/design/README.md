@@ -1,18 +1,24 @@
 # Design sources
 
-Frontend design guidance. Its readers are the four frontend roles (`frontend-implementer`, `frontend-researcher`, `frontend-spec-critic`, `frontend-reviewer`) and the `code-gate-reviewer` for a PR touching `frontend/src`; each reads this file first. Roles read these files by path; no tool lists them.
+Frontend design guidance. Its readers are the `frontend-researcher`, the `frontend-spec-critic`, the `frontend-implementer`, the `visual-reviewer` and the `code-gate-reviewer` for a PR touching `frontend/src`; each reads this file first. Roles read these files by path; no tool lists them.
 
 ## Reading order
 
-1. `README.md` (this file).
-2. `project-rules.md`: teachdash's own rules and the resolved conflicts C0-C14.
-3. `checklist.md`: the web interface checklist, for every frontend slice.
-4. `accessibility.md`, when the slice adds or changes interactive elements, forms or dialogs.
-5. The rest on demand: `accessibility-wcag22.md`, `accessibility-patterns.md`, `refactoring-ui.md`, `refactoring-ui-patterns.md`, `frontend-design-copy.md`, `critique-rubric.md`.
+Every frontend role reads `README.md` first, then `product-brief.md` and `design-code.md` (stubs that say "filled by #171" are noted and skipped). Then, per role:
+
+- `frontend-researcher`: all the visual sources in full (`refactoring-ui.md`, `refactoring-ui-patterns.md`, `critique-rubric.md`, `visual-criteria.md`, `frontend-design-principles.md`, `frontend-design-copy.md`, `visual-colour.md`, `visual-type.md`, `visual-layout.md`, `visual-passes.md`), then `project-rules.md` and `checklist.md`; the accessibility files as its role file says.
+- `frontend-spec-critic`: `project-rules.md`, `visual-criteria.md`, `frontend-design-principles.md`, `accessibility.md`.
+- `frontend-implementer` (per slice): the change's "UI design", `project-rules.md`, `visual-criteria.md`, `critique-rubric.md`, `checklist.md` (every slice), `accessibility.md` (forms, dialogs, interactive elements); one pass of `visual-passes.md` only when its self-critique or a `visual-reviewer` finding names it.
+- `visual-reviewer`: the change's "UI design", `project-rules.md`, `visual-criteria.md`, `critique-rubric.md`, `refactoring-ui.md`, `refactoring-ui-patterns.md`, `frontend-design-principles.md`, `visual-colour.md`, `visual-type.md`, `visual-layout.md`, `visual-passes.md`. It may also run read-only `ui-ux-pro-max/scripts/search.py` queries.
+- `code-gate-reviewer`: `project-rules.md`, `checklist.md`, `accessibility.md` for forms, dialogs and interactive elements; no screenshots.
+
+`ui-ux-pro-max/` is query-only for every role: `search.py` queries or grep, never the data files read whole. The rest of the files are read on demand.
 
 ## Precedence
 
-The change's spec wins, then the design code (from #171, not yet written), then `project-rules.md`, then the vendored community sources (C0). Where a source says something else, follow `project-rules.md`. The sources are adapted copies: their own Title Case, uppercase labels, web fonts, raw values and scores are already removed.
+the change's spec > design code > `project-rules.md` > `visual-criteria.md` > vendored sources
+
+The design code is `design-code.md`; #171 records the chosen direction and the token plan there. Where a source says something else, follow the one higher in the line (C0). The sources are adapted copies: their own Title Case, uppercase labels, web fonts, raw values and scores are already removed.
 
 A change which alters a behaviour stated in a `.agents/design/` file updates that file in the same PR. That sentence counts as a requested change: the
 edit may be made without asking again (the permission files ask first for edits under `.agents/design/**`).
@@ -25,6 +31,8 @@ Each vendored file starts with a header line naming its source, path, commit, li
 |---|---|---|---|---|---|
 | `project-rules.md` | ours | - | - | - | - |
 | `visual-criteria.md` | ours | - | - | - | - |
+| `product-brief.md` | ours | - | - | - | - |
+| `design-code.md` | ours | - | - | - | - |
 | `checklist.md` | vercel-labs/web-interface-guidelines | `command.md` | 434b7f9 | MIT | `licenses/vercel-labs-web-interface-guidelines.LICENSE` |
 | `accessibility.md` | addyosmani/web-quality-skills | `skills/accessibility/SKILL.md` | afa8da9 | MIT | `licenses/addyosmani-web-quality-skills.LICENSE` |
 | `accessibility-wcag22.md` | addyosmani/web-quality-skills | `skills/accessibility/references/WCAG.md` | afa8da9 | MIT | `licenses/addyosmani-web-quality-skills.LICENSE` |

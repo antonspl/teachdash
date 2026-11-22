@@ -2,7 +2,7 @@ Source: pbakaus/impeccable, `skill/reference/critique-rubric.md` @b49177d, Apach
 
 # Critique rubric
 
-A rubric for critiquing a screen or flow: cognitive load, Nielsen's heuristics and persona walk-throughs. The `frontend-reviewer` and the `frontend-researcher` read it on demand. `project-rules.md` wins over this file. There are no grades, ratings or severity levels: each problem found is a finding, triaged as C13 says.
+A rubric for critiquing a screen or flow: cognitive load, Nielsen's heuristics and persona walk-throughs. The `frontend-researcher`, the `frontend-implementer` and the `visual-reviewer` read it. `project-rules.md` wins over this file. There are no grades, ratings or severity levels: each problem found is a finding, triaged as C13 says.
 
 ## Cognitive load
 
