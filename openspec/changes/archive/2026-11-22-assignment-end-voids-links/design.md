@@ -37,7 +37,7 @@ Constitution §3 puts repositories in `persistence`, and a Java package-private 
 
 ### D4. Callers
 
-- `StudentRemovalService.removeStudent`: lock the teacher row as today, then `if (!ending.end(teacherId, studentId)) throw ApiException.notFound()`. The `UserRepository`, `TeacherStudentRepository` and `PasswordLinkService` fields give way to `AssignmentEnding` (the user repository stays for the lock). The comment about the concurrent reset stays: it explains why the lock is taken.
+- `StudentRemovalService.removeStudent`: lock the teacher row as today, then `if (!ending.end(teacherId, studentId)) throw ApiException.notFound()`. The `TeacherStudentRepository` and `PasswordLinkService` fields give way to `AssignmentEnding`; the `UserRepository` field stays for the lock. The comment about the concurrent reset stays: it explains why the lock is taken.
 - `TeacherDeactivationListener`: `joinLinks.delete(teacherId)`, then `ending.endAll(teacherId)`. The `assignments` and `links` fields go. The class Javadoc "runs synchronously in the deactivation transaction" stays.
 
 ### D5. Locks

@@ -4,7 +4,7 @@ This is a refactor with no product behaviour change and `skip_specs: true`. The 
 
 ## 1. Implementation
 
-- [x] 1.1 `PasswordLinkService.invalidateLinksIssuedBy` `PasswordLinkService.invalidateLinksIssuedBy` takes a set of user ids and returns without a query for an empty set; add a set-based method to `OneTimeTokenRepository` and keep `markUnusedIssuedByAsUsed` single-user for `store()` (design D2). Verify: the module compiles, `store()` is unchanged
+- [x] 1.1 `PasswordLinkService.invalidateLinksIssuedBy` takes a set of user ids and returns without a query for an empty set; add a set-based method to `OneTimeTokenRepository` and keep `markUnusedIssuedByAsUsed` single-user for `store()` (design D2). Verify: the module compiles, `store()` is unchanged
 - [x] 1.2 Add `AssignmentEnding` with `end` and `endAll` in `enrolment/persistence`, with Javadoc saying the teacher row must already be locked (design D1, D5)
 - [x] 1.3 Make `TeacherStudentRepository.delete` and `deleteAllOfTeacher` package-private (design D3). Verify: `grep -rn "assignments.delete\|deleteAllOfTeacher" backend/src/main` shows only `AssignmentEnding`, and the build compiles. Add Javadoc on both methods (package-private on purpose, use `AssignmentEnding`). The removal and deactivation tests, including those that spy `TeacherStudentRepository` (`JoinLinkFailureTest`), must pass; if the Spring proxy or the spy breaks, use the fallback in design D3 and report it
 - [x] 1.4 `StudentRemovalService` and `TeacherDeactivationListener` call `AssignmentEnding`; the per-student loop goes (design D4)
