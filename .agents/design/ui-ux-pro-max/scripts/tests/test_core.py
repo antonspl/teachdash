@@ -250,24 +250,6 @@ class TestDomainDetection(unittest.TestCase):
 
 
 class TestPersistence(unittest.TestCase):
-    def test_concurrent_non_force_persist_has_one_writer(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            search_script = SCRIPTS_DIR / "search.py"
-            processes = [subprocess.Popen(
-                [sys.executable, str(search_script), f"saas dashboard {index}",
-                 "--design-system", "--persist", "--project-name", "Race Probe",
-                 "--output-dir", tmp, "--json"],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-            ) for index in range(8)]
-            statuses = []
-            for process in processes:
-                stdout, stderr = process.communicate(timeout=30)
-                self.assertEqual(process.returncode, 0, stderr)
-                statuses.append(json.loads(stdout)["persistence"]["status"])
-
-            self.assertEqual(statuses.count("success"), 1)
-            self.assertEqual(statuses.count("skipped_exists"), 7)
-
     def test_persist_then_skip_then_force(self):
         with tempfile.TemporaryDirectory() as tmp:
             result = generate_design_system("saas dashboard", "Test Project", persist=True, output_dir=tmp)

@@ -72,7 +72,8 @@ says something else, follow this file. The full order is in C0.
 - **C14** Empty states are text plus a `src/ui/` action. No image assets.
 - **C15** Web-font data and `preview.py` are not used. `ui-ux-pro-max/data/google-fonts.csv`,
   `typography.csv` and the font-pairing results, and the `fonts.googleapis.com` link
-  that `scripts/preview.py` writes, give font names we do not load. Text uses
+  that `scripts/preview.py` writes, give font names we do not load. `preview.py` is not
+  reachable through the allowed `search.py` command. Text uses
   `--font-body` (C4); nothing loads from third-party CDNs (base rules, constitution
   §10). Font-pairing output is not a recommendation.
 - **C16** Icon sets are not added. `ui-ux-pro-max/data/icons.csv` names the Phosphor
@@ -95,13 +96,10 @@ says something else, follow this file. The full order is in C0.
   change's spec and the design code (C0), empty states follow C14 (no image assets).
   A landing pattern is used only when a spec asks for a public page, and then it
   still obeys C3, C4 and C14.
-- **C20** `search.py --persist`, `--preview` and `--tokens` are forbidden, with any
-  other flag (`--output-dir`, `--page`, `--force`). They write files (`design-system/`,
-  `preview.html`, token files) or load web fonts, and the tokens live in
-  `frontend/src/styles/tokens.css` (C3, C5, base rules). This is an instruction, not a
-  control: the permission entry allows `search.py` with any arguments, and the review
-  of 20.5 found that these flags write files and that `--output-dir` is not
-  sanitised. Basis: the "Not to be run" section of `ui-ux-pro-max/SKILL.md` and G-38.
+- **C20** The `search.py` options that write files (persistence, page, output
+  directory, force, preview) or export tokens are removed in our copy, so the allowed
+  command only prints. The tokens live in `frontend/src/styles/tokens.css` (C3, C5,
+  base rules). Basis: `ui-ux-pro-max/NOTICE-teachdash.md`, G-38 and G-51.
 - **C21** "One radius, one soft shadow" is not a violation. The anti-pattern list in
   `frontend-design-principles.md` (the "SaaS-card kit") and the radius and shadow
   lines of `visual-passes.md` warn against one radius and the same soft shadow on
