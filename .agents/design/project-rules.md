@@ -69,3 +69,61 @@ says something else, follow this file. The full order is in C0.
     field border contrast, stays out unless the change edits that border).
   - Every other finding becomes an issue, as step 10 says.
 - **C14** Empty states are text plus a `src/ui/` action. No image assets.
+- **C15** Web-font data and `preview.py` are not used. `ui-ux-pro-max/data/google-fonts.csv`,
+  `typography.csv` and the font-pairing results, and the `fonts.googleapis.com` link
+  that `scripts/preview.py` writes, give font names we do not load. Text uses
+  `--font-body` (C4); nothing loads from third-party CDNs (base rules, constitution
+  §10). Font-pairing output is not a recommendation.
+- **C16** Icon sets are not added. `ui-ux-pro-max/data/icons.csv` names the Phosphor
+  npm package; a new dependency is an engineer decision (constitution §7). Icons are
+  inline SVG components in `src/ui/` (`PlusIcon` is the model), one set with one
+  stroke style, as `refactoring-ui-patterns.md` "Icon usage" says. `icons.csv` may
+  help choose which meaning an icon needs, not where it comes from. No emoji as icons.
+- **C17** Tailwind, shadcn and other stack data (`ui-ux-pro-max/data/stacks/*.csv`)
+  is reference only, as `ui-ux-pro-max/SKILL.md` says. teachdash has no Tailwind or
+  shadcn: styling follows C3 and the base rules (token-only CSS, no `className` in
+  pages), and C5 keeps the existing tokens.
+- **C18** 44x44 does not apply. `ui-ux-pro-max` asks for a 44x44 touch target
+  ("Touch & Interaction" priority); our floor is 24 CSS px (C9, WCAG 2.5.8 AA, as
+  `accessibility.md` "Target size" states), met by `--control-height`. A target
+  between 24 and 44 CSS px is not a finding. A new control is not made smaller than
+  `--control-height` because of this item.
+- **C19** Landing and hero patterns do not apply. `ui-ux-pro-max/data/landing.csv`
+  and the landing-page parts of the vendored sources describe marketing pages. A
+  teachdash screen is a working screen: the page type and layout come from the
+  change's spec and the design code (C0), empty states follow C14 (no image assets).
+  A landing pattern is used only when a spec asks for a public page, and then it
+  still obeys C3, C4 and C14.
+- **C20** `search.py --persist`, `--preview` and `--tokens` are forbidden, with any
+  other flag (`--output-dir`, `--page`, `--force`). They write files (`design-system/`,
+  `preview.html`, token files) or load web fonts, and the tokens live in
+  `frontend/src/styles/tokens.css` (C3, C5, base rules). This is an instruction, not a
+  control: the permission entry allows `search.py` with any arguments, and the review
+  of 20.5 found that these flags write files and that `--output-dir` is not
+  sanitised. Basis: the "Not to be run" section of `ui-ux-pro-max/SKILL.md` and G-38.
+- **C21** "One radius, one soft shadow" is not a violation. The anti-pattern list in
+  `frontend-design-principles.md` (the "SaaS-card kit") and the radius and shadow
+  lines of `visual-passes.md` warn against one radius and the same soft shadow on
+  everything. teachdash has exactly one `--radius` and one `--shadow-card` by design
+  (C5, `refactoring-ui.md` section 5, `refactoring-ui-patterns.md` "Radius"). Flag
+  only what the spec's "UI design" section does not support: a card around
+  everything, or decoration with no meaning (`visual-criteria.md`).
+- **C22** Design system step. `ui-ux-pro-max/SKILL.md` Step 2 says generating a
+  design system is "REQUIRED for new pages/projects". In teachdash it is not: #171
+  chooses the direction and the token plan in `design-code.md` (G-37), which ranks
+  above the vendored sources (C0). `search.py --design-system` output is a reference
+  read in the terminal (C20), not a decision; where it differs from the design code,
+  the design code wins.
+- **C23** A "distinctive typeface", web-font fallback metrics and "character" through
+  type: `visual-type.md` (the `size-adjust` fallback advice for a web font),
+  `visual-passes.md` ("Still distinctive") and the typography data suggest a typeface
+  choice. C4 wins: one system stack in `--font-body`. Character comes from hierarchy,
+  spacing and the tokens in the design code, and a finding that asks for a different
+  typeface becomes an issue (C13).
+- **C24** Other disagreements. The "Pre-Delivery Checklist" in
+  `ui-ux-pro-max/references/pro-rules.md` is scoped to native and mobile app UI and
+  does not apply to the web client; `accessibility.md` and `checklist.md` do. Where a
+  vendored source and these rules disagree on anything not named above, the order of
+  C0 decides, so these rules win over the vendored sources and the change's spec and
+  the design code win over these rules. A finding that rests on a vendored source
+  alone is triaged as C13 says.
