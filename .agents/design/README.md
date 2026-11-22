@@ -24,6 +24,7 @@ Each vendored file starts with a header line naming its source, path, commit, li
 | File | Source | Path | Commit | Licence | Licence file |
 |---|---|---|---|---|---|
 | `project-rules.md` | ours | - | - | - | - |
+| `visual-criteria.md` | ours | - | - | - | - |
 | `checklist.md` | vercel-labs/web-interface-guidelines | `command.md` | 434b7f9 | MIT | `licenses/vercel-labs-web-interface-guidelines.LICENSE` |
 | `accessibility.md` | addyosmani/web-quality-skills | `skills/accessibility/SKILL.md` | afa8da9 | MIT | `licenses/addyosmani-web-quality-skills.LICENSE` |
 | `accessibility-wcag22.md` | addyosmani/web-quality-skills | `skills/accessibility/references/WCAG.md` | afa8da9 | MIT | `licenses/addyosmani-web-quality-skills.LICENSE` |
