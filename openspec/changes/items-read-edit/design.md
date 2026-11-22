@@ -23,13 +23,13 @@ See proposal.md. Current state on `main` (items-core-model):
 In `ItemController`, under `/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items`, no `SecurityConfig` change (`/api/teacher/**` is TEACHER):
 
 - `GET` returns `List<ItemResponse>` (the R1 response record, no new fields). 200.
-- `PATCH /{itemId}` with `EditItemRequest(Long version, Map<String,Object> payload)`. 200 with `ItemResponse`. Properties outside `version` and `payload` (such as `type`, `position`, `teacherId`) are ignored, as everywhere (R2-S11).
+- `PATCH /{itemId}` with `EditItemRequest(BigInteger version, Map<String,Object> payload)`. 200 with `ItemResponse`. Properties outside `version` and `payload` (such as `type`, `position`, `teacherId`) are ignored, as everywhere (R2-S11).
 
 Path ids are `UUID`; a malformed id is 404 `NOT_FOUND` (api-errors R3).
 
 ### D2. Edit input
 
-- `version` is a `Long`: `StrictIntegerJsonConfig` already makes it strict, so a string, a float, a boolean or `1e400` fails while binding the body with `INVALID_TYPE`. A missing or `null` `version` is `REQUIRED`, checked in the controller. A negative or zero `version` is a valid integer and simply never matches (409).
+- `version` is a `BigInteger`: `StrictIntegerJsonConfig` already makes it strict, so a string, a float, a boolean or `1e400` fails while binding the body with `INVALID_TYPE`. A `Long` would turn `99999999999999999999` into a Jackson overflow (`MALFORMED_REQUEST`), so the controller reports `version` `INVALID_TYPE` when `bitLength() > 63` and passes a `long` to the service. A missing or `null` `version` is `REQUIRED`, checked in the controller. A negative or zero `version` is a valid integer and simply never matches (409).
 - `payload` is a `Map`, as in create: missing or `null` is `REQUIRED` (controller), a non-object is `INVALID_TYPE` while binding. The first binding error wins (the body is bound in key order), so `{"version": "1", "payload": []}` gives only `version` `INVALID_TYPE`. Presence errors of `version` and `payload` are reported together, sorted by field (`{}` gives `payload` and `version` `REQUIRED`).
 - The type is not in the body, so the payload cannot be checked in the controller: it is checked in the service after the item is found (D3). `ItemPayloadValidator.validate` is reused unchanged (its javadoc in `items-core-model` anticipated this).
 
