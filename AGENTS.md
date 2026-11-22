@@ -9,6 +9,9 @@ and restart the session. Roles are defined in `.agents/roles/`, skills in
 `.agents/skills/`. Each developer maps model classes to models in
 `.agents/models.local` (see `.agents/models.example`).
 
+When you change `X.md` in `.agents/roles/`, check `frontend-X.md`, and the other way
+round; also for `visual-reviewer` and `code-gate-reviewer`, which share parts.
+
 ## Read the constitution by section
 
 `openspec/constitution.md` holds the rules; `openspec/config.yaml` holds the OpenSpec
@@ -51,9 +54,9 @@ too).
 
 - **Before a proposal**: the main agent restates the task, proposes research angles
   and agrees them with the engineer. Explore is optional: never ask the engineer to
-  run it first. A change touching `frontend/src` gets at least one
-  `frontend-researcher` at Clarify; as for any change, the engineer may agree that a
-  small task needs no research.
+  run it first. A change touching `frontend/src` always gets at least one
+  `frontend-researcher` at Clarify; the engineer cannot agree to skip it. For any
+  other change, the engineer may agree that a small task needs no research.
 - **Investigation** (tracing behaviour, comparing options, web research): the
   `researcher` agent (medium model class), one per angle. Angles about the UI
   (screens, components, frontend behaviour) go to the `frontend-researcher` agent
@@ -79,8 +82,7 @@ too).
 - **Implementation** (tests in pass 1, code in pass 2): the `implementer` agent
   (medium class). Give it one coherent slice of `tasks.md` at a time, not the whole
   change. Implementation slices that touch `frontend/` go to the
-  `frontend-implementer` agent (medium class) instead. The "Failing tests" section
-  (pass 1) of a change with both layers stays with the `implementer`.
+  `frontend-implementer` agent (medium class) instead.
 - **Review**: the `reviewer` agent (medium class). Run it:
   - after every implementation slice: pass 2, or the single pass of a frontend-only
     change;
@@ -130,7 +132,7 @@ stopped). It does not reread earlier phases' diffs.
   `change-start` (branch and new change), `pr-draft` (push and open the draft PR),
   `gate-request` (post the commit range), `gate-status` (check approvals),
   `pr-ready` (mark ready). They print a few lines only.
-- Do not change `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/` or the permission
+- Do not change `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/`, `.agents/design/` or the permission
   files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) unless the task
   requires it. The reviewer checks this.
 
