@@ -7,7 +7,7 @@
 - [x] 1.3 Write tests for items R6-S1 to R6-S8 in `items/api/MoveItemTest`, with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`. Create courses, lessons, parts, items and sessions in GIVEN with the helpers, never through the endpoints under test or the list endpoint. GIVEN has no asserts. The WHEN step only captures responses, so each test fails in THEN. In R6-S6 the anonymous client fetches a CSRF cookie first (also in R7-S4); courses use `en` and `ru` instruction languages. R6-S8 uses `Parallel.run`
 - [x] 1.4 Write tests for items R7-S1 to R7-S8 in `items/api/DeleteItemTest`, same rules. R7-S6, R7-S7 and R7-S8 use `Parallel.run`
 - [x] 1.5 The stubs answer 501 to any request shape. Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify each new test fails at its THEN step (not in setup). Against the 501 stubs only the 403 role and CSRF cases and the 401 deactivated and no-session cases pass, because security runs before the controller (the whole of R6-S6, R7-S4 and R7-S5, and the 403 and 401 steps of R6-S7); everything else fails at THEN. Report each new test that passes against the stubs, with the reason
-- [ ] 1.6 List the stubs (temporary) in the PR description; there is no migration
+- [x] 1.6 List the stubs (temporary) in the PR description; there is no migration
 
 ## 2. Test review
 
