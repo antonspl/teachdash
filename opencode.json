@@ -17,6 +17,7 @@
     { "action": "shell", "resource": "./scripts/flow/gate-status *", "effect": "allow" },
     { "action": "shell", "resource": "scripts/flow/test *", "effect": "allow" },
     { "action": "shell", "resource": "./scripts/flow/test *", "effect": "allow" },
+    { "action": "shell", "resource": "python3 .agents/design/ui-ux-pro-max/scripts/search.py *", "effect": "allow" },
     { "action": "shell", "resource": "git push", "effect": "ask" },
     { "action": "shell", "resource": "git push *", "effect": "ask" },
     { "action": "shell", "resource": "gh pr comment", "effect": "ask" },

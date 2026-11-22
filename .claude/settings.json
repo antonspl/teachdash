@@ -16,7 +16,8 @@
       "Bash(scripts/flow/gate-status *)",
       "Bash(./scripts/flow/gate-status *)",
       "Bash(scripts/flow/test *)",
-      "Bash(./scripts/flow/test *)"
+      "Bash(./scripts/flow/test *)",
+      "Bash(python3 .agents/design/ui-ux-pro-max/scripts/search.py *)"
     ],
     "ask": [
       "Edit(/scripts/flow/**)",

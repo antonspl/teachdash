@@ -53,6 +53,12 @@ prefix_rule(
     decision = "allow",
     match = ["./scripts/flow/test"],
 )
+prefix_rule(
+    pattern = ["python3", ".agents/design/ui-ux-pro-max/scripts/search.py"],
+    decision = "allow",
+    match = ["python3 .agents/design/ui-ux-pro-max/scripts/search.py \"saas dashboard\""],
+    not_match = ["python3 .agents/design/ui-ux-pro-max/scripts/generate.py"],
+)
 
 # Force flag right after "push" or after the remote.
 prefix_rule(
