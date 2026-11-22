@@ -54,7 +54,7 @@
 - **THEN** the delete response is 204, each add response is 201 or 404 and none is 500, the part is not stored, and no item row references it
 
 ### Requirement: R2 An item payload follows the generic rules and its type's rules
-`type` SHALL be a registered code and `payload` a JSON object, else 400 `VALIDATION_FAILED` with `REQUIRED`, `UNKNOWN_TYPE` or `INVALID_TYPE`; the first binding error wins (the body is bound in key order). The payload SHALL be read into the type's record and checked, with errors under `payload.`; an unknown property is `UNKNOWN_FIELD`, and a Jackson path is cut at a `Map` key, so both give the field `payload` and no key is echoed. The stored payload is the record serialised without null fields.
+`type` SHALL be a registered code and `payload` a JSON object, else 400 `VALIDATION_FAILED` with `REQUIRED`, `UNKNOWN_TYPE` or `INVALID_TYPE` (the first binding error wins). A NUL or lone surrogate in any payload string, a known field or not, gives `payload` `INVALID_FORMAT`, and an unknown property `payload` `UNKNOWN_FIELD`: no key is echoed. Other errors of the record or its constraints keep the path `payload.<path>`. The stored payload is the record serialised without null fields.
 
 #### Scenario: items/R2-S1 A missing, null, blank, wrongly typed or unknown type is rejected
 - **GIVEN** a logged-in teacher A with a part, and the item type `test-note` (no type `poll` is registered)
@@ -71,10 +71,10 @@
 - **WHEN** teacher A adds items of the type `test-note` with the payload `[]`, `["Hi"]`, `"Hi"`, `""`, `123` and `true`, and an item of the type "poll" (not registered) with the payload `[]`, one with a blank type and the payload `[]`, and the body `{"type":123,"payload":[]}` (the `type` key first)
 - **THEN** every response is 400 with code `VALIDATION_FAILED`; all but the last have `errors` exactly `[{field: "payload", code: "INVALID_TYPE"}]` (no `payload.text` entry and no `type` entry: the type is not checked), the last has `errors` exactly `[{field: "type", code: "INVALID_TYPE"}]` (binding stops at the first error, `type`, and `payload` is not reported), no body contains "Hi" as a value, and the part has no item
 
-#### Scenario: items/R2-S5 A NUL character or a lone surrogate in a string is rejected with its field
+#### Scenario: items/R2-S5 A NUL character or a lone surrogate in a string value is rejected as `payload`
 - **GIVEN** a logged-in teacher A with a part
 - **WHEN** teacher A adds items of the type `test-note` with the payloads `{"text": "a\u0000b"}`, `{"text": "ok", "hint": "a\u0000"}` and `{"text": "a\ud800b"}` (JSON escapes: the NUL and the lone high surrogate are characters of the string)
-- **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.text", code: "INVALID_FORMAT"}]`, `[{field: "payload.hint", code: "INVALID_FORMAT"}]` and `[{field: "payload.text", code: "INVALID_FORMAT"}]` (not 500), and the part has no item
+- **THEN** every response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_FORMAT"}]` (not 500; the field is cut at the `Map` key, also for the known fields `text` and `hint`), no body contains the rejected value, and the part has no item
 
 #### Scenario: items/R2-S6 A NUL character in an object key is an unknown property reported as `payload`
 - **GIVEN** a logged-in teacher A with a part

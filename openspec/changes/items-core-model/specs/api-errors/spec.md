@@ -5,7 +5,7 @@ A 400 `VALIDATION_FAILED` response SHALL carry `errors`: one `{field, code}` per
 field, sorted as strings by field, then code. `field` is the dotted body path (`[i]` for
 list items) or the query parameter name. Several broken rules give the first of
 `REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`/`UNSUPPORTED_COURSE_LANGUAGE`/`UNKNOWN_TYPE`/`UNKNOWN_FIELD`.
-NUL and a lone surrogate are `INVALID_FORMAT`, a wrong type `INVALID_TYPE` (a string, a fraction or `1e400` for an `Integer` or `Long` too; scenario items R2-S12 exercises the strict `Integer`), a Jackson path is cut at the first `Map` key, so a key is never echoed in `field` (a NUL under `payload.secretKey` is the field `payload`; scenario items R2-S13), an unknown item payload property `UNKNOWN_FIELD` with the field `payload` (the property name is never echoed); in a body these (`INVALID_FORMAT`, `INVALID_TYPE` and `UNKNOWN_FIELD`) stop reading, so
+NUL and a lone surrogate are `INVALID_FORMAT`, a wrong type `INVALID_TYPE` (a string, a fraction or `1e400` for an `Integer` or `Long` too; scenario items R2-S12 exercises the strict `Integer`), a Jackson path is cut at the first `Map` key, so a key is never echoed in `field` (a NUL or a lone surrogate in any string value of an item payload, a known field or not, is found at body binding and gives the field `payload`; scenarios items R2-S5 and R2-S13), an unknown item payload property `UNKNOWN_FIELD` with the field `payload` (the property name is never echoed); in a body these (`INVALID_FORMAT`, `INVALID_TYPE` and `UNKNOWN_FIELD`) stop reading, so
 only that field is listed. Rejected values MUST NOT be in the response.
 
 #### Scenario: api-errors/R1-S1 Missing and blank fields are required
