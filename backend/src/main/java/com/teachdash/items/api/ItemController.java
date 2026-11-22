@@ -14,11 +14,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.teachdash.common.ApiException;
 import com.teachdash.common.FieldErrorCodes;
 import com.teachdash.common.FieldErrorDetail;
 import com.teachdash.items.api.dto.CreateItemRequest;
 import com.teachdash.items.api.dto.ItemResponse;
+import com.teachdash.items.api.dto.MoveItemRequest;
 import com.teachdash.items.domain.ItemPayloadValidator;
 import com.teachdash.items.domain.ItemService;
 import com.teachdash.items.domain.ItemType;
@@ -53,16 +56,28 @@ class ItemController {
 		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type.code(), payloadJson));
 	}
 
-	// STUB: replaced in pass 2 (items-reorder-delete)
 	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}/position")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void move() {
+	ItemResponse move(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId,
+			@PathVariable UUID itemId,
+			@Valid @RequestBody MoveItemRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return ItemResponse.from(items.move(teacherId, courseId, lessonId, partId, itemId, request.position()));
 	}
 
-	// STUB: replaced in pass 2 (items-reorder-delete)
 	@DeleteMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}")
-	@ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-	void delete() {
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void delete(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId,
+			@PathVariable UUID itemId,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		items.delete(teacherId, courseId, lessonId, partId, itemId);
 	}
 
 	private ItemType<?> validateEnvelope(CreateItemRequest request) {
