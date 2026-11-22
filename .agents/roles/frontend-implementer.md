@@ -22,7 +22,7 @@ Reading, in this order:
    self-critique or a `visual-reviewer` finding names it.
 
 ui-ux-pro-max is query-only: read-only `python3 .agents/design/ui-ux-pro-max/scripts/search.py ...`
-queries (never `--persist`, `--preview` or `--tokens`) or grep, never its data files
+queries (the vendored `search.py` has no file-writing options, G-51) or grep, never its data files
 whole.
 
 You work in a single pass: your slice writes its code and its own tests, one per

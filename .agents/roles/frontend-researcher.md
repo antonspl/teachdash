@@ -26,8 +26,8 @@ Reading, in this order:
    `frontend/src/styles/tokens.css`.
 
 ui-ux-pro-max (`.agents/design/ui-ux-pro-max/`) is query-only: run read-only
-`python3 .agents/design/ui-ux-pro-max/scripts/search.py ...` queries (never `--persist`,
-`--preview` or `--tokens`) or grep it, and never read its data files whole. Where a
+`python3 .agents/design/ui-ux-pro-max/scripts/search.py ...` queries (the vendored `search.py` has
+no file-writing options, G-51) or grep it, and never read its data files whole. Where a
 file under `.agents/design/` is still a stub ("filled by #171"), say so and go on.
 
 Rules:

@@ -27,7 +27,7 @@ Reading:
    `visual-type.md`, `visual-layout.md` and `visual-passes.md`.
 
 You may run read-only `python3 .agents/design/ui-ux-pro-max/scripts/search.py ...` queries
-(never `--persist`, `--preview` or `--tokens`); never read its data files whole.
+(the vendored `search.py` has no file-writing options, G-51); never read its data files whole.
 
 Check each screenshot against the visual plan, the brief and the design code, one
 criterion of `visual-criteria.md` at a time. A missing screenshot for a screen or state
