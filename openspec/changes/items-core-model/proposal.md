@@ -36,7 +36,22 @@ Rework after the final review (the archive was reverted to rework the payload de
 | R12 | Record rules? | Payload records use wrapper types with `@NotNull` (no primitives, so a missing field gives `REQUIRED`) and no class-level constraints (cross-field rules go in `extraChecks`). |
 | R13 | Test type? | `test-note`: a record with `@NotNull @Size(max=1000) String text` and an optional `hint` with a declared limit (`@Size(max=200)`, a value chosen by the spec-writer, to confirm at the spec gate). R1-S1..S10 stay. R2-S9 (duplicate keys, last wins) is rewritten without `schema_version`: the stored value is the serialised record. |
 
-The change has 23 scenarios: `items` R1 10, R2 10 (R2-S1 to S3, S5 to S11; S4 is dropped), and `api-errors` R1-S11 to R1-S13.
+Second rework, after the spec critique of the rework. The engineer's decisions, as given; they supersede R1 to R13 and rows 1 to 11 where those say otherwise (R8: a NUL in a key is `UNKNOWN_FIELD` with the field `payload`; R9: `BigDecimal` is read exactly):
+
+| # | Question | Engineer's answer |
+|---|---|---|
+| R14 | Where does `UNKNOWN_FIELD` sit? | In the default priority tier next to `INVALID_FORMAT` and `UNKNOWN_TYPE`. |
+| R15 | `hint` limit of `test-note`? | `@Size(max=200)`, kept. |
+| R16 | Strict `Integer` and `Long`? | No scenario of its own; the rule is in `api-errors` R1 text plus a unit test. Kept. |
+| R17 | Proof of the Caddy 413? | `caddy validate` plus one manual request with a body over 1 MB, described in the PR. Kept. |
+| R18 | Field of `UNKNOWN_FIELD`? | Always `payload`, never the property name: the key is user text and must not be echoed. Items R2-S6 and R2-S10 and `api-errors` R1-S12 are rewritten; no escaped-NUL key comparison. |
+| R19 | Several errors? | Jackson stops at the first unknown or mistyped property, so one such error is reported; Bean Validation errors are reported together. Kept and stated in the design. |
+| R20 | Stored payload and nulls? | The payload is serialised without null fields (`JsonInclude.Include.NON_NULL` for the stored payload), so an absent `hint` is not stored as `"hint": null`. Items R2-S9 and design D5. |
+| R21 | A payload that is not an object? | It fails while Spring binds the body to `Map`, before the controller: the one error `payload` `INVALID_TYPE`, and `type` is not checked. The combined case is dropped from R2-S1 and the "reported together" sentence from D2 and D4. A blank or unknown `type` with a valid object payload works as before. `payload: ""` is expected to give `INVALID_TYPE` (R2-S3). |
+| R22 | Floats? | `DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS` is enabled globally (the body is bound to `Map` by the app's `ObjectMapper`; it changes only untyped `Object` and `Map` floats). Payload records may use `BigDecimal` for fractions; `Double` and `Float` stay forbidden. `1e400` stays a `BigDecimal` and is stored in jsonb as is; into an `Integer` or `Long` field it, like `1.5`, is `payload.<field>` `INVALID_TYPE`. Scenario R2-S12 and a unit test; `test-note` gets the optional fields `Integer rating` and `BigDecimal weight` for it. |
+| R23 | Body size? | Only the Caddy 1 MB limit on `/api/*`; the 413 has no JSON body; dev and tests are unbounded; uploads (#55) get their own route limit. Written in design D9 and Risks. |
+
+The change has 24 scenarios: `items` R1 10, R2 11 (R2-S1 to S3, S5 to S12; S4 is dropped), and `api-errors` R1-S11 to R1-S13.
 
 ## Research angles
 
@@ -56,7 +71,7 @@ A part is a container; its content is made of items (exercises, text blocks and 
 - Table `items` (migration `V17__items.sql`, no `schema_version`).
 - `POST /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items` adds an item at the end of the caller's part (R1) after the payload rules (R2).
 - A generic `ItemType<P>` interface, a registry and a shared `ItemPayloadValidator`; no production type.
-- Strict `Integer` and `Long` parsing and a lone-surrogate check for all endpoints; public `ApiException.fromJackson` and `ApiException.validation` helpers.
+- Strict `Integer` and `Long` parsing, a lone-surrogate check and `USE_BIG_DECIMAL_FOR_FLOATS` for all endpoints; public `ApiException.fromJackson` and `ApiException.validation` helpers.
 - A 1 MB request body limit on `/api/*` in `infra/Caddyfile`.
 - New field codes `UNKNOWN_TYPE` and `UNKNOWN_FIELD` (400) and the response code `409 ITEM_LIMIT_REACHED`.
 - Property `teachdash.items.max-per-part=50`.
@@ -81,8 +96,8 @@ A part is a container; its content is made of items (exercises, text blocks and 
 ## Impact
 
 - Backend: new `items` feature package (`api`, `api/dto`, `domain` with `ItemType<P>`, the registry and `ItemPayloadValidator`, `persistence`); new field codes in `common/FieldErrorCodes`; two public helpers on `ApiException`; one property in `application.properties`.
-- Behaviour change for all endpoints: `Integer` and `Long` body fields reject a string or a fraction with `INVALID_TYPE` (before, "5" was accepted and 5.7 became 5); a lone surrogate in any string is `INVALID_FORMAT`. No existing endpoint has an `Integer` or `Long` body field today (moves use `BigInteger`), so no current client changes.
-- Infra: `infra/Caddyfile` gets `request_body { max_size 1MB }` in the `/api/*` handle; a larger body gets 413 from Caddy.
+- Behaviour change for all endpoints: `Integer` and `Long` body fields reject a string or a fraction with `INVALID_TYPE` (before, "5" was accepted and 5.7 became 5); a lone surrogate in any string is `INVALID_FORMAT`; `USE_BIG_DECIMAL_FOR_FLOATS` is enabled globally, so a JSON float bound to an untyped `Object` or `Map` is a `BigDecimal` and not a `Double` (typed fields are unchanged). No existing endpoint has an `Integer` or `Long` body field today (moves use `BigInteger`), so no current client changes.
+- Infra: `infra/Caddyfile` gets `request_body { max_size 1MB }` in the `/api/*` handle; a larger body gets 413 from Caddy with no JSON body (the only body limit; dev and tests are unbounded).
 - Database: migration `V17__items.sql`, edited in place (table `items` without `schema_version`, plus a unique `(id, teacher_id)` on `parts`), renumbered at merge if needed.
 - API: one new endpoint, one new response code, new field codes `UNKNOWN_TYPE` and `UNKNOWN_FIELD` (`api-errors` R1 MODIFIED), 413 for a body over 1 MB.
 - No new dependencies.

@@ -5,7 +5,7 @@ A 400 `VALIDATION_FAILED` response SHALL carry `errors`: one `{field, code}` per
 field, sorted as strings by field, then code. `field` is the dotted body path (`[i]` for
 list items) or the query parameter name. Several broken rules give the first of
 `REQUIRED`, `TOO_SHORT`/`TOO_LONG`, `INVALID_FORMAT`/`UNSUPPORTED_COURSE_LANGUAGE`/`UNKNOWN_TYPE`/`UNKNOWN_FIELD`.
-NUL and a lone surrogate are `INVALID_FORMAT`, a wrong type `INVALID_TYPE` (a string or a fraction for an `Integer` or `Long` too); in a body these stop reading, so
+NUL and a lone surrogate are `INVALID_FORMAT`, a wrong type `INVALID_TYPE` (a string, a fraction or `1e400` for an `Integer` or `Long` too), an unknown item payload property `UNKNOWN_FIELD` with the field `payload` (the property name is never echoed); in a body these (`INVALID_FORMAT`, `INVALID_TYPE` and `UNKNOWN_FIELD`) stop reading, so
 only that field is listed. Rejected values MUST NOT be in the response.
 
 #### Scenario: api-errors/R1-S1 Missing and blank fields are required
@@ -66,7 +66,7 @@ only that field is listed. Rejected values MUST NOT be in the response.
 #### Scenario: api-errors/R1-S12 An unknown payload property is rejected with its own code
 - **GIVEN** a logged-in teacher with a part, and the item type `test-note`
 - **WHEN** the teacher adds an item with the type `test-note` and the payload `{"text": "Hi", "answer": 42}`
-- **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "payload.answer", code: "UNKNOWN_FIELD"}]`, and no item is created
+- **THEN** the response is 400 with code `VALIDATION_FAILED`, `errors` is exactly `[{field: "payload", code: "UNKNOWN_FIELD"}]`, the body does not contain "answer", and no item is created
 
 #### Scenario: api-errors/R1-S13 A lone surrogate is invalid format on every endpoint
 - **GIVEN** a logged-in admin
