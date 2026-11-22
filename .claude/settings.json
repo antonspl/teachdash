@@ -16,12 +16,24 @@
       "Bash(scripts/flow/gate-status *)",
       "Bash(./scripts/flow/gate-status *)",
       "Bash(scripts/flow/test *)",
-      "Bash(./scripts/flow/test *)"
+      "Bash(./scripts/flow/test *)",
+      "Bash(docker compose up --build --wait)",
+      "Bash(npm --prefix frontend run build)",
+      "Bash(npm --prefix frontend run lint)",
+      "Bash(npm --prefix frontend run format:check)",
+      "Bash(npm --prefix frontend run test)",
+      "Bash(npm --prefix frontend run test:e2e *)",
+      "Bash(scripts/check-scenario-coverage.sh)",
+      "Bash(./scripts/check-scenario-coverage.sh)",
+      "Bash(scripts/check-scenario-coverage.sh *)",
+      "Bash(./scripts/check-scenario-coverage.sh *)",
+      "Bash(python3 .agents/design/ui-ux-pro-max/scripts/search.py *)"
     ],
     "ask": [
       "Edit(/scripts/flow/**)",
       "Edit(/scripts/setup-agents)",
       "Edit(/.agents/roles/**)",
+      "Edit(/.agents/design/**)",
       "Edit(/.claude/settings.json)",
       "Edit(/opencode.json)",
       "Edit(/.codex/rules/**)"

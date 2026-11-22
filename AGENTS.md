@@ -9,6 +9,9 @@ and restart the session. Roles are defined in `.agents/roles/`, skills in
 `.agents/skills/`. Each developer maps model classes to models in
 `.agents/models.local` (see `.agents/models.example`).
 
+When you change `X.md` in `.agents/roles/`, check `frontend-X.md`, and the other way
+round; also for `visual-reviewer` and `code-gate-reviewer`, which share parts.
+
 ## Read the constitution by section
 
 `openspec/constitution.md` holds the rules; `openspec/config.yaml` holds the OpenSpec
@@ -44,39 +47,70 @@ in English.
 Keep the main agent's context small. It talks to the engineer (whoever took the
 task), decides, and delegates. It does not read large parts of the codebase, write
 production code or draft OpenSpec artifacts itself. Before delegating to the
-`implementer` or the `spec-writer`, it commits its own pending edits, staged by
-path, so no agent commits them. Agents do not push: the main agent pushes their
-commits after reading the report (the flow scripts push too).
+`implementer`, the `frontend-implementer` or the `spec-writer`, it commits its own
+pending edits, staged by path, so no agent commits them. Agents do not push: the
+main agent pushes their commits after reading the report (the flow scripts push
+too).
 
 - **Before a proposal**: the main agent restates the task, proposes research angles
   and agrees them with the engineer. Explore is optional: never ask the engineer to
-  run it first.
+  run it first. A change touching `frontend/src` always gets at least one
+  `frontend-researcher` at Clarify; the engineer cannot agree to skip it. For any
+  other change, the engineer may agree that a small task needs no research.
 - **Investigation** (tracing behaviour, comparing options, web research): the
-  `researcher` agent (medium model class), one per angle. Give it the task, the
-  angle and what you need to decide. A built-in quick-search agent, where the tool
-  has one, is only for finding where something is.
+  `researcher` agent (medium model class), one per angle. Angles about the UI
+  (screens, components, frontend behaviour) go to the `frontend-researcher` agent
+  (medium class) instead. Give it the task, the angle and what you need to decide.
+  A built-in quick-search agent, where the tool has one, is only for finding where
+  something is.
+  The `frontend-researcher` returns design questions on the screens the change
+  touches. The main agent asks the engineer the questions; the answers go into the
+  proposal's Clarifications and the "UI design" section of `design.md`.
 - **Writing artifacts** (proposal, spec deltas, design, tasks, and every fix after
   critique or engineer comments): the `spec-writer` agent (medium class). Brief it
   with the change name, the issue and PR, the engineer's decisions as a numbered list,
   the research conclusions and, for a fix, the findings with the decision on each. It
   records decisions as given and does not take new ones. The main agent may make a
   one- or two-line edit in one file itself.
+  The main agent passes the `frontend-researcher`'s visual plan (its own report
+  section, outside the 40 lines) to the spec-writer word for word for "UI design".
   The spec-writer, not the main agent, follows the OpenSpec propose and update skills
   for writing; the main agent uses them only to agree the plan.
 - **Spec critique**: the `spec-critic` agent (medium class), after the spec is
-  drafted and before asking for the spec gate, on every change.
+  drafted and before asking for the spec gate, on every change. For a change
+  touching `frontend/src`, the `frontend-spec-critic` agent (medium class) runs
+  instead. The main agent asks the engineer its unanswered design questions, and the
+  spec-writer records the answers in the fix round.
 - **Implementation** (tests in pass 1, code in pass 2): the `implementer` agent
   (medium class). Give it one coherent slice of `tasks.md` at a time, not the whole
-  change.
-- **Review**: the `reviewer` agent (medium class). Run it:
-  - after every pass 2 slice;
-  - whenever an implementer report raises doubt (unsure items, unexpected files,
+  change. Implementation slices that touch `frontend/` go to the
+  `frontend-implementer` agent (medium class) instead.
+- **Review**: the `reviewer` agent (medium class). A change touching `frontend/` has
+  no slice review. For any other change, run the `reviewer`:
+  - after every implementation slice (pass 2);
+  - whenever an `implementer` report raises doubt (unsure items, unexpected files,
     failing or changed tests, security-sensitive code);
   - once per PR with the `code-gate-reviewer` agent (strong model class), before
     asking for the code gate.
 
-  Fix findings as the Code review step in constitution §1 says, then re-review if
-  the fix was non-trivial.
+  For any other change, fix findings as the Code review step in constitution §1 says,
+  then re-review if the fix was non-trivial; after a fix of the `code-gate-reviewer`'s
+  findings, run it again.
+
+  For a change touching `frontend/`, only the PR-level review runs: the
+  `code-gate-reviewer` and the `visual-reviewer` (strong model class) in parallel; the
+  `visual-reviewer` runs only for a PR with a final screenshot set. Doubts in a
+  `frontend-implementer` report (unsure items, unexpected files, failing or changed
+  tests, security-sensitive code) go to the `code-gate-reviewer` as points to check.
+  For a PR touching `frontend/src`, after the last slice the main agent
+  asks the `frontend-implementer` for the final screenshot set and passes its folder
+  path and its list of unreachable states to the `visual-reviewer` (or its "no screenshots:
+  <reason>" line, which skips it). At the code gate of such a PR the main agent gives
+  the engineer the final screenshot folder path (`frontend/screenshots/<change-name>/`);
+  the engineer looks and decides whether to attach anything. Fix findings as the Code
+  review step in constitution §1 says. After a fix from the final review's findings,
+  run again the reviewer(s) whose findings were fixed: the `code-gate-reviewer` after a
+  code fix, the `visual-reviewer` on a retaken whole screenshot set after a UI fix.
 
 Agents' reports are not shown to the engineer: relay what matters in a few lines.
 
@@ -110,7 +144,7 @@ stopped). It does not reread earlier phases' diffs.
   `change-start` (branch and new change), `pr-draft` (push and open the draft PR),
   `gate-request` (post the commit range), `gate-status` (check approvals),
   `pr-ready` (mark ready). They print a few lines only.
-- Do not change `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/` or the permission
+- Do not change `scripts/flow/`, `scripts/setup-agents`, `.agents/roles/`, `.agents/design/` or the permission
   files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) unless the task
   requires it. The reviewer checks this.
 

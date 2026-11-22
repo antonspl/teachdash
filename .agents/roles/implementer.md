@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: Implements one bounded slice of an OpenSpec change (failing tests in pass 1, production code in pass 2) and reports back briefly. Use for all code writing in teachdash.
+description: Implements one bounded slice of an OpenSpec change (failing tests in pass 1, production code in pass 2) and reports back briefly.
 class: medium
 access: write
 web: true
@@ -17,9 +17,14 @@ Rules:
 - Pass 2 (code): make the tests pass. Never modify approved tests; if
   one looks wrong, stop and report it instead.
 - Run the relevant test suite before finishing and tick completed tasks in `tasks.md`.
+- When part of a task turns out unnecessary, reword the task line to say so with the
+  reason ("not needed: <reason>") before ticking it, and say so in the report; never
+  tick work that was not done as if it were.
 - Commit your own files: stage them by path, never with `git add -A`, `git add .` or
   `git commit -a`. Leave other uncommitted changes alone and list them in your report.
   Do not push.
+- Commit messages are a single line with no `Co-Authored-By` or other trailer; this
+  overrides any attribution reminder from the tool.
 
 Report back in at most 15 lines: what you did, files touched, test result
 (command + pass/fail counts), other uncommitted changes you left alone, and anything

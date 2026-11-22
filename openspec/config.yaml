@@ -20,13 +20,16 @@ rules:
   specs:
     - Every requirement has at least one Given/When/Then scenario
     - Give every scenario a stable ID in the form <capability>/R<n>-S<n>
+    - 'Design-affecting behaviour goes into scenarios: an error message and where it appears, focus after an error, empty and loading states, what is disabled during a request. Visual layout stays in design.md. This adds scenarios, not requirements: the 6-requirement limit holds'
   design:
     - Justify every new dependency
     - List Flyway migrations the change adds
+    - 'A change touching frontend/src has a "UI design" section in design.md with these headings: screens touched; layout (desktop and 360 px); states per screen (empty, error, loading, disabled, success); copy (i18n keys and text); a11y (focus order, keyboard, aria-*); components and tokens (reused or new, and each new token listed, since a token is added only when no existing one fits); a visual plan per screen and state (hierarchy, tokens used and new, layout, density). Add an ASCII sketch for a new screen or a significant layout change. A change touching frontend/src with no rendered UI change may instead have one line: "UI design: none, <reason>"'
   tasks:
     - Section 1 is "Failing tests" - one backend test per scenario (JUnit 5, Testcontainers, RestAssured), plus stubs (501, marked STUB) and schema migrations so tests compile and fail at their THEN step
     - Section 2 is a single task "Engineer approves tests in the PR" - a hard stop
     - Implementation tasks come only after the review task
+    - 'Implementation task groups (after the test review task, or every group in a frontend-only change) are split by layer: a group touches either code under frontend/ or code under backend/, never both, so each group is one slice for one implementer role. Repository tooling (scripts/, for example adding a capability to FRONTEND_CAPABILITIES in scripts/check-scenario-coverage.sh, and config files) may go with either group'
     - 'End with a "Workflow follow-up" section: code review gate, archive in the same PR, mark the PR ready for the final code owner review'
     - 'Exception for a frontend-only change (no backend scenarios): no "Failing tests" section and no test review task. Each task group lands its own Vitest or Playwright tests, one per scenario, with "[<scenario ID>]" at the start of the test title. Tests and code are reviewed together at the code gate'
     - 'Exception for a tooling change (CI, scripts, repository tooling) with skip_specs: true: no "Failing tests" section and no test review task. Each task says how that part is proven, and the proof is recorded in the PR'

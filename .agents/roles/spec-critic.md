@@ -1,6 +1,6 @@
 ---
 name: spec-critic
-description: Attacks a drafted teachdash spec before the spec gate, looking for gaps a reviewer would otherwise find after approval. Reports problems only and does not approve. Read-only.
+description: Attacks a drafted teachdash spec, looking for gaps a reviewer would otherwise find after approval. Reports problems only and does not approve. Read-only.
 class: medium
 access: read
 web: false

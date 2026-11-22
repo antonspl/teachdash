@@ -1,0 +1,445 @@
+# Design
+
+## Context
+
+See `proposal.md` for the decisions. The engineer revised part of the design after the spec gate (proposal Clarifications, G-1 to G-11); D2 (C13), D5, D7, D8, D11 and D12 are revised, D6 is removed, and D13-D16 are added. Tasks 1-4 were done before that revision. After the critique of that revision (G-12 to G-19), D2 (C0), D3, D5, D7, D8, D11, D12, D13, D14 and D15 are revised. After a further critique (G-20, and the fixes F7 and F8), D2 (C13), D3, D5, D7, D8, D11 and D14 are revised. After the second dry run (G-25 to G-27), D1, D3, D4 and D13 are revised. After the code-gate review (G-28, G-29), D3, D7 and D8 are revised. After the code owner's review (G-31 to G-45), D17-D29 are added and supersede parts of D1-D4, D5, D7-D10, D12-D14 and the risks; each superseded D-item carries a note at its head. The dry-run groups (D12, tasks 13) are not repeated (G-45). After the second critique of the revision (G-46 to G-49), D19, D20, D21 and D24 are clarified. After the code owner's second review (G-51 to G-55), D30-D34 are added and supersede parts of D3, D5, D13, D19, D24, D25 and the risks; each superseded item carries a note.
+
+- `scripts/setup-agents` builds every role from `.agents/roles/*.md`. `body()` copies the role body verbatim into Claude Code, opencode and Codex. Write roles get no tool limits. A body must not contain three single quotes (it breaks the Codex TOML string). `validate_roles` treats every `*.md` in `.agents/roles/` as a role, so a shared include cannot live there. `--check` hashes only `.agents/roles` and `.agents/skills`.
+- The permission files (`.claude/settings.json`, `opencode.json`, `.codex/rules/`) do not list `docker` or `npx`, so each such call prompts the engineer. The new role gets no permission change.
+- `.agents/roles/implementer.md:3` describes the role as "Use for all code writing in teachdash."
+- Frontend look rules today: all values are tokens in `frontend/src/styles/tokens.css`; `npm run lint` runs `scripts/check-design-tokens.mjs`, which fails on look values outside that file; pages live in `frontend/src/pages/` and use `src/ui/` components. UI copy tone and spacing rules are recorded only in archived changes.
+- `frontend/playwright.config.ts` hardcodes `baseURL` to `http://localhost:8081`, which serves the built app from `compose.yaml`. Its `outputDir` is `test-results/`, which Playwright empties on each run.
+- A frontend-only change has one pass (`openspec/config.yaml` tasks and apply rules), and each of its task groups lands its own "[<scenario ID>]" tests (the frontend-only exception in `rules.tasks`). Constitution step 7 speaks of backend tests only, and the "Section 1 is Failing tests" rule in `rules.tasks` says "one backend test per scenario (JUnit 5, Testcontainers, RestAssured)". In a change with both layers, archived `2026-11-02-login-invalid-credentials`, task 1.5, adds the Vitest test `[web-client/R5-S4]` to the one "Failing tests" section. How frontend tests fit pass 1 (constitution §2, no frontend stubs, coverage by `FRONTEND_CAPABILITIES` in `scripts/check-scenario-coverage.sh`) is #170; this change adds no test rules (decision 3).
+- Constitution §1 step 10 and the reviewers' triage: security problems, data loss and spec violations are fixed in the PR; every other finding becomes an issue. This change adds one sentence to step 10 for UI the change adds or edits (D7).
+- State after tasks 1-4 (before the post-gate revision): `researcher.md` has a design-angle bullet that returns design questions and existing-UI problems apart; `reviewer.md` has the frontend Check bullet (design sources, screenshots, leftover `zshots.spec.ts` or `frontend/screenshots/`); `code-gate-reviewer.md` has one bullet checking frontend diffs against `project-rules.md`; `AGENTS.md` has the design-angle text and the out-of-scope filing text; constitution §1 step 2 has the design-angle sentence. In `.agents/design/`, `project-rules.md` C13 holds the out-of-scope filing text, and `README.md`, `checklist.md` and `critique-rubric.md` name the `reviewer` and the design-angle `researcher` as readers (`checklist.md:5-6` names "the frontend-implementer before it reports, the reviewer on the diff"). The README and `project-rules.md` C0 state the precedence "the spec, then the project rules, then the sources", without the design code. `frontend-implementer.md` takes screenshots "when the slice changes pages (`frontend/src/pages/`) or `src/ui/` components". `researcher.md`'s description says "Use for all investigation in teachdash", and `CONTRIBUTING.md:52` says the agent "runs the spec-critic".
+- Constitution §1 names the spec critic in the Roles paragraph ("helped by the spec-critic (spec gate)") and in step 5 ("the spec-critic agent attacks the draft"). It does not name the slice reviewer; step 10 names only the code-gate review.
+- `openspec/config.yaml` `rules.design` has two rules (justify new dependencies, list Flyway migrations) and `rules.specs` two (a scenario per requirement, scenario IDs).
+
+## Goals / Non-Goals
+
+**Goals:**
+
+- A frontend slice is built by a role that has read the design sources, and its result is checked on screenshots before review.
+- Design questions reach the engineer before any spec or frontend code is written.
+- Every frontend step has a frontend role that accounts for design: research, spec critique, implementation and slice review; the code-gate review covers design for a PR touching `frontend/src`.
+- Design is part of the spec: a "UI design" section in `design.md` and design-affecting behaviour in scenarios.
+- One file of project rules settles every conflict between the sources and our own rules; the design code of #171 will sit above it.
+- Backend and tooling roles (`implementer`, `researcher`, `spec-critic`, `reviewer`) do not load the design sources.
+- The design works in Claude Code, opencode and Codex; this change proves it in Claude Code only (D12).
+
+**Non-Goals:**
+
+- Enforcing the design rules by a script, beyond the existing `check-design-tokens.mjs`.
+- Fixing existing UI that the change does not add or edit, and sweeping or filing design and UI problems in existing UI: existing UI design is #171.
+- The design code itself, and `@axe-core/playwright` automated a11y checks (a new dependency, constitution §7): both go with #171.
+- A frontend code-gate role: the `code-gate-reviewer` stays one per PR for both layers.
+- Test rules for a change with both layers (#170).
+- Keeping the vendored copies in sync with upstream automatically. The README records the pinned commits for a manual re-sync.
+- Proving the roles in opencode and Codex, and proving routing in a change with both layers (D12).
+
+## Decisions
+
+### D1. `.agents/design/` layout and sources
+
+> **Extended by D24 (G-38).** The table below lists the first five sources; the vendored visual sources, `ui-ux-pro-max/` and the new stubs are in D24. The reading order in the README is D21 and D23.
+
+| File | Source @ commit | Licence | About |
+|---|---|---|---|
+| `README.md` | ours | - | Index, ~35 lines: reading order, precedence, a source/path/commit/licence-file table for re-syncs, the NOTICE note (D10), and the upkeep rule that a change altering a behaviour stated in a `.agents/design/` file updates that file in the same PR (G-26) |
+| `project-rules.md` | ours | - | ~80 lines, D2 |
+| `checklist.md` | vercel-labs/web-interface-guidelines @434b7f9 `command.md` | MIT | ~130 lines, plus the three impeccable audit points |
+| `accessibility.md` | addyosmani/web-quality-skills @afa8da9 `skills/accessibility/SKILL.md` | MIT | ~250 lines |
+| `accessibility-wcag22.md` | same, `references/WCAG.md` | MIT | ~100 lines |
+| `accessibility-patterns.md` | same, `references/A11Y-PATTERNS.md` | MIT | ~120 lines |
+| `refactoring-ui.md` | wondelai/skills @c526558 `refactoring-ui/SKILL.md` | MIT | ~150 lines |
+| `refactoring-ui-patterns.md` | same, `refactoring-ui/references/advanced-patterns.md` | MIT | ~250 lines |
+| `frontend-design-copy.md` | anthropics/skills @e4bb5d9 `skills/frontend-design/SKILL.md` | Apache-2.0 | ~35 lines |
+| `critique-rubric.md` | pbakaus/impeccable @b49177d `skill/reference/critique-rubric.md` | Apache-2.0 | ~200 lines |
+| `licenses/<owner>-<repo>.LICENSE` x5 | upstream licence files (D10) | - | verbatim |
+
+Total about 1,350 lines (about 14k tokens). Reading order: `README.md`, then `project-rules.md`, then `checklist.md` (about 3k tokens, every slice); `accessibility.md` when the slice adds or changes interactive elements, forms or dialogs (this is what "new UI" means for the reading order); the rest on demand.
+
+The implementer fetches each file by the pinned commit, not from a branch. Per source:
+
+- **addyosmani/web-quality-skills** (MIT, "Copyright (c) 2026 Addy Osmani"):
+  - drop: frontmatter; `npx lighthouse` and the global axe install (SKILL.md 405-418); links to sibling skills; AAA columns and the AAA table; the external tools table; the hand-made focus trap (`src/ui/Dialog` does it);
+  - rewrite: the Lighthouse / DevTools MCP workflow (SKILL.md 14-23) to Playwright `npm run test:e2e`, a keyboard pass and screenshots; raw px and hex CSS samples to tokens; "Session Expiring" to sentence case; the global 0.01ms motion kill per C6; dialog examples to native `<dialog>` and `src/ui/Dialog`;
+  - replace: the focus-on-error example (it focuses the field and then the summary, so it announces twice) with a pointer to `openspec/specs/web-client/spec.md` R14-S12 and R17-S3.
+- **wondelai/skills** (MIT, "Copyright (c) 2025 Wondel.ai sp. z o.o."):
+  - drop: Tailwind triggers; 10/10 scoring; Amazon affiliate links (SKILL.md 244-251); image, avatar and hero advice; radius "systems"; Tailwind breakpoints; hover-to-reveal card titles; its other references (accessibility-depth, theming-dark-mode, data-visualization, animation);
+  - rewrite: remove uppercase-small labels; px scales, Tailwind classes and hex to `--space-*`, `--text-*`, `--color-*`, `--shadow-card`, `--content-width`; illustrated empty states to text plus a `src/ui/` action; input and button states to the `src/ui/` Button and Field variants.
+- **vercel-labs/web-interface-guidelines** (MIT, "Copyright (c) 2025 Vercel Labs"):
+  - drop: the `$ARGUMENTS` header; virtua and nuqs (new dependencies); CDN preconnect and font preload (§10, system font); dark mode; hydration (Vite SPA); "&" over "and";
+  - rewrite: Title Case and "Save API Key" (C1); `focus-visible:ring-*` to a token outline; Tailwind to plain CSS; C7, C8, C11;
+  - keep: native select colours and the output format;
+  - add, in our own words, the three impeccable audit points: reduced motion keeps state feedback; interrupted touch gestures; `will-change`.
+- **anthropics/skills** (Apache-2.0): keep only the line length (maps to `--content-width`), restraint, quality floor, screenshots and copy sections. Drop the frontmatter, aesthetic risk, client memory, hero, typefaces, calibration and the hex palette plan. Tone per C10. The repository has no root LICENSE; the licence is `skills/frontend-design/LICENSE.txt` @e4bb5d9.
+- **pbakaus/impeccable** (Apache-2.0, "Copyright 2025 Paul Bakaus"): take the template from `skill/`, not the build output (it has `{{...}}` placeholders). Keep the cognitive-load checklist, the "check for" lists of the Nielsen heuristics and the persona walk-throughs. Drop the `critique.md` link, `PRODUCT.md` and `impeccable init`, the landing and e-commerce personas and the numeric scoring. "44x44pt" becomes the AA floor of 24 CSS px. Its `NOTICE.md` is handled in D10.
+
+Alternative: `.agents/skills/`. Rejected: every tool would list the sources to every role, including the main agent and the backend implementer, and `setup-agents` would regenerate on each edit.
+
+### D2. `project-rules.md`
+
+It comes first after the index and wins over every vendored source. Its opening paragraph says it wins over the vendored sources only and points to C0 for the full order; it used to say it wins over every file in `.agents/design/`, which would contradict the design code from #171 (G-21, applied in 22f1a98). It holds:
+
+- all colours, fonts, sizes, spacing, radii and shadows are tokens in `frontend/src/styles/tokens.css`; the `npm run lint` (`check-design-tokens.mjs`) rules apply; pages use `src/ui/` components;
+- nothing loads from third-party CDNs (constitution §10);
+- UI copy goes through i18n, sentence case, informal and friendly, like talking to a friend;
+- buttons never touch fields, cards or each other; native parts such as the select arrow are inset like text; controls go exactly where the spec says;
+- new UI built in a change meets these rules and WCAG 2.2 AA;
+- the resolved conflicts:
+  - **C0** precedence: as written by task 1.2, the spec, then project rules, then the sources; task 11.4 changes it to the order of D14 (the change's spec, then design code from #171, then project rules, then the sources), or to a pointer to the README, which states it (G-12);
+  - **C1** sentence case, not Title Case;
+  - **C2** no all-caps or uppercase-small labels;
+  - **C3** tokens only; a new value becomes a new role-named token added to `tokens.css`;
+  - **C4** `--font-body` system stack, no web fonts, no "distinctive typeface";
+  - **C5** the one `--radius` and `--shadow-card` are ours; changing, renaming or deleting them, or any existing token, is an engineer decision; the frontend-implementer only adds new role-named tokens;
+  - **C6** reduced motion removes non-essential motion but keeps state feedback;
+  - **C7** native elements first; never add key handlers to a `<button>`;
+  - **C8** personal-data fields get autocomplete tokens (WCAG 1.3.5), not `autocomplete="off"`;
+  - **C9** touch target floor 24 CSS px (AA); controls use `--control-height`;
+  - **C10** friendly, second person, no apologies; a message says what happened and how to fix it;
+  - **C11** quotes follow each language's typography in the i18n files (ru uses «»);
+  - **C12** focus on error follows the specs (web-client R14, R17);
+  - **C13** no scores and no P0-P3. Findings at review are triaged as constitution §1 step 10 says, with this change's step 10 sentence (D7): security problems, data loss, spec violations, and design-rule violations (the design rules in `.agents/design/`, in the precedence order of its README) and WCAG 2.2 AA violations in UI the change itself adds or edits are fixed in the PR. Task 1.2 wrote it as "design-rule" only; task 11.2 changes it to this generic wording (G-20). "UI the change adds or edits" means markup, CSS, copy (i18n strings) or behaviour (handlers, focus, states) that the change adds or edits; touching an existing component for an unrelated reason does not pull in its existing problems (#168, field border contrast, stays out unless the change edits that border). Every other finding becomes an issue as step 10 says; there is no sweep or filing of problems in existing UI outside the change (D6 is removed, existing UI design is #171). The file holds the out-of-scope filing line from task 1.2, which task 11.2 removes;
+  - **C14** empty states are text plus a `src/ui/` action, no image assets.
+
+### D3. `frontend-implementer` role
+
+> **Superseded in part by D17, D18, D19, D21 and D25 (G-31, G-32, G-33, G-35, G-39, G-40).** The role is a self-contained prompt (no "read `implementer.md`", no "where they differ" line, no "Passes" paragraph); it reads the list of D21; per-slice screenshots (G-17), the per-slice retake line (G-29) and the "final set before the code gate" wording are replaced by the one final set of D25. The token bullet follows D26. What stays: the commit-message line (G-22), the tick-honesty line (G-27), no new dependencies.
+
+`.agents/roles/frontend-implementer.md` frontmatter: `name: frontend-implementer`, class `medium`, access `write`, web `true`, and
+
+> description: Implements one bounded slice that touches frontend/, building the UI to the design sources in .agents/design/. Use instead of implementer for any slice touching frontend/.
+>
+> *Superseded by D34 (G-55): the "Use instead of implementer ..." sentence is dropped; the description keeps only the scope.*
+
+The body is short, because `setup-agents` copies it verbatim and cannot include another file:
+
+1. Read `.agents/roles/implementer.md` and follow it.
+2. Read `.agents/design/` in this order: `README.md`, then `project-rules.md`, then `checklist.md`; `accessibility.md` when the slice adds or changes interactive elements, forms or dialogs; the rest on demand.
+3. One line: where `implementer.md` and this file differ, this file wins.
+4. Passes: it works only in pass 2 of a change with both layers, where it writes its group's code, or in the single pass of a frontend-only change, where its group writes its code and its own "[<scenario ID>]" tests (the frontend-only exception in `rules.tasks` of `openspec/config.yaml`). It writes no pass 1 failing tests; the "Failing tests" section of a change with both layers stays with the backend `implementer` (decision 3, #170).
+5. Additions:
+   - build new UI to the design sources; new UI meets the project rules and WCAG 2.2 AA;
+   - it may only add new role-named tokens to `tokens.css` inside its slice; changing an existing token's value, renaming it or deleting it is an engineer decision (C5), so it stops and reports instead;
+   - when the slice changes rendered UI (any change to `frontend/src/**/*.tsx` except `*.test.tsx`, `frontend/src/**/*.css`, or `frontend/src/i18n/*.json`; G-17), take screenshots of each page it touches and each state the slice changes as D8 says, and check them against the sources before reporting;
+   - list the screenshot paths in its report; the list does not count toward `implementer.md`'s 15-line report limit; after any fix that changes the UI, it takes the affected screenshots again, and the report lists only screenshots taken after the last change (G-29, task 17.2);
+   - before the code gate, when the main agent asks, take the final screenshot set of every screen and state listed in the change's "UI design" section, at desktop and 360 px, into `frontend/screenshots/<change-name>/` as D8 says, and list the paths (G-16);
+   - no new dependencies.
+   - one line (G-27, task 16.3, also in `implementer.md`): when part of a task turns out unnecessary, reword the task line to say so with the reason ("not needed: <reason>") before ticking it, and say so in the report; never tick work that was not done as if it were.
+
+Task 2.1 wrote the body with the earlier trigger (pages or `src/ui/` components) and without the final set; task 5.4 reworks both.
+
+`implementer.md` stays as it is, apart from the one commit-message line of G-22 (task 14.1) and the one tick-honesty line of G-27 (task 16.3), including line 3 ("Use for all code writing in teachdash."). Routing relies on the frontend-implementer's description and the `AGENTS.md` routing (D4); the remaining line is a risk (see Risks). The body has no three single quotes.
+
+Alternative: one implementer that reads the design sources when a slice touches `frontend/`. Rejected: the backend implementer would carry the rule, and the engineer decided it stays unchanged.
+
+### D4. Routing and the tasks rule
+
+> **Superseded in part by D18 and D19 (G-32, G-33).** The order sentence of the tasks rule ("in a change with both layers, backend groups come before...") is removed, and so is every mixed-change remnant. Slices touching `frontend/` are reviewed by the plain `reviewer`, not the `frontend-reviewer` (D19). The research bullet gains "always at least one `frontend-researcher`" with no "no research" exception for changes touching `frontend/src` (D21).
+
+- `AGENTS.md`, in "Main agent is an orchestrator":
+  - before delegating, the main agent commits its edits: "the `implementer`" becomes "the `implementer`, the `frontend-implementer`";
+  - the implementation bullet: implementation slices that touch `frontend/` go to `frontend-implementer`, others to `implementer`; the "Failing tests" section of a change with both layers stays with `implementer`;
+  - the review bullet: "implementer report" becomes "implementer or frontend-implementer report".
+- `.agents/roles/spec-writer.md` gets one step before reporting (G-25, task 16.1): read the written delta files back and report the requirement and scenario IDs from that read (for example `grep` of the `### Requirement:` and `#### Scenario:` headers), not from memory; if something in the brief is missing from the files, fix it before reporting. Reason: in the second dry run a script overwrote a delta and the report still listed the lost requirement.
+- `openspec/config.yaml` `rules.tasks` gets one layer-split rule: implementation task groups (after the test review task, or every group in a frontend-only change) are split by layer; a group touches either code under `frontend/` or code under `backend/`, never both. Repository tooling (`scripts/`, for example adding a capability to `FRONTEND_CAPABILITIES` in `scripts/check-scenario-coverage.sh`, and config files) may go with either group. In a change with both layers, backend implementation groups come before the frontend groups that call them, so screenshots show real states, not 501 stubs (proposal decision 3). The spec-writer follows it, so one group is one slice for one role.
+- No test rules change: the "Section 1 is Failing tests" rule in `rules.tasks` and the "Pass 1 production code" apply guidance stay as they are, and the "Failing tests" section of a change with both layers stays one section written by the backend `implementer` (decision 3). The frontend-only exception in `rules.tasks` and the rest of the apply guidance stay unchanged. Frontend tests in pass 1 are #170.
+
+### D5. Frontend research
+
+> **Extended by D21 (G-35):** the `frontend-researcher` also returns a visual plan, and the main agent puts it in "UI design" after the engineer's answers.
+
+Revised after the spec gate (G-2), and after the critique of the post-gate revision (G-15, G-17); it replaces the design angle.
+
+- The `frontend-researcher` (D13) takes any research angle about the UI: screens, components, frontend behaviour. It reads `.agents/design/`: `README.md` first, then `project-rules.md`, `checklist.md`; then required reading by the topic the change touches (G-24): layout, spacing and tokens, `refactoring-ui.md` and `refactoring-ui-patterns.md`; accessibility, `accessibility.md`, `accessibility-patterns.md` and `accessibility-wcag22.md`; copy, `frontend-design-copy.md`; the rest (including `critique-rubric.md`) on demand. It always returns design questions on the screens the change touches: layout, states, copy, a11y, tokens and components. Each design recommendation cites its source (file and section or item); "matches current code" alone is not enough. A recommendation that departs from a source, or sources that disagree, is stated explicitly in the question. Points the sources fully decide are given as "decided by sources: X (source)" for the engineer to confirm, not as open questions (G-24; reason: in the dry run its Q4, "no live region", contradicted `checklist.md` without saying so). The precedence (D14) is unchanged; G-24 only makes the questions rest on the sources.
+- The generic `researcher` keeps backend, web research and tooling angles. Its design-angle bullet is removed from `researcher.md`, and its description changes from "Use for all investigation in teachdash" to: for all investigation, except UI angles, which go to `frontend-researcher` (G-15; superseded by D34, G-55: no routing in descriptions).
+- Constitution §1 step 2: the design-angle sentence is replaced by one saying that a change touching `frontend/src` gets at least one `frontend-researcher` at Clarify (AGENTS.md). Step 2 already lets the engineer agree that a small task needs no research.
+- `AGENTS.md`: the design-angle text in "Before a proposal" and in the research bullet is replaced by the routing above. The research bullet sends angles about the UI to the `frontend-researcher` and the rest to the `researcher`. The main agent asks the engineer the design questions; the answers go into the proposal's Clarifications and the "UI design" section of `design.md` (D15).
+- Scopes, kept apart: the `frontend-researcher` and the `frontend-spec-critic` are for a change touching `frontend/src`; routing to `frontend-implementer` and `frontend-reviewer` is for any slice touching `frontend/`; screenshots are for a slice that changes rendered UI, that is any change to `frontend/src/**/*.tsx` except `*.test.tsx`, `frontend/src/**/*.css`, or `frontend/src/i18n/*.json` (G-17); the final screenshot set before the code gate is for a PR touching `frontend/src` whose "UI design" section lists screens (G-16).
+
+### D6. Removed after the spec gate
+
+> **Unchanged by the code owner's review.** It is not undone by D20 (the fix-in-PR set); findings from vendored sources become issues, but there is still no sweep of existing UI.
+
+Removed by G-3. There is no sweep or filing of design and UI problems in existing UI outside the change; existing UI design is #171. The out-of-scope filing text comes out of `AGENTS.md`, `researcher.md` (with its design-angle bullet) and `project-rules.md` C13. The own-UI rule (D7) is unchanged; other findings follow constitution §1 step 10 unchanged.
+
+### D7. Review
+
+> **Superseded by D19 and D20 (G-33, G-34).** There is no `frontend-reviewer`: G-14 (its Design cap), G-28 (its screenshot hand-off) and the per-slice screenshot review of this section no longer apply. Slice reviews use the plain `reviewer`. At PR level the `code-gate-reviewer` (without screenshots; G-16 and G-21 are superseded) and the new `visual-reviewer` run in parallel. The step 10 sentence and its generic design-rule wording (G-20) are replaced by the narrower set of D20.
+
+Revised after the spec gate (G-3, G-6, G-7), and after the critique of the post-gate revision (G-14, G-16, G-17).
+
+- `frontend-reviewer` (D13) does the slice review for every slice that touches `frontend/` (medium class), after every implementation slice (pass 2 of a change with both layers, or the single pass of a frontend-only change). It follows `reviewer.md`, reads `.agents/design/README.md` first, then `project-rules.md` and `checklist.md` (the README's reading order), and its report has two sections:
+  - **Logic:** the `reviewer.md` checks;
+  - **Design:** a pass against `project-rules.md` and `checklist.md`, the screenshots at desktop and 360 px, and a11y (keyboard, focus, `aria-*`, contrast). It opens the screenshot PNGs listed in the brief from the main agent itself (it never sees the `frontend-implementer`'s report; G-28, task 17.1) and checks them against the change's "UI design" section (D15). The Design section always says what was checked, even when there are no findings. For a frontend slice with no screenshots it says "no screenshots: <reason>", so a slice that needed none differs from one that skipped them (G-17). The Design section does not count toward the 25-line report limit of `reviewer.md`; it has its own cap of 15 lines (G-14).
+
+  A leftover `frontend/e2e/zshots.spec.ts` or any file under `frontend/screenshots/` in the diff is a finding (moved from `reviewer.md`).
+- `reviewer.md`: the frontend Check bullet is removed; it reviews backend and tooling slices. `.agents/design/` stays on its "no unrequested changes" list, which the `frontend-reviewer` inherits, and its triage line keeps the own-UI case.
+- `code-gate-reviewer.md` stays one per PR, strong class, both layers. Its frontend bullet is strengthened: for a PR touching `frontend/src` it reads `README.md` first, then `project-rules.md`, `checklist.md` (and `accessibility.md` for forms and dialogs), checks the diff against the "UI design" section of `design.md` and the final screenshot set (D8) whose paths the main agent passes, and its report gets a "Design" section that says what was checked. When there is no final set (for example the change's design says "UI design: none"), the Design section says "no screenshots: <reason>", so "not needed" differs from "skipped" (F8). Per-slice screenshots are not used for the code-gate review: the folder is cleared on each slice's run, the paths may be missing, they may predate review fixes, and, being gitignored, they are gone in a new session (G-16). The Design section does not count toward the 25-line report limit; it has its own cap of 15 lines, as for the `frontend-reviewer` and the `frontend-spec-critic` (G-21). The leftover `zshots.spec.ts` / `frontend/screenshots/` finding stays. `.agents/design/` stays on its "no unrequested changes" list, and its triage line keeps the own-UI case.
+- `AGENTS.md` review bullet: slices touching `frontend/` go to the `frontend-reviewer`, other slices to the `reviewer`, after every implementation slice (pass 2 of a change with both layers, or the single pass of a frontend-only change); the `code-gate-reviewer` runs once per PR. The main agent passes the slice's screenshot paths from the `frontend-implementer`'s report (or its "no screenshots: <reason>" line) to the `frontend-reviewer` (G-28). For a PR touching `frontend/src`, before the code-gate review the main agent has the `frontend-implementer` take the final screenshot set (D8) and passes its paths to the `code-gate-reviewer` (G-16). The sentence "A slice that touches `frontend/` is also checked against `.agents/design/` and the screenshots" becomes the `frontend-reviewer` routing.
+- Constitution §1 step 10 keeps its sentence, next to "Security problems, data loss and spec violations are fixed in the PR": design-rule violations (the design rules in `.agents/design/`, in the precedence order of its README) and WCAG 2.2 AA violations in UI the change adds or edits (its markup, CSS, copy or behaviour) are fixed in the PR too. Task 4.2 wrote it naming only `.agents/design/project-rules.md`; task 9.2 makes it generic (G-20), so the design code of #171 is covered without a constitution edit. This sentence goes beyond issue #166's original "Done when"; the engineer decided to keep it in this change as the core of the requirement that new features come with good design (proposal decision 7).
+
+Findings are triaged as constitution §1 step 10 says, with that sentence: security problems, data loss, spec violations, and design-rule violations (the design rules in `.agents/design/`, in the precedence order of its README) and WCAG 2.2 AA violations in UI the change itself adds or edits are fixed in the PR. The triage lines of `reviewer.md` (task 6.3) and `code-gate-reviewer.md` (task 7.2) use the same generic wording instead of "a design-rule ... violation"; the `frontend-reviewer` has no triage line of its own and inherits the one in `reviewer.md` (G-20). "UI the change adds or edits" means markup, CSS, copy (i18n strings) or behaviour (handlers, focus, states) that the change adds or edits (proposal decision 6); touching an existing component for an unrelated reason does not pull in its existing problems (#168 stays out unless the change edits that border). Every other finding becomes an issue as step 10 says. C13 says the same.
+
+### D8. Screenshots
+
+> **Superseded by D25 (G-39, G-40)** for the trigger (G-17), per-slice shots, the retake line (G-29), the method (state building, project names, file names) and the PR attachment. The folder, the `.gitignore` entry and the no-script, no-Playwright-project rule stay.
+
+Revised after the critique of the post-gate revision (G-16, G-17).
+
+- Trigger: a slice takes screenshots when it changes rendered UI, that is any change to `frontend/src/**/*.tsx` except `*.test.tsx`, `frontend/src/**/*.css`, or `frontend/src/i18n/*.json` (G-17, widened by F7 so CSS modules such as `frontend/src/ui/*.module.css` count and tests do not; it replaces "pages or `src/ui/` components"). These per-slice screenshots serve the slice review.
+- Final set (G-16): before the code gate of a PR touching `frontend/src`, the `frontend-implementer` takes, by the method below, a final set of every screen and state listed in the change's "UI design" section, at both widths, into `frontend/screenshots/<change-name>/`, and lists the paths; the main agent passes them to the `code-gate-reviewer`. It is taken after all slices and their review fixes, so it shows the code under review, and it can be retaken in a new session. When the change's design says "UI design: none", there is no final set, and the `code-gate-reviewer`'s Design section says "no screenshots: <reason>" (D7, F8).
+- Folder: `frontend/screenshots/<change-name>/`, cleared before each run, so a stale PNG cannot survive a failed run. `.gitignore` gets `frontend/screenshots/`. `test-results/` is not used, because Playwright empties it on each run.
+- Widths: the desktop project's viewport and a 360 px viewport.
+- Method:
+  1. `docker compose up --build --wait`, so 8081 serves the slice's code;
+  2. clear `frontend/screenshots/<change-name>/`;
+  3. a temporary `frontend/e2e/zshots.spec.ts` that logs in with the `e2e/accounts.ts` helpers and captures each page the slice touches and each state the slice changes (for example the error shown after an empty submit, or a dialog open), at both widths, saving to that folder;
+  4. `npx playwright test zshots --project=desktop-chromium`;
+  5. delete the spec before committing.
+- `docker` and `npx` are in no allow list, so each call prompts the engineer.
+- The report lists the screenshot paths, only of screenshots taken after the last change that touched the UI: after a fix, the affected ones are taken again (G-29). The engineer attaches images to the PR by hand if wanted; `gh` cannot upload images. The `frontend-reviewer` (per-slice screenshots) and, for a PR touching `frontend/src`, the `code-gate-reviewer` (the final set) open the PNGs themselves (D7). For this change's dry run, screenshots attached by hand are the proof (D12).
+- No script or Playwright project is added. The method is plain shell and Playwright, meant for all three tools, but only proven in Claude Code (D12).
+
+### D9. Test phases
+
+> **Note (G-32):** a change never touches both layers, so the both-layers wording is dropped; frontend-only changes keep one pass.
+
+No change to test phases; see #170.
+
+### D10. Licences and attribution
+
+> **Extended by D24 (G-38):** the same rules apply to the new sources; the ui-ux-pro-max licence goes to `licenses/nextlevelbuilder-ui-ux-pro-max-skill.LICENSE`.
+
+- Each upstream licence file is copied verbatim to `.agents/design/licenses/<owner>-<repo>.LICENSE`. For anthropics/skills, which has no root LICENSE, the source is `skills/frontend-design/LICENSE.txt` @e4bb5d9.
+- Each vendored file starts with one header line: source, path, pinned commit, licence, the licence file path in `.agents/design/licenses/`, and "modified by teachdash". This states the changes as Apache-2.0 §4(b) requires; MIT needs the licence text, which `licenses/` holds.
+- impeccable has a `NOTICE.md`. Its notices cover none of what goes into `critique-rubric.md` (they are about iOS and Android references, fonts and consent rules). Apache-2.0 §4(d) excludes notices that do not pertain to any part of the derivative work, so no copy is included. The README records this reason.
+
+### D11. Approval
+
+The role files (including the three new ones of D13), `openspec/config.yaml` and the constitution (§1 Roles paragraph and steps 2, 3, 5 and 10) need the owner's approval (CODEOWNERS). `.agents/design/`, `AGENTS.md`, `CONTRIBUTING.md` and `.gitignore` do not.
+
+So any engineer can change the frontend routing in `AGENTS.md` and `CONTRIBUTING.md` and the rules in `.agents/design/`, including `project-rules.md` and later the design code of #171, without the owner (constitution §1, Roles), even though step 10 now makes violations of the design rules in `.agents/design/` in the change's own UI fix-in-PR (G-20), so such an edit changes what a gate must fix. The engineer accepted this (proposal decision 11): every PR still needs approval from a code owner other than the author, and the reviewers flag unrequested changes to `.agents/design/`.
+
+### D12. Dry run and tool support
+
+> **The dry run is not repeated for the revision (G-45, D29).** The mixed-change routing note of this section (G-9) is moot: a change never touches both layers (D18).
+
+Revised after the spec gate (G-9, G-11), and after the critique of the post-gate revision (G-13, G-16).
+
+- The dry run is in Claude Code, after `scripts/setup-agents` and a restart, with all new roles, a full run on #165 (ui-required-fields):
+  1. the `frontend-researcher` (and the generic `researcher` only if a non-UI angle exists) returns design questions;
+  2. the main agent asks them before any spec or code;
+  3. a throwaway branch is made off this one with `git switch -c <throwaway name, for example dry-run-frontend-implementer> workflow-frontend-implementer`. `scripts/flow/change-start` is not used: it branches from `origin/main` and would take the real #165 branch name. On that branch a scratch change is created with `npx -y @fission-ai/openspec@1.15.0 new change ui-required-fields`, never by hand;
+  4. the `spec-writer` writes a minimal proposal (Clarifications with the answers), `design.md` with the "UI design" section (D15), one spec delta and a minimal `tasks.md`;
+  5. the `frontend-spec-critic` attacks it;
+  6. the `frontend-implementer` builds the slice, with screenshots in `frontend/screenshots/ui-required-fields/` (D8);
+  7. the `frontend-reviewer` reviews it (Logic and Design);
+  8. the `frontend-implementer` takes the final screenshot set of every screen and state in the scratch change's "UI design" section into `frontend/screenshots/ui-required-fields/` (D8), and the main agent passes those paths to the `code-gate-reviewer`, which reviews the throwaway slice (its diff against `workflow-frontend-implementer`) with its "Design" section (G-13, G-16).
+- The proof is screenshots only (proposal decision 10): the engineer attaches screenshots to PR #169 by hand, showing how the new flow works (for example the design questions asked before any spec or code, and the frontend-spec-critic's, the frontend-implementer's, the frontend-reviewer's and the code-gate-reviewer's work) and what result it gives (the UI). No throwaway-branch SHA, no pushed branch and no text logs are required. The same screenshots prove the new role files, the `frontend-implementer.md` rework, and the `researcher.md`, `reviewer.md` and `code-gate-reviewer.md` edits, in addition to their text checks. The throwaway branch is not pushed and is deleted right after the run, with the scratch change, its spec delta and the code; no #165 code or spec survives.
+- opencode and Codex are unverified. The Codex sandbox may block `docker` or Chromium, and whether opencode and Codex can read screenshot images (for the `frontend-reviewer` and the `code-gate-reviewer`) is unverified.
+- Routing in a change with both layers (implementation groups split by layer, both roles in one change) is unproven: #165 is frontend-only, so the dry run does not exercise it.
+
+### D13. Frontend roles
+
+> **Superseded in part by D17, D19 and D21 (G-31, G-33, G-35).** Three roles remain (`frontend-researcher`, `frontend-spec-critic`, `frontend-implementer`), each a full prompt with no base-role reading; `frontend-reviewer` is removed and `visual-reviewer` is added (D19). The G-14 and G-19 limit wording that depended on a base limit is rewritten in the role files: each role states its own report limits. The "description says to use it instead of the base role" sentence is superseded by D34 (G-55); the `frontend-researcher` visual plan has its own section outside its limit (D32).
+
+Added after the spec gate (G-1, G-2, G-5, G-6); revised after the critique of the post-gate revision (G-14, G-18, G-19). Three new role files, alongside `frontend-implementer.md` (D3):
+
+| Role | Base role | Class | Access | Web |
+|---|---|---|---|---|
+| `frontend-researcher` | `researcher.md` | medium | read | as the base (`true`) |
+| `frontend-spec-critic` | `spec-critic.md` | medium | read | as the base (`false`) |
+| `frontend-reviewer` | `reviewer.md` | medium | read | as the base (`false`) |
+
+Each body is short, as in D3, because `setup-agents` copies it verbatim and cannot include another file: read the base role and follow it; then read `.agents/design/` in the README's order: `README.md` first, then `project-rules.md`, then `checklist.md`; after that, in the roles other than the `frontend-researcher`, `accessibility.md` when the change or slice adds or changes interactive elements, forms or dialogs, and the rest on demand, as the `frontend-implementer` does (D3); one line says that where the base role and this file differ, this file wins; then only the additions. Because every frontend role and the code-gate-reviewer's frontend part start from the README, #171 only adds a file (D14). Each `description` says to use it instead of the base role for frontend work, as the frontend-implementer's does. No body has three single quotes.
+
+- `frontend-researcher` additions: D5 (any UI angle, after `checklist.md` the topic-based reading of D5 (G-24) in place of the conditional `accessibility.md`, design questions on the screens the change touches, each citing its source).
+- `frontend-spec-critic` additions: the `spec-critic` checks plus a design pass against `.agents/design/` (project rules, checklist, accessibility) and the `rules.design` format (D15): missing states, scenarios without focus behaviour, copy not through i18n or not per the tone rules, contradictions with `project-rules.md`, unanswered design questions. Also (G-26, task 16.2): a spec delta that changes a behaviour stated in a `.agents/design/` file, without a task updating that file, is a finding. It keeps one report with the full `spec-critic` checks, also for a change with both layers; its "Design" section does not count toward the base 25-line limit and has its own cap of 15 lines (G-19). Its "unanswered design question" findings are questions for the engineer: the main agent asks them, and the spec-writer records the answers in the fix round (G-18). One critic per change: when the change touches `frontend/src`, the `frontend-spec-critic` runs instead of the `spec-critic`; otherwise the `spec-critic`. `AGENTS.md`'s spec-critique bullet (with the design-question route), `CONTRIBUTING.md:52` (G-15) and constitution §1 (the Roles paragraph and step 5, where the critic is named) say so.
+- `frontend-reviewer` additions: D7 (Logic and Design sections, the Design section's own 15-line cap and its "no screenshots: <reason>" line, screenshots opened by the role, the "UI design" section, the leftover-screenshot finding).
+
+Alternative: design bullets in the generic roles (the state after tasks 1-4). Rejected by the engineer after the spec gate: such a bullet is easy to forget and loads the design sources into backend work.
+
+### D14. Precedence
+
+> **Extended by D23 (G-37):** the order stays; the design code now has a stub file, and #171 records the direction and token plan in it, not in `project-rules.md`.
+
+Added after the spec gate (G-8); revised after the critique of the post-gate revision (G-12). `.agents/design/README.md` states the precedence: the change's spec > design code (from #171, not yet written) > `project-rules.md` > vendored community sources. `project-rules.md` C0 is changed to the same order, or to a pointer to the README, which states it, and the file's opening paragraph says it wins over the vendored sources only and points to C0 for the full order (D2; G-21). Every frontend role and the code-gate-reviewer's frontend part read the README first (D7, D13), and constitution §1 step 10 and the triage lines name the design rules in `.agents/design/` in the README's precedence order (D7, G-20), so #171 then adds a file and changes no roles and no constitution text. The README's list of readers names the four frontend roles and the `code-gate-reviewer`. `checklist.md:5-6` names all its readers: the `frontend-implementer`, the `frontend-reviewer`, the `frontend-spec-critic` and the `code-gate-reviewer`. `critique-rubric.md` names the `frontend-reviewer` and the `frontend-researcher` where it names the reviewer and the design-angle researcher today.
+
+### D15. Spec format
+
+Added after the spec gate (G-4); revised after the critique of the post-gate revision (G-18). Two rule groups in `openspec/config.yaml`:
+
+- `rules.design`: a change touching `frontend/src` has a "UI design" section in `design.md` with fixed headings: screens touched; layout (desktop and 360 px); states per screen (empty, error, loading, disabled, success); copy (i18n keys and text); a11y (focus order, keyboard, `aria-*`); components and tokens (reused or new); plus an ASCII sketch for a new screen or a significant layout change. A change touching `frontend/src` with no rendered UI change may instead have one line: "UI design: none, <reason>".
+- `rules.specs`: design-affecting behaviour goes into scenarios (an error message and where it appears, focus after an error, empty and loading states, what is disabled during a request); visual layout stays in `design.md`. This adds scenarios, not requirements: the 6-requirement limit holds.
+
+The existing rules in both groups and the rest of `openspec/config.yaml` stay unchanged. This change touches no `frontend/src`, so its own `design.md` has no "UI design" section.
+
+### D16. Postponed
+
+Added after the spec gate (G-9). `@axe-core/playwright` automated a11y checks go with #171 (a new dependency, constitution §7). Whether opencode and Codex can read screenshot images is unverified (D12).
+
+### D17. Self-contained frontend roles (G-31)
+
+`frontend-researcher`, `frontend-spec-critic` and `frontend-implementer` are written in full: purpose, reading, steps, report format, limits and the commit rule (implementer). None says "read `researcher.md`", `spec-critic.md` or `implementer.md`. The cost is some duplicated text, which the engineer accepts for runtime clarity: no run-time merge of two prompts, no silently lost rule, no edit to a base role changing a frontend role. A line in `AGENTS.md` handles the drift: when you change `X.md`, check `frontend-X.md` and the other way round, and the same for `visual-reviewer` and `code-gate-reviewer` for their shared parts. Routing text that was meant for others ("Use for all code writing", "UI angles go to frontend-researcher") no longer reaches the frontend roles. A role body still cannot contain three single quotes (D3's setup-agents note).
+
+### D18. Single-layer changes (G-32)
+
+A change never touches both backend and frontend. Removed: the `rules.tasks` sentence about backend groups before frontend groups in `openspec/config.yaml`, the "Passes" paragraph of the `frontend-implementer`, the `AGENTS.md` line about "Failing tests" of a change with both layers, and any other remnant (`grep -rn "both layers"` over `AGENTS.md`, `openspec/config.yaml`, `.agents/roles/`, `CONTRIBUTING.md` and the constitution is the check). The frontend-only single pass stays. This takes away the owner's point-2 conflicts (pass 1 and pass 2 against the single pass).
+
+### D19. Visual review only at PR level (G-33)
+
+- *Superseded by D31 (G-52): slices that touch `frontend/` get no slice review.* Slices that touch `frontend/` are reviewed by the plain `reviewer`: logic only, no screenshots. `frontend-reviewer.md` is deleted (the generated agent files are not in git; `scripts/setup-agents` is run, and a stale generated `frontend-reviewer` is removed by hand if the script does not).
+- The `frontend-implementer` takes only the final set, after all slices, when the main agent asks (D25).
+- At PR level two strong-class reviewers run in parallel: the `code-gate-reviewer` (diff, specs, constitution, a11y in code; it keeps reading `README.md`, `project-rules.md` and `checklist.md` (and `accessibility.md` for forms, dialogs and interactive elements), and checks the diff for hard-coded colours and px, components that bypass `src/ui/`, the C3 and C5 token rules and new tokens in `tokens.css` that "UI design" does not list (G-41); it drops only the screenshots and its Design section; G-49) and the new `visual-reviewer` (read-only; the final screenshots against "UI design", the product brief, the design code, `project-rules.md` and `.agents/design/`, using `visual-criteria.md` and `critique-rubric.md`; reads all visual sources per D21; report organised per criterion: 25 lines of findings plus a "checked per criterion" block of up to 10 lines outside the limit, G-47; it may run read-only `search.py` queries). Their contexts barely overlap. A PR that changes no rendered UI, or has no final set, runs only the `code-gate-reviewer` (as for this PR, G-45); the `visual-reviewer` then says "no screenshots: <reason>" if it is run at all.
+- After a UI fix made from visual findings: the fix gets a plain `reviewer` slice review and the whole set is retaken (D25). *Superseded by D31 (G-52): the reviewer(s) whose findings were fixed run again; there is no slice review.*
+- The cost, accepted: visual findings come only at the end, fine for frontend changes of at most 6 requirements.
+- `AGENTS.md` (roles, Review section, screenshot hand-off text) and constitution section 1 name the PR-level pair and drop the `frontend-reviewer`.
+
+### D20. Fix-in-PR set (G-34)
+
+Constitution section 1 step 10 and C13 in `project-rules.md`: fixed in the PR are security problems, data loss, violations of the spec, of the change's "UI design" section, of the design code (#171), of `project-rules.md`, and of WCAG 2.2 AA. A finding from a vendored source (for example a `refactoring-ui` or `checklist.md` item) that is none of these becomes an issue. The triage lines of `reviewer.md`, `code-gate-reviewer.md` and `visual-reviewer.md` use the same set. The "UI the change adds or edits" boundary of D7 stays. `visual-criteria.md` findings (G-46): fixed in the PR only where the screenshot departs from the change's "UI design" visual plan (hierarchy, tokens, layout, density per screen, G-35); other criteria findings and the generic AI defaults become issues. The gap closes when the design code (#171) exists. Reviewers that diff the PR exclude `.agents/design/ui-ux-pro-max/data` (`':(exclude).agents/design/ui-ux-pro-max/data'`) and sample it instead.
+
+### D21. Reading split by role (G-35)
+
+| Role | Reads | Output |
+|---|---|---|
+| `frontend-researcher` (Clarify, always one for a change touching `frontend/src`) | all visual sources in full, the brief, the design code | design questions plus a visual plan per screen and state (hierarchy, tokens used and new, layout, density); after the engineer's answers the plan goes into "UI design" (`rules.design` asks for it) |
+| `frontend-spec-critic` | `visual-criteria.md`, `frontend-design-principles.md`, `accessibility.md`, the brief, the design code | checks "UI design" covers the criteria |
+| `frontend-implementer` (per slice) | "UI design", `visual-criteria.md`, `critique-rubric.md`, the brief, the design code, `project-rules.md`, `checklist.md` (every slice) and `accessibility.md` (forms, dialogs, interactive elements); a pass only when its self-critique or a `visual-reviewer` finding names it | plan, build, self-critique against criteria and rubric, then report |
+| `code-gate-reviewer` (PR level) | `README.md`, `project-rules.md`, `checklist.md`, `accessibility.md` for forms, dialogs and interactive elements; no screenshots | diff checks of G-49 |
+| `visual-reviewer` | `refactoring-ui.md`, `refactoring-ui-patterns.md`, `critique-rubric.md`, `frontend-design-principles.md`, colour, type and layout files, the passes, `visual-criteria.md`, the brief, the design code, `project-rules.md`; may run read-only `search.py` queries | report per criterion (G-47) |
+
+ui-ux-pro-max is query-only for every role: `search.py` or grep, never read the data files whole. Every frontend role reads the product brief and the design code (stubs now, D23). This departs deliberately from the letter of the owner's point 3 (required reading of the visual sources for the implementer): the researcher reads them fully once, and their conclusions travel as the visual plan in "UI design", which is cheaper than loading them in every slice. The `AGENTS.md` "engineer may agree that a small task needs no research" clause is removed for changes touching `frontend/src`, since the visual plan depends on the researcher.
+
+### D22. `visual-criteria.md` (G-36)
+
+Our own file, about one page: hierarchy, spacing scale, type scale, colour roles, alignment, density and the generic AI defaults to avoid. Each has 2-3 checkable questions and links to the relevant section of the vendored sources. It is the shared yardstick of the implementer's self-critique, the spec critic's coverage check and the `visual-reviewer`'s per-criterion report. Where it contradicts `project-rules.md`, the latter wins (D23).
+
+### D23. Slots and precedence (G-37)
+
+Stub files `.agents/design/product-brief.md` and `.agents/design/design-code.md`, each saying "filled by #171". The README reading order and precedence: the change's spec > design code > `project-rules.md` > vendored sources, with `visual-criteria.md` (our own file) below `project-rules.md` and above the vendored sources. #171 records the chosen direction and token plan in `design-code.md`, not in `project-rules.md`. Every frontend role's reading list already includes both files, so #171 changes no workflow file (G-44).
+
+### D24. Vendored visual sources and ui-ux-pro-max (G-38)
+
+Same method as D1 and D10: one file per source, a source header line on `.md` files ("modified by teachdash"), licence in `licenses/`, a README row, pinned SHAs: anthropics/skills e4bb5d9, pbakaus/impeccable b49177d, nextlevelbuilder/ui-ux-pro-max-skill 2de1134.
+
+| New file | From | Cuts |
+|---|---|---|
+| `frontend-design-principles.md` | anthropics `skills/frontend-design/SKILL.md`: "Ground your designs in the subject matter", "Design principles", "Process" with the generic AI defaults list | frontmatter, studio persona, landing-page hero paragraph, "choose typefaces deliberately" (C4, section 10), "4-6 named hex values" becomes role tokens (C3), the client-memory sentence |
+| `visual-colour.md`, `visual-type.md`, `visual-layout.md` | impeccable `skill/reference/colorize.md`, `typeset.md`, `layout.md` | sections that repeat `refactoring-ui` |
+| `visual-passes.md` | impeccable `polish`, `quieter`, `bolder`, `distill` (four sections) | tool instructions |
+| `product-brief-template.md` | impeccable `init.md` Step 4 template, `shape.md` interview questions, the Anthropic subject-matter paragraph | the schema comment, Platform, Stack, Brand Commitments |
+| `ui-ux-pro-max/` | `.claude/skills/ui-ux-pro-max/` whole (SKILL.md, data/, scripts/, references/) | frontmatter, stack detection, README and install mention; commands become `python3 .agents/design/ui-ux-pro-max/scripts/search.py ...`; five tests and their fixtures (see below) |
+
+`foundations.md` is not vendored. Every `{{...}}` placeholder and tool instruction in the impeccable files is removed: `npx impeccable login`, `.impeccable/config.json`, live mode and live.md, critique-storage, `impeccable detect/context/foundations`, `shot`, hand-off lines, the image-generation question, and links to the missing DESIGN.md, new-work.md, ios.md and android.md. The ui-ux-pro-max licence (MIT, repo root) becomes `licenses/nextlevelbuilder-ui-ux-pro-max-skill.LICENSE`. Five tests that need the upstream repo root (`test_catalog_refresh`, `test_skill_script_paths`, `test_relevance_evaluator`, `test_catalog_summary_line_endings`, `test_design_system_tokens`) and their fixtures (`relevance-*.json`, `catalogs/`) are dropped (the fifth, `test_design_system_tokens`, found when the tests were run, G-50); the rest pass with `python3 -m unittest discover -s .agents/design/ui-ux-pro-max/scripts/tests`. CSV, JSON and `.py` files carry no header line, so a README row and `.agents/design/ui-ux-pro-max/NOTICE-teachdash.md` state the origin and the changes. About 3.7 MB; the scripts are stdlib-only by their imports.
+
+Agents run only `search.py` (including `--design-system`), never `--persist`, `--preview` or `--tokens`. This is an instruction, not a control: the permission entry allows `search.py` with any arguments, so the ban is held by the role text, the review of the scripts and the engineer's hand check. *Superseded by D30 (G-51): the modes are removed from our copy of `search.py`, so there is nothing to ban; the allow entry stays.* The `search.py` permission is granted only after the engineer's hand check (task 22.1). `__pycache__/` and `*.pyc` go to `.gitignore`. The placeholder and tool-instruction greps also run over `ui-ux-pro-max/**/*.md` including `references/`; `SKILL.md` and `references/*.md` carry the source header line (and "modified by teachdash" where changed); CSV, JSON and `.py` files rely on the README row and `NOTICE-teachdash.md`. The permission files allow only `python3 .agents/design/ui-ux-pro-max/scripts/search.py *`. `project-rules.md` gets conflict lines (G-38): web-font data and `preview.py` loading Google Fonts (section 10, C4); the icon sets Phosphor and Lucide (reference only, a new set is an engineer decision, section 7); Tailwind and shadcn stack data (reference only); 44x44 touch target against our 24 CSS px (C9); landing and hero patterns (C14); `--persist`, `--preview`, `--tokens` forbidden (tokens live in `tokens.css`; a fact after D30: the modes are removed); "one radius, one soft shadow everywhere" against our existing `--radius` and `--shadow-card` (not a violation, C5); the remaining disagreements between sources, with which one wins. The implementer vendors from a read-only shallow `git clone` of each upstream at the pinned SHA into its scratchpad (never into the repo; it never runs upstream code), copies and adapts from there, and for files kept unchanged (data, scripts) compares blob SHAs (`git hash-object` against the pinned tree); if the clone is refused by the permission check it stops and reports and the main agent falls back to `gh api` with the engineer (G-48). The slice review is a review step, not an implementer slice: it reads the scripts and lists every file write of `search.py` and of `--design-system`, and the review diff excludes `.agents/design/ui-ux-pro-max/data` and samples it; the engineer runs the unittest command and one sample search by hand. The Python files are the first in the repo and no CI job covers them.
+
+### D25. Screenshots (G-39, G-40)
+
+- One final set, taken after all slices when the main agent asks, into `frontend/screenshots/<change-name>/` (gitignored). No per-slice shots, no "before" set. At the code gate the main agent gives the engineer the folder path; the engineer looks and decides whether to attach anything to the PR. No script, no change to `scripts/flow/`.
+- The temporary `frontend/e2e/zshots.spec.ts` builds each state itself through `frontend/e2e/accounts.ts` helpers: fresh, uniquely named accounts (`createTeacherAndLoginInUi`, `createTeacher`); a new teacher is the "empty" state. It never wipes the database and never depends on data from earlier runs. Each state is its own test. File names are `<screen>-<state>-<desktop|360>.png`, built from `testInfo.project.name`.
+- Run `npx playwright test zshots --project=desktop-chromium --project=phone-chrome` (superseded by D33, G-54: `npm --prefix frontend run test:e2e -- zshots ...`). Under `phone-chrome` the spec sets the viewport to 360x800 (keeps the Pixel 7 touch and DPR); on the first run check the shot is 360 px wide.
+- A state that cannot be reached (for example an empty admin teachers list; the admin account is shared) is named as what it shows and noted in the report (D32, G-53: the report gives the folder path, the PNG count and the unreachable states, not every PNG path). The implementer may add a helper to `e2e/accounts.ts` (for example for students) when a state needs it.
+- After a UI fix the whole set is retaken. If a screenshot step fails, the spec is deleted before stopping. 360 px shots use the longest locale once `ru.json` exists, `en` until then (C11 note).
+- The method steps of D8 (`docker compose up --build --wait`, clear the folder, temporary spec, delete the spec before committing) stay.
+
+### D26. Tokens (G-41)
+
+Reuse existing tokens first. A new role-named token is added only when none fits, and each new token is listed in the "UI design" section (components and tokens heading), so the engineer sees it at the spec gate. C3 in `project-rules.md` says so; the token bullet in D2 and D3 is read with this. Changing, renaming or deleting an existing token stays an engineer decision (C5).
+
+### D27. Protect `.agents/design/**` (G-42)
+
+`.agents/design/**` is added to the `ask` lists of `.claude/settings.json`, `opencode.json` and `.codex/rules/` (next to `.agents/roles/**`) and to the `AGENTS.md` Git flow "do not change" list. The README's "update that file in the same PR" (D1 upkeep rule, G-26) counts as a requested change, and the README says so. This changes the permission files, which D3 and the out-of-scope list left alone, so those exceptions are listed in the proposal.
+
+### D28. Smaller notes (G-43)
+
+Constitution section 1 step 3 sends UI angles to the `frontend-researcher`. The other smaller notes are inside D21 (always one researcher), D25 (delete the spec on failure, `phone-chrome`, locale).
+
+### D29. Issue #171 and proof (G-44, G-45)
+
+#171 makes design decisions only and touches no workflow files: it keeps the product brief, baseline screenshots, 2-3 directions, the chosen direction with its token plan in `design-code.md`, and per-screen issues. Its "Design sources to add" and "Suggested flow" step 3 are rewritten by the main agent (a task, not an implementer task). The revised roles get no dry run; the next frontend tasks test them and problems become issues. At this PR's code gate only the `code-gate-reviewer` runs (no UI changes, so no `visual-reviewer`); then the change is archived again and the PR marked ready.
+
+### D30. Remove the file-writing command-line surface of `search.py` (G-51)
+
+Why: Codex `match`/`not_match` in `.rules` are only load-time examples, not exclusions, so Codex cannot deny a flag anywhere in the command; deny patterns in Claude Code and opencode leak through argparse abbreviations (`--pe`, `--pre`, `--tok`) and `--opt=value` forms; and the wildcard allow entry `python3 .agents/design/ui-ux-pro-max/scripts/search.py *` is open to every role, read-only ones included. So the fix is in the script, not in the permission files. Narrowed in the fix round after the spec critique of 695c52e: only the command-line surface goes, the library stays.
+
+- In `.agents/design/ui-ux-pro-max/scripts/search.py`: remove the options `--persist`, `--page`, `--output-dir`/`-o`, `--force`, `--preview` and `--tokens`, their checks, their print branches, the `persistence`/`preview`/`tokens` keys of the `--json` payload and the usage lines in the docstring; set `allow_abbrev=False` on the `ArgumentParser`. The query modes (domain search, `--design-system`) stay.
+- The library stays unchanged: `design_system.generate_design_system` keeps its parameters; `design_system.py` (with its module docstring and its own `__main__`, which no allow entry covers, so a run prompts) and `preview.py` stay as vendored and are not reachable through the allowed command.
+- Drop only the vendored tests that run `search.py` with a removed flag (for example the subprocess test in `tests/test_core.py` lines 253-308); tests that call the library with `persist=True` and the like stay. `python3 -m unittest discover -s .agents/design/ui-ux-pro-max/scripts/tests` passes; the test count is recorded in the PR (it was 176 after G-50).
+- Record the local modification in `NOTICE-teachdash.md` and in the `.agents/design/README.md` row. The blob-SHA check of D24 (G-48) applies only to files kept unchanged; `search.py` and `tests/test_core.py` are listed as modified.
+- `project-rules.md`: C20 is reworded from a ban into a fact (the options are removed in our copy); C15's `preview.py` sentence and the D24 conflict line say the script is not reachable through the allowed command.
+- `ui-ux-pro-max/SKILL.md` Step 2 is no longer "REQUIRED": it is optional and prints only. Any other `SKILL.md` or `references/*.md` line that mentions the removed flags or the `MASTER.md` output (for example `SKILL.md` line 106) is removed or adapted.
+- The allow entries in `.claude/settings.json`, `opencode.json` and `.codex/rules/flow.rules` stay as they are. This reverses the 22.2 note that the wildcard stands on a role-text instruction (D24, G-38).
+
+### D31. No slice review for changes touching `frontend/` (G-52)
+
+A change touching `frontend/` has no slice review, not even a logic-only one by the plain `reviewer`. Only the PR-level pair runs, in parallel: the `code-gate-reviewer` for code and the `visual-reviewer` for design. Supersedes the slice-review part of G-33 and D19, the Routing text of the proposal's "What Changes", and the D19 rule that a UI fix gets a `reviewer` slice review.
+
+- Doubts in a `frontend-implementer` report (unsure items, unexpected files, failing or changed tests, security-sensitive code) are passed by the main agent to the `code-gate-reviewer` as points to check.
+- After a fix made from the final review's findings, the reviewer(s) whose findings were fixed run again: the `code-gate-reviewer` after a code fix, the `visual-reviewer` on a retaken whole set (D25) after a UI fix. Otherwise nobody checks the fix. This replaces the `AGENTS.md` line that sent a UI fix from visual findings to a `reviewer` slice review.
+- Places to change: the `AGENTS.md` Review bullets (the "after every implementation slice ... single pass of a frontend-only change" text, the "frontend slices go to the plain `reviewer`" text and the fix rule); `.agents/roles/reviewer.md` (its lines 14-15 on frontend slices, and its description); constitution section 1 step 10 and any other place that sends frontend slices to the `reviewer`; any role text that does the same.
+- Non-frontend changes keep their slice reviews unchanged, including tooling slices (such as the review step 20.5).
+
+### D32. Report limits (G-53)
+
+- `frontend-researcher`: the visual plan is its own report section, outside the 40-line limit, capped at about 6 lines per screen and state, 60 lines in total. The main agent passes it to the spec-writer word for word for the "UI design" section. A file is rejected: the role is read-only.
+- `frontend-implementer`: 15 lines for a normal slice. On the final screenshot run it reports, in a block outside the 15 lines, the screenshot folder path (`frontend/screenshots/<change-name>/`), the PNG count and the unreachable states, instead of listing every PNG path. This replaces the "list the PNG paths" text of D25 and of G-39 and G-40.
+- `AGENTS.md`: the main agent passes the folder path and the unreachable-states list to the `visual-reviewer`. `.agents/roles/visual-reviewer.md`: if it expects a list of paths, it reads the PNGs in the folder it is given and checks them against the screens and states of "UI design".
+
+### D33. Pinned commands and allow entries for `frontend-implementer` (G-54)
+
+`frontend-implementer.md` names exactly these commands, all run from the repo root (opencode and Codex do not match `cd frontend && ...`), in place of "Run the relevant test suite":
+
+| Purpose | Command |
+|---|---|
+| Rebuild the stack | `docker compose up --build --wait` |
+| Build, lint, format check, unit tests | `npm --prefix frontend run build`, `npm --prefix frontend run lint`, `npm --prefix frontend run format:check`, `npm --prefix frontend run test` (vitest) |
+| Final screenshot run | `npm --prefix frontend run test:e2e -- zshots --project=desktop-chromium --project=phone-chrome` (npm runs the script in `frontend/`, where the Playwright config is) |
+| Scenario coverage | `scripts/check-scenario-coverage.sh` |
+
+This replaces the `npx playwright test ...` command of D25. Then targeted allow entries for exactly these commands are added to `.claude/settings.json`, `opencode.json` and `.codex/rules/flow.rules`, with the `./scripts/...` variant as the flow scripts have. A trailing ` *` only where the command takes arguments: `test:e2e` and `scripts/check-scenario-coverage.sh` (it loops over `"$@"`). The `docker compose up --build --wait`, `build`, `lint`, `format:check` and `test` entries have no wildcard. No broad `npm *`, `npx *` or `docker *` entries. This is the requested change to the permission files, which the `ask` entries guard. Accepted prompts and risks: clearing `frontend/screenshots/<change-name>/` and deleting `zshots.spec.ts` prompt once per final run; no `docker compose` stop is pinned (the stack stays up, as today); if `node_modules` or the Playwright browsers are missing, the implementer stops and reports instead of installing; Codex prefix rules allow trailing arguments on every entry, and `test:e2e *` allows any Playwright argument in all three tools, accepted as a recorded risk (the role can write files anyway).
+
+### D34. No routing in role descriptions (G-55)
+
+Each role's `description` in `.agents/roles/` says only what the role does and its scope. Routing ("Use for all ...", "Use instead of ...", "Use for any slice touching ...", "after a pass 2 slice", "Runs once per PR ..., alongside ...") is dropped from every role and stays in `AGENTS.md` and constitution section 1 only. The roles concerned today: `researcher`, `implementer`, `frontend-researcher`, `frontend-spec-critic`, `frontend-implementer`, `reviewer`, `code-gate-reviewer` and `visual-reviewer`; `spec-critic` and `spec-writer` are checked and left if clean. A description still states the scope, for example "Implements one slice that touches frontend/". `implementer.md`'s "Use for all code writing in teachdash" goes. The check is a `grep` of the `description:` lines for `Use for|Use instead|after a pass|Runs once|alongside`. Supersedes G-15's description wording, G-30(a) (issue #177 stays open for its second part, naming tooling slices) and the description wording of D3, D5 and D13.
+
+## Risks / Trade-offs
+
+- **Stale screenshots** if `--build` is skipped: 8081 serves the old build. → D8 step 1, and the role says to rebuild.
+- **A stale PNG from an earlier run** passes as new. → The change's folder is cleared before each run (D8).
+- **Lost screenshots** in `test-results/`, which Playwright empties. → They go to `frontend/screenshots/<change-name>/`.
+- **The temporary spec gets committed.** → The role says to delete it, and the `frontend-reviewer` and the `code-gate-reviewer` see any `zshots` file in the diff. (Superseded in part by D19, G-33: there is no `frontend-reviewer`; the `reviewer` and `code-gate-reviewer` see a leftover `zshots` file in the diff.)
+- **A frontend slice goes to `implementer`**, because `implementer.md:3` still says "Use for all code writing in teachdash." → The frontend-implementer's description says "Use instead of implementer for any slice touching frontend/", and `AGENTS.md` routes such slices to it. (Superseded by D34, G-55: that sentence goes from `implementer.md`, no description carries routing, and `AGENTS.md` and the constitution alone route.)
+- **Frontend tests in pass 1 of a change with both layers stay unclear** (constitution §2 and step 7 against practice). → Out of scope, filed as #170; this change adds no test rules (D4, D9). (Superseded by D18, G-32: a change never touches both layers.)
+- **Routing in a change with both layers is unproven** (the dry run on #165 is frontend-only). → Marked unproven (D12); the first change with both layers shows it. (Superseded by D18, G-32: moot.)
+- **Where "UI the change adds or edits" ends** may be argued at review. → It is defined as markup, CSS, copy (i18n strings) or behaviour (handlers, focus, states) that the change adds or edits (D7, C13).
+- **opencode and Codex may not run the screenshot method** (sandbox, PNG display). → Marked unverified (D12); the first frontend change in those tools shows it.
+- **Each `docker` and `npx` call prompts.** → Accepted; no permission change. (Amended by G-38 and G-42: the permission files now change for `.agents/design/**` and `search.py`. Superseded by D33, G-54, for the exact commands of the `frontend-implementer`: they get targeted allow entries.)
+- **Leftover network-tool or Tailwind lines** in a copy, which an agent might follow. → Task 1.7 greps for them.
+- **impeccable build output copied** instead of `skill/`. → D1 names the path; task 1.5 checks it.
+- **A missing "modified by teachdash" header** breaks Apache-2.0 §4(b). → Task 1.6 checks every file.
+- **#168 will be the first design finding** in the dry run. → It is filed already and stays out of this change unless a change edits that border; existing UI design is #171.
+- **A frontend change goes to a generic role** (`spec-critic`, `reviewer`), whose design bullets are gone. → Each frontend role's description says to use it instead of the base role, and `AGENTS.md`, `CONTRIBUTING.md` and constitution §1 route frontend work to them (D5, D7, D13). The `researcher.md` description now sends UI angles to `frontend-researcher` (G-15). (Amended by D19: slices are reviewed by the plain `reviewer`.)
+- **A Design section that says nothing**, so a skipped design pass looks like a clean one. → The `frontend-reviewer` and the `code-gate-reviewer` always say what was checked, and each says "no screenshots: <reason>" when it has none (a frontend slice without them, or a PR with no final set) (D7). (Superseded by D19, G-33: the `frontend-reviewer` is gone and the `code-gate-reviewer` has no Design section; the `visual-reviewer` reports per criterion, G-47.)
+- **A long Design section crowds out logic findings** in a 25-line report. → The Design sections of the `frontend-reviewer`, the `frontend-spec-critic` and the `code-gate-reviewer` sit outside the base limit, with their own cap of 15 lines (D7, D13; G-21). (Superseded by D19, G-33 and G-47: no 15-line Design cap; the `visual-reviewer` has 25 lines plus a 10-line block.)
+- **The code-gate review sees stale or missing screenshots** (per-slice runs clear the folder, shots predate review fixes, gitignored shots are gone in a new session). → The final screenshot set is taken before the code gate and its paths are passed by the main agent (D8). (Revised by D25, G-39 and G-40: one final set, retaken whole after a fix, passed to the `visual-reviewer`.)
+- **Base role and frontend file drift apart** (a base edit contradicts a frontend addition). → The frontend file holds only additions and wins where they differ (D13). (Superseded by D17, G-31: self-contained roles; see the drift guard in `AGENTS.md`.)
+- **More reading per frontend step**, about 3k tokens always, now in research, spec critique, implementation and review. → The rest is read on demand; backend and tooling roles read none of it. (Superseded by D21, G-35: the reading lists are per role, not "3k tokens always, the rest on demand".)
+- **The rules are instructions, not checks, and any engineer may change `project-rules.md` without the owner**, although step 10 makes its violations in the change's own UI fix-in-PR. → Accepted (D11): every PR still needs approval from a code owner other than the author, and the reviewers guard `.agents/design/` against unrequested changes.
+
+- **Duplicated text between a base role and its frontend role drifts** (G-31). The older entry on drift no longer applies; the `AGENTS.md` line "when you change `X.md`, check `frontend-X.md`" is the guard (D17).
+- **Visual findings arrive only at the end** (G-33). Accepted for changes of at most 6 requirements (D19).
+- **Vendored scripts run by an agent** (ui-ux-pro-max). Agents run only `search.py`; the implementer does not run upstream code while vendoring; the slice reviewer reads the scripts; the engineer runs the tests and one search by hand (D24).
+- **Vendored data conflicts with our rules** (web fonts, icon sets, 44 px targets). Conflict lines in `project-rules.md`, which wins (D24).
+- **Nobody checks a frontend slice before the end** (G-52). Accepted by the engineer and the code owner: doubts from the `frontend-implementer` report go to the `code-gate-reviewer`, and a fix from final findings re-runs the reviewer whose finding it fixed (D31).
+- **A vendored script diverges from upstream** (G-51). The edited `search.py` and the dropped subprocess test are recorded in `NOTICE-teachdash.md` and the README row; a manual re-sync re-applies the removal (D30).
+- **Broad Playwright and Codex arguments** (G-54). `test:e2e *` allows any Playwright argument in all three tools, and Codex prefix rules allow trailing arguments on every entry. Accepted (the role can write files anyway); missing `node_modules` or browsers make the implementer stop and report (D33).
+- **The researcher's visual plan is the only full read of the sources before the implementer** (G-35). The implementer's reading is narrower on purpose; the `visual-reviewer` reads everything at PR level (D21).
+
+## Open Questions
+
+None. The `visual-reviewer` report cap is settled by G-47.
