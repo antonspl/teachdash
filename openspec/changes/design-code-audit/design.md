@@ -42,11 +42,90 @@ Map roles to existing tokens where the role already matches. The foundations fol
 
 Inventory shared navigation and page headings, forms and field wrappers, native inputs and selects, password visibility, buttons, inline errors and form feedback, status labels, list rows, and dialogs. In the design code, map them to the existing shared components and use cases. Give layouts the same focus order as the rendered reading order. Record which existing states apply to each screen and keep current i18n copy and behavior as the reference, including loading, disabled, validation, server failure, success, and dialog states where supported. Test long names and email addresses in row layouts and plan space for English and Russian text.
 
+### Approved profile and admin layouts
+
+Keep these four sketches with the change and link to this section from `.agents/design/design-code.md`. When archiving, update that link to the archived path and check that it opens in a clean checkout. The locally generated previews supplement these sketches.
+
+**Profile desktop · 1040 px content**
+
+```text
+TeachDash                           Anna (Teacher) [Back to cabinet] [Log out]
+Your profile
+Your email: anna.petrova@example.com
++ About you (55%) ---------------------+    + Password (45%) ----------------+
+| Name                                 |    | Current password        [Show] |
+| Time zone                            |    | New password            [Show] |
+| Native language (teacher only)       |    | Repeat the new password [Show] |
+| [Save]                               |    | [Change password]              |
++--------------------------------------+    +--------------------------------+
+```
+
+**Profile at 360 px · 16 px inset**
+
+```text
+TeachDash
+Anna (Teacher)
+[Back to cabinet] [Log out]
+
+Your profile
+Your email: anna.petrova@example.com
++ About you --------------------------+
+| Name                                |
+| Time zone                           |
+| Native language (teacher only)      |
+| [Save]                              |
++-------------------------------------+
++ Password ---------------------------+
+| Current password             [Show] |
+| New password                 [Show] |
+| Repeat the new password      [Show] |
+| [Change password]                   |
++-------------------------------------+
+```
+
+**Admin desktop · 1120 px content**
+
+```text
+TeachDash                                  Alena (Admin) [Profile] [Log out]
+Admin cabinet                                                  [Add teacher]
++----------------------------------------------------------------------------+
+| Anna / email  | Europe/Moscow | Active               | [Reset] [Deactivate]|
+| David / email | Europe/Berlin | Waiting for password | [Invite] [Deactivate]|
+| Maria / email | Asia/Tbilisi  | Deactivated          | [Reactivate]         |
++----------------------------------------------------------------------------+
+```
+
+**Admin at 360 px · 16 px inset**
+
+```text
+TeachDash
+Alena (Admin)
+[Profile] [Log out]
+
+Admin cabinet
+[Add teacher]
++-------------------------------------+
+| Anna                                |
+| anna.petrova@example.com            |
+| Europe/Moscow                       |
+| Active                              |
+| [Password reset link] [Deactivate]  |
+| ----------------------------------- |
+| David                               |
+| david.morozov.lessons@example.com     |
+| Europe/Berlin                       |
+| Waiting for password                |
+| [New invite link] [Deactivate]       |
++-------------------------------------+
+```
+
+The desktop sketch abbreviates two action labels to fit, and the mobile sketch shows the first two records. Use the existing “Password reset link” and “New invite link” labels at both widths.
+
 ### Evidence and rollout
 
-The local baseline gallery holds 30 states at 1280 px and 360 px. It includes both cabinet roles and separates controlled network conditions in the captions. The design comparison shows the selected layout on profile and admin using synthetic data. Use baseline captures as the reference for current behavior and the selected mockups as the reference for intended layout.
+The local baseline gallery starts with 30 paired captures at 1280 px and 360 px. It includes both cabinet roles and labels controlled network conditions in the captions. Inventory each screen against its applicable states and role variants using the current UI and the `web-auth`, `web-profile`, `web-admin-teachers` and `web-client` specs. Check startup loading and retryable startup errors wherever the route shows them, field and form feedback, disabled and success states, list loading and empty states, and admin dialog failures including server errors and native-language loading, failure and retry. Capture missing reachable states at both widths. Record a reason for any remaining gap or inapplicable state. Use baseline captures as the reference for current behavior and the sketches as the reference for intended layout.
 
-Publish the baseline through GitHub issue #171. Check that the files and share links are accessible to reviewers and that screenshots contain only test data and masked or unusable invite/reset URLs. Link the resulting evidence from follow-up issues by screen and state. Order the issues as foundations, shared UI components, then pages. Integrate #168 with control borders, #165 with shared required fields, and #172 with page and content language. Use the existing issue when its scope matches and record dependencies so the backlog covers all current screen families.
+Publish the coverage inventory and captures through GitHub issue #171. Check that the files and share links are accessible to reviewers and that screenshots contain only test data and masked or unusable invite/reset URLs. Link the resulting evidence from follow-up issues by screen and state. Order the issues as foundations, shared UI components, then pages. Size every follow-up for one OpenSpec change with at most six requirements. Reuse #168 for control borders, #165 for shared required fields, and #172 for page and content language. Cross-link dependent work to the issue that owns it and keep ownership of each requirement in one issue. Check that the ordered backlog covers all current screen families.
 
 ## Risks and trade-offs
 

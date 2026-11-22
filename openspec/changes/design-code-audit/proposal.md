@@ -10,14 +10,14 @@ The current interface grew screen by screen. Issue #171 establishes a shared des
 
 ## Research
 
-- **Current screen inventory and baseline.** The audit mapped six screen families, including both role cabinets, and captured 30 reachable states at 1280 px and 360 px.
+- **Current screen inventory and baseline.** The audit mapped six screen families, including both role cabinets, and produced an initial set of 30 paired captures at 1280 px and 360 px. The screen and state inventory will determine the published set and document any remaining gaps.
 - **Visual direction.** Two concepts used the same profile and teacher management content. Working desk made desktop rows easier to scan while retaining a usable single column on a phone. The wider roster described in the product brief informed the comparison.
 
 ## What Changes
 
-- Complete `.agents/design/design-code.md` with the selected layout, token plan, shared component inventory and screen patterns.
-- Publish the baseline gallery to issue #171 with synthetic accounts and masked invitation links.
-- Sequence follow-up frontend work by dependency and connect the relevant existing issues, including #165, #168 and #172.
+- Complete `.agents/design/design-code.md` with the selected layout, token plan, shared component inventory, screen patterns and durable references to the four layout sketches.
+- Audit baseline coverage against the current specs and UI, capture missing reachable states, and publish the evidence and any remaining gaps to issue #171.
+- Sequence follow-up frontend work in changes of up to six requirements. Keep existing work with #165, #168 and #172 and cross-link dependent work.
 
 ## Capabilities
 
