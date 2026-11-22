@@ -95,6 +95,9 @@ prefix_rule(
     match = ["git push --force-with-lease origin main"],
 )
 
+# Codex rules match commands only, not file edits, so `.agents/design/**` (like
+# `.agents/roles/**`) is protected here by instruction: see AGENTS.md Git flow.
+
 # Commands that could post an approval or edit the PR gate boxes as the engineer.
 prefix_rule(
     pattern = ["gh", "pr", ["comment", "edit", "review", "merge"]],

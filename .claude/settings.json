@@ -22,6 +22,7 @@
       "Edit(/scripts/flow/**)",
       "Edit(/scripts/setup-agents)",
       "Edit(/.agents/roles/**)",
+      "Edit(/.agents/design/**)",
       "Edit(/.claude/settings.json)",
       "Edit(/opencode.json)",
       "Edit(/.codex/rules/**)"

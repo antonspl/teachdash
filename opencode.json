@@ -35,6 +35,8 @@
     { "action": "edit", "resource": "./scripts/setup-agents", "effect": "ask" },
     { "action": "edit", "resource": ".agents/roles/**", "effect": "ask" },
     { "action": "edit", "resource": "./.agents/roles/**", "effect": "ask" },
+    { "action": "edit", "resource": ".agents/design/**", "effect": "ask" },
+    { "action": "edit", "resource": "./.agents/design/**", "effect": "ask" },
     { "action": "edit", "resource": ".claude/settings.json", "effect": "ask" },
     { "action": "edit", "resource": "opencode.json", "effect": "ask" },
     { "action": "edit", "resource": ".codex/rules/**", "effect": "ask" },
