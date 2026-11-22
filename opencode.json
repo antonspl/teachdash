@@ -24,6 +24,8 @@
     { "action": "shell", "resource": "npm --prefix frontend run format:check", "effect": "allow" },
     { "action": "shell", "resource": "npm --prefix frontend run test", "effect": "allow" },
     { "action": "shell", "resource": "npm --prefix frontend run test:e2e *", "effect": "allow" },
+    { "action": "shell", "resource": "scripts/check-scenario-coverage.sh", "effect": "allow" },
+    { "action": "shell", "resource": "./scripts/check-scenario-coverage.sh", "effect": "allow" },
     { "action": "shell", "resource": "scripts/check-scenario-coverage.sh *", "effect": "allow" },
     { "action": "shell", "resource": "./scripts/check-scenario-coverage.sh *", "effect": "allow" },
     { "action": "shell", "resource": "git push", "effect": "ask" },

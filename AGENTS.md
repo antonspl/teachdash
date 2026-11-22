@@ -93,6 +93,10 @@ too).
   - once per PR with the `code-gate-reviewer` agent (strong model class), before
     asking for the code gate.
 
+  For any other change, fix findings as the Code review step in constitution §1 says,
+  then re-review if the fix was non-trivial; after a fix of the `code-gate-reviewer`'s
+  findings, run it again.
+
   For a change touching `frontend/`, only the PR-level review runs: the
   `code-gate-reviewer` and the `visual-reviewer` (strong model class) in parallel; the
   `visual-reviewer` runs only for a PR with a final screenshot set. Doubts in a

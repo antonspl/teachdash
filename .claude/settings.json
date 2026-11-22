@@ -23,6 +23,8 @@
       "Bash(npm --prefix frontend run format:check)",
       "Bash(npm --prefix frontend run test)",
       "Bash(npm --prefix frontend run test:e2e *)",
+      "Bash(scripts/check-scenario-coverage.sh)",
+      "Bash(./scripts/check-scenario-coverage.sh)",
       "Bash(scripts/check-scenario-coverage.sh *)",
       "Bash(./scripts/check-scenario-coverage.sh *)",
       "Bash(python3 .agents/design/ui-ux-pro-max/scripts/search.py *)"

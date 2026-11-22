@@ -71,4 +71,6 @@ plan (Design questions and Other open questions included):
 The **Visual plan** is its own section, outside the 40-line limit: about 6 lines per
 screen and state, at most 60 lines in total. The main agent passes it to the
 spec-writer word for word for the "UI design" section, so write it ready to be pasted.
+If the plan would exceed 60 lines, keep the cap and list the screens or states left
+out by name, so nothing is cut silently.
 Do not write it to a file (you are read-only).
