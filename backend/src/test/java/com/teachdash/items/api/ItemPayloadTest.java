@@ -127,7 +127,7 @@ class ItemPayloadTest extends ItemApiTest {
 	}
 
 	@Test
-	@DisplayName("[items/R2-S5] A NUL character or a lone surrogate in a string is rejected with its field")
+	@DisplayName("[items/R2-S5] A NUL character or a lone surrogate in a string value is rejected as payload")
 	void aNulCharacterOrALoneSurrogateInAStringIsRejectedWithItsField() {
 		// given a logged-in teacher A with a part
 		var setup = teacherWithPart();
@@ -137,10 +137,14 @@ class ItemPayloadTest extends ItemApiTest {
 		var nulInHint = setup.client().post(setup.items(), raw("test-note", "{\"text\": \"ok\", \"hint\": \"a\\u0000\"}"));
 		var surrogate = setup.client().post(setup.items(), raw("test-note", "{\"text\": \"a\\ud800b\"}"));
 
-		// then the responses are 400 VALIDATION_FAILED with payload.text, payload.hint and payload.text INVALID_FORMAT
-		assertValidation(nulInText, error("payload.text", "INVALID_FORMAT"));
-		assertValidation(nulInHint, error("payload.hint", "INVALID_FORMAT"));
-		assertValidation(surrogate, error("payload.text", "INVALID_FORMAT"));
+		// then every response is 400 VALIDATION_FAILED with payload INVALID_FORMAT only
+		assertValidation(nulInText, error("payload", "INVALID_FORMAT"));
+		assertValidation(nulInHint, error("payload", "INVALID_FORMAT"));
+		assertValidation(surrogate, error("payload", "INVALID_FORMAT"));
+		// and no body contains the rejected value
+		nulInText.then().body(not(containsString("a\u0000b"))).body(not(containsString("a\\u0000b")));
+		nulInHint.then().body(not(containsString("a\u0000"))).body(not(containsString("a\\u0000")));
+		surrogate.then().body(not(containsString("a\ud800b"))).body(not(containsString("a\\ud800b")));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}
