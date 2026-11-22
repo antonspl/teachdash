@@ -40,3 +40,5 @@ frontend/screenshots/
 .opencode/agents/
 .codex/agents/
 .claude/worktrees/
+__pycache__/
+*.pyc
