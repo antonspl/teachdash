@@ -55,7 +55,8 @@ desktop and at 360 px, into `frontend/screenshots/<change-name>/` (gitignored). 
 4. File name `<screen>-<state>-<desktop|360>.png`: `desktop` for
    `testInfo.project.name` `desktop-chromium`, `360` for `phone-chrome`. Under
    `phone-chrome` set the viewport to 360x800 (`page.setViewportSize`) before the
-   first navigation, and check that the first shot is 360 px wide. Use the longest
+   first navigation, take shots with `scale: 'css'` (the device scale makes a
+   Pixel 7 PNG about 945 px wide), and check that the first shot is 360 px wide. Use the longest
    locale for the 360 shots once `frontend/src/i18n/ru.json` exists; `en` until then.
 5. Run `npx playwright test zshots --project=desktop-chromium --project=phone-chrome`.
 6. A state you cannot reach is named for what it shows (for example "error banner
