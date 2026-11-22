@@ -3,7 +3,7 @@ Source: vercel-labs/web-interface-guidelines, `command.md` @434b7f9, MIT, licenc
 # Web interface checklist
 
 Check the slice's UI code against the rules below: the `frontend-implementer` before it
-reports, the `code-gate-reviewer` on the diff, the `frontend-spec-critic` on the spec.
+reports, the `code-gate-reviewer` on the diff, the `frontend-researcher` at Clarify.
 `project-rules.md` wins over this file.
 
 ## Rules

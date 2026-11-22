@@ -96,7 +96,10 @@ too).
   model class) run in parallel; the `visual-reviewer` runs only for a PR with a final
   screenshot set. For a PR touching `frontend/src`, after the last slice the main agent
   asks the `frontend-implementer` for the final screenshot set and passes its paths to
-  the `visual-reviewer` (or its "no screenshots: <reason>" line, which skips it). After
+  the `visual-reviewer`, with its list of unreachable states (or its "no screenshots:
+  <reason>" line, which skips it). At the code gate of such a PR the main agent gives
+  the engineer the final screenshot folder path (`frontend/screenshots/<change-name>/`);
+  the engineer looks and decides whether to attach anything. After
   a UI fix from visual findings, the fix gets a `reviewer` slice review and the set is
   retaken. Fix findings as the Code review step in constitution §1 says, then
   re-review if the fix was non-trivial.

@@ -56,4 +56,4 @@ These CSV, JSON and `.py` files carry no header line; they are byte-identical to
 
 ## NOTICE
 
-pbakaus/impeccable has a `NOTICE.md`. Its notices are about iOS and Android references, fonts and consent rules, none of which is in `critique-rubric.md` or the checklist points. Apache-2.0 §4(d) excludes notices that do not pertain to any part of the derivative work, so no copy is included.
+pbakaus/impeccable has a `NOTICE.md`. Its notices are about iOS and Android references, fonts and consent rules, none of which is in `critique-rubric.md`, `visual-colour.md`, `visual-type.md`, `visual-layout.md`, `visual-passes.md`, `product-brief-template.md` or the checklist points. Apache-2.0 §4(d) excludes notices that do not pertain to any part of the derivative work, so no copy is included.

@@ -69,8 +69,9 @@ In the report, list the PNG paths and the unreachable states. Attach nothing to 
 and add no script: at the code gate the main agent gives the engineer the folder path.
 
 Rules:
-- Never modify tests approved at an earlier gate or already on the branch; if one looks
-  wrong, stop and report it instead.
+- Never modify tests approved at an earlier gate. Change an existing test only where
+  this change's spec changes the behaviour it checks; if a test looks wrong otherwise,
+  stop and report it.
 - Tick completed tasks in `tasks.md`.
 - No new dependencies.
 - When part of a task turns out unnecessary, reword the task line to say so with the

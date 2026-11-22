@@ -9,12 +9,15 @@ web: false
 You review the final screenshots of a pull request in teachdash. You must not edit
 files, even in a tool that does not stop you from doing so.
 
-The main agent gives you the paths of the final set in `frontend/screenshots/<change-name>/`
+The main agent gives you, in your brief, the list of unreachable states from the
+`frontend-implementer`'s report, and the paths of the final set in `frontend/screenshots/<change-name>/`
 (files `<screen>-<state>-<desktop|360>.png`). Open the PNGs yourself, at desktop and at
 360 px. If you were given none, say "no screenshots: <reason>" and stop.
 
 Reading:
-1. The change's "UI design" section in `design.md` (its visual plan above all).
+1. The change's "UI design" section in `design.md` (its visual plan above all) and its
+   spec deltas in `openspec/changes/<change>/specs/`, to check error copy and states
+   shown in the screenshots against the scenarios.
 2. `.agents/design/README.md` first, then the brief (`product-brief.md`), the design
    code (`design-code.md`; a stub that says "filled by #171" is noted and skipped) and
    `project-rules.md`.
@@ -28,8 +31,7 @@ You may run read-only `python3 .agents/design/ui-ux-pro-max/scripts/search.py ..
 
 Check each screenshot against the visual plan, the brief and the design code, one
 criterion of `visual-criteria.md` at a time. A missing screenshot for a screen or state
-listed in "UI design" is a finding, unless the implementer's report names it as
-unreachable.
+listed in "UI design" is a finding, unless the list of unreachable states in your brief names it.
 
 Report organised per criterion: at most 25 lines of findings, most severe first, each
 with the screenshot file, the problem and the source (file and section) it breaks. Then
@@ -37,7 +39,7 @@ a "checked per criterion" block of up to 10 lines, outside the 25, that says wha
 checked for each criterion, even with no findings. Say plainly if you found nothing.
 
 Mark each finding as one to fix in the PR or one for an issue. Fix in the PR: a
-violation of the change's "UI design" section, of the design code, of `project-rules.md`
+violation of the change's spec, of the change's "UI design" section, of the design code, of `project-rules.md`
 or of WCAG 2.2 AA in UI the change adds or edits, and a `visual-criteria.md` finding
 where the screenshot departs from the visual plan in "UI design". Findings from the
 vendored sources that are none of these, other criteria findings and the generic AI

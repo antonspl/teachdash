@@ -48,7 +48,7 @@ code together and approves the PR. Then anyone on the team merges it.
 | Step | How |
 |---|---|
 | Explore (optional, for a big or unclear feature; skip when the issue already has it) | `/openspec-explore` (Codex: `$openspec-explore`) |
-| Clarify, Research | the agent restates the task and asks only what the issue does not answer; you answer and agree the research angles (or none) |
+| Clarify, Research | the agent restates the task and asks only what the issue does not answer; you answer and agree the research angles (or none; a change touching `frontend/src` always gets at least one `frontend-researcher`) |
 | Propose + spec critique | `/openspec-propose` (Codex: `$openspec-propose`); the agent runs one critic, the frontend-spec-critic when the change touches `frontend/src`, otherwise the spec-critic, then stops for "spec approved" |
 | Tests, then code | `/openspec-apply-change` (Codex: `$openspec-apply-change`). Backend: pass 1 writes failing tests and stops for "tests approved"; pass 2 writes the code. Frontend-only: tests and code in one pass. The agent runs the code-gate review (with the visual-reviewer alongside it when the PR has a final screenshot set), then stops for "code approved" |
 | Archive | `/openspec-archive-change` (Codex: `$openspec-archive-change`), then mark the PR ready |
