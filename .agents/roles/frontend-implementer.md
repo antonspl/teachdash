@@ -64,7 +64,8 @@ desktop and at 360 px, into `frontend/screenshots/<change-name>/` (gitignored). 
    fails, before you stop. It is never committed.
 8. After a UI fix made from visual findings, retake the whole set (clear, run), never
    part of it.
-In the report, list the PNG paths and the unreachable states.
+In the report, list the PNG paths and the unreachable states. Attach nothing to the PR
+and add no script: at the code gate the main agent gives the engineer the folder path.
 
 Rules:
 - Never modify tests approved at an earlier gate or already on the branch; if one looks
