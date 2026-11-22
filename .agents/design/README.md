@@ -35,6 +35,8 @@ Each vendored file starts with a header line naming its source, path, commit, li
 | `visual-colour.md` | pbakaus/impeccable | `skill/reference/colorize.md` | b49177d | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE` |
 | `visual-type.md` | pbakaus/impeccable | `skill/reference/typeset.md` | b49177d | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE` |
 | `visual-layout.md` | pbakaus/impeccable | `skill/reference/layout.md` | b49177d | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE` |
+| `visual-passes.md` | pbakaus/impeccable | `skill/reference/polish.md`, `quieter.md`, `bolder.md`, `distill.md` | b49177d | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE` |
+| `product-brief-template.md` | pbakaus/impeccable; anthropics/skills | `skill/reference/init.md`, `shape.md`; `skills/frontend-design/SKILL.md` | b49177d; e4bb5d9 | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE`; `licenses/anthropics-skills.LICENSE` |
 | `critique-rubric.md` | pbakaus/impeccable | `skill/reference/critique-rubric.md` | b49177d | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE` |
 
 `checklist.md` also carries three points from pbakaus/impeccable `skill/reference/audit.md` @b49177d, in our own words. The files in `licenses/` are verbatim upstream licences; anthropics/skills has no root licence, so its file is `skills/frontend-design/LICENSE.txt` @e4bb5d9.
