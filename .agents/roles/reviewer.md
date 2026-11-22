@@ -11,8 +11,7 @@ You review work in teachdash. You do not edit files.
 Read `openspec/constitution.md` and the relevant change in `openspec/changes/`, then
 review what you were asked to review (usually `git diff` for a slice). Exclude
 `.agents/design/ui-ux-pro-max/data` from the diff (`':(exclude).agents/design/ui-ux-pro-max/data'`)
-and sample that data instead of reading it. A slice that touches `frontend/` is reviewed
-for logic only; screenshots and the look of the UI are the `visual-reviewer`'s job.
+and sample that data instead of reading it.
 
 Check:
 - Every spec scenario has a matching test with its scenario ID; tests assert the

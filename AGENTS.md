@@ -83,26 +83,28 @@ too).
   (medium class). Give it one coherent slice of `tasks.md` at a time, not the whole
   change. Implementation slices that touch `frontend/` go to the
   `frontend-implementer` agent (medium class) instead.
-- **Review**: the `reviewer` agent (medium class). Run it:
-  - after every implementation slice: pass 2, or the single pass of a frontend-only
-    change;
-  - whenever an implementer or frontend-implementer report raises doubt (unsure
-    items, unexpected files, failing or changed tests, security-sensitive code);
+- **Review**: the `reviewer` agent (medium class). A change touching `frontend/` has
+  no slice review. For any other change, run the `reviewer`:
+  - after every implementation slice (pass 2);
+  - whenever an `implementer` report raises doubt (unsure items, unexpected files,
+    failing or changed tests, security-sensitive code);
   - once per PR with the `code-gate-reviewer` agent (strong model class), before
     asking for the code gate.
 
-  A slice that touches `frontend/` goes to the plain `reviewer` too (logic only, no
-  screenshots). At PR level the `code-gate-reviewer` and the `visual-reviewer` (strong
-  model class) run in parallel; the `visual-reviewer` runs only for a PR with a final
-  screenshot set. For a PR touching `frontend/src`, after the last slice the main agent
+  For a change touching `frontend/`, only the PR-level review runs: the
+  `code-gate-reviewer` and the `visual-reviewer` (strong model class) in parallel; the
+  `visual-reviewer` runs only for a PR with a final screenshot set. Doubts in a
+  `frontend-implementer` report (unsure items, unexpected files, failing or changed
+  tests, security-sensitive code) go to the `code-gate-reviewer` as points to check.
+  For a PR touching `frontend/src`, after the last slice the main agent
   asks the `frontend-implementer` for the final screenshot set and passes its paths to
   the `visual-reviewer`, with its list of unreachable states (or its "no screenshots:
   <reason>" line, which skips it). At the code gate of such a PR the main agent gives
   the engineer the final screenshot folder path (`frontend/screenshots/<change-name>/`);
-  the engineer looks and decides whether to attach anything. After
-  a UI fix from visual findings, the fix gets a `reviewer` slice review and the set is
-  retaken. Fix findings as the Code review step in constitution §1 says, then
-  re-review if the fix was non-trivial.
+  the engineer looks and decides whether to attach anything. Fix findings as the Code
+  review step in constitution §1 says. After a fix from the final review's findings,
+  run again the reviewer(s) whose findings were fixed: the `code-gate-reviewer` after a
+  code fix, the `visual-reviewer` on a retaken whole screenshot set after a UI fix.
 
 Agents' reports are not shown to the engineer: relay what matters in a few lines.
 
