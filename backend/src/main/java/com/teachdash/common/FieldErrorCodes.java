@@ -15,14 +15,16 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-final class FieldErrorCodes {
+public final class FieldErrorCodes {
 
-	static final String REQUIRED = "REQUIRED";
-	static final String TOO_SHORT = "TOO_SHORT";
-	static final String TOO_LONG = "TOO_LONG";
-	static final String INVALID_FORMAT = "INVALID_FORMAT";
-	static final String INVALID_TYPE = "INVALID_TYPE";
-	static final String UNSUPPORTED_COURSE_LANGUAGE = "UNSUPPORTED_COURSE_LANGUAGE";
+	public static final String REQUIRED = "REQUIRED";
+	public static final String TOO_SHORT = "TOO_SHORT";
+	public static final String TOO_LONG = "TOO_LONG";
+	public static final String INVALID_FORMAT = "INVALID_FORMAT";
+	public static final String INVALID_TYPE = "INVALID_TYPE";
+	public static final String UNSUPPORTED_COURSE_LANGUAGE = "UNSUPPORTED_COURSE_LANGUAGE";
+	public static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
+	public static final String UNKNOWN_FIELD = "UNKNOWN_FIELD";
 
 	private FieldErrorCodes() {
 	}
@@ -48,9 +50,22 @@ final class FieldErrorCodes {
 	}
 
 	static List<FieldErrorDetail> fromViolations(Collection<? extends ConstraintViolation<?>> violations) {
+		return fromViolations(violations, "");
+	}
+
+	static List<FieldErrorDetail> fromViolations(Collection<? extends ConstraintViolation<?>> violations, String prefix) {
 		return reduce(violations.stream()
-				.map(violation -> new FieldErrorDetail(violation.getPropertyPath().toString(), codeOf(violation)))
+				.map(violation -> new FieldErrorDetail(
+						withPrefix(prefix, violation.getPropertyPath().toString()),
+						codeOf(violation)))
 				.toList());
+	}
+
+	public static String withPrefix(String prefix, String path) {
+		if (prefix.isEmpty()) {
+			return path;
+		}
+		return path.isEmpty() ? prefix : prefix + "." + path;
 	}
 
 	static List<FieldErrorDetail> reduce(Collection<FieldErrorDetail> details) {

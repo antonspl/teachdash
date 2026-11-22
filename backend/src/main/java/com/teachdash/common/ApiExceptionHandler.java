@@ -29,9 +29,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import jakarta.validation.ConstraintViolation;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DatabindException;
-import tools.jackson.databind.exc.MismatchedInputException;
 import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 @RestControllerAdvice
@@ -86,8 +84,9 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpStatusCode status,
 			WebRequest request) {
 		DatabindException databind = firstWithPath(ex);
-		String field = databind == null ? "" : fieldOf(databind);
-		String fieldCode = field.isEmpty() ? null : jsonCodeOf(ex, databind);
+		String field = databind == null ? "" : JacksonErrors.fieldOf(databind, "");
+		boolean unknownProperty = databind instanceof UnrecognizedPropertyException;
+		String fieldCode = field.isEmpty() || unknownProperty ? null : JacksonErrors.codeOf(ex, databind);
 		if (fieldCode == null) {
 			return ResponseEntity.status(status).body(problem(status, "MALFORMED_REQUEST"));
 		}
@@ -101,34 +100,6 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			if (cause instanceof DatabindException databind && !databind.getPath().isEmpty()) {
 				return databind;
 			}
-		}
-		return null;
-	}
-
-	private static String fieldOf(DatabindException exception) {
-		StringBuilder field = new StringBuilder();
-		for (JacksonException.Reference reference : exception.getPath()) {
-			if (reference.getPropertyName() != null) {
-				if (!field.isEmpty()) {
-					field.append('.');
-				}
-				field.append(reference.getPropertyName());
-			}
-			else if (reference.getIndex() >= 0) {
-				field.append('[').append(reference.getIndex()).append(']');
-			}
-		}
-		return field.toString();
-	}
-
-	private static String jsonCodeOf(Throwable error, DatabindException databind) {
-		if (containsNul(error)) {
-			return FieldErrorCodes.INVALID_FORMAT;
-		}
-		boolean wrongType = databind instanceof MismatchedInputException
-				&& !(databind instanceof UnrecognizedPropertyException);
-		if (wrongType) {
-			return FieldErrorCodes.INVALID_TYPE;
 		}
 		return null;
 	}
@@ -231,15 +202,6 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			problem.setProperty("code", resolved == null ? "ERROR" : resolved.name());
 		}
 		return response;
-	}
-
-	private static boolean containsNul(Throwable error) {
-		for (Throwable cause = error; cause != null; cause = cause.getCause()) {
-			if (cause instanceof NulRejectingJsonConfig.NulCharacterException) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private static boolean hasCode(ProblemDetail problem) {

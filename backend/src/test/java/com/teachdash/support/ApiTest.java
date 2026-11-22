@@ -377,6 +377,71 @@ public abstract class ApiTest {
 				.list();
 	}
 
+	/** Inserts an item into a part directly: version 1, both times the clock time. */
+	protected UUID createItem(UUID teacherId, UUID partId, String type, String payloadJson, int position) {
+		UUID id = UUID.randomUUID();
+		Timestamp now = Timestamp.from(Instant.now(clock));
+		jdbc.sql("""
+				insert into items (id, teacher_id, part_id, type, payload, version, position, created_at, updated_at)
+				values (:id, :teacher, :part, :type, cast(:payload as jsonb), 1, :position, :now, :now)
+				""")
+				.param("id", id)
+				.param("teacher", teacherId)
+				.param("part", partId)
+				.param("type", type)
+				.param("payload", payloadJson)
+				.param("position", position)
+				.param("now", now)
+				.update();
+		return id;
+	}
+
+	protected long countItems(UUID partId) {
+		return jdbc.sql("select count(*) from items where part_id = :part")
+				.param("part", partId)
+				.query(Long.class)
+				.single();
+	}
+
+	/** The positions of the part's items, ascending. */
+	protected List<Integer> itemPositions(UUID partId) {
+		return jdbc.sql("select position from items where part_id = :part order by position")
+				.param("part", partId)
+				.query(Integer.class)
+				.list();
+	}
+
+	/** An item row as stored; the payload is the jsonb text as Postgres prints it. */
+	public record ItemRow(
+			UUID teacherId,
+			UUID partId,
+			String type,
+			String payload,
+			long version,
+			int position,
+			Instant createdAt,
+			Instant updatedAt) {
+	}
+
+	protected ItemRow readItem(UUID id) {
+		return jdbc.sql("""
+				select teacher_id, part_id, type, payload::text as payload, version, position,
+				       created_at, updated_at
+				from items where id = :id
+				""")
+				.param("id", id)
+				.query((rs, i) -> new ItemRow(
+						rs.getObject("teacher_id", UUID.class),
+						rs.getObject("part_id", UUID.class),
+						rs.getString("type"),
+						rs.getString("payload"),
+						rs.getLong("version"),
+						rs.getInt("position"),
+						rs.getTimestamp("created_at").toInstant(),
+						rs.getTimestamp("updated_at").toInstant()))
+				.single();
+	}
+
 	protected Instant readPartUpdatedAt(UUID partId) {
 		return jdbc.sql("select updated_at from parts where id = :id")
 				.param("id", partId)
