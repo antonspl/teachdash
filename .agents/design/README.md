@@ -10,7 +10,7 @@ Every frontend role reads `README.md` first, then `product-brief.md` and `design
 - `frontend-spec-critic`: `project-rules.md`, `visual-criteria.md`, `frontend-design-principles.md`, `accessibility.md`.
 - `frontend-implementer` (per slice): the change's "UI design", `project-rules.md`, `visual-criteria.md`, `critique-rubric.md`, `checklist.md` (every slice), `accessibility.md` (forms, dialogs, interactive elements); one pass of `visual-passes.md` only when its self-critique or a `visual-reviewer` finding names it.
 - `visual-reviewer`: the change's "UI design", `project-rules.md`, `visual-criteria.md`, `critique-rubric.md`, `refactoring-ui.md`, `refactoring-ui-patterns.md`, `frontend-design-principles.md`, `visual-colour.md`, `visual-type.md`, `visual-layout.md`, `visual-passes.md`. It may also run read-only `ui-ux-pro-max/scripts/search.py` queries.
-- `code-gate-reviewer`: `project-rules.md`, `checklist.md`, `accessibility.md` for forms, dialogs and interactive elements; no screenshots.
+- `code-gate-reviewer`: `product-brief.md`, `design-code.md`, `project-rules.md`, `checklist.md`, `accessibility.md` for forms, dialogs and interactive elements; no screenshots.
 
 `ui-ux-pro-max/` is query-only for every role: `search.py` queries or grep, never the data files read whole. The rest of the files are read on demand.
 

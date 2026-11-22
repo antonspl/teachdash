@@ -21,7 +21,8 @@ Check:
   secrets in code or logs, no unjustified dependencies.
 - Correctness bugs, security issues, missing error cases.
 - For a PR touching `frontend/src`: read `.agents/design/` in this order: `README.md`,
-  then `project-rules.md`, then `checklist.md`, and `accessibility.md` when the PR adds
+  then `product-brief.md` and `design-code.md` (stubs that say "filled by #171" are
+  skipped), then `project-rules.md`, then `checklist.md`, and `accessibility.md` when the PR adds
   or changes forms, dialogs or other interactive elements. Check the diff against them
   and against the "UI design" section of the change's `design.md`, and a11y in code:
   keyboard, focus, `aria-*`, contrast. Also check the diff for hard-coded colours and

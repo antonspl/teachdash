@@ -27,7 +27,8 @@ says something else, follow this file. The full order is in C0.
 ## Resolved conflicts
 
 - **C0** Precedence: as the README states it, the change's spec, then the design
-  code (#171), then these project rules, then the vendored sources.
+  code (#171), then these project rules, then `visual-criteria.md`, then the vendored
+  sources.
 - **C1** Sentence case, not Title Case, for headings, buttons, labels and messages.
 - **C2** No all-caps or uppercase-small labels.
 - **C3** Tokens only. Reuse an existing token first; add a new token only when none
@@ -77,7 +78,7 @@ says something else, follow this file. The full order is in C0.
 - **C16** Icon sets are not added. `ui-ux-pro-max/data/icons.csv` names the Phosphor
   npm package; a new dependency is an engineer decision (constitution §7). Icons are
   inline SVG components in `src/ui/` (`PlusIcon` is the model), one set with one
-  stroke style, as `refactoring-ui-patterns.md` "Icon usage" says. `icons.csv` may
+  stroke style, as `refactoring-ui.md` section 6 (Icons) says. `icons.csv` may
   help choose which meaning an icon needs, not where it comes from. No emoji as icons.
 - **C17** Tailwind, shadcn and other stack data (`ui-ux-pro-max/data/stacks/*.csv`)
   is reference only, as `ui-ux-pro-max/SKILL.md` says. teachdash has no Tailwind or
