@@ -32,6 +32,9 @@ Each vendored file starts with a header line naming its source, path, commit, li
 | `refactoring-ui-patterns.md` | wondelai/skills | `refactoring-ui/references/advanced-patterns.md` | c526558 | MIT | `licenses/wondelai-skills.LICENSE` |
 | `frontend-design-copy.md` | anthropics/skills | `skills/frontend-design/SKILL.md` | e4bb5d9 | Apache-2.0 | `licenses/anthropics-skills.LICENSE` |
 | `frontend-design-principles.md` | anthropics/skills | `skills/frontend-design/SKILL.md` | e4bb5d9 | Apache-2.0 | `licenses/anthropics-skills.LICENSE` |
+| `visual-colour.md` | pbakaus/impeccable | `skill/reference/colorize.md` | b49177d | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE` |
+| `visual-type.md` | pbakaus/impeccable | `skill/reference/typeset.md` | b49177d | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE` |
+| `visual-layout.md` | pbakaus/impeccable | `skill/reference/layout.md` | b49177d | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE` |
 | `critique-rubric.md` | pbakaus/impeccable | `skill/reference/critique-rubric.md` | b49177d | Apache-2.0 | `licenses/pbakaus-impeccable.LICENSE` |
 
 `checklist.md` also carries three points from pbakaus/impeccable `skill/reference/audit.md` @b49177d, in our own words. The files in `licenses/` are verbatim upstream licences; anthropics/skills has no root licence, so its file is `skills/frontend-design/LICENSE.txt` @e4bb5d9.
