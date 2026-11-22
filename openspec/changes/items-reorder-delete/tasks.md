@@ -15,10 +15,10 @@
 
 ## 3. Implementation
 
-- [ ] 3.1 `ItemRepository`: lookup of an item and its position scoped by part and teacher, `shiftRange`, `setPosition`, delete returning the position, `closeGap` (design D3); `MoveItemRequest` (`BigInteger position`, `@NotNull`; the strict coercion already exists, design D2)
-- [ ] 3.2 `ItemService.move` and `delete`: one lock helper shared with `create`, kept compatible with `lockItem` of PR #186 (whichever merges second reuses the other's helper), in the order user row (`findActiveByIdForUpdate`, none gives 401), course row, lesson row, part row, then the item lookup (design D3); the controller replaces its stubs (`PATCH .../position`, `DELETE` 204)
-- [ ] 3.3 Check that no payload content appears in logs (constitution §5: record IDs, not content)
-- [ ] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `ItemRepository`: lookup of an item and its position scoped by part and teacher, `shiftRange`, `setPosition`, delete returning the position, `closeGap` (design D3); `MoveItemRequest` (`BigInteger position`, `@NotNull`; the strict coercion already exists, design D2)
+- [x] 3.2 `ItemService.move` and `delete`: one lock helper shared with `create`, kept compatible with `lockItem` of PR #186 (whichever merges second reuses the other's helper), in the order user row (`findActiveByIdForUpdate`, none gives 401), course row, lesson row, part row, then the item lookup (design D3); the controller replaces its stubs (`PATCH .../position`, `DELETE` 204)
+- [x] 3.3 Check that no payload content appears in logs (constitution §5: record IDs, not content)
+- [x] 3.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
