@@ -1,6 +1,6 @@
 ---
 name: frontend-implementer
-description: Implements one bounded slice that touches frontend/, building the UI to the design sources in .agents/design/. Use for any slice touching frontend/.
+description: Implements one slice that touches frontend/, building the UI to the design sources in .agents/design/.
 class: medium
 access: write
 web: true

@@ -1,6 +1,6 @@
 ---
 name: code-gate-reviewer
-description: Independent reviewer for the whole pull request. Runs once per PR, before the code gate, and checks the full diff against the specs and the constitution. Read-only.
+description: Independent reviewer of a whole pull request. Checks the full diff against the specs and the constitution. Read-only.
 class: strong
 access: read
 web: false

@@ -1,6 +1,6 @@
 ---
 name: visual-reviewer
-description: Independent visual reviewer for a pull request touching frontend/src. Runs once per PR with a final screenshot set, alongside the code-gate-reviewer, and checks the screenshots against the UI design section and the design sources. Read-only.
+description: Independent visual reviewer for a pull request touching frontend/src. Checks the final screenshots against the UI design section and the design sources. Read-only.
 class: strong
 access: read
 web: false

@@ -1,6 +1,6 @@
 ---
 name: frontend-researcher
-description: Answers one agreed research angle about the UI of a teachdash change (screens, components, frontend behaviour) and returns design questions and a visual plan per the design sources in .agents/design/. Use instead of researcher for research angles about the UI. Read-only.
+description: Answers one agreed research angle about the UI of a teachdash change (screens, components, frontend behaviour) and returns design questions and a visual plan per the design sources in .agents/design/. Read-only.
 class: medium
 access: read
 web: true
