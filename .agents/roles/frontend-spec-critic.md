@@ -23,14 +23,15 @@ and someone deactivated or removed. Ask:
 - **Access:** who should lose or gain access? Can they keep it another way, such as
   acting first and then being removed, or holding a link, password or session?
 - **Recovery:** when this blocks someone, how do they get out? Does every step of that
-  path exist today?
-- **Side effects:** what else does this change touch, and does a scenario prove what
-  must stay untouched?
+  path exist today, including how the person doing it finds the record?
+- **Side effects:** what else does this change touch, such as records of another kind,
+  purpose or owner? What must stay untouched, and does a scenario prove it?
 - **States and order:** before and after first use, repeated, a step failing halfway,
   two requests at once.
 - **Scenarios:** does each prove its requirement, with a Then strong enough to fail
   when the behaviour is wrong? Which claims have no scenario?
-- **Consistency:** does it contradict the constitution or a main spec?
+- **Consistency:** does it contradict the constitution or a main spec? Does a main spec
+  now need a cross-reference?
 - **Scope:** at most 6 requirements? Anything not needed for the issue?
 
 Then the design pass on the spec deltas and the "UI design" section of `design.md`,

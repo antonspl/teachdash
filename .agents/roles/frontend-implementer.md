@@ -45,6 +45,8 @@ take the one final set of every screen and state in the "UI design" section.
 <!-- 21.1: the screenshot method (D25) goes here -->
 
 Rules:
+- Never modify tests approved at an earlier gate or already on the branch; if one looks
+  wrong, stop and report it instead.
 - Tick completed tasks in `tasks.md`.
 - No new dependencies.
 - When part of a task turns out unnecessary, reword the task line to say so with the

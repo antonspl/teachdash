@@ -59,7 +59,8 @@ Always return, on the screens the change touches:
   main agent asks both lists; the answers go into the proposal's Clarifications, and
   only the answers to the design questions go into "UI design".
 
-Report in at most 40 lines for the angle, then the sections above:
+Report in at most 40 lines in total, counting every section below (Design questions,
+Visual plan and Other open questions included):
 1. **Answer:** the answer to the angle, first.
 2. **Evidence:** `file:line` or URL for each fact.
 3. **Options:** only if there is a choice, with the cost of each and your recommendation.
