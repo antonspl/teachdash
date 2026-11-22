@@ -308,7 +308,7 @@ Checks in groups 23-28 use base `efc52ff` (the restore commit of the second revi
 - [x] 28.3 Run `npx -y @fission-ai/openspec@1.15.0 validate workflow-frontend-implementer --strict`; it passes. Last coherence check, recorded in the PR: `grep -rn 'frontend-reviewer' .agents AGENTS.md CONTRIBUTING.md openspec/constitution.md openspec/config.yaml` and `grep -rn 'both layers' AGENTS.md openspec/config.yaml .agents` find nothing.
 - [x] 28.4 Run the `code-gate-reviewer` on the whole PR (the PR changes no UI, so no `visual-reviewer`, G-45), fix its findings as constitution section 1 step 10 says, and re-run it after a fix of its findings; then the engineer approves the code gate in the PR (G-52 applies to the PR's own review: there is no frontend change here, so the tooling slice reviews of groups 23-27 by the `reviewer` stay).
 - [x] 28.5 The main agent comments on #177 that the `reviewer.md` description part is done in #169 (G-55) and that the second part, naming tooling slices, stays open. (A task for the main agent, not an agent.) Record the comment link in the PR.
-- [ ] 28.6 Archive the change again after the code gate (`/openspec-archive-change`), and mark the PR ready for the final review by a code owner other than the engineer.
+- [x] 28.6 Archive the change again after the code gate (`/openspec-archive-change`), and mark the PR ready for the final review by a code owner other than the engineer.
 
 ## Workflow follow-up
 
