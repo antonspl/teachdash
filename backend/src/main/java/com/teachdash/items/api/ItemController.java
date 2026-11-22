@@ -3,7 +3,6 @@ package com.teachdash.items.api;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -47,12 +46,12 @@ class ItemController {
 			@RequestBody CreateItemRequest request,
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		ItemType<?> type = resolveType(request);
+		ItemType<?> type = validateEnvelope(request);
 		String payloadJson = validator.toStoredJson(validator.validate(type, request.payload()));
 		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type.code(), payloadJson));
 	}
 
-	private ItemType<?> resolveType(CreateItemRequest request) {
+	private ItemType<?> validateEnvelope(CreateItemRequest request) {
 		List<FieldErrorDetail> errors = new ArrayList<>();
 		ItemType<?> type = null;
 		if (request.type() == null || request.type().isBlank()) {
@@ -64,8 +63,7 @@ class ItemController {
 				errors.add(new FieldErrorDetail("type", FieldErrorCodes.UNKNOWN_TYPE));
 			}
 		}
-		Map<String, Object> payload = request.payload();
-		if (payload == null) {
+		if (request.payload() == null) {
 			errors.add(new FieldErrorDetail("payload", FieldErrorCodes.REQUIRED));
 		}
 		if (!errors.isEmpty()) {

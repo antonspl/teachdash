@@ -23,10 +23,10 @@
 - [x] 3.3 `CreateItemRequest` (`String type`, `Map<String,Object> payload`) and `ItemResponse`; the controller of a few lines and `ItemPayloadValidator` (design D4: convert with unknown properties rejected, Bean Validation, `extraChecks`; the stored payload serialised with `NON_NULL`, D5), the `common` helpers `ApiException.fromJackson` (extracted from `ApiExceptionHandler`; field `payload` for an unknown property and a root mismatch, never `REQUIRED`; the path is cut at the first `Map` key, also in `ApiExceptionHandler.fieldOf`, design D3) and `ApiException.validation` with the prefixed overload, the codes `UNKNOWN_TYPE` and `UNKNOWN_FIELD` in the default priority tier
 - [x] 3.4 `ItemRepository` on `JdbcClient`: the part lock (in `ItemRepository`, the only place) scoped by lesson and teacher, count, insert at the end with `cast(:payload as jsonb)` taking the serialised record as a String and returning the stored payload and the position (design D5), without `schema_version`
 - [x] 3.5 `ItemService.create(teacherId, courseId, lessonId, partId, type, payloadJson)` in the lock order of design D7 (user row, course, lesson, part, limit check, insert) with the limit from `teachdash.items.max-per-part`; the controller replaces its stub (201). Add a comment at the locks saying the user row comes first to avoid a deadlock with `CourseService.rename`
-- [ ] 3.6 Check every payload record has `@Size` or `@MaxUtf8Bytes` on each String field and list, wrapper types with `@NotNull`, `@Digits` on every `BigDecimal`, no `Double`, `Float` or `Map` field (design D3)
-- [ ] 3.7 Add `request_body { max_size 1MB }` to the `handle /api/*` block of `infra/Caddyfile` (design D9). Proof: `caddy validate` passes; one manual request with a body over 1 MB gets 413, described in the PR
-- [ ] 3.8 Check that no payload content, and no property name from a rejected payload, appears in logs or error responses (constitution §5)
-- [ ] 3.9 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.6 Check every payload record has `@Size` or `@MaxUtf8Bytes` on each String field and list, wrapper types with `@NotNull`, `@Digits` on every `BigDecimal`, no `Double`, `Float` or `Map` field (design D3)
+- [x] 3.7 Add `request_body { max_size 1MB }` to the `handle /api/*` block of `infra/Caddyfile` (design D9). Proof: `caddy validate` passes; one manual request with a body over 1 MB gets 413, described in the PR
+- [x] 3.8 Check that no payload content, and no property name from a rejected payload, appears in logs or error responses (constitution §5)
+- [x] 3.9 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

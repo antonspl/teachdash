@@ -22,6 +22,9 @@
 	}
 
 	handle /api/* {
+		request_body {
+			max_size 1MB
+		}
 		reverse_proxy {$BACKEND_UPSTREAM:backend:8080}
 	}
 

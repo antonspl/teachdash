@@ -34,7 +34,10 @@ class NulRejectingJsonConfig {
 		private static boolean hasLoneSurrogate(String value) {
 			for (int i = 0; i < value.length(); i++) {
 				char c = value.charAt(i);
-				if (Character.isHighSurrogate(c) && i + 1 < value.length() && Character.isLowSurrogate(value.charAt(i + 1))) {
+				boolean validPair = Character.isHighSurrogate(c)
+						&& i + 1 < value.length()
+						&& Character.isLowSurrogate(value.charAt(i + 1));
+				if (validPair) {
 					i++;
 				}
 				else if (Character.isSurrogate(c)) {

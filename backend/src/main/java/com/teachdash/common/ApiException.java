@@ -45,12 +45,13 @@ public class ApiException extends RuntimeException {
 
 	/**
 	 * Never gives REQUIRED (a missing property is null and Bean Validation reports it) and never echoes a Map key
-	 * or an unknown property name, because both are user text.
+	 * or an unknown property name, because both are user text. Any Jackson error that is not bad input
+	 * (for example a definition problem) is rethrown and surfaces as a logged 500.
 	 */
 	public static ApiException fromJackson(DatabindException exception, String prefix) {
 		String code = JacksonErrors.codeOf(exception);
 		if (code == null) {
-			code = FieldErrorCodes.INVALID_TYPE;
+			throw exception;
 		}
 		String field = code.equals(FieldErrorCodes.UNKNOWN_FIELD) ? prefix : JacksonErrors.fieldOf(exception, prefix);
 		return new ApiException(

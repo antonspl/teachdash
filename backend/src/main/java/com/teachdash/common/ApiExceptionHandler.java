@@ -30,6 +30,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import jakarta.validation.ConstraintViolation;
 import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 @RestControllerAdvice
 class ApiExceptionHandler extends ResponseEntityExceptionHandler {
@@ -84,7 +85,8 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			WebRequest request) {
 		DatabindException databind = firstWithPath(ex);
 		String field = databind == null ? "" : JacksonErrors.fieldOf(databind, "");
-		String fieldCode = field.isEmpty() ? null : JacksonErrors.codeOf(ex, databind);
+		boolean unknownProperty = databind instanceof UnrecognizedPropertyException;
+		String fieldCode = field.isEmpty() || unknownProperty ? null : JacksonErrors.codeOf(ex, databind);
 		if (fieldCode == null) {
 			return ResponseEntity.status(status).body(problem(status, "MALFORMED_REQUEST"));
 		}
