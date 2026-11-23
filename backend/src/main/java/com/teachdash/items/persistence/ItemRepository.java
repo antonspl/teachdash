@@ -125,10 +125,7 @@ public class ItemRepository {
 				.single();
 	}
 
-	/**
-	 * Empty when the part is not found for this teacher, lesson and course.
-	 * Checking the part and reading its items in one query keeps the answer consistent.
-	 */
+	// One query, so a part deleted mid-request gives 404, not an empty list.
 	public Optional<List<Item>> findByPart(UUID partId, UUID lessonId, UUID courseId, UUID teacherId) {
 		List<Optional<Item>> rows = jdbc.sql("""
 				select i.id, i.type, i.payload::text as payload, i.position, i.version, i.created_at, i.updated_at
