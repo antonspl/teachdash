@@ -125,33 +125,32 @@ public class ItemRepository {
 				.single();
 	}
 
-	public boolean partExists(UUID partId, UUID lessonId, UUID courseId, UUID teacherId) {
-		return jdbc.sql("""
-				select p.id from parts p
+	/**
+	 * Empty when the part is not found for this teacher, lesson and course.
+	 * Checking the part and reading its items in one query keeps the answer consistent.
+	 */
+	public Optional<List<Item>> findByPart(UUID partId, UUID lessonId, UUID courseId, UUID teacherId) {
+		List<Optional<Item>> rows = jdbc.sql("""
+				select i.id, i.type, i.payload::text as payload, i.position, i.version, i.created_at, i.updated_at
+				from parts p
 				join lessons l on l.id = p.lesson_id and l.teacher_id = p.teacher_id
+				left join items i on i.part_id = p.id and i.teacher_id = p.teacher_id
 				where p.id = :partId and p.lesson_id = :lessonId and l.course_id = :courseId
 				  and p.teacher_id = :teacherId
+				order by i.position
 				""")
 				.param("partId", partId)
 				.param("lessonId", lessonId)
 				.param("courseId", courseId)
 				.param("teacherId", teacherId)
-				.query(UUID.class)
-				.optional()
-				.isPresent();
-	}
-
-	public List<Item> findByPart(UUID partId, UUID teacherId) {
-		return jdbc.sql("""
-				select id, type, payload::text as payload, position, version, created_at, updated_at
-				from items
-				where part_id = :partId and teacher_id = :teacherId
-				order by position
-				""")
-				.param("partId", partId)
-				.param("teacherId", teacherId)
-				.query((rs, rowNum) -> toItem(rs))
+				.query((rs, rowNum) -> rs.getObject("id", UUID.class) == null
+						? Optional.<Item>empty()
+						: Optional.of(toItem(rs)))
 				.list();
+		if (rows.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(rows.stream().flatMap(Optional::stream).toList());
 	}
 
 	public Optional<Locked> lockItem(UUID itemId, UUID partId, UUID teacherId) {

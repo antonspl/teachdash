@@ -119,10 +119,7 @@ public class ItemService {
 
 	@Transactional(readOnly = true)
 	public List<Item> list(UUID teacherId, UUID courseId, UUID lessonId, UUID partId) {
-		if (!items.partExists(partId, lessonId, courseId, teacherId)) {
-			throw ApiException.notFound();
-		}
-		return items.findByPart(partId, teacherId);
+		return items.findByPart(partId, lessonId, courseId, teacherId).orElseThrow(ApiException::notFound);
 	}
 
 	@Transactional
@@ -147,7 +144,8 @@ public class ItemService {
 		}
 		ItemRepository.Locked locked = items.lockItem(itemId, partId, teacherId)
 				.orElseThrow(ApiException::notFound);
-		ItemType<?> type = registry.find(locked.type()).orElseThrow();
+		ItemType<?> type = registry.find(locked.type())
+				.orElseThrow(() -> new IllegalStateException("Unknown item type: " + locked.type()));
 		String payloadJson = validator.toStoredJson(validator.validate(type, payload));
 		if (locked.version() != version) {
 			throw new ApiException(HttpStatus.CONFLICT, "VERSION_CONFLICT");
