@@ -59,7 +59,7 @@ None.
 
 ## Impact
 
-- Backend: `items` package gets `GET` and `PATCH` in `ItemController`, `ItemService.list` and `edit`, new `ItemRepository` queries, `EditItemRequest(Long version, Map<String,Object> payload)`; new `theory` type (`TheoryItemType`, `TheoryPayload`) registered as a Spring bean, so the production registry is no longer empty.
+- Backend: `items` package gets `GET` and `PATCH` in `ItemController`, `ItemService.list` and `edit`, new `ItemRepository` queries, `EditItemRequest(BigInteger version, Map<String,Object> payload)`; new `theory` type (`TheoryItemType`, `TheoryPayload`) registered as a Spring bean, so the production registry is no longer empty.
 - API: two new endpoints, one new response code (`VERSION_CONFLICT`), one new item type code.
 - Database: no migration.
 - Limits: 50 items per part (existing), 20000 characters of theory text, no title.
