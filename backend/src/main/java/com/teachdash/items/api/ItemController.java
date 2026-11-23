@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +21,7 @@ import com.teachdash.common.ApiException;
 import com.teachdash.common.FieldErrorCodes;
 import com.teachdash.common.FieldErrorDetail;
 import com.teachdash.items.api.dto.CreateItemRequest;
+import com.teachdash.items.api.dto.EditItemRequest;
 import com.teachdash.items.api.dto.ItemResponse;
 import com.teachdash.items.api.dto.MoveItemRequest;
 import com.teachdash.items.domain.ItemPayloadValidator;
@@ -78,6 +80,48 @@ class ItemController {
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
 		items.delete(teacherId, courseId, lessonId, partId, itemId);
+	}
+
+	@GetMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items")
+	List<ItemResponse> list(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		return items.list(teacherId, courseId, lessonId, partId).stream()
+				.map(ItemResponse::from)
+				.toList();
+	}
+
+	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}")
+	ItemResponse edit(
+			@PathVariable UUID courseId,
+			@PathVariable UUID lessonId,
+			@PathVariable UUID partId,
+			@PathVariable UUID itemId,
+			@RequestBody EditItemRequest request,
+			Principal principal) {
+		UUID teacherId = UUID.fromString(principal.getName());
+		validateEditEnvelope(request);
+		return ItemResponse.from(items.edit(
+				teacherId, courseId, lessonId, partId, itemId, request.version().longValueExact(), request.payload()));
+	}
+
+	private void validateEditEnvelope(EditItemRequest request) {
+		List<FieldErrorDetail> errors = new ArrayList<>();
+		if (request.payload() == null) {
+			errors.add(new FieldErrorDetail("payload", FieldErrorCodes.REQUIRED));
+		}
+		if (request.version() == null) {
+			errors.add(new FieldErrorDetail("version", FieldErrorCodes.REQUIRED));
+		}
+		else if (request.version().bitLength() > 63) {
+			errors.add(new FieldErrorDetail("version", FieldErrorCodes.INVALID_TYPE));
+		}
+		if (!errors.isEmpty()) {
+			throw ApiException.fields(errors);
+		}
 	}
 
 	private ItemType<?> validateEnvelope(CreateItemRequest request) {

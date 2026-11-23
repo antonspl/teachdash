@@ -422,17 +422,29 @@ public abstract class ApiTest {
 
 	/** Inserts an item into a part directly: version 1, both times the clock time. */
 	protected UUID createItem(UUID teacherId, UUID partId, String type, String payloadJson, int position) {
+		return createItem(teacherId, partId, type, payloadJson, position, 1);
+	}
+
+	/** Inserts an item into a part directly with the given version; both times are the clock time. */
+	protected UUID createItem(
+			UUID teacherId,
+			UUID partId,
+			String type,
+			String payloadJson,
+			int position,
+			long version) {
 		UUID id = UUID.randomUUID();
 		Timestamp now = Timestamp.from(Instant.now(clock));
 		jdbc.sql("""
 				insert into items (id, teacher_id, part_id, type, payload, version, position, created_at, updated_at)
-				values (:id, :teacher, :part, :type, cast(:payload as jsonb), 1, :position, :now, :now)
+				values (:id, :teacher, :part, :type, cast(:payload as jsonb), :version, :position, :now, :now)
 				""")
 				.param("id", id)
 				.param("teacher", teacherId)
 				.param("part", partId)
 				.param("type", type)
 				.param("payload", payloadJson)
+				.param("version", version)
 				.param("position", position)
 				.param("now", now)
 				.update();

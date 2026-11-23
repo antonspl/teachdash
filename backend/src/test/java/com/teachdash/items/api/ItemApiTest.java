@@ -1,11 +1,21 @@
 package com.teachdash.items.api;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.teachdash.support.ApiTest;
 import com.teachdash.support.TestClient;
+
+import io.restassured.response.Response;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Shared helpers of the item API tests. */
 abstract class ItemApiTest extends ApiTest {
@@ -56,5 +66,42 @@ abstract class ItemApiTest extends ApiTest {
 				.param("position", position)
 				.query(String.class)
 				.single();
+	}
+
+	private static final JsonMapper JSON = JsonMapper.builder().build();
+
+	protected static String item(Object courseId, Object lessonId, Object partId, Object itemId) {
+		return items(courseId, lessonId, partId) + "/" + itemId;
+	}
+
+	/** A raw edit body, so that any JSON (a NUL escape, a long number) reaches the server as written. */
+	protected static String editBody(Object version, String payloadJson) {
+		return "{\"version\":" + version + ",\"payload\":" + payloadJson + "}";
+	}
+
+	protected static String rawBody(String type, String payloadJson) {
+		return "{\"type\":\"" + type + "\",\"payload\":" + payloadJson + "}";
+	}
+
+	/** The stored payload equals the JSON, ignoring the formatting jsonb adds. */
+	protected void assertStoredPayload(UUID itemId, String expectedJson) {
+		assertEquals(JSON.readTree(expectedJson), JSON.readTree(readItem(itemId).payload()));
+	}
+
+	@SafeVarargs
+	protected static void expectValidation(Response response, Map<String, String>... expected) {
+		response.then().statusCode(400)
+				.body("code", equalTo("VALIDATION_FAILED"))
+				.body("errors", equalTo(List.of(expected)));
+	}
+
+	protected static void expectNotFound(Response response) {
+		response.then().statusCode(404)
+				.body("code", equalTo("NOT_FOUND"))
+				.body("$", not(hasKey("errors")))
+				.body(not(containsString("Грамматика")))
+				.body(not(containsString("Падежи")))
+				.body(not(containsString("Разминка")))
+				.body(not(containsString("Секрет")));
 	}
 }
