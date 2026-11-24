@@ -94,6 +94,11 @@
 - **WHEN** teacher A adds an item of the type `test-note` with the title `123` and no payload
 - **THEN** the response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "INVALID_TYPE"}]` (no `payload` entry: binding stops at the first error), and the part has no item
 
+#### Scenario: items/R1-S18 A title with an unpaired surrogate is rejected
+- **GIVEN** a logged-in teacher A with a part
+- **WHEN** teacher A adds items of the type `test-note` with a valid payload and the title "a\uD800b" (an unpaired high surrogate between two letters, sent as the JSON escape), then "a\uDC00b" (an unpaired low surrogate)
+- **THEN** both responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "INVALID_FORMAT"}]` (the shared title rule rejects the surrogate class, Clarification 12; without it the database would store "a?b"), no body has a `rejectedValue`, and the part has no item
+
 ### Requirement: R3 A teacher lists the items of a part
 `GET /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items` SHALL return 200 with the items of the caller's part only, as an unpaginated JSON array ordered by `position`, each with the fields R1 returns; no items gives `[]`. A foreign, unknown, malformed or mismatched id gives 404 `NOT_FOUND`. Checks run in order: role (403, no CSRF on a GET), deactivated (401), malformed id (404), unknown or foreign id (404).
 

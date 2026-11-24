@@ -10,7 +10,7 @@
 
 ## 2. Test review
 
-- [ ] 2.1 Engineer approves tests in the PR. HARD STOP: no production code before approval
+- [x] 2.1 Engineer approves tests in the PR. HARD STOP: no production code before approval
 
 ## 3. Implementation (backend)
 
@@ -18,6 +18,12 @@
 - [x] 3.2 Title validation: normalise with `Normalize.name`, blank to null, validate a non-null value with the `@Title` rules and `FieldErrorCodes` (one shared helper, design D2); add its errors to `validateEnvelope` and `validateEditEnvelope`; verify R1-S13 to R1-S17 and R4-S13 to R4-S15 pass
 - [x] 3.3 `ItemService.create` and `edit` take and store the title (a missing or null title clears it on edit); `ItemResponse` returns `title` for create, list, edit and move; verify R1-S1, R1-S11, R1-S12, R4-S11 and R4-S12 pass
 - [x] 3.4 Check that no title text is logged (constitution section 5: record IDs, sizes and outcomes, not user text), then run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+
+## 5. Code review fix (Clarification 12)
+
+- [ ] 5.1 Write failing tests for items R1-S18 (`AddItemTest`) and parts R1-S14 (the parts create test) with the scenario ID in `@DisplayName`; verify each fails at its THEN step (the title is stored or accepted today)
+- [ ] 5.2 Add `\p{Cs}` to the rejected classes of the `@Title` pattern; verify R1-S18 and parts R1-S14 pass
+- [ ] 5.3 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and every scenario ID has a test
 
 ## Workflow follow-up
 
