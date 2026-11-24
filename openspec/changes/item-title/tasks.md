@@ -15,9 +15,9 @@
 ## 3. Implementation (backend)
 
 - [x] 3.1 `ItemRepository`: `insertAtEnd`, `findInPart`, `setPosition`, `findByPart`, `updatePayload` (payload and title in one statement, each written only when it differs from the stored value; `version` and `updated_at` always, design D4) and `toItem` carry `title`; check that the `Stored` record returned by `insertAtEnd` carries the title, or that `ItemService` uses the normalised input for the response; verify `ListItemsTest`, `MoveItemTest` and R4-S1 pass
-- [ ] 3.2 Title validation: normalise with `Normalize.name`, blank to null, validate a non-null value with the `@Title` rules and `FieldErrorCodes` (one shared helper, design D2); add its errors to `validateEnvelope` and `validateEditEnvelope`; verify R1-S13 to R1-S17 and R4-S13 to R4-S15 pass
-- [x] 3.3 `ItemService.create` and `edit` take and store the title (a missing or null title clears it on edit); `ItemResponse` returns `title` for create, list, edit and move; verify R1-S1, R1-S11, R1-S12, R4-S11 pass (R4-S12 also needs the title normalisation of 3.2)
-- [ ] 3.4 Check that no title text is logged (constitution section 5: record IDs, sizes and outcomes, not user text), then run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.2 Title validation: normalise with `Normalize.name`, blank to null, validate a non-null value with the `@Title` rules and `FieldErrorCodes` (one shared helper, design D2); add its errors to `validateEnvelope` and `validateEditEnvelope`; verify R1-S13 to R1-S17 and R4-S13 to R4-S15 pass
+- [x] 3.3 `ItemService.create` and `edit` take and store the title (a missing or null title clears it on edit); `ItemResponse` returns `title` for create, list, edit and move; verify R1-S1, R1-S11, R1-S12, R4-S11 and R4-S12 pass
+- [x] 3.4 Check that no title text is logged (constitution section 5: record IDs, sizes and outcomes, not user text), then run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

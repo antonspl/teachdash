@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import com.teachdash.common.ApiException;
 import com.teachdash.common.FieldErrorCodes;
 import com.teachdash.common.FieldErrorDetail;
+import com.teachdash.common.OptionalTitle;
 import com.teachdash.items.api.dto.CreateItemRequest;
 import com.teachdash.items.api.dto.EditItemRequest;
 import com.teachdash.items.api.dto.ItemResponse;
@@ -38,7 +39,10 @@ class ItemController {
 
 	private final ItemPayloadValidator validator;
 
-	ItemController(ItemService items, ItemTypeRegistry registry, ItemPayloadValidator validator) {
+	private final OptionalTitle titles;
+
+	ItemController(ItemService items, ItemTypeRegistry registry, ItemPayloadValidator validator, OptionalTitle titles) {
+		this.titles = titles;
 		this.items = items;
 		this.registry = registry;
 		this.validator = validator;
@@ -55,7 +59,14 @@ class ItemController {
 		UUID teacherId = UUID.fromString(principal.getName());
 		ItemType<?> type = validateEnvelope(request);
 		String payloadJson = validator.toStoredJson(validator.validate(type, request.payload()));
-		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type.code(), request.title(), payloadJson));
+		return ItemResponse.from(items.create(
+				teacherId,
+				courseId,
+				lessonId,
+				partId,
+				type.code(),
+				titles.normalise(request.title()),
+				payloadJson));
 	}
 
 	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}/position")
@@ -105,7 +116,14 @@ class ItemController {
 		UUID teacherId = UUID.fromString(principal.getName());
 		validateEditEnvelope(request);
 		return ItemResponse.from(items.edit(
-				teacherId, courseId, lessonId, partId, itemId, request.version().longValueExact(), request.title(), request.payload()));
+				teacherId,
+				courseId,
+				lessonId,
+				partId,
+				itemId,
+				request.version().longValueExact(),
+				titles.normalise(request.title()),
+				request.payload()));
 	}
 
 	private void validateEditEnvelope(EditItemRequest request) {
@@ -119,6 +137,7 @@ class ItemController {
 		else if (request.version().bitLength() > 63) {
 			errors.add(new FieldErrorDetail("version", FieldErrorCodes.INVALID_TYPE));
 		}
+		errors.addAll(titles.errors(titles.normalise(request.title())));
 		if (!errors.isEmpty()) {
 			throw ApiException.fields(errors);
 		}
@@ -139,6 +158,7 @@ class ItemController {
 		if (request.payload() == null) {
 			errors.add(new FieldErrorDetail("payload", FieldErrorCodes.REQUIRED));
 		}
+		errors.addAll(titles.errors(titles.normalise(request.title())));
 		if (!errors.isEmpty()) {
 			throw ApiException.fields(errors);
 		}
