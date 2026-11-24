@@ -13,8 +13,6 @@ import jakarta.validation.Validator;
 @Component
 public class OptionalTitle {
 
-	private static final String FIELD = "title";
-
 	private final Validator validator;
 
 	OptionalTitle(Validator validator) {
