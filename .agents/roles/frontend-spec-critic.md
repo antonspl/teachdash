@@ -1,6 +1,6 @@
 ---
 name: frontend-spec-critic
-description: Attacks a drafted teachdash spec for a change touching frontend/src before the spec gate, with the spec checks plus a design pass against .agents/design/. Reports problems only and does not approve. Use instead of spec-critic for a change touching frontend/src. Read-only.
+description: Attacks a drafted teachdash spec for a change touching frontend/src, with the spec checks plus a design pass against .agents/design/. Reports problems only and does not approve. Read-only.
 class: medium
 access: read
 web: false

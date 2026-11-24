@@ -69,7 +69,7 @@ Extract from the engineer's request:
 - **Style keywords**: playful, vibrant, minimal, dark mode, content-first, immersive, etc.
 - **Stack**: fixed by the change's spec and `project-rules.md`; do not infer it from files.
 
-### Step 2: Generate Design System (REQUIRED for new pages/projects)
+### Step 2: Generate Design System (optional, prints only)
 
 Use `--design-system` when the task needs a coherent product-wide visual direction:
 
@@ -84,9 +84,9 @@ This aggregates product/style/color/landing/typography matches, applies reasonin
 python3 .agents/design/ui-ux-pro-max/scripts/search.py "beauty spa wellness service" --design-system -p "Serenity Spa"
 ```
 
-### Not to be run: `--persist`, `--preview`, `--tokens` (G-38)
+### Output is read-only (modified by teachdash)
 
-Do not run `--persist`, `--preview` or `--tokens`, with any other flag (`--output-dir`, `--page`, `--force`). They write files (`design-system/`, `preview.html`, token files) or load web fonts, and teachdash keeps its tokens in `frontend/src/styles/tokens.css` (`project-rules.md`). Run `--design-system` only to read the result in the terminal, and take values from it as role-named tokens, not as copied hex or font names. This is an instruction, not a control: the permission entry allows `search.py` with any arguments.
+In our copy `search.py` only prints to the terminal. Its options that wrote files or tokens, or loaded web fonts, are removed. Take values from the result as role-named tokens, not as copied hex or font names; teachdash keeps its tokens in `frontend/src/styles/tokens.css` (`project-rules.md`).
 
 ### Step 2c: Design Dials (optional)
 
@@ -103,7 +103,7 @@ python3 .agents/design/ui-ux-pro-max/scripts/search.py "<query>" --design-system
 | `--density` | Spacious (24-96px spacing scale) | Standard (16-64px, current default) | Dense/dashboard (8-32px spacing scale) |
 
 - `--motion` attaches a ready-to-use GSAP snippet (with framework notes, Do/Don't, and performance notes) pulled from `--domain gsap`, matched to the resolved tier (Subtle/Standard/Complex).
-- `--density` overrides the `--space-*` CSS variable table in the ASCII/markdown/MASTER.md output — use it for dashboards (high) vs. marketing pages (low) without hand-editing tokens.
+- `--density` overrides the `--space-*` CSS variable table in the ASCII/markdown output — use it for dashboards (high) vs. marketing pages (low) without hand-editing tokens.
 - Leaving a dial unset keeps that part of the output exactly as it was before (no behavior change).
 
 **Example:**

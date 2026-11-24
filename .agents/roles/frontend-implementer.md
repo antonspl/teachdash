@@ -1,6 +1,6 @@
 ---
 name: frontend-implementer
-description: Implements one bounded slice that touches frontend/, building the UI to the design sources in .agents/design/. Use for any slice touching frontend/.
+description: Implements one slice that touches frontend/, building the UI to the design sources in .agents/design/.
 class: medium
 access: write
 web: true
@@ -22,7 +22,7 @@ Reading, in this order:
    self-critique or a `visual-reviewer` finding names it.
 
 ui-ux-pro-max is query-only: read-only `python3 .agents/design/ui-ux-pro-max/scripts/search.py ...`
-queries (never `--persist`, `--preview` or `--tokens`) or grep, never its data files
+queries (the vendored `search.py` has no file-writing options, G-51) or grep, never its data files
 whole.
 
 You work in a single pass: your slice writes its code and its own tests, one per
@@ -36,14 +36,29 @@ Steps:
    add a new role-named token to `frontend/src/styles/tokens.css` only when none fits
    and the "UI design" section lists it. Changing an existing token's value, renaming
    or deleting it is an engineer decision: stop and report instead.
-3. Run the relevant test suite and `scripts/check-scenario-coverage.sh`.
+3. Run these commands, all from the repo root, and no other
+   frontend commands:
+   - `npm --prefix frontend run build`
+   - `npm --prefix frontend run lint`
+   - `npm --prefix frontend run format:check`
+   - `npm --prefix frontend run test`
+   - `scripts/check-scenario-coverage.sh`
+   - for the final screenshot run only: `docker compose up --build --wait` and
+     `npm --prefix frontend run test:e2e -- zshots --project=desktop-chromium --project=phone-chrome`
+     (npm runs the script in `frontend/`, where the Playwright config is).
+   If `node_modules` or the Playwright browsers are missing, stop and report; do not
+   install them.
 4. Self-critique against `visual-criteria.md` and `critique-rubric.md` before
    reporting; fix what fails, and say in the report what you checked.
 
-Screenshots: you take none per slice. Only when the main agent asks, after all slices,
-you take one final set of every screen and state in the "UI design" section, at
-desktop and at 360 px, into `frontend/screenshots/<change-name>/` (gitignored). No
-"before" set. Method:
+Screenshots: you take none per slice. When the main agent asks for the final set,
+check `design.md` first. If it says `UI design: none, <reason>`, reply with
+`no screenshots: <reason>` using the stated reason, and stop before starting Docker,
+clearing the screenshot folder, or creating or running a Playwright spec.
+
+For rendered UI, take one final set after all slices, covering every screen and state
+in the "UI design" section at desktop and at 360 px. Save it in
+`frontend/screenshots/<change-name>/` (gitignored). No "before" set. Method:
 1. `docker compose up --build --wait`, so port 8081 serves the code under review.
 2. Clear `frontend/screenshots/<change-name>/` before the run.
 3. Write a temporary `frontend/e2e/zshots.spec.ts`, one test per state. Each test
@@ -58,15 +73,17 @@ desktop and at 360 px, into `frontend/screenshots/<change-name>/` (gitignored). 
    first navigation, take shots with `scale: 'css'` (the device scale makes a
    Pixel 7 PNG about 945 px wide), and check that the first shot is 360 px wide. Use the longest
    locale for the 360 shots once `frontend/src/i18n/ru.json` exists; `en` until then.
-5. Run `npx playwright test zshots --project=desktop-chromium --project=phone-chrome`.
+5. Run `npm --prefix frontend run test:e2e -- zshots --project=desktop-chromium --project=phone-chrome`.
 6. A state you cannot reach is named for what it shows (for example "error banner
    after a failed save") and listed as unreachable in the report; do not fake it.
 7. Delete `frontend/e2e/zshots.spec.ts` before you commit, and also when any step
    fails, before you stop. It is never committed.
 8. After a UI fix made from visual findings, retake the whole set (clear, run), never
    part of it.
-In the report, list the PNG paths and the unreachable states. Attach nothing to the PR
-and add no script: at the code gate the main agent gives the engineer the folder path.
+On this final run, report in a block outside the 15 lines: the folder path
+(`frontend/screenshots/<change-name>/`), the PNG count and the unreachable states. Do
+not list every PNG path. Attach nothing to the PR and add no script: at the code gate
+the main agent gives the engineer the folder path.
 
 Rules:
 - Never modify tests approved at an earlier gate. Change an existing test only where

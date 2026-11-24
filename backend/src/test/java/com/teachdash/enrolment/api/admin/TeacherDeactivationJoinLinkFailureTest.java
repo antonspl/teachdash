@@ -2,6 +2,7 @@ package com.teachdash.enrolment.api.admin;
 
 import static org.hamcrest.Matchers.contains;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.doThrow;
 
 import java.util.Map;
@@ -31,7 +32,7 @@ class TeacherDeactivationJoinLinkFailureTest extends ApiTest {
 		String token = createJoinLink(teacherA);
 		TestClient admin = loggedInAdmin();
 		TestClient teacher = loggedInAs("a@example.com");
-		doThrow(new IllegalStateException("release failure")).when(links).invalidateLinksIssuedBy(any(), any());
+		doThrow(new IllegalStateException("release failure")).when(links).invalidateLinksIssuedBy(anyCollection(), any());
 
 		// when the admin deactivates teacher A, and the preview of L1 is requested
 		var deactivation = admin.post("/api/admin/teachers/" + teacherA + "/deactivate");

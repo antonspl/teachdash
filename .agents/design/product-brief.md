@@ -2,56 +2,60 @@
 
 ## Users
 
-The three roles are admin, teacher and student (constitution §3).
+Three roles: admin, teacher, student (constitution §3).
 
-- Teachers include tutors of any subject, often independent private tutors. Each has a native language, set by the admin at creation and changeable by the teacher (§9, `specs/web-profile`).
-- Students are mostly adults and teens taking private lessons (engineer, 2026-11-22). Each has at most one teacher, who can enroll them or send them a join link. The teacher sets the student's native language or the student chooses it when joining (§8, §9, `specs/student-enrolment`).
-- Admins create and manage teacher accounts. They can read data across the platform except student answers and results (§8).
-- The platform is designed for about 1,000 teachers (§8), with tens of students per teacher and 1–3 admins (engineer, 2026-11-22). For roster design, plan for around 10 active students per tutor on average, often more.
+- Teachers: tutors teaching any subject (code owner, 2026-11-22), often independent private tutors. Each has a native language, set by the admin at creation and changeable by the teacher (§9, `specs/web-profile`). A course has an instruction language (initially `en` and `ru`) and may have a target language (§9).
+- Students: registered by their teacher or joining through the teacher's join link; at most one teacher; native language set by the teacher or chosen at joining (§8, §9, `specs/student-enrolment`). Mostly adults and teens in one-to-one classes, not children (engineer, 2026-11-22).
+- Admin: creates and manages teacher accounts; reads all data except student answers and results (§8).
+- Scale: about 1000 teachers (§8); tens of students per teacher; 1-3 admins (engineer, 2026-11-22).
 
 ## Product Purpose
 
-TeachDash is a lightweight tutoring platform for lessons, exercises, a shared whiteboard and video calls (README).
+A lightweight teaching platform: lessons, exercises, a shared whiteboard and video calls (README).
 
-In the intended teaching workflow, a teacher builds courses (course > lessons > parts with teacher-chosen names > ordered items), assigns a course to students, and opens or closes each lesson per student. A student reads an open lesson, answers exercises and sees whether each answer is correct, wrong or unchecked (#13, #135, #138). Between classes, the intended workflow lets students find materials and stay in touch with their tutor.
+A teacher builds courses (course > lessons > parts with teacher-chosen names > ordered items), assigns a course to students, and opens or closes each lesson per student. A student reads an open lesson, answers exercises and sees results: correct, wrong or unchecked (#13, #135, #138).
 
-The goal is for a teacher to prepare a lesson once and run it for many students within the platform. A student should always know what is open and what to do next (engineer, 2026-11-22).
+A teacher can share a course or a lesson with other teachers by link: the other teacher gets a read-only preview and may copy it (§8; code owner, 2026-11-22).
+
+Planned (#14): a teacher manages their schedule in their personal cabinet. They see the schedule and each class with its details: the student, a comment, whether it was rescheduled or cancelled, the meeting link and the whiteboard link (code owner, 2026-11-22).
+
+Success: a teacher prepares a lesson once and runs it for many students without leaving the platform; a student always knows what is open and what to do next (engineer, 2026-11-22).
 
 ## Positioning
 
-- One light place for content, classes and the whiteboard, for independent tutors (engineer, 2026-11-22).
-- Each teacher's data is private from day one. The planned sharing workflow lets teachers share their own courses and lessons with other teachers by link. The recipient can open a read-only preview and make an independent copy (§8).
-- The core supports any subject. Each course has an instruction language (`instructionLanguage`) and may have a target language when it teaches a language. The configured course languages initially support English (`en`) and Russian (`ru`) (§9).
+- One light place for content, classes and the whiteboard, for independent teachers rather than schools (engineer, 2026-11-22).
+- Several teachers from day one, each with private data; sharing only by link as a read-only preview plus copy (§8).
+- Subject-independent core (§9).
 
 ## Operating Context
 
-- The UI supports English and Russian independently of course languages. Support Cyrillic throughout and make room for longer Russian strings. Users are on fixed-line internet in Russia and the EU. The platform uses no third-party CDNs or web fonts (§10, `project-rules.md`).
-- Teachers and students are desktop-first. Teachers prepare content and teach on a computer, and teacher editors are designed for desktop (#115–#120, #132, #133, #138). Both roles can use a phone between classes. Every page, including the editors, remains usable at 360 CSS px (`specs/web-client` R7).
+- UI in English and Russian, separate from course languages; Cyrillic must work everywhere; Russian strings are longer. Users on fixed-line internet in Russia and the EU; no third-party CDNs or web fonts (§10, `project-rules.md`).
+- Devices: teachers prepare content at a desk on a laptop; teacher editors are designed for desktop (#115–#120, #132, #133, #138). Students are desktop-first too; by default every page, editors included, must also look good on a phone (360 CSS px) (code owner, 2026-11-22). `specs/web-client` R7 (fits 360 CSS px, no horizontal scroll) is the minimum.
 - A student may have a lesson open next to a live video call, in a narrow window with split attention.
-- Teachers use the platform daily and students a few times a week. Admins use it rarely, for tasks such as creating teacher accounts or issuing reset links. Keep teacher screens fast and admin screens simple (engineer, 2026-11-22).
-- Teachers and students both have a time zone for scheduling (`specs/web-profile`, `specs/student-enrolment`).
-- The first release focuses on content and enrolment. Schedule (#14), whiteboard and video come later. The planned schedule gives teachers a separate place in their personal cabinet to manage classes. The proposed class details include the student, a comment, whether the class was rescheduled or cancelled, and links to the meeting and whiteboard. A meeting link serves the class until LiveKit Cloud is available (§3).
+- Frequency: teachers daily; students a few times a week; admins rarely (creating a teacher, issuing a reset link). Admin screens can be plain; teacher screens must be fast (engineer, 2026-11-22).
+- Time zones matter for schedules: teachers and students both have a time zone (`specs/web-profile`, `specs/student-enrolment`).
+- First release focus: content and enrolment. Schedule (#14), whiteboard and video (LiveKit Cloud later, §3; a meeting link until then) come later.
 
 ## Capabilities and Constraints
 
-- The November 2026 audit baseline includes accounts, login and password setup, teacher administration, profiles, enrolment, and the core model for courses, lessons, parts and items. The screens are login, set password, cabinet, profile, admin teachers and not found.
-- The November 2026 backlog includes course editors (#115-#120), student course and lesson views (#134, #135), assign and lesson access (#132, #133), results (#138), cabinet tabs (#57), students list (#35), join page (#37), schedule (#14), groups (#54), homework (#56), media (#55), language switch (#102, #103).
-- Planned lesson content includes gap fill, dropdown, free text and matching exercises, images, and theory in Markdown with KaTeX maths (#13, #119). Gap fill was the only exercise type scheduled at the audit baseline (#120, #135). Each teacher can create up to 20 courses with titles of 1–200 characters (`specs/courses` R1). Each course can contain up to 100 lessons (`specs/lessons` R1), each lesson up to 20 parts (`specs/parts` R1), and each part up to 50 items (`specs/items` R1). Lessons embed YouTube videos and display other video URLs as links (§10).
-- A lesson is course content. A class is a scheduled call with a student (§3).
-- Use informal, friendly copy in sentence case and second person. Follow the guidance on apologies in `project-rules.md`. `project-rules.md` wins over the "neutral tone" lines in #102, #115–#120, #132, #133 and #138.
-- The product has a calm personality. Visual choices such as palette, type, layout and chrome belong in `design-code.md`.
-- At the audit baseline, "teachdash" is the working name and the logo and brand colour are open decisions.
+- Built now (backend unless noted; from `openspec/specs/`): accounts, login, set password, logout and password links (`accounts`, `web-auth`); admin teachers, with screens (`web-admin-teachers`); profile, with a screen (`web-profile`); student enrolment and join links (`student-enrolment`); the language list (`languages`); courses: create, list, view, rename (`courses`); lessons and parts: create, list, rename, move, delete (`lessons`, `parts`); items: add, list, edit with a version, move, delete, with the `theory` type holding Markdown text (`items`, #186, #187); course assignment: assign, list, unassign (`course-assignment`). Current screens: login, set password, cabinet, profile, admin teachers, not found.
+- Planned (backlog, not order): course editors (#115-#120), student course and lesson views (#134, #135), assign screens (#132), lesson access (#133), results (#138), cabinet tabs (#57), students list (#35), join page (#37), schedule (#14), groups (#54), homework (#56), media (#55), language switch (#102, #103).
+- Exercise types, planned and not built (only gap fill is scheduled so far, #120, #135): gap fill, dropdown, free text, matching; images; theory in Markdown with KaTeX maths (the backend already stores theory text, `specs/items` R5; showing it is planned, #13, #119). Limits: at most 20 courses per teacher and course titles 1-200 characters (`specs/courses` R1); 100 lessons per course (`specs/lessons` R1), 20 parts per lesson (`specs/parts` R1), 50 items per part (`specs/items` R1). YouTube embeds in lessons; other video URLs show as links (§10).
+- Terminology: lesson = content, class = scheduled call; never mixed (§3).
+- Voice: copy is informal, friendly, sentence case, second person, no apologies (`project-rules.md`). `project-rules.md` wins over the "neutral tone" lines in #102, #115–#120, #132, #133 and #138.
+- Personality: calm, not playful. Every concrete visual choice (palette, type, layout, chrome) belongs in `design-code.md`, not here.
+- Name and brand: no logo and no brand colour yet; the working name "teachdash" may change.
 
 ## Evidence on Hand
 
-- The repository provides no real lesson content, user research or brand assets. Use documented evidence for claims.
-- Examples from the specs include the course "English B1", the lesson "Present Simple" and the part "Warm-up".
+- No real lesson content, user research or brand assets in the repository; none may be invented.
+- Realistic samples from the specs: course "English B1", lesson "Present Simple", part "Warm-up".
 
 ## Product Principles
 
-1. Start with the domain. The domain defines what data is stored and the backend enforces who can access it and what can be exposed. The frontend presents the data users are allowed to see (§3, §8). Within that model, the lesson is the main learning object.
-2. Students on small screens never lose the next action.
-3. Give both supported UI languages equal attention. Allow for longer Russian text and keep the interface usable in both languages.
+1. Domain first: the platform stores the data and guards how it can be accessed and exposed; the frontend shows that data.
+2. On a phone, no one loses the next action.
+3. Every language is first-class: Russian text is as long as it gets, and nothing breaks in either language.
 4. Teacher data is private and its owner is always clear.
 5. Friendly words, calm personality.
 

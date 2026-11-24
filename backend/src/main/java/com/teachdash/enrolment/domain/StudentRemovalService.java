@@ -6,27 +6,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.teachdash.accounts.domain.PasswordLinkService;
 import com.teachdash.accounts.persistence.UserRepository;
 import com.teachdash.common.ApiException;
-import com.teachdash.enrolment.persistence.TeacherStudentRepository;
 
 @Service
 public class StudentRemovalService {
 
 	private final UserRepository users;
 
-	private final TeacherStudentRepository assignments;
+	private final AssignmentEnding ending;
 
-	private final PasswordLinkService links;
-
-	StudentRemovalService(
-			UserRepository users,
-			TeacherStudentRepository assignments,
-			PasswordLinkService links) {
+	StudentRemovalService(UserRepository users, AssignmentEnding ending) {
 		this.users = users;
-		this.assignments = assignments;
-		this.links = links;
+		this.ending = ending;
 	}
 
 	@Transactional
@@ -36,9 +28,8 @@ public class StudentRemovalService {
 		// A teacher deactivated after the session check is not found here and gets 401.
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
-		if (!assignments.delete(teacherId, studentId)) {
+		if (!ending.end(teacherId, studentId)) {
 			throw ApiException.notFound();
 		}
-		links.invalidateLinksIssuedBy(studentId, teacherId);
 	}
 }

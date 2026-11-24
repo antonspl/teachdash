@@ -56,6 +56,10 @@ public class TeacherStudentRepository {
 		return rows > 0;
 	}
 
+	/**
+	 * Only {@link com.teachdash.enrolment.domain.AssignmentEnding} calls this: it also voids the
+	 * links the teacher issued for the student. Every other caller ends assignments through it.
+	 */
 	public boolean delete(UUID teacherId, UUID studentId) {
 		int rows = jdbc.sql("""
 				delete from teacher_students
@@ -67,6 +71,10 @@ public class TeacherStudentRepository {
 		return rows > 0;
 	}
 
+	/**
+	 * Only {@link com.teachdash.enrolment.domain.AssignmentEnding} calls this: it also voids the
+	 * links the teacher issued for the student. Every other caller ends assignments through it.
+	 */
 	public List<UUID> deleteAllOfTeacher(UUID teacherId) {
 		return jdbc.sql("""
 				delete from teacher_students

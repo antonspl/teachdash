@@ -10,8 +10,6 @@ or directly:
     python scripts/tests/test_design_system_preview.py
 """
 
-import json
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -30,7 +28,6 @@ from design_system import (  # noqa: E402
 )
 from preview import format_preview_html, write_preview_html  # noqa: E402
 
-SEARCH = SCRIPTS_DIR / "search.py"
 HOSTILE_NAME = '<script>alert(1)</script>'
 DARK_QUERY = "SaaS invoicing fintech B2B professional dark mode"
 
@@ -52,17 +49,6 @@ def _parse(html):
     parser = _TagCollector()
     parser.feed(html)
     return parser
-
-
-def _run_search(*args):
-    return subprocess.run(
-        [sys.executable, str(SEARCH), *map(str, args)],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
 
 
 class TestPreviewStructure(unittest.TestCase):
@@ -133,19 +119,6 @@ class TestPreviewEscaping(unittest.TestCase):
         self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", html)
         self.assertIn("<html lang=", html)
 
-    def test_cli_hostile_project_name_is_escaped(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            proc = _run_search(
-                "kids education app", "--design-system", "--preview",
-                "--project-name", HOSTILE_NAME, "--output-dir", tmp, "--json",
-            )
-            self.assertEqual(proc.returncode, 0, proc.stderr)
-            payload = json.loads(proc.stdout)
-            path = Path(payload["preview"]["preview_file"])
-            html = path.read_text(encoding="utf-8")
-            self.assertNotIn("<script>alert(1)</script>", html)
-            self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", html)
-
 
 class TestPreviewContrast(unittest.TestCase):
     def test_printed_ratios_match_generator(self):
@@ -180,51 +153,6 @@ class TestPreviewDarkMode(unittest.TestCase):
 
 
 class TestPreviewCli(unittest.TestCase):
-    def test_preview_without_design_system_errors(self):
-        proc = _run_search("fintech dashboard", "--preview")
-        self.assertNotEqual(proc.returncode, 0)
-        self.assertIn("--design-system", proc.stderr)
-
-    def test_preview_with_persist_writes_next_to_master(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            proc = _run_search(
-                "fintech dashboard", "--design-system", "--persist", "--preview",
-                "--project-name", "Ledger", "--output-dir", tmp, "--json",
-            )
-            self.assertEqual(proc.returncode, 0, proc.stderr)
-            payload = json.loads(proc.stdout)
-            preview = Path(payload["preview"]["preview_file"])
-            master = Path(payload["persistence"]["master_file"])
-            self.assertEqual(preview.parent, master.parent)
-            self.assertEqual(preview.name, "preview.html")
-            self.assertTrue(preview.exists())
-            self.assertTrue(master.exists())
-
-    def test_preview_without_persist_uses_output_dir(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            proc = _run_search(
-                "fintech dashboard", "--design-system", "--preview",
-                "--project-name", "Ledger", "--output-dir", tmp, "--json",
-            )
-            self.assertEqual(proc.returncode, 0, proc.stderr)
-            payload = json.loads(proc.stdout)
-            preview = Path(payload["preview"]["preview_file"])
-            self.assertEqual(preview, Path(tmp) / "preview.html")
-            self.assertTrue(preview.exists())
-            self.assertFalse((Path(tmp) / "design-system").exists())
-
-    def test_preview_without_output_dir_uses_temp_file(self):
-        proc = _run_search(
-            "fintech dashboard", "--design-system", "--preview",
-            "--project-name", "Temp Ledger", "--json",
-        )
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        payload = json.loads(proc.stdout)
-        preview = Path(payload["preview"]["preview_file"])
-        self.assertTrue(preview.exists())
-        self.assertTrue(preview.name.startswith("design-system-preview-"))
-        preview.unlink()
-
     def test_preview_respects_force(self):
         with tempfile.TemporaryDirectory() as tmp:
             first = write_preview_html(

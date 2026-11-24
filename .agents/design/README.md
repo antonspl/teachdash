@@ -50,7 +50,7 @@ Each vendored file starts with a header line naming its source, path, commit, li
 | `ui-ux-pro-max/SKILL.md`, `ui-ux-pro-max/references/*.md` | nextlevelbuilder/ui-ux-pro-max-skill | `.claude/skills/ui-ux-pro-max/SKILL.md`, `references/` | 2de1134 | MIT | `licenses/nextlevelbuilder-ui-ux-pro-max-skill.LICENSE` |
 | `ui-ux-pro-max/data/**` (CSV, JSON), `ui-ux-pro-max/scripts/**` (`.py`) | nextlevelbuilder/ui-ux-pro-max-skill | `.claude/skills/ui-ux-pro-max/data/`, `scripts/` | 2de1134 | MIT | `licenses/nextlevelbuilder-ui-ux-pro-max-skill.LICENSE` |
 
-These CSV, JSON and `.py` files carry no header line; they are byte-identical to upstream except that five tests and their fixtures are dropped, as `ui-ux-pro-max/NOTICE-teachdash.md` states.
+These CSV, JSON and `.py` files carry no header line; they are byte-identical to upstream except that five tests and their fixtures and the tests that ran `search.py` with a removed option are dropped, and that `scripts/search.py` has its file-writing command-line options removed and `allow_abbrev=False` set (the library and `preview.py` are unchanged and not reachable through the allowed command), as `ui-ux-pro-max/NOTICE-teachdash.md` states.
 
 `checklist.md` also carries three points from pbakaus/impeccable `skill/reference/audit.md` @b49177d, in our own words. The files in `licenses/` are verbatim upstream licences; anthropics/skills has no root licence, so its file is `skills/frontend-design/LICENSE.txt` @e4bb5d9.
 
