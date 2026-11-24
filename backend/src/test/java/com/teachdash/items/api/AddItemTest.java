@@ -602,4 +602,29 @@ class AddItemTest extends ItemApiTest {
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}
+
+	@Test
+	@DisplayName("[items/R1-S18] A title with an unpaired surrogate is rejected")
+	void aTitleWithAnUnpairedSurrogateIsRejected() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+
+		// when teacher A adds items with a lone high and a lone low surrogate in the title, sent as JSON escapes
+		List<Response> responses = List.of(
+				setup.client().post(setup.items(), rawNoteWithTitle("a\\uD800b")),
+				setup.client().post(setup.items(), rawNoteWithTitle("a\\uDC00b")));
+
+		// then both responses are 400 VALIDATION_FAILED with title INVALID_FORMAT
+		for (Response response : responses) {
+			expectValidation(response, error("title", "INVALID_FORMAT"));
+			// and no body has a rejectedValue
+			expectNoRejectedValue(response);
+		}
+		// and the part has no item
+		assertEquals(0, countItems(setup.part()));
+	}
+
+	private static String rawNoteWithTitle(String escapedTitle) {
+		return "{\"type\":\"test-note\",\"payload\":{\"text\":\"Note\"},\"title\":\"" + escapedTitle + "\"}";
+	}
 }
