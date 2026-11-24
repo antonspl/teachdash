@@ -10,6 +10,7 @@ import tools.jackson.databind.JsonNode;
 public record ItemResponse(
 		UUID id,
 		String type,
+		String title,
 		JsonNode payload,
 		int position,
 		long version,
@@ -20,6 +21,7 @@ public record ItemResponse(
 		return new ItemResponse(
 				item.id(),
 				item.type(),
+				item.title(),
 				item.payload(),
 				item.position(),
 				item.version(),

@@ -425,6 +425,11 @@ public abstract class ApiTest {
 		return createItem(teacherId, partId, type, payloadJson, position, 1);
 	}
 
+	/** Inserts an item into a part directly with the given title: version 1, both times the clock time. */
+	protected UUID createItem(UUID teacherId, UUID partId, String type, String payloadJson, int position, String title) {
+		return createItem(teacherId, partId, type, title, payloadJson, position, 1);
+	}
+
 	/** Inserts an item into a part directly with the given version; both times are the clock time. */
 	protected UUID createItem(
 			UUID teacherId,
@@ -433,16 +438,29 @@ public abstract class ApiTest {
 			String payloadJson,
 			int position,
 			long version) {
+		return createItem(teacherId, partId, type, null, payloadJson, position, version);
+	}
+
+	/** Inserts an item into a part directly with the given title and version; both times are the clock time. */
+	protected UUID createItem(
+			UUID teacherId,
+			UUID partId,
+			String type,
+			String title,
+			String payloadJson,
+			int position,
+			long version) {
 		UUID id = UUID.randomUUID();
 		Timestamp now = Timestamp.from(Instant.now(clock));
 		jdbc.sql("""
-				insert into items (id, teacher_id, part_id, type, payload, version, position, created_at, updated_at)
-				values (:id, :teacher, :part, :type, cast(:payload as jsonb), :version, :position, :now, :now)
+				insert into items (id, teacher_id, part_id, type, title, payload, version, position, created_at, updated_at)
+				values (:id, :teacher, :part, :type, :title, cast(:payload as jsonb), :version, :position, :now, :now)
 				""")
 				.param("id", id)
 				.param("teacher", teacherId)
 				.param("part", partId)
 				.param("type", type)
+				.param("title", title)
 				.param("payload", payloadJson)
 				.param("version", version)
 				.param("position", position)
@@ -471,6 +489,7 @@ public abstract class ApiTest {
 			UUID teacherId,
 			UUID partId,
 			String type,
+			String title,
 			String payload,
 			long version,
 			int position,
@@ -480,7 +499,7 @@ public abstract class ApiTest {
 
 	protected ItemRow readItem(UUID id) {
 		return jdbc.sql("""
-				select teacher_id, part_id, type, payload::text as payload, version, position,
+				select teacher_id, part_id, type, title, payload::text as payload, version, position,
 				       created_at, updated_at
 				from items where id = :id
 				""")
@@ -489,6 +508,7 @@ public abstract class ApiTest {
 						rs.getObject("teacher_id", UUID.class),
 						rs.getObject("part_id", UUID.class),
 						rs.getString("type"),
+						rs.getString("title"),
 						rs.getString("payload"),
 						rs.getLong("version"),
 						rs.getInt("position"),

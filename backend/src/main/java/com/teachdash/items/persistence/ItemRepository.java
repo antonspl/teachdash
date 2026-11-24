@@ -207,6 +207,7 @@ public class ItemRepository {
 		return new Item(
 				rs.getObject("id", UUID.class),
 				rs.getString("type"),
+				null,
 				mapper.readTree(rs.getString("payload")),
 				rs.getInt("position"),
 				rs.getLong("version"),

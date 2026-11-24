@@ -67,7 +67,7 @@ public class ItemService {
 		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 		UUID id = UUID.randomUUID();
 		ItemRepository.Stored stored = items.insertAtEnd(id, teacherId, partId, type, payloadJson, now);
-		return new Item(id, type, stored.payload(), stored.position(), 1, now, now);
+		return new Item(id, type, null, stored.payload(), stored.position(), 1, now, now);
 	}
 
 	@Transactional

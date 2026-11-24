@@ -4,7 +4,9 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
@@ -29,7 +31,7 @@ import com.teachdash.support.TestClient;
 class EditItemTest extends ItemApiTest {
 
 	private static final Set<String> ITEM_PROPERTIES =
-			Set.of("id", "type", "payload", "position", "version", "createdAt", "updatedAt");
+			Set.of("id", "type", "title", "payload", "position", "version", "createdAt", "updatedAt");
 
 	@Test
 	@DisplayName("[items/R4-S1] Edit an English item: the payload is replaced, the type and position are kept")
@@ -58,6 +60,7 @@ class EditItemTest extends ItemApiTest {
 		first.then().statusCode(200)
 				.body("id", equalTo(third.toString()))
 				.body("type", equalTo("test-note"))
+				.body("title", nullValue())
 				.body("payload", equalTo(Map.of("text", "Read it twice.")))
 				.body("position", equalTo(3))
 				.body("version", equalTo(2));
@@ -437,17 +440,19 @@ class EditItemTest extends ItemApiTest {
 	@Test
 	@DisplayName("[items/R4-S9] Parallel edits with the same version: one wins")
 	void parallelEditsWithTheSameVersionOneWins() throws Exception {
-		// given a logged-in teacher A with a test-note item with version 1
+		// given a logged-in teacher A with a test-note item with the title "Original" and version 1
 		var setup = teacherWithPart();
-		UUID item = createItem(setup.teacher(), setup.part(), "test-note", "{\"text\": \"Start\"}", 1);
+		UUID item = createItem(setup.teacher(), setup.part(), "test-note", "{\"text\": \"Start\"}", 1, "Original");
 		String path = item(setup.course(), setup.lesson(), setup.part(), item);
 
-		// when teacher A sends 6 edit requests at the same time, all with version 1, with the texts "Edit 1" to "Edit 6"
+		// when teacher A sends 6 edit requests at the same time, all with version 1, with the texts "Edit 1" to "Edit 6" and the titles "Title 1" to "Title 6"
 		List<Callable<Response>> calls = new ArrayList<>();
 		for (int i = 1; i <= 6; i++) {
 			TestClient client = setup.client().snapshot();
 			String text = "Edit " + i;
-			calls.add(() -> client.patch(path, Map.of("version", 1, "payload", Map.of("text", text))));
+			String title = "Title " + i;
+			calls.add(() -> client.patch(path,
+					Map.of("version", 1, "payload", Map.of("text", text), "title", title)));
 		}
 		List<Response> responses = Parallel.run(calls);
 
@@ -459,8 +464,9 @@ class EditItemTest extends ItemApiTest {
 		assertEquals(5, responses.stream()
 				.filter(r -> r.statusCode() == 409 && "VERSION_CONFLICT".equals(r.path("code")))
 				.count());
-		// and the item has version 2 and the text of the successful response
+		// and the item has version 2 and the text and the title of the successful response
 		assertEquals(2, readItem(item).version());
+		assertEquals(won.get(0).path("title"), readItem(item).title());
 		assertEquals(won.get(0).path("payload.text"),
 				jdbc.sql("select payload->>'text' from items where id = :id")
 						.param("id", item).query(String.class).single());
@@ -503,5 +509,198 @@ class EditItemTest extends ItemApiTest {
 		assertEquals(0, countParts(setup.lesson()));
 		// and no item row references it
 		assertEquals(0, countItems(setup.part()));
+	}
+
+	private static Map<String, Object> edit(Object version, Map<String, Object> payload) {
+		Map<String, Object> request = new HashMap<>();
+		request.put("version", version);
+		request.put("payload", payload);
+		return request;
+	}
+
+	private static Map<String, Object> edit(Object version, Map<String, Object> payload, Object title) {
+		Map<String, Object> request = edit(version, payload);
+		request.put("title", title);
+		return request;
+	}
+
+	private static void expectNoRejectedValue(Response response) {
+		response.then().body(not(containsString("rejectedValue")));
+	}
+
+	@Test
+	@DisplayName("[items/R4-S11] Edit an English item: the title is set, replaced and cleared with the payload")
+	void theTitleIsSetReplacedAndClearedWithThePayload() {
+		// given a logged-in teacher A with an item of the type test-note with the payload {"text": "Hi"}, no title and version 1, created at a time T, and the clock advanced by one hour
+		var setup = teacherWithPart();
+		UUID item = createItem(setup.teacher(), setup.part(), "test-note", "{\"text\": \"Hi\"}", 1);
+		Instant created = Instant.now(clock);
+		String path = item(setup.course(), setup.lesson(), setup.part(), item);
+		testClock().advance(Duration.ofHours(1));
+		Map<String, Object> hi = Map.of("text", "Hi");
+		Map<String, Object> hello = Map.of("text", "Hello");
+
+		// when teacher A edits it with the title "Greeting", then advances the clock and edits it with "Greeting 2", with no title, with "Back" and with null
+		var first = setup.client().patch(path, edit(1, hi, "Greeting"));
+		testClock().advance(Duration.ofHours(1));
+		var second = setup.client().patch(path, edit(2, hello, "Greeting 2"));
+		var third = setup.client().patch(path, edit(3, hello));
+		var fourth = setup.client().patch(path, edit(4, hello, "Back"));
+		var fifth = setup.client().patch(path, edit(5, hello, null));
+
+		// then the responses are 200 with the titles "Greeting", "Greeting 2", null, "Back" and null, and version 2 to 6
+		List<Response> responses = List.of(first, second, third, fourth, fifth);
+		List<String> titles = new ArrayList<>(List.of("Greeting", "Greeting 2"));
+		titles.add(null);
+		titles.add("Back");
+		titles.add(null);
+		for (int i = 0; i < responses.size(); i++) {
+			responses.get(i).then().statusCode(200)
+					.body("title", equalTo(titles.get(i)))
+					.body("version", equalTo(i + 2))
+					.body("type", equalTo("test-note"))
+					.body("position", equalTo(1));
+			assertEquals(created, Instant.parse(responses.get(i).path("createdAt")));
+		}
+		// and the payloads are as sent
+		first.then().body("payload", equalTo(hi));
+		for (Response response : responses.subList(1, 5)) {
+			response.then().body("payload", equalTo(hello));
+		}
+		// and updatedAt is T plus one hour for the first and T plus two hours for the others
+		assertEquals(created.plus(Duration.ofHours(1)), Instant.parse(first.path("updatedAt")));
+		for (Response response : responses.subList(1, 5)) {
+			assertEquals(created.plus(Duration.ofHours(2)), Instant.parse(response.path("updatedAt")));
+		}
+		// and the stored item has the last title and version
+		assertNull(readItem(item).title());
+		assertEquals(6, readItem(item).version());
+		// and listing the part shows the same title
+		setup.client().get(setup.items()).then().statusCode(200).body("[0].title", nullValue());
+	}
+
+	@Test
+	@DisplayName("[items/R4-S12] Edit a Russian item: a Cyrillic title is kept exactly, a title-only change still needs the payload")
+	void aCyrillicTitleIsKeptAndATitleOnlyChangeNeedsThePayload() {
+		// given a logged-in teacher A with the course "Литература 9 класс" with a theory item with the payload {"text": "Падежи"}, the title "Теория" and version 1, created at a time T, and the clock advanced by one hour
+		UUID teacher = createTeacher("a@example.com", "teacher-pass-1");
+		UUID course = createCourse(teacher, "Литература 9 класс", "ru", null);
+		UUID lesson = createLesson(teacher, course, "Падежи", 1);
+		UUID part = createPart(teacher, lesson, "Разминка", 1);
+		UUID item = createItem(teacher, part, "theory", "Теория", "{\"text\": \"Падежи\"}", 1, 1);
+		Instant created = Instant.now(clock);
+		TestClient client = loggedInAs("a@example.com");
+		String path = item(course, lesson, part, item);
+		testClock().advance(Duration.ofHours(1));
+
+		// when teacher A edits it with the title "  Немного теории" plus a zero-width space and two spaces, and then with {"version": 2, "title": "Итоги"} and no payload
+		var first = client.patch(path, edit(1, Map.of("text", "Падежи"), "  Немного теории​  "));
+		var second = client.patch(path, Map.of("version", 2, "title", "Итоги"));
+
+		// then the first response is 200 with the title "Немного теории", the payload, version 2 and updatedAt T plus one hour
+		first.then().statusCode(200)
+				.body("title", equalTo("Немного теории"))
+				.body("payload", equalTo(Map.of("text", "Падежи")))
+				.body("version", equalTo(2));
+		assertEquals(created.plus(Duration.ofHours(1)), Instant.parse(first.path("updatedAt")));
+		// and the second is 400 with payload REQUIRED
+		expectValidation(second, error("payload", "REQUIRED"));
+		// and the stored item still has the title "Немного теории" and version 2
+		assertEquals("Немного теории", readItem(item).title());
+		assertEquals(2, readItem(item).version());
+	}
+
+	@Test
+	@DisplayName("[items/R4-S13] An invalid title is rejected and changes nothing")
+	void anInvalidTitleIsRejectedAndChangesNothing() {
+		// given a logged-in teacher A with a test-note item with the payload {"text": "Hi"}, the title "Keep" and version 1
+		var setup = teacherWithPart();
+		UUID item = createItem(setup.teacher(), setup.part(), "test-note", "Keep", "{\"text\": \"Hi\"}", 1, 1);
+		String path = item(setup.course(), setup.lesson(), setup.part(), item);
+		Map<String, Object> payload = Map.of("text", "New");
+
+		// when teacher A edits it with a valid payload, version 1 and a title of 201 letters, "!!!", 123, true, ["Keep"], {"a": "Keep"}, and then "   "
+		var tooLong = setup.client().patch(path, edit(1, payload, "Я".repeat(201)));
+		var invalidFormat = setup.client().patch(path, edit(1, payload, "!!!"));
+		List<Response> invalidType = List.of(
+				setup.client().patch(path, edit(1, payload, 123)),
+				setup.client().patch(path, edit(1, payload, true)),
+				setup.client().patch(path, edit(1, payload, List.of("Keep"))),
+				setup.client().patch(path, edit(1, payload, Map.of("a", "Keep"))));
+		var itemAfterRejections = readItem(item);
+		var blank = setup.client().patch(path, edit(1, payload, "   "));
+
+		// then the first response is 400 with title TOO_LONG, the second INVALID_FORMAT, the next four INVALID_TYPE
+		expectValidation(tooLong, error("title", "TOO_LONG"));
+		expectValidation(invalidFormat, error("title", "INVALID_FORMAT"));
+		for (Response response : invalidType) {
+			expectValidation(response, error("title", "INVALID_TYPE"));
+		}
+		// and no body has a rejectedValue
+		expectNoRejectedValue(tooLong);
+		expectNoRejectedValue(invalidFormat);
+		invalidType.forEach(EditItemTest::expectNoRejectedValue);
+		// and the item still has the title "Keep", the payload {"text": "Hi"} and version 1 after those six
+		assertEquals("Keep", itemAfterRejections.title());
+		assertEquals(1, itemAfterRejections.version());
+		assertEquals("{\"text\": \"Hi\"}", itemAfterRejections.payload());
+		// and the last response is 200 with title null and version 2
+		blank.then().statusCode(200).body("title", nullValue()).body("version", equalTo(2));
+	}
+
+	@Test
+	@DisplayName("[items/R4-S14] A title error joins the envelope errors, before the item lookup and the payload checks")
+	void aTitleErrorJoinsTheEnvelopeErrors() {
+		// given teacher A logged in with an item I with the payload {"text": "Hi"} and version 1, and a course "Грамматика" of teacher B with a part with the item "Секрет"
+		var setup = teacherWithPart();
+		UUID itemI = createItem(setup.teacher(), setup.part(), "test-note", "{\"text\": \"Hi\"}", 1);
+		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
+		UUID foreignCourse = createCourse(teacherB, "Грамматика", "ru", null);
+		UUID foreignLesson = createLesson(teacherB, foreignCourse, "Падежи", 1);
+		UUID foreignPart = createPart(teacherB, foreignLesson, "Разминка", 1);
+		UUID secret = createItem(teacherB, foreignPart, "test-note", "{\"text\": \"Секрет\"}", 1);
+		String own = item(setup.course(), setup.lesson(), setup.part(), itemI);
+
+		// when teacher A sends {"title": "!!!"} for (1) teacher B's item and (2) an unknown item id, then {"version": 1, "payload": {}, "title": "!!!"} for (3) I, then {"version": 9, "payload": {}, "title": ""} for (4) I
+		var foreign = setup.client().patch(item(foreignCourse, foreignLesson, foreignPart, secret), Map.of("title", "!!!"));
+		var unknown = setup.client().patch(item(setup.course(), setup.lesson(), setup.part(), UUID.randomUUID()),
+				Map.of("title", "!!!"));
+		var third = setup.client().patch(own, edit(1, Map.of(), "!!!"));
+		var fourth = setup.client().patch(own, edit(9, Map.of(), ""));
+
+		// then (1) and (2) are 400 with payload REQUIRED, title INVALID_FORMAT and version REQUIRED, and do not contain "Секрет"
+		for (Response response : List.of(foreign, unknown)) {
+			expectValidation(response, error("payload", "REQUIRED"), error("title", "INVALID_FORMAT"),
+					error("version", "REQUIRED"));
+			response.then().body(not(containsString("Секрет")));
+		}
+		// and (3) is 400 with title INVALID_FORMAT only
+		expectValidation(third, error("title", "INVALID_FORMAT"));
+		// and (4) is 400 with payload.text REQUIRED
+		expectValidation(fourth, error("payload.text", "REQUIRED"));
+		// and I and teacher B's item are unchanged
+		assertEquals(1, readItem(itemI).version());
+		assertStoredPayload(itemI, "{\"text\": \"Hi\"}");
+		assertEquals(1, readItem(secret).version());
+		assertStoredPayload(secret, "{\"text\": \"Секрет\"}");
+	}
+
+	@Test
+	@DisplayName("[items/R4-S15] A non-string title is a binding error and hides the other envelope errors")
+	void aNonStringTitleIsABindingError() {
+		// given a logged-in teacher A with an item with the payload {"text": "Hi"}, the title "Keep" and version 1
+		var setup = teacherWithPart();
+		UUID item = createItem(setup.teacher(), setup.part(), "test-note", "Keep", "{\"text\": \"Hi\"}", 1, 1);
+
+		// when teacher A edits it with {"version": 1, "title": 123}
+		var response = setup.client().patch(item(setup.course(), setup.lesson(), setup.part(), item),
+				Map.of("version", 1, "title", 123));
+
+		// then the response is 400 with title INVALID_TYPE only
+		expectValidation(response, error("title", "INVALID_TYPE"));
+		// and the item still has the title "Keep", the payload and version 1
+		assertEquals("Keep", readItem(item).title());
+		assertStoredPayload(item, "{\"text\": \"Hi\"}");
+		assertEquals(1, readItem(item).version());
 	}
 }
