@@ -74,4 +74,4 @@
 #### Scenario: parts/R1-S14 A title with an unpaired surrogate is rejected
 - **GIVEN** a logged-in teacher A with a lesson
 - **WHEN** teacher A creates a part with the title "a\uD800b" (an unpaired high surrogate between two letters, sent as the JSON escape), then a part with the title "a\uDC00b" (an unpaired low surrogate)
-- **THEN** both responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "INVALID_FORMAT"}]`, no body has a `rejectedValue`, and the lesson has no part (the rule is the shared title rule, so items R1-S18 and the course and lesson titles follow it)
+- **THEN** both responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "INVALID_FORMAT"}]`, no body has a `rejectedValue`, and the lesson has no part (rejected at JSON parsing by the existing NUL/surrogate rule, so items R1-S18 and the course and lesson titles follow it)

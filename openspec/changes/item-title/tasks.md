@@ -21,9 +21,9 @@
 
 ## 5. Code review fix (Clarification 12)
 
-- [ ] 5.1 Write failing tests for items R1-S18 (`AddItemTest`) and parts R1-S14 (the parts create test) with the scenario ID in `@DisplayName`; verify each fails at its THEN step (the title is stored or accepted today)
-- [ ] 5.2 Add `\p{Cs}` to the rejected classes of the `@Title` pattern; verify R1-S18 and parts R1-S14 pass
-- [ ] 5.3 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and every scenario ID has a test
+- [x] 5.1 Tests for items R1-S18 (`AddItemTest`) and parts R1-S14 (the parts create test) with the scenario ID in `@DisplayName`; written as regression tests, they pass because of the existing JSON rule
+- [x] 5.2 Not needed: already rejected at JSON deserialisation (api-errors/R1-S13); no change to `@Title`
+- [x] 5.3 `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`: full suite 468/468 green, scenario coverage 609/609
 
 ## Workflow follow-up
 

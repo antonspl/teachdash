@@ -17,7 +17,7 @@ Issue #191. The engineer's decisions, as given:
 | 9 | Clear on missing? | Accepted: a PATCH with only `version` and `payload` clears the title; a future frontend always sends the current title back. Decision 4 stays. R4's title becomes "edits an item's payload and title". |
 | 10 | Which columns does the edit write? | API semantics stay "replace" (decision 4), but the edit's Postgres UPDATE writes `payload` and `title` only when their value differs from the stored one; `version` and `updated_at` are always written. Design only (D4 and a task); no scenario. |
 | 11 | `title: null` in the JSON? | Always serialised when unset (kept). The change is client-visible (a new `title` key); no client is affected. |
-| 12 | Unpaired surrogates (2026-11-24, code review)? | A title with an unpaired surrogate anywhere (for example "a\uD800b") is `INVALID_FORMAT`. Today it passes `@Title` and Postgres stores "a?b". The fix adds `\p{Cs}` to the rejected classes of the shared `@Title` pattern, so it applies to part and item titles together (one rule per field). Scenarios: items R1-S18 and parts R1-S14. |
+| 12 | Unpaired surrogates (2026-11-24, code review)? | Keep items R1-S18 and parts R1-S14 as regression scenarios; no change to `@Title`. A lone surrogate in a title (for example "a\uD800b") is rejected at JSON parsing by the existing NUL/surrogate rule (`NulRejectingJsonConfig`, mapped by `JacksonErrors` to `INVALID_FORMAT`; main spec api-errors/R1-S13), so part, item, course and lesson titles are covered the same way. (Decision of 2026-11-24; the first draft of this row wrongly planned a `\p{Cs}` pattern change.) |
 
 ## Research angles
 
@@ -48,7 +48,7 @@ A teacher cannot name an item today (items-read-edit, Clarification 10), for exa
 None.
 
 ### Modified Capabilities
-- `parts`: R1 (a title with an unpaired surrogate is `INVALID_FORMAT`, one new scenario; the shared `@Title` pattern changes).
+- `parts`: R1 (a title with an unpaired surrogate is `INVALID_FORMAT`, one new regression scenario; no production change, the existing JSON rule already rejects it).
 - `items`: R1 (create accepts and returns `title`; the extra-field scenario no longer sends `title`), R3 (list returns `title`), R4 (renamed to "edits an item's payload and title"; edit replaces payload and title together), R6 (the move response carries `title`). R2 and R5 keep their text: R2-S11 (unknown properties outside the payload are ignored) and R5-S5 (a `title` inside the theory payload is `UNKNOWN_FIELD`) stay true.
 
 ## Impact

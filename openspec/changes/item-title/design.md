@@ -27,7 +27,7 @@ See proposal.md for the motivation. Items have 7 fields (`id`, `type`, `payload`
 
 **D6. Repository.** `insertAtEnd`, `findInPart`, `setPosition`, `findByPart`, `updatePayload` and the `toItem` mapper select and return `title`.
 
-**D7. Unpaired surrogates (Clarification 12).** `\p{Cs}` joins the rejected classes of the `@Title` pattern (`\p{Cc}\p{Cf}\p{Zl}\p{Zp}`), so a title with an unpaired surrogate is `INVALID_FORMAT` instead of being stored as "a?b". The pattern is shared, so part, course and lesson titles and item titles follow the one rule. Scenarios: items R1-S18 and parts R1-S14; course and lesson titles need none (same annotation, no separate rule; their title scenarios stay as they are).
+**D7. Unpaired surrogates (Clarification 12).** No change to the `@Title` pattern. A lone surrogate in any JSON string is already rejected at deserialisation (`NulRejectingJsonConfig`, mapped by `JacksonErrors` to `VALIDATION_FAILED` with `[{title, INVALID_FORMAT}]`; main spec api-errors/R1-S13), so item, part, course and lesson titles are covered the same way. Items R1-S18 and parts R1-S14 stay as regression scenarios; course and lesson titles need none.
 
 ## Risks / Trade-offs
 
