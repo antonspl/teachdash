@@ -18,13 +18,13 @@ This is a tooling change with `skip_specs: true`: no "Failing tests" section and
 
 ## 3. Fold in the code owner's final-review comments
 
-Added after the restore commit (bbbf9cf); proposal decisions 14-19. Groups 1 and 2 above stay as done history. Base for the checks: `bbbf9cf` (`<restore>`).
+Added after the restore commit (bbbf9cf); proposal decisions 14-19. Groups 1 and 2 above stay as done history. Base for the checks: `bbbf9cf`.
 
 - [ ] 3.1 Rewrite `.agents/design/product-brief.md` from the text between the BRIEF START and BRIEF END markers of the updated `design.md`. Proof: `diff` of the file against the marked block (markers removed) shows no difference.
 - [ ] 3.2 Check the headings are unchanged. Proof: `grep -n '^#' .agents/design/product-brief.md` prints the same nine headings in the same order as before (task 1.2): `# Product`, Users, Product Purpose, Positioning, Operating Context, Capabilities and Constraints, Evidence on Hand, Product Principles, Accessibility & Inclusion.
 - [ ] 3.3 Re-run the 1.3 checks. Proof: `grep -oiE '#[0-9a-fA-F]{3,8}\b' .agents/design/product-brief.md | grep -vE '^#[0-9]+$'` prints nothing; `grep -niE '[0-9]+ ?(CSS )?(px|rem|em)\b|palette|shadow|radius|typeface' .agents/design/product-brief.md` prints exactly two lines: the Operating Context Devices line (matching "360 CSS px") and the personality line ("calm, not playful", matching "palette"). The reviewer checks by hand that the new Product Purpose lines (sharing, schedule) and the Teachers line trace to §8, §9, §3, #14 or "(code owner, 2026-11-22)".
 - [ ] 3.4 Check the old wording is gone and the new is in. Proof: `grep -niE 'language teachers|phone-first|content first' .agents/design/product-brief.md` prints nothing; `grep -n 'Domain first' .agents/design/product-brief.md` prints exactly one line (principle 1).
-- [ ] 3.5 Check only `product-brief.md` and the change folder changed since the restore commit, and `design-code.md` is untouched. Proof: `git diff --name-only bbbf9cf..HEAD` lists only `.agents/design/product-brief.md` and `openspec/changes/design-product-brief/**`; `git diff bbbf9cf..HEAD -- .agents/design/design-code.md` is empty.
+- [ ] 3.5 Check only `product-brief.md` and the change folder changed since the restore commit, and `design-code.md` is untouched. Proof: `git diff --name-only bbbf9cf..HEAD` lists only `.agents/design/product-brief.md` and files under `openspec/changes/**` (the change folder, or `openspec/changes/archive/` after task 4.2); `git diff bbbf9cf..HEAD -- .agents/design/design-code.md` is empty.
 
 ## 4. Workflow follow-up (second round)
 

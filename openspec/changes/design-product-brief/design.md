@@ -24,8 +24,8 @@ The implementer writes the file from the text between the markers below, as it s
 
 Three roles: admin, teacher, student (constitution §3).
 
-- Teachers: tutors teaching any subject, often independent private tutors (code owner, 2026-11-22). Each has a native language, set by the admin at creation and changeable by the teacher (§9, `specs/web-profile`). A course has an instruction language (initially `en` and `ru`) and may have a target language (§9).
-- Students: registered by their teacher or joining through the teacher's join link; at most one teacher; native language set by the teacher or chosen at joining (§8, §9, `specs/student-enrolment`). Mostly adults and teens in private lessons, not children (engineer, 2026-11-22).
+- Teachers: tutors teaching any subject (code owner, 2026-11-22), often independent private tutors. Each has a native language, set by the admin at creation and changeable by the teacher (§9, `specs/web-profile`). A course has an instruction language (initially `en` and `ru`) and may have a target language (§9).
+- Students: registered by their teacher or joining through the teacher's join link; at most one teacher; native language set by the teacher or chosen at joining (§8, §9, `specs/student-enrolment`). Mostly adults and teens in one-to-one classes, not children (engineer, 2026-11-22).
 - Admin: creates and manages teacher accounts; reads all data except student answers and results (§8).
 - Scale: about 1000 teachers (§8); tens of students per teacher; 1-3 admins (engineer, 2026-11-22).
 
@@ -50,7 +50,7 @@ Success: a teacher prepares a lesson once and runs it for many students without 
 ## Operating Context
 
 - UI in English and Russian, separate from course languages; Cyrillic must work everywhere; Russian strings are longer. Users on fixed-line internet in Russia and the EU; no third-party CDNs or web fonts (§10, `project-rules.md`).
-- Devices: teachers prepare content at a desk on a laptop; teacher editors are designed for desktop (#115–#120, #132, #133, #138). Students are desktop-first too; by default every page, editors included, must also look good on a phone (360 CSS px) (`specs/web-client` R7; code owner, 2026-11-22).
+- Devices: teachers prepare content at a desk on a laptop; teacher editors are designed for desktop (#115–#120, #132, #133, #138). Students are desktop-first too; by default every page, editors included, must also look good on a phone (360 CSS px) (code owner, 2026-11-22). `specs/web-client` R7 (fits 360 CSS px, no horizontal scroll) is the minimum.
 - A student may have a lesson open next to a live video call, in a narrow window with split attention.
 - Frequency: teachers daily; students a few times a week; admins rarely (creating a teacher, issuing a reset link). Admin screens can be plain; teacher screens must be fast (engineer, 2026-11-22).
 - Time zones matter for schedules: teachers and students both have a time zone (`specs/web-profile`, `specs/student-enrolment`).
