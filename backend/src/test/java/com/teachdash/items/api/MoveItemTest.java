@@ -98,8 +98,11 @@ class MoveItemTest extends ItemApiTest {
 		UUID lesson = createLesson(teacherA, course, "Падежи", 1);
 		UUID warmUp = createPart(teacherA, lesson, "Разминка", 1);
 		UUID summary = createPart(teacherA, lesson, "Итоги", 2);
-		List<UUID> ids = createNotes(teacherA, warmUp, "Один", "Два", "Три", "Четыре");
-		jdbc.sql("update items set title = 'Начало' where id = :id").param("id", ids.get(0)).update();
+		List<UUID> ids = new ArrayList<>();
+		ids.add(createItem(teacherA, warmUp, "test-note", "{\"text\": \"Один\"}", 1, "Начало"));
+		ids.add(createItem(teacherA, warmUp, "test-note", "{\"text\": \"Два\"}", 2));
+		ids.add(createItem(teacherA, warmUp, "test-note", "{\"text\": \"Три\"}", 3));
+		ids.add(createItem(teacherA, warmUp, "test-note", "{\"text\": \"Четыре\"}", 4));
 		createNotes(teacherA, summary, "Первый", "Второй", "Третий", "Четвёртый");
 		UUID foreignCourse = createCourse(teacherB, "Grammar", "en", "en");
 		UUID foreignLesson = createLesson(teacherB, foreignCourse, "Tenses", 1);

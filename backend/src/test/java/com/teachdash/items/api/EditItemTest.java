@@ -594,7 +594,7 @@ class EditItemTest extends ItemApiTest {
 		testClock().advance(Duration.ofHours(1));
 
 		// when teacher A edits it with the title "  Немного теории" plus a zero-width space and two spaces, and then with {"version": 2, "title": "Итоги"} and no payload
-		var first = client.patch(path, edit(1, Map.of("text", "Падежи"), "  Немного теории​  "));
+		var first = client.patch(path, edit(1, Map.of("text", "Падежи"), "  Немного теории\u200B  "));
 		var second = client.patch(path, Map.of("version", 2, "title", "Итоги"));
 
 		// then the first response is 200 with the title "Немного теории", the payload, version 2 and updatedAt T plus one hour
