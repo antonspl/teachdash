@@ -33,6 +33,23 @@ class EditItemTest extends ItemApiTest {
 	private static final Set<String> ITEM_PROPERTIES =
 			Set.of("id", "type", "title", "payload", "position", "version", "createdAt", "updatedAt");
 
+	private static Map<String, Object> edit(Object version, Map<String, Object> payload) {
+		Map<String, Object> request = new HashMap<>();
+		request.put("version", version);
+		request.put("payload", payload);
+		return request;
+	}
+
+	private static Map<String, Object> editWithTitle(Object version, Map<String, Object> payload, Object title) {
+		Map<String, Object> request = edit(version, payload);
+		request.put("title", title);
+		return request;
+	}
+
+	private static void expectNoRejectedValue(Response response) {
+		response.then().body(not(containsString("rejectedValue")));
+	}
+
 	@Test
 	@DisplayName("[items/R4-S1] Edit an English item: the payload is replaced, the type and position are kept")
 	void editAnEnglishItem() {
@@ -511,23 +528,6 @@ class EditItemTest extends ItemApiTest {
 		assertEquals(0, countItems(setup.part()));
 	}
 
-	private static Map<String, Object> edit(Object version, Map<String, Object> payload) {
-		Map<String, Object> request = new HashMap<>();
-		request.put("version", version);
-		request.put("payload", payload);
-		return request;
-	}
-
-	private static Map<String, Object> edit(Object version, Map<String, Object> payload, Object title) {
-		Map<String, Object> request = edit(version, payload);
-		request.put("title", title);
-		return request;
-	}
-
-	private static void expectNoRejectedValue(Response response) {
-		response.then().body(not(containsString("rejectedValue")));
-	}
-
 	@Test
 	@DisplayName("[items/R4-S11] Edit an English item: the title is set, replaced and cleared with the payload")
 	void theTitleIsSetReplacedAndClearedWithThePayload() {
@@ -541,12 +541,12 @@ class EditItemTest extends ItemApiTest {
 		Map<String, Object> hello = Map.of("text", "Hello");
 
 		// when teacher A edits it with the title "Greeting", then advances the clock and edits it with "Greeting 2", with no title, with "Back" and with null
-		var first = setup.client().patch(path, edit(1, hi, "Greeting"));
+		var first = setup.client().patch(path, editWithTitle(1, hi, "Greeting"));
 		testClock().advance(Duration.ofHours(1));
-		var second = setup.client().patch(path, edit(2, hello, "Greeting 2"));
+		var second = setup.client().patch(path, editWithTitle(2, hello, "Greeting 2"));
 		var third = setup.client().patch(path, edit(3, hello));
-		var fourth = setup.client().patch(path, edit(4, hello, "Back"));
-		var fifth = setup.client().patch(path, edit(5, hello, null));
+		var fourth = setup.client().patch(path, editWithTitle(4, hello, "Back"));
+		var fifth = setup.client().patch(path, editWithTitle(5, hello, null));
 
 		// then the responses are 200 with the titles "Greeting", "Greeting 2", null, "Back" and null, and version 2 to 6
 		List<Response> responses = List.of(first, second, third, fourth, fifth);
@@ -594,7 +594,7 @@ class EditItemTest extends ItemApiTest {
 		testClock().advance(Duration.ofHours(1));
 
 		// when teacher A edits it with the title "  Немного теории" plus a zero-width space and two spaces, and then with {"version": 2, "title": "Итоги"} and no payload
-		var first = client.patch(path, edit(1, Map.of("text", "Падежи"), "  Немного теории\u200B  "));
+		var first = client.patch(path, editWithTitle(1, Map.of("text", "Падежи"), "  Немного теории\u200B  "));
 		var second = client.patch(path, Map.of("version", 2, "title", "Итоги"));
 
 		// then the first response is 200 with the title "Немного теории", the payload, version 2 and updatedAt T plus one hour
@@ -620,15 +620,15 @@ class EditItemTest extends ItemApiTest {
 		Map<String, Object> payload = Map.of("text", "New");
 
 		// when teacher A edits it with a valid payload, version 1 and a title of 201 letters, "!!!", 123, true, ["Keep"], {"a": "Keep"}, and then "   "
-		var tooLong = setup.client().patch(path, edit(1, payload, "Я".repeat(201)));
-		var invalidFormat = setup.client().patch(path, edit(1, payload, "!!!"));
+		var tooLong = setup.client().patch(path, editWithTitle(1, payload, "Я".repeat(201)));
+		var invalidFormat = setup.client().patch(path, editWithTitle(1, payload, "!!!"));
 		List<Response> invalidType = List.of(
-				setup.client().patch(path, edit(1, payload, 123)),
-				setup.client().patch(path, edit(1, payload, true)),
-				setup.client().patch(path, edit(1, payload, List.of("Keep"))),
-				setup.client().patch(path, edit(1, payload, Map.of("a", "Keep"))));
+				setup.client().patch(path, editWithTitle(1, payload, 123)),
+				setup.client().patch(path, editWithTitle(1, payload, true)),
+				setup.client().patch(path, editWithTitle(1, payload, List.of("Keep"))),
+				setup.client().patch(path, editWithTitle(1, payload, Map.of("a", "Keep"))));
 		var itemAfterRejections = readItem(item);
-		var blank = setup.client().patch(path, edit(1, payload, "   "));
+		var blank = setup.client().patch(path, editWithTitle(1, payload, "   "));
 
 		// then the first response is 400 with title TOO_LONG, the second INVALID_FORMAT, the next four INVALID_TYPE
 		expectValidation(tooLong, error("title", "TOO_LONG"));
@@ -665,8 +665,8 @@ class EditItemTest extends ItemApiTest {
 		var foreign = setup.client().patch(item(foreignCourse, foreignLesson, foreignPart, secret), Map.of("title", "!!!"));
 		var unknown = setup.client().patch(item(setup.course(), setup.lesson(), setup.part(), UUID.randomUUID()),
 				Map.of("title", "!!!"));
-		var third = setup.client().patch(own, edit(1, Map.of(), "!!!"));
-		var fourth = setup.client().patch(own, edit(9, Map.of(), ""));
+		var third = setup.client().patch(own, editWithTitle(1, Map.of(), "!!!"));
+		var fourth = setup.client().patch(own, editWithTitle(9, Map.of(), ""));
 
 		// then (1) and (2) are 400 with payload REQUIRED, title INVALID_FORMAT and version REQUIRED, and do not contain "Секрет"
 		for (Response response : List.of(foreign, unknown)) {

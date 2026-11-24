@@ -41,6 +41,22 @@ class AddItemTest extends ItemApiTest {
 				.body(not(containsString("Разминка")));
 	}
 
+	private static Map<String, Object> noteWithTitle(Object title, String text) {
+		Map<String, Object> request = note(text);
+		request.put("title", title);
+		return request;
+	}
+
+	private static Map<String, Object> itemWithTitle(String type, Object title, String text) {
+		Map<String, Object> request = body(type, Map.of("text", text));
+		request.put("title", title);
+		return request;
+	}
+
+	private static void expectNoRejectedValue(Response response) {
+		response.then().body(not(containsString("rejectedValue")));
+	}
+
 	@Test
 	@DisplayName("[items/R1-S1] Add an English item")
 	void addAnEnglishItem() {
@@ -406,22 +422,6 @@ class AddItemTest extends ItemApiTest {
 		assertEquals(0, countItems(setup.part()));
 	}
 
-	private static Map<String, Object> titled(Object title, String text) {
-		Map<String, Object> request = note(text);
-		request.put("title", title);
-		return request;
-	}
-
-	private static Map<String, Object> titled(String type, Object title, String text) {
-		Map<String, Object> request = body(type, Map.of("text", text));
-		request.put("title", title);
-		return request;
-	}
-
-	private static void expectNoRejectedValue(Response response) {
-		response.then().body(not(containsString("rejectedValue")));
-	}
-
 	@Test
 	@DisplayName("[items/R1-S11] Add an English item with a title")
 	void addAnEnglishItemWithATitle() {
@@ -429,8 +429,8 @@ class AddItemTest extends ItemApiTest {
 		var setup = teacherWithPart();
 
 		// when teacher A adds a test-note item with the title "Reading aloud", and then a theory item with the title "Present Simple rules"
-		var first = setup.client().post(setup.items(), titled("Reading aloud", "Read the story aloud."));
-		var second = setup.client().post(setup.items(), titled("theory", "Present Simple rules", "Use **do/does**."));
+		var first = setup.client().post(setup.items(), noteWithTitle("Reading aloud", "Read the story aloud."));
+		var second = setup.client().post(setup.items(), itemWithTitle("theory", "Present Simple rules", "Use **do/does**."));
 
 		// then both responses are 201 with the titles, position 1 and 2 and the payloads exactly as sent
 		first.then().statusCode(201)
@@ -461,7 +461,7 @@ class AddItemTest extends ItemApiTest {
 
 		// when teacher A adds a theory item with the title "Немного теории" and a Cyrillic payload
 		String text = "Падежи: **именительный**, родительный.";
-		var response = client.post(items(course, lesson, part), titled("theory", "Немного теории", text));
+		var response = client.post(items(course, lesson, part), itemWithTitle("theory", "Немного теории", text));
 
 		// then the response is 201 with the title exactly and the payload exactly as sent
 		response.then().statusCode(201)
@@ -477,15 +477,15 @@ class AddItemTest extends ItemApiTest {
 		// given a logged-in teacher A with a part
 		var setup = teacherWithPart();
 		Map<String, Object> noTitle = note("No title");
-		Map<String, Object> nullTitle = titled(null, "Null title");
+		Map<String, Object> nullTitle = noteWithTitle(null, "Null title");
 
 		// when teacher A adds items with the title "  Грамматика" plus a zero-width space and two spaces, with no title, with null, with "" and with "   "
 		List<Response> responses = List.of(
-				setup.client().post(setup.items(), titled("  Грамматика\u200B  ", "One")),
+				setup.client().post(setup.items(), noteWithTitle("  Грамматика\u200B  ", "One")),
 				setup.client().post(setup.items(), noTitle),
 				setup.client().post(setup.items(), nullTitle),
-				setup.client().post(setup.items(), titled("", "Four")),
-				setup.client().post(setup.items(), titled("   ", "Five")));
+				setup.client().post(setup.items(), noteWithTitle("", "Four")),
+				setup.client().post(setup.items(), noteWithTitle("   ", "Five")));
 
 		// then every response is 201
 		for (Response response : responses) {
@@ -511,13 +511,13 @@ class AddItemTest extends ItemApiTest {
 		var setup = teacherWithPart();
 
 		// when teacher A adds items with a title of 201 letters, "!!!", an inner NUL, an inner newline, 200 Cyrillic letters and 200 English letters
-		Response tooLong = setup.client().post(setup.items(), titled("Я".repeat(201), "One"));
+		Response tooLong = setup.client().post(setup.items(), noteWithTitle("Я".repeat(201), "One"));
 		List<Response> invalidFormat = List.of(
-				setup.client().post(setup.items(), titled("!!!", "Two")),
-				setup.client().post(setup.items(), titled("a\u0000b", "Three")),
-				setup.client().post(setup.items(), titled("a\nb", "Four")));
-		Response cyrillic = setup.client().post(setup.items(), titled("Я".repeat(200), "Five"));
-		Response english = setup.client().post(setup.items(), titled("a".repeat(200), "Six"));
+				setup.client().post(setup.items(), noteWithTitle("!!!", "Two")),
+				setup.client().post(setup.items(), noteWithTitle("a\u0000b", "Three")),
+				setup.client().post(setup.items(), noteWithTitle("a\nb", "Four")));
+		Response cyrillic = setup.client().post(setup.items(), noteWithTitle("Я".repeat(200), "Five"));
+		Response english = setup.client().post(setup.items(), noteWithTitle("a".repeat(200), "Six"));
 
 		// then the first response is 400 VALIDATION_FAILED with title TOO_LONG
 		expectValidation(tooLong, error("title", "TOO_LONG"));
@@ -543,10 +543,10 @@ class AddItemTest extends ItemApiTest {
 
 		// when teacher A adds items with a valid payload and the title 123, true, ["Intro"] and {"a": "Intro"}
 		List<Response> responses = List.of(
-				setup.client().post(setup.items(), titled(123, "One")),
-				setup.client().post(setup.items(), titled(true, "Two")),
-				setup.client().post(setup.items(), titled(List.of("Intro"), "Three")),
-				setup.client().post(setup.items(), titled(Map.of("a", "Intro"), "Four")));
+				setup.client().post(setup.items(), noteWithTitle(123, "One")),
+				setup.client().post(setup.items(), noteWithTitle(true, "Two")),
+				setup.client().post(setup.items(), noteWithTitle(List.of("Intro"), "Three")),
+				setup.client().post(setup.items(), noteWithTitle(Map.of("a", "Intro"), "Four")));
 
 		// then every response is 400 VALIDATION_FAILED with title INVALID_TYPE
 		for (Response response : responses) {
