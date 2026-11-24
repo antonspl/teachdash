@@ -29,7 +29,7 @@ Added after the restore commit (bbbf9cf); proposal decisions 14-19. Groups 1 and
 
 ## 4. Workflow follow-up (second round)
 
-- [ ] 4.1 Code review gate: run the `code-gate-reviewer` on the PR; the engineer approves the code gate (the spec gate for this round's artifacts is approved first).
-- [ ] 4.2 Archive the change again in the same PR (`openspec archive`; nothing merges into `openspec/specs/`).
+- [x] 4.1 Code review gate: run the `code-gate-reviewer` on the PR; the engineer approves the code gate (the spec gate for this round's artifacts is approved first).
+- [x] 4.2 Archive the change again in the same PR (`openspec archive`; nothing merges into `openspec/specs/`).
 - [ ] 4.3 Mark the PR ready for the final code owner review.
 - [ ] 4.4 Reply to each of Anton's comments (4659260401, 4659265790, 4659270344, 4659274680, 4659295751), mapping each to the commit that fixes it.
