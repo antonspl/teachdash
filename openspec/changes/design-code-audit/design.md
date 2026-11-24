@@ -2,7 +2,7 @@
 
 ## Context
 
-The audit covers the current login, set-password, role cabinet, profile, teacher management, and not-found screens. The route inventory comes from `frontend/src/App.tsx`, and `web-auth`, `web-profile`, `web-admin-teachers`, and `web-client` define their behavior. This cross-screen plan gives future OpenSpec changes a common layout and component reference.
+The audit covers the current login, set-password, role cabinet, profile, teacher management, and not-found screens. The route inventory comes from `frontend/src/App.tsx`, and `web-auth`, `web-profile`, `web-admin-teachers`, and `web-client` define their behavior. This cross-screen plan gives future OpenSpec changes a common layout and component reference grounded in the desktop-first workflows described in the [product brief](../../../.agents/design/product-brief.md).
 
 ## Goals
 
@@ -123,7 +123,9 @@ The desktop sketch abbreviates two action labels to fit, and the mobile sketch s
 
 ### Evidence and rollout
 
-The local baseline gallery starts with 30 paired captures at 1280 px and 360 px. It includes both cabinet roles and labels controlled network conditions in the captions. Inventory each screen against its applicable states and role variants using the current UI and the `web-auth`, `web-profile`, `web-admin-teachers` and `web-client` specs. Check startup loading and retryable startup errors wherever the route shows them, field and form feedback, disabled and success states, list loading and empty states, and admin dialog failures including server errors and native-language loading, failure and retry. Capture missing reachable states at both widths. Record a reason for any remaining gap or inapplicable state. Use baseline captures as the reference for current behavior and the sketches as the reference for intended layout.
+The local baseline gallery starts with 30 paired captures at 1280 px and 360 px. It includes both cabinet roles and labels controlled network conditions in the captions. The PR #189 gallery supplements the local captures and reports 35 paired states. Reconcile its coverage and reported gaps with the local set. [PR #189 baseline gallery](https://github.com/antonspl/teachdash/pull/189#issuecomment-7082114274)
+
+Inventory each screen against its applicable states and role variants using the current UI and the `web-auth`, `web-profile`, `web-admin-teachers` and `web-client` specs. Check startup loading and retryable startup errors wherever the route shows them, field and form feedback, disabled and success states, list loading and empty states, and admin dialog failures including server errors and native-language loading, failure and retry. Capture missing reachable states at both widths. Record a reason for any remaining gap or inapplicable state. Use baseline captures as the reference for current behavior and the sketches as the reference for intended layout.
 
 Publish the coverage inventory and captures through GitHub issue #171. Check that the files and share links are accessible to reviewers and that screenshots contain only test data and masked or unusable invite/reset URLs. Link the resulting evidence from follow-up issues by screen and state. Order the issues as foundations, shared UI components, then pages. Size every follow-up for one OpenSpec change with at most six requirements. Reuse #168 for control borders, #165 for shared required fields, and #172 for page and content language. Cross-link dependent work to the issue that owns it and keep ownership of each requirement in one issue. Check that the ordered backlog covers all current screen families.
 
