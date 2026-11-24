@@ -55,7 +55,7 @@ class ItemController {
 		UUID teacherId = UUID.fromString(principal.getName());
 		ItemType<?> type = validateEnvelope(request);
 		String payloadJson = validator.toStoredJson(validator.validate(type, request.payload()));
-		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type.code(), payloadJson));
+		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type.code(), request.title(), payloadJson));
 	}
 
 	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}/position")
@@ -105,7 +105,7 @@ class ItemController {
 		UUID teacherId = UUID.fromString(principal.getName());
 		validateEditEnvelope(request);
 		return ItemResponse.from(items.edit(
-				teacherId, courseId, lessonId, partId, itemId, request.version().longValueExact(), request.payload()));
+				teacherId, courseId, lessonId, partId, itemId, request.version().longValueExact(), request.title(), request.payload()));
 	}
 
 	private void validateEditEnvelope(EditItemRequest request) {

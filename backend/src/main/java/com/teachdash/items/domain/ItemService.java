@@ -59,6 +59,7 @@ public class ItemService {
 			UUID lessonId,
 			UUID partId,
 			String type,
+			String title,
 			String payloadJson) {
 		lockForWrite(teacherId, courseId, lessonId, partId);
 		if (items.countInPart(partId, teacherId) >= maxPerPart) {
@@ -66,8 +67,8 @@ public class ItemService {
 		}
 		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 		UUID id = UUID.randomUUID();
-		ItemRepository.Stored stored = items.insertAtEnd(id, teacherId, partId, type, payloadJson, now);
-		return new Item(id, type, null, stored.payload(), stored.position(), 1, now, now);
+		ItemRepository.Stored stored = items.insertAtEnd(id, teacherId, partId, type, title, payloadJson, now);
+		return new Item(id, type, stored.title(), stored.payload(), stored.position(), 1, now, now);
 	}
 
 	@Transactional
@@ -130,6 +131,7 @@ public class ItemService {
 			UUID partId,
 			UUID itemId,
 			long version,
+			String title,
 			Map<String, Object> payload) {
 		users.findActiveByIdForUpdate(teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED"));
@@ -151,6 +153,6 @@ public class ItemService {
 			throw new ApiException(HttpStatus.CONFLICT, "VERSION_CONFLICT");
 		}
 		Instant now = clock.instant().truncatedTo(ChronoUnit.MILLIS);
-		return items.updatePayload(itemId, partId, teacherId, payloadJson, now);
+		return items.updatePayload(itemId, partId, teacherId, title, payloadJson, now);
 	}
 }

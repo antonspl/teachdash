@@ -18,6 +18,7 @@ import tools.jackson.databind.ObjectMapper;
 public class ItemRepository {
 
 	public record Stored(
+			String title,
 			JsonNode payload,
 			int position) {
 	}
@@ -63,29 +64,34 @@ public class ItemRepository {
 			UUID teacherId,
 			UUID partId,
 			String type,
+			String title,
 			String payloadJson,
 			Instant now) {
 		return jdbc.sql("""
-				insert into items (id, teacher_id, part_id, type, payload, version, position, created_at, updated_at)
-				select :id, :teacherId, :partId, :type, cast(:payload as jsonb), 1,
+				insert into items (id, teacher_id, part_id, type, title, payload, version, position, created_at, updated_at)
+				select :id, :teacherId, :partId, :type, cast(:title as varchar), cast(:payload as jsonb), 1,
 				       coalesce(max(position), 0) + 1, :now, :now
 				from items
 				where part_id = :partId and teacher_id = :teacherId
-				returning payload::text as payload, position
+				returning title, payload::text as payload, position
 				""")
 				.param("id", id)
 				.param("teacherId", teacherId)
 				.param("partId", partId)
 				.param("type", type)
+				.param("title", title)
 				.param("payload", payloadJson)
 				.param("now", Timestamp.from(now))
-				.query((rs, rowNum) -> new Stored(mapper.readTree(rs.getString("payload")), rs.getInt("position")))
+				.query((rs, rowNum) -> new Stored(
+						rs.getString("title"),
+						mapper.readTree(rs.getString("payload")),
+						rs.getInt("position")))
 				.single();
 	}
 
 	public Optional<Item> findInPart(UUID itemId, UUID partId, UUID teacherId) {
 		return jdbc.sql("""
-				select id, type, payload::text as payload, position, version, created_at, updated_at
+				select id, type, title, payload::text as payload, position, version, created_at, updated_at
 				from items
 				where id = :itemId and part_id = :partId and teacher_id = :teacherId
 				""")
@@ -114,7 +120,7 @@ public class ItemRepository {
 		return jdbc.sql("""
 				update items set position = :position, updated_at = :now
 				where id = :itemId and part_id = :partId and teacher_id = :teacherId
-				returning id, type, payload::text as payload, position, version, created_at, updated_at
+				returning id, type, title, payload::text as payload, position, version, created_at, updated_at
 				""")
 				.param("position", position)
 				.param("now", Timestamp.from(now))
@@ -128,7 +134,7 @@ public class ItemRepository {
 	// One query, so a part deleted mid-request gives 404, not an empty list.
 	public Optional<List<Item>> findByPart(UUID partId, UUID lessonId, UUID courseId, UUID teacherId) {
 		List<Optional<Item>> rows = jdbc.sql("""
-				select i.id, i.type, i.payload::text as payload, i.position, i.version, i.created_at, i.updated_at
+				select i.id, i.type, i.title, i.payload::text as payload, i.position, i.version, i.created_at, i.updated_at
 				from parts p
 				join lessons l on l.id = p.lesson_id and l.teacher_id = p.teacher_id
 				left join items i on i.part_id = p.id and i.teacher_id = p.teacher_id
@@ -163,14 +169,19 @@ public class ItemRepository {
 				.optional();
 	}
 
-	public Item updatePayload(UUID itemId, UUID partId, UUID teacherId, String payloadJson, Instant now) {
+	public Item updatePayload(UUID itemId, UUID partId, UUID teacherId, String title, String payloadJson, Instant now) {
 		return jdbc.sql("""
 				update items
-				set payload = cast(:payload as jsonb), version = version + 1, updated_at = :now
+				set payload = case when payload is distinct from cast(:payload as jsonb)
+				                   then cast(:payload as jsonb) else payload end,
+				    title = case when title is distinct from cast(:title as varchar)
+				                 then cast(:title as varchar) else title end,
+				    version = version + 1, updated_at = :now
 				where id = :itemId and part_id = :partId and teacher_id = :teacherId
-				returning id, type, payload::text as payload, position, version, created_at, updated_at
+				returning id, type, title, payload::text as payload, position, version, created_at, updated_at
 				""")
 				.param("payload", payloadJson)
+				.param("title", title)
 				.param("now", Timestamp.from(now))
 				.param("itemId", itemId)
 				.param("partId", partId)
@@ -207,7 +218,7 @@ public class ItemRepository {
 		return new Item(
 				rs.getObject("id", UUID.class),
 				rs.getString("type"),
-				null,
+				rs.getString("title"),
 				mapper.readTree(rs.getString("payload")),
 				rs.getInt("position"),
 				rs.getLong("version"),
