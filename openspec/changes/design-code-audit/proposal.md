@@ -1,6 +1,6 @@
 ## Clarifications
 
-1. **What product brief guides the audit?** Use the product brief from PR #189 with the five corrections below. [Revised product brief](../../../.agents/design/product-brief.md) · [Source PR #189](https://github.com/antonspl/teachdash/pull/189)
+1. **What product brief guides the audit?** Use the product brief merged into `main` through PR #189. The five review points below informed this audit. [Merged product brief](../../../.agents/design/product-brief.md) · [PR #189](https://github.com/antonspl/teachdash/pull/189)
    - Tutoring spans any subject. Every course has an instruction language, initially `en` or `ru`, and may have a target language (§9). [Anton's review comment](https://github.com/antonspl/teachdash/pull/189#discussion_r4659260401)
    - Planned sharing lets teachers send a course or lesson link to another teacher, who can preview it read-only and make an independent copy (§8). [Anton's review comment](https://github.com/antonspl/teachdash/pull/189#discussion_r4659265790)
    - The planned teacher cabinet schedule (#14) is a separate task. Class details include the student, a comment, rescheduling or cancellation status, and links to the meeting and whiteboard. [Anton's review comment](https://github.com/antonspl/teachdash/pull/189#discussion_r4659270344)
@@ -20,7 +20,6 @@ The current interface grew screen by screen. Issue #171 establishes a shared des
 
 ## What Changes
 
-- Update `.agents/design/product-brief.md` with the text from PR #189 and the five review corrections.
 - Complete `.agents/design/design-code.md` with the selected layout, token plan, shared component inventory, screen patterns and durable references to the four layout sketches.
 - Audit baseline coverage against the current specs and UI, capture missing reachable states, and publish the evidence and any remaining gaps to issue #171.
 - Sequence follow-up frontend work in changes of up to six requirements. Keep existing work with #165, #168 and #172 and cross-link dependent work.
