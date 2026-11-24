@@ -37,6 +37,11 @@ Decisions by the engineer for issue #171 (2026-11-22), first of two changes:
 22. Task 3.5 allows `openspec/changes/**` (the change folder moves to `openspec/changes/archive/` at 4.2), and the `<restore>` placeholder is replaced by `bbbf9cf`.
 23. `README.md` line 3 still says "for language teachers". It is out of scope for this change and is filed as issue #192; README is not edited here.
 
+**Code-gate review fixes** (engineer's decisions 24-25, 2026-11-24):
+
+24. (code-gate-reviewer) The "Built now" line was stale against `main` (7aee949). It is rewritten from the folders in `openspec/specs/` (accounts, api-errors, course-assignment, courses, items, languages, lessons, parts, student-enrolment, web-admin-teachers, web-auth, web-client, web-profile), each checked: course assignment is built (`course-assignment`), and items have add, list, edit, move and delete (#186, #187). The "Planned" list keeps #132 (the assign screens; only the backend is built) and #133; the theory item's text is stored by the backend, and showing it stays planned. Current screens were checked against the routes in `frontend/src/App.tsx` and `frontend/src/pages/` and are unchanged.
+25. (code-gate-reviewer) The note in `design.md` on where the brief's facts come from now also covers the "(code owner, 2026-11-22)" tags: they come from decisions 14-21 (the code owner's review comments on PR #189).
+
 The five product principles in `design.md` are proposed, not decided: the engineer agrees them (or changes them) at the spec gate.
 
 ## Why
