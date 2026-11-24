@@ -13,6 +13,10 @@ Issue #191. The engineer's decisions, as given:
 | 5 | Order of checks (2026-11-24)? | Title validation is part of the envelope 400. On edit it is checked with the `version` and `payload` presence checks, before the item 404, and its errors come in the same list sorted by field. On create it joins the `type` and `payload` envelope errors, before the payload-by-type checks. |
 | 6 | Out of scope? | Showing the title in the frontend. Storing numbers like "Упражнение 1": the client derives them from type and position. |
 | 7 | Languages (constitution section 9)? | Scenarios use a Russian title ("Немного теории") and an English one. |
+| 8 | Binding errors? | A non-string `title` fails at JSON binding, and the 400 carries only `title INVALID_TYPE`, hiding other envelope errors (a missing payload, type or version) in the same body. This is the current API behaviour, stated as is. The same holds the other way: an earlier binding error hides a title error. Said in R1 and R4, with one scenario on create and one on edit. |
+| 9 | Clear on missing? | Accepted: a PATCH with only `version` and `payload` clears the title; a future frontend always sends the current title back. Decision 4 stays. R4's title becomes "edits an item's payload and title". |
+| 10 | Which columns does the edit write? | API semantics stay "replace" (decision 4), but the edit's Postgres UPDATE writes `payload` and `title` only when their value differs from the stored one; `version` and `updated_at` are always written. Design only (D4 and a task); no scenario. |
+| 11 | `title: null` in the JSON? | Always serialised when unset (kept). The change is client-visible (a new `title` key); no client is affected. |
 
 ## Research angles
 
@@ -35,7 +39,7 @@ A teacher cannot name an item today (items-read-edit, Clarification 10), for exa
 - `PATCH .../items/{itemId}` accepts `title` and replaces it together with the payload, a missing or null title clearing it (R4).
 - A title is validated as a part title; its errors join the envelope 400 of create and edit.
 - The move response (R6) returns the title unchanged.
-- **BREAKING** for clients: every item response has a new `title` property (null when unset).
+- Client-visible: every item response has a new `title` property (null when unset); no client is affected.
 
 ## Capabilities
 
@@ -43,7 +47,7 @@ A teacher cannot name an item today (items-read-edit, Clarification 10), for exa
 None.
 
 ### Modified Capabilities
-- `items`: R1 (create accepts and returns `title`; the extra-field scenario no longer sends `title`), R3 (list returns `title`), R4 (edit replaces payload and title together), R6 (the move response carries `title`). R2 and R5 keep their text: R2-S11 (unknown properties outside the payload are ignored) and R5-S5 (a `title` inside the theory payload is `UNKNOWN_FIELD`) stay true.
+- `items`: R1 (create accepts and returns `title`; the extra-field scenario no longer sends `title`), R3 (list returns `title`), R4 (renamed to "edits an item's payload and title"; edit replaces payload and title together), R6 (the move response carries `title`). R2 and R5 keep their text: R2-S11 (unknown properties outside the payload are ignored) and R5-S5 (a `title` inside the theory payload is `UNKNOWN_FIELD`) stay true.
 
 ## Impact
 

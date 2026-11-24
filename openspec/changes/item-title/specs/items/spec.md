@@ -1,9 +1,13 @@
 # Spec Delta
 
+## RENAMED Requirements
+- FROM: `### Requirement: R4 A teacher edits an item's payload with its version`
+- TO: `### Requirement: R4 A teacher edits an item's payload and title with its version`
+
 ## MODIFIED Requirements
 
 ### Requirement: R1 A teacher adds an item to a part
-`POST /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items` with `{type, payload, title}` SHALL add an item at the end of the caller's part and return 201 with `{id, type, title, payload, position, version, createdAt, updatedAt}`, `version` 1. The optional `title` is normalised as a part title (parts R1); null or blank after that is stored as null, and any other value needs 1-200 characters and a letter or digit. `title` is always returned, null when unset. A 51st item gives 409 `ITEM_LIMIT_REACHED`; a foreign, unknown, malformed or mismatched id gives 404. Checks run in order: CSRF and role (403), deactivated (401), malformed id (404), input (400, R2 and the title rule), unknown or foreign id (404), limit (409).
+`POST /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items` with `{type, payload, title}` SHALL add an item at the end of the caller's part and return 201 with `{id, type, title, payload, position, version, createdAt, updatedAt}`, `version` 1. The optional `title` is normalised as a part title (parts R1); null or blank after that is stored as null, and any other value needs 1-200 characters and a letter or digit. `title` is always returned, null when unset. A non-string `title` fails at JSON binding, and the 400 then carries only `title INVALID_TYPE`, hiding other envelope errors in the same body; an earlier binding error likewise hides a title error. A 51st item gives 409 `ITEM_LIMIT_REACHED`; a foreign, unknown, malformed or mismatched id gives 404. Checks run in order: CSRF and role (403), deactivated (401), malformed id (404), input (400, R2 and the title rule), unknown or foreign id (404), limit (409).
 
 #### Scenario: items/R1-S1 Add an English item
 - **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with the lesson "Present Simple" that has the part "Warm-up", the item type `test-note`, and another teacher B
@@ -68,12 +72,12 @@
 #### Scenario: items/R1-S13 The title is normalised, and a missing, null or blank title is stored as null
 - **GIVEN** a logged-in teacher A with a part
 - **WHEN** teacher A adds items of the type `test-note` with the title "  Грамматика&#8203;  " (the text `&#8203;` stands for a zero-width space, U+200B, written before the two trailing spaces), with no `title`, with `"title": null`, with the title "" and with the title "   "
-- **THEN** every response is 201, the first has the title "Грамматика" (the stored title is the same), the other four have `title` null (the property is present) and no title is stored for them, and the part has 5 items
+- **THEN** every response is 201, the first has the title "Грамматика" (the stored title is the same), the other four have `title` null (the property is present) and the stored `title` column is NULL for them (not ""), and the part has 5 items
 
 #### Scenario: items/R1-S14 A title must have 1-200 characters and a letter or digit
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `test-note` with a valid payload and the title of 201 Cyrillic letters ("Я"), then "!!!", then 200 Cyrillic letters ("Я"), then 200 English letters ("a")
-- **THEN** the first response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "TOO_LONG"}]`, the second is 400 with `errors` exactly `[{field: "title", code: "INVALID_FORMAT"}]` ("!!!" is not blank, so it is not stored as null), no body has a `rejectedValue`, the last two are 201 with the title exactly as sent, and the part has exactly 2 items
+- **WHEN** teacher A adds items of the type `test-note` with a valid payload and the title of 201 Cyrillic letters ("Я"), then "!!!", then "a\u0000b" (an inner NUL), then "a\nb" (an inner newline), then 200 Cyrillic letters ("Я"), then 200 English letters ("a")
+- **THEN** the first response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "TOO_LONG"}]`, the next three are 400 with `errors` exactly `[{field: "title", code: "INVALID_FORMAT"}]` ("!!!" is not blank, so it is not stored as null; a control character inside the title is part of the title rule, Clarification 2), no body has a `rejectedValue`, the last two are 201 with the title exactly as sent, and the part has exactly 2 items
 
 #### Scenario: items/R1-S15 A title that is not a string is rejected
 - **GIVEN** a logged-in teacher A with a part
@@ -84,6 +88,11 @@
 - **GIVEN** a logged-in teacher A with a part, and the type `test-note` whose `text` is required
 - **WHEN** teacher A adds an item of the type `test-note` with the title "!!!" and no payload, then an item of the type `test-note` with the title "!!!" and the payload `{}`, then an item with no type, no payload and a title of 201 Cyrillic letters ("Я")
 - **THEN** the first response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "REQUIRED"}, {field: "title", code: "INVALID_FORMAT"}]` (sorted by field), the second has `errors` exactly `[{field: "title", code: "INVALID_FORMAT"}]` (no `payload.text` entry: the payload is checked by its type only after the envelope), the third has `errors` exactly `[{field: "payload", code: "REQUIRED"}, {field: "title", code: "TOO_LONG"}, {field: "type", code: "REQUIRED"}]`, and the part has no item
+
+#### Scenario: items/R1-S17 A non-string title is a binding error and hides the other envelope errors
+- **GIVEN** a logged-in teacher A with a part
+- **WHEN** teacher A adds an item of the type `test-note` with the title `123` and no payload
+- **THEN** the response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "INVALID_TYPE"}]` (no `payload` entry: binding stops at the first error), and the part has no item
 
 ### Requirement: R3 A teacher lists the items of a part
 `GET /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items` SHALL return 200 with the items of the caller's part only, as an unpaginated JSON array ordered by `position`, each with the fields R1 returns; no items gives `[]`. A foreign, unknown, malformed or mismatched id gives 404 `NOT_FOUND`. Checks run in order: role (403, no CSRF on a GET), deactivated (401), malformed id (404), unknown or foreign id (404).
@@ -113,8 +122,8 @@
 - **WHEN** the admin and teacher A2 each list the items of the part "not-a-uuid" of the lesson "not-a-uuid" of the course "not-a-uuid"
 - **THEN** the admin's response is 403 with code `FORBIDDEN` and teacher A2's is 401 with code `UNAUTHENTICATED`, neither is a 404
 
-### Requirement: R4 A teacher edits an item's payload with its version
-`PATCH .../parts/{partId}/items/{itemId}` with `{version, payload, title}` SHALL replace the payload and the title of the caller's item together and return 200 with the item as in R1. The title follows R1; a missing or null `title` clears it. A success adds 1 to `version` and sets `updatedAt` to now even if unchanged; `position`, `createdAt`, `type`, other items and the part, lesson and course `updatedAt` stay. A stale `version` gives 409 `VERSION_CONFLICT`, no `errors`, no payload. Checks: 403, 401, id 404, envelope 400 (`version`, `payload` presence and `title`), item 404, payload 400 (R2), 409.
+### Requirement: R4 A teacher edits an item's payload and title with its version
+`PATCH .../parts/{partId}/items/{itemId}` with `{version, payload, title}` SHALL replace the payload and the title of the caller's item together and return 200 with the item as in R1. The title follows R1; a missing or null `title` clears it. A non-string `title` fails at JSON binding and the 400 carries only `title INVALID_TYPE`, hiding other envelope errors in the same body; an earlier binding error likewise hides a title error. A success adds 1 to `version` and sets `updatedAt` to now even if unchanged; `position`, `createdAt`, `type`, other items and the part, lesson and course `updatedAt` stay. A stale `version` gives 409 `VERSION_CONFLICT`, no `errors`, no payload. Checks: 403, 401, id 404, envelope 400 (`version`, `payload` presence and `title`), item 404, payload 400 (R2), 409.
 
 #### Scenario: items/R4-S1 Edit an English item: the payload is replaced, the type and position are kept
 - **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with a part with the items "One" and "Two" and a third item of the type `test-note` at position 3 with the payload `{"text": "Read the story aloud.", "hint": "Page 3"}`, all created at a time T with `version` 1, a teacher B, and the clock advanced by one hour
@@ -132,14 +141,14 @@
 - **THEN** the first two responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "version", code: "REQUIRED"}]`, the next four are 400 with `errors` exactly `[{field: "version", code: "INVALID_TYPE"}]`, the seventh and the eighth are 400 with `errors` exactly `[{field: "payload", code: "REQUIRED"}]`, the ninth and the tenth are 400 with `errors` exactly `[{field: "payload", code: "INVALID_TYPE"}]`, the eleventh is 400 with `errors` exactly `[{field: "payload", code: "REQUIRED"}, {field: "version", code: "REQUIRED"}]` (sorted by field), the twelfth is 400 with `errors` exactly `[{field: "version", code: "INVALID_TYPE"}]` (binding stops at the first error), the last two are 400 with code `MALFORMED_REQUEST` and no `errors` property, no body contains "New" as a value, and the item is unchanged with `version` 1
 
 #### Scenario: items/R4-S4 The payload is validated by the stored type, and a bad payload changes nothing
-- **GIVEN** a logged-in teacher A with an item of the type `test-note` (a `text` of at most 1000 characters, an optional `hint`) with the payload `{"text": "Hi"}`, `version` 1 and `updatedAt` T
-- **WHEN** teacher A edits it with `version` 1 and the payloads `{}`, `{"text": 42}`, `{"text": "<1001 Cyrillic letters>"}`, `{"text": "ok", "extra": {"deep": [1]}}` and `{"text": "a\u0000b"}`
-- **THEN** all responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.text", code: "REQUIRED"}]`, `[{field: "payload.text", code: "INVALID_TYPE"}]`, `[{field: "payload.text", code: "TOO_LONG"}]`, `[{field: "payload", code: "UNKNOWN_FIELD"}]` and `[{field: "payload", code: "INVALID_FORMAT"}]`, no body contains "extra", "deep" or a `rejectedValue`, and the item still has the payload `{"text": "Hi"}`, `version` 1 and `updatedAt` T
+- **GIVEN** a logged-in teacher A with an item of the type `test-note` (a `text` of at most 1000 characters, an optional `hint`) with the payload `{"text": "Hi"}`, the title "Keep", `version` 1 and `updatedAt` T
+- **WHEN** teacher A edits it with `version` 1, the title "Changed" and the payloads `{}`, `{"text": 42}`, `{"text": "<1001 Cyrillic letters>"}`, `{"text": "ok", "extra": {"deep": [1]}}` and `{"text": "a\u0000b"}`
+- **THEN** all responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.text", code: "REQUIRED"}]`, `[{field: "payload.text", code: "INVALID_TYPE"}]`, `[{field: "payload.text", code: "TOO_LONG"}]`, `[{field: "payload", code: "UNKNOWN_FIELD"}]` and `[{field: "payload", code: "INVALID_FORMAT"}]`, no body contains "extra", "deep" or a `rejectedValue`, and the item still has the payload `{"text": "Hi"}`, the title "Keep", `version` 1 and `updatedAt` T
 
 #### Scenario: items/R4-S5 A stale version is a conflict and changes nothing
-- **GIVEN** a logged-in teacher A with an item of the type `test-note` with the payload `{"text": "Привет"}`, `version` 3 and `updatedAt` T, and the clock advanced by one hour
-- **WHEN** teacher A edits it with the payload `{"text": "Мир"}` and `version` 2, then 4, then 0, then -1, and then 3
-- **THEN** the first four responses are 409 with code `VERSION_CONFLICT` and no `errors` property, and none contains "Привет" or "Мир" (the conflict does not return the stored payload), after them the item still has the payload `{"text": "Привет"}`, `version` 3 and `updatedAt` T, and the last response is 200 with the text "Мир", `version` 4 and `updatedAt` T plus one hour
+- **GIVEN** a logged-in teacher A with an item of the type `test-note` with the payload `{"text": "Привет"}`, the title "Старый", `version` 3 and `updatedAt` T, and the clock advanced by one hour
+- **WHEN** teacher A edits it with the payload `{"text": "Мир"}`, the title "Новый" and `version` 2, then 4, then 0, then -1, and then 3
+- **THEN** the first four responses are 409 with code `VERSION_CONFLICT` and no `errors` property, and none contains "Привет" or "Мир" (the conflict does not return the stored payload), after them the item still has the payload `{"text": "Привет"}`, the title "Старый", `version` 3 and `updatedAt` T, and the last response is 200 with the text "Мир", the title "Новый", `version` 4 and `updatedAt` T plus one hour
 
 #### Scenario: items/R4-S6 Another teacher's, unknown, malformed and wrong-parent ids are not found
 - **GIVEN** teacher A logged in with the courses "English B1" and "Maths", the lessons "Fractions" and "Decimals" in "Maths" with the parts "Halves" and "Quarters" in "Fractions" and "Tenths" in "Decimals", each with one item (`version` 1), and a course "Грамматика" of teacher B with the lesson "Падежи", the part "Разминка" and its item "Секрет"
@@ -157,9 +166,9 @@
 - **THEN** (1) is 404 with code `NOT_FOUND` and no `errors` property, (2) and (3) are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "REQUIRED"}, {field: "version", code: "REQUIRED"}]` and do not contain "Секрет", (4) is 404 with code `NOT_FOUND` (not 400 and not 409), (5) is 400 with `errors` exactly `[{field: "payload.text", code: "REQUIRED"}]` (the payload is checked before the version), (6) is 409 with code `VERSION_CONFLICT`, the admin's response is 403 with code `FORBIDDEN` and the deactivated teacher's is 401 with code `UNAUTHENTICATED` (neither is 404 or 400), and I and teacher B's item are unchanged
 
 #### Scenario: items/R4-S9 Parallel edits with the same version: one wins
-- **GIVEN** a logged-in teacher A with an item of the type `test-note` with `version` 1
-- **WHEN** teacher A sends 6 edit requests at the same time (`support.Parallel.run`), all with `version` 1, with the texts "Edit 1" to "Edit 6"
-- **THEN** exactly one response is 200 with `version` 2, the other 5 are 409 `VERSION_CONFLICT`, none is 500, and the item has `version` 2 and the text of the successful response
+- **GIVEN** a logged-in teacher A with an item of the type `test-note` with the title "Original" and `version` 1
+- **WHEN** teacher A sends 6 edit requests at the same time (`support.Parallel.run`), all with `version` 1, with the texts "Edit 1" to "Edit 6" and the titles "Title 1" to "Title 6"
+- **THEN** exactly one response is 200 with `version` 2, the other 5 are 409 `VERSION_CONFLICT`, none is 500, and the item has `version` 2 and the text and the title of the successful response (no title of a losing request is stored)
 
 #### Scenario: items/R4-S10 Editing items while the part is deleted
 - **GIVEN** a logged-in teacher A with a part with 5 items
@@ -185,6 +194,11 @@
 - **GIVEN** teacher A logged in with an item I of the type `test-note` with the payload `{"text": "Hi"}` and `version` 1, and a course "Грамматика" of teacher B with a part with the item "Секрет"
 - **WHEN** teacher A sends `{"title": "!!!"}` for (1) teacher B's item and (2) an unknown item id; then `{"version": 1, "payload": {}, "title": "!!!"}` for (3) I; then `{"version": 9, "payload": {}, "title": ""}` for (4) I
 - **THEN** (1) and (2) are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "REQUIRED"}, {field: "title", code: "INVALID_FORMAT"}, {field: "version", code: "REQUIRED"}]` (sorted by field; not 404) and do not contain "Секрет", (3) is 400 with `errors` exactly `[{field: "title", code: "INVALID_FORMAT"}]` (no `payload.text` entry), (4) is 400 with `errors` exactly `[{field: "payload.text", code: "REQUIRED"}]` (a blank title is valid, and the payload is checked before the version), and I and teacher B's item are unchanged
+
+#### Scenario: items/R4-S15 A non-string title is a binding error and hides the other envelope errors
+- **GIVEN** a logged-in teacher A with an item of the type `test-note` with the payload `{"text": "Hi"}`, the title "Keep" and `version` 1
+- **WHEN** teacher A edits it with `{"version": 1, "title": 123}` (no payload)
+- **THEN** the response is 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "INVALID_TYPE"}]` (no `payload` entry: binding stops at the first error), and the item still has the title "Keep", the payload `{"text": "Hi"}` and `version` 1
 
 ### Requirement: R6 A teacher moves an item to a position
 `PATCH /api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}/position` with `{position}` SHALL move the item and return 200 with the item as R1. `position` is a required JSON integer, clamped to 1..count (any integer within the JSON number-length limit); floats and strings are rejected. Shifted items are unchanged; the moved item gets a new `updatedAt`, also on a same-position move, and keeps `version`. Checks: 403, 401, malformed id 404, input 400, unknown id 404.
