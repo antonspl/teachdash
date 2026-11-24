@@ -42,10 +42,10 @@ class ItemController {
 	private final OptionalTitle titles;
 
 	ItemController(ItemService items, ItemTypeRegistry registry, ItemPayloadValidator validator, OptionalTitle titles) {
-		this.titles = titles;
 		this.items = items;
 		this.registry = registry;
 		this.validator = validator;
+		this.titles = titles;
 	}
 
 	@PostMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items")
@@ -57,7 +57,8 @@ class ItemController {
 			@RequestBody CreateItemRequest request,
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		ItemType<?> type = validateEnvelope(request);
+		String title = titles.normalise(request.title());
+		ItemType<?> type = validateEnvelope(request, title);
 		String payloadJson = validator.toStoredJson(validator.validate(type, request.payload()));
 		return ItemResponse.from(items.create(
 				teacherId,
@@ -65,7 +66,7 @@ class ItemController {
 				lessonId,
 				partId,
 				type.code(),
-				titles.normalise(request.title()),
+				title,
 				payloadJson));
 	}
 
@@ -114,7 +115,8 @@ class ItemController {
 			@RequestBody EditItemRequest request,
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		validateEditEnvelope(request);
+		String title = titles.normalise(request.title());
+		validateEditEnvelope(request, title);
 		return ItemResponse.from(items.edit(
 				teacherId,
 				courseId,
@@ -122,11 +124,11 @@ class ItemController {
 				partId,
 				itemId,
 				request.version().longValueExact(),
-				titles.normalise(request.title()),
+				title,
 				request.payload()));
 	}
 
-	private void validateEditEnvelope(EditItemRequest request) {
+	private void validateEditEnvelope(EditItemRequest request, String title) {
 		List<FieldErrorDetail> errors = new ArrayList<>();
 		if (request.payload() == null) {
 			errors.add(new FieldErrorDetail("payload", FieldErrorCodes.REQUIRED));
@@ -137,13 +139,13 @@ class ItemController {
 		else if (request.version().bitLength() > 63) {
 			errors.add(new FieldErrorDetail("version", FieldErrorCodes.INVALID_TYPE));
 		}
-		errors.addAll(titles.errors(titles.normalise(request.title())));
+		errors.addAll(titles.errors(title));
 		if (!errors.isEmpty()) {
 			throw ApiException.fields(errors);
 		}
 	}
 
-	private ItemType<?> validateEnvelope(CreateItemRequest request) {
+	private ItemType<?> validateEnvelope(CreateItemRequest request, String title) {
 		List<FieldErrorDetail> errors = new ArrayList<>();
 		ItemType<?> type = null;
 		if (request.type() == null || request.type().isBlank()) {
@@ -158,7 +160,7 @@ class ItemController {
 		if (request.payload() == null) {
 			errors.add(new FieldErrorDetail("payload", FieldErrorCodes.REQUIRED));
 		}
-		errors.addAll(titles.errors(titles.normalise(request.title())));
+		errors.addAll(titles.errors(title));
 		if (!errors.isEmpty()) {
 			throw ApiException.fields(errors);
 		}
