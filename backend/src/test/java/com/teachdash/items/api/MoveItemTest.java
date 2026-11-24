@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.math.BigInteger;
@@ -89,7 +90,7 @@ class MoveItemTest extends ItemApiTest {
 	@Test
 	@DisplayName("[items/R6-S1] Move an item down and up, a Russian payload is unchanged")
 	void moveAnItemDownAndUp() {
-		// given a logged-in teacher A with the course "Литература 9 класс" (instruction "ru") with the lesson "Падежи" that has the parts "Разминка" and "Итоги", where "Разминка" has four items "Один", "Два", "Три" and "Четыре", all created at a time T with version 1, "Итоги" has four items, a teacher B with a part with four items created at T, and the clock advanced by one hour
+		// given a logged-in teacher A with the course "Литература 9 класс" (instruction "ru") with the lesson "Падежи" that has the parts "Разминка" and "Итоги", where "Разминка" has four items "Один", "Два", "Три" and "Четыре", "Один" with the title "Начало", all created at a time T with version 1, "Итоги" has four items, a teacher B with a part with four items created at T, and the clock advanced by one hour
 		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
 		UUID teacherB = createTeacher("b@example.com", "teacher-pass-1");
 		Instant created = Instant.now(clock);
@@ -97,7 +98,11 @@ class MoveItemTest extends ItemApiTest {
 		UUID lesson = createLesson(teacherA, course, "Падежи", 1);
 		UUID warmUp = createPart(teacherA, lesson, "Разминка", 1);
 		UUID summary = createPart(teacherA, lesson, "Итоги", 2);
-		List<UUID> ids = createNotes(teacherA, warmUp, "Один", "Два", "Три", "Четыре");
+		List<UUID> ids = new ArrayList<>();
+		ids.add(createItem(teacherA, warmUp, "test-note", "{\"text\": \"Один\"}", 1, "Начало"));
+		ids.add(createItem(teacherA, warmUp, "test-note", "{\"text\": \"Два\"}", 2));
+		ids.add(createItem(teacherA, warmUp, "test-note", "{\"text\": \"Три\"}", 3));
+		ids.add(createItem(teacherA, warmUp, "test-note", "{\"text\": \"Четыре\"}", 4));
 		createNotes(teacherA, summary, "Первый", "Второй", "Третий", "Четвёртый");
 		UUID foreignCourse = createCourse(teacherB, "Grammar", "en", "en");
 		UUID foreignLesson = createLesson(teacherB, foreignCourse, "Tenses", 1);
@@ -117,16 +122,18 @@ class MoveItemTest extends ItemApiTest {
 		first.then().statusCode(200)
 				.body("payload.text", equalTo("Один"))
 				.body("type", equalTo("test-note"))
+				.body("title", equalTo("Начало"))
 				.body("position", equalTo(3))
 				.body("version", equalTo(1));
 		assertEquals(created.plus(Duration.ofHours(1)), Instant.parse(first.path("updatedAt")));
-		// and exactly the properties id, type, payload, position, version, createdAt and updatedAt, createdAt T
-		assertEquals(Set.of("id", "type", "payload", "position", "version", "createdAt", "updatedAt"),
+		// and exactly the properties id, type, title, payload, position, version, createdAt and updatedAt, createdAt T
+		assertEquals(Set.of("id", "type", "title", "payload", "position", "version", "createdAt", "updatedAt"),
 				first.<Map<String, Object>>path("$").keySet());
 		assertEquals(created, Instant.parse(first.path("createdAt")));
 		// and the second is 200 with the text "Четыре", position 1 and updatedAt T plus two hours
 		second.then().statusCode(200)
 				.body("payload.text", equalTo("Четыре"))
+				.body("title", nullValue())
 				.body("position", equalTo(1));
 		assertEquals(created.plus(Duration.ofHours(2)), Instant.parse(second.path("updatedAt")));
 		// and the final order of "Разминка" is "Четыре", "Два", "Три", "Один" at the positions 1, 2, 3, 4
@@ -142,6 +149,7 @@ class MoveItemTest extends ItemApiTest {
 		assertEquals(created.plus(Duration.ofHours(1)), stored.get(3).updatedAt());
 		assertEquals(1, stored.get(3).version());
 		assertEquals("Один", stored.get(3).text());
+		assertEquals("Начало", readItem(ids.get(0)).title());
 		// and the order and the updatedAt of the items of "Итоги" and of teacher B's part are unchanged
 		assertEquals(summaryBefore, storedItems(summary));
 		assertEquals(foreignBefore, storedItems(foreignPart));

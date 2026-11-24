@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import com.teachdash.common.ApiException;
 import com.teachdash.common.FieldErrorCodes;
 import com.teachdash.common.FieldErrorDetail;
+import com.teachdash.common.OptionalTitle;
 import com.teachdash.items.api.dto.CreateItemRequest;
 import com.teachdash.items.api.dto.EditItemRequest;
 import com.teachdash.items.api.dto.ItemResponse;
@@ -38,10 +39,13 @@ class ItemController {
 
 	private final ItemPayloadValidator validator;
 
-	ItemController(ItemService items, ItemTypeRegistry registry, ItemPayloadValidator validator) {
+	private final OptionalTitle titles;
+
+	ItemController(ItemService items, ItemTypeRegistry registry, ItemPayloadValidator validator, OptionalTitle titles) {
 		this.items = items;
 		this.registry = registry;
 		this.validator = validator;
+		this.titles = titles;
 	}
 
 	@PostMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items")
@@ -53,9 +57,17 @@ class ItemController {
 			@RequestBody CreateItemRequest request,
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		ItemType<?> type = validateEnvelope(request);
+		String title = titles.normalise(request.title());
+		ItemType<?> type = validateEnvelope(request, title);
 		String payloadJson = validator.toStoredJson(validator.validate(type, request.payload()));
-		return ItemResponse.from(items.create(teacherId, courseId, lessonId, partId, type.code(), payloadJson));
+		return ItemResponse.from(items.create(
+				teacherId,
+				courseId,
+				lessonId,
+				partId,
+				type.code(),
+				title,
+				payloadJson));
 	}
 
 	@PatchMapping("/api/teacher/courses/{courseId}/lessons/{lessonId}/parts/{partId}/items/{itemId}/position")
@@ -103,12 +115,20 @@ class ItemController {
 			@RequestBody EditItemRequest request,
 			Principal principal) {
 		UUID teacherId = UUID.fromString(principal.getName());
-		validateEditEnvelope(request);
+		String title = titles.normalise(request.title());
+		validateEditEnvelope(request, title);
 		return ItemResponse.from(items.edit(
-				teacherId, courseId, lessonId, partId, itemId, request.version().longValueExact(), request.payload()));
+				teacherId,
+				courseId,
+				lessonId,
+				partId,
+				itemId,
+				request.version().longValueExact(),
+				title,
+				request.payload()));
 	}
 
-	private void validateEditEnvelope(EditItemRequest request) {
+	private void validateEditEnvelope(EditItemRequest request, String title) {
 		List<FieldErrorDetail> errors = new ArrayList<>();
 		if (request.payload() == null) {
 			errors.add(new FieldErrorDetail("payload", FieldErrorCodes.REQUIRED));
@@ -119,12 +139,13 @@ class ItemController {
 		else if (request.version().bitLength() > 63) {
 			errors.add(new FieldErrorDetail("version", FieldErrorCodes.INVALID_TYPE));
 		}
+		errors.addAll(titles.errors(title));
 		if (!errors.isEmpty()) {
 			throw ApiException.fields(errors);
 		}
 	}
 
-	private ItemType<?> validateEnvelope(CreateItemRequest request) {
+	private ItemType<?> validateEnvelope(CreateItemRequest request, String title) {
 		List<FieldErrorDetail> errors = new ArrayList<>();
 		ItemType<?> type = null;
 		if (request.type() == null || request.type().isBlank()) {
@@ -139,6 +160,7 @@ class ItemController {
 		if (request.payload() == null) {
 			errors.add(new FieldErrorDetail("payload", FieldErrorCodes.REQUIRED));
 		}
+		errors.addAll(titles.errors(title));
 		if (!errors.isEmpty()) {
 			throw ApiException.fields(errors);
 		}

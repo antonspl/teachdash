@@ -5,12 +5,15 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +41,22 @@ class AddItemTest extends ItemApiTest {
 				.body(not(containsString("Разминка")));
 	}
 
+	private static Map<String, Object> noteWithTitle(Object title, String text) {
+		Map<String, Object> request = note(text);
+		request.put("title", title);
+		return request;
+	}
+
+	private static Map<String, Object> itemWithTitle(String type, Object title, String text) {
+		Map<String, Object> request = body(type, Map.of("text", text));
+		request.put("title", title);
+		return request;
+	}
+
+	private static void expectNoRejectedValue(Response response) {
+		response.then().body(not(containsString("rejectedValue")));
+	}
+
 	@Test
 	@DisplayName("[items/R1-S1] Add an English item")
 	void addAnEnglishItem() {
@@ -49,16 +68,17 @@ class AddItemTest extends ItemApiTest {
 		UUID part = createPart(teacherA, lesson, "Warm-up", 1);
 		TestClient teacher = loggedInAs("a@example.com");
 
-		// when teacher A adds an item with the type test-note and the payload to the part, with the extra body fields teacherId and title
+		// when teacher A adds an item with the type test-note and the payload to the part, with the extra body fields teacherId and position
 		Map<String, Object> request = note("Read the story aloud.");
 		request.put("teacherId", teacherB.toString());
-		request.put("title", "Ignored");
+		request.put("position", 7);
 		var response = teacher.post(items(course, lesson, part), request);
 
 		// then the response is 201 with a new id, the type, the payload, position 1 and version 1
 		response.then().statusCode(201)
 				.body("id", notNullValue())
 				.body("type", equalTo("test-note"))
+				.body("title", nullValue())
 				.body("payload", equalTo(Map.of("text", "Read the story aloud.")))
 				.body("position", equalTo(1))
 				.body("version", equalTo(1))
@@ -66,7 +86,7 @@ class AddItemTest extends ItemApiTest {
 		// and updatedAt equals createdAt
 		assertEquals(response.<String>path("createdAt"), response.<String>path("updatedAt"));
 		// and exactly these properties are returned
-		assertEquals(Set.of("id", "type", "payload", "position", "version", "createdAt", "updatedAt"),
+		assertEquals(Set.of("id", "type", "title", "payload", "position", "version", "createdAt", "updatedAt"),
 				response.<Map<String, Object>>path("$").keySet());
 		// and the item is stored owned by teacher A in that part at position 1
 		assertEquals(1, countItems(part));
@@ -74,6 +94,8 @@ class AddItemTest extends ItemApiTest {
 		assertEquals(teacherA, stored.teacherId());
 		assertEquals(part, stored.partId());
 		assertEquals(1, stored.position());
+		// and has no title
+		assertNull(stored.title());
 	}
 
 	@Test
@@ -398,5 +420,211 @@ class AddItemTest extends ItemApiTest {
 		assertEquals(0, countParts(setup.lesson()));
 		// and no item row references it
 		assertEquals(0, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[items/R1-S11] Add an English item with a title")
+	void addAnEnglishItemWithATitle() {
+		// given a logged-in teacher A with the course "English B1" (instruction "en", target "en") with a part, and the item types test-note and theory
+		var setup = teacherWithPart();
+
+		// when teacher A adds a test-note item with the title "Reading aloud", and then a theory item with the title "Present Simple rules"
+		var first = setup.client().post(setup.items(), noteWithTitle("Reading aloud", "Read the story aloud."));
+		var second = setup.client().post(setup.items(), itemWithTitle("theory", "Present Simple rules", "Use **do/does**."));
+
+		// then both responses are 201 with the titles, position 1 and 2 and the payloads exactly as sent
+		first.then().statusCode(201)
+				.body("title", equalTo("Reading aloud"))
+				.body("position", equalTo(1))
+				.body("payload", equalTo(Map.of("text", "Read the story aloud.")));
+		second.then().statusCode(201)
+				.body("title", equalTo("Present Simple rules"))
+				.body("position", equalTo(2))
+				.body("payload", equalTo(Map.of("text", "Use **do/does**.")));
+		// and the stored items have the same titles
+		assertEquals("Reading aloud", readItem(UUID.fromString(first.path("id"))).title());
+		assertEquals("Present Simple rules", readItem(UUID.fromString(second.path("id"))).title());
+		// and listing the part returns the same titles
+		setup.client().get(setup.items()).then().statusCode(200)
+				.body("title", equalTo(List.of("Reading aloud", "Present Simple rules")));
+	}
+
+	@Test
+	@DisplayName("[items/R1-S12] Add a Russian item with a title, Cyrillic is kept exactly")
+	void addARussianItemWithATitle() {
+		// given a logged-in teacher A with the course "Литература 9 класс" (instruction "ru", no target) with a part
+		UUID teacher = createTeacher("a@example.com", "teacher-pass-1");
+		UUID course = createCourse(teacher, "Литература 9 класс", "ru", null);
+		UUID lesson = createLesson(teacher, course, "Падежи", 1);
+		UUID part = createPart(teacher, lesson, "Разминка", 1);
+		TestClient client = loggedInAs("a@example.com");
+
+		// when teacher A adds a theory item with the title "Немного теории" and a Cyrillic payload
+		String text = "Падежи: **именительный**, родительный.";
+		var response = client.post(items(course, lesson, part), itemWithTitle("theory", "Немного теории", text));
+
+		// then the response is 201 with the title exactly and the payload exactly as sent
+		response.then().statusCode(201)
+				.body("title", equalTo("Немного теории"))
+				.body("payload", equalTo(Map.of("text", text)));
+		// and the stored item has the same title
+		assertEquals("Немного теории", readItem(UUID.fromString(response.path("id"))).title());
+	}
+
+	@Test
+	@DisplayName("[items/R1-S13] The title is normalised, and a missing, null or blank title is stored as null")
+	void theTitleIsNormalisedAndBlankIsNull() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+		Map<String, Object> noTitle = note("No title");
+		Map<String, Object> nullTitle = noteWithTitle(null, "Null title");
+
+		// when teacher A adds items with the title "  Грамматика" plus a zero-width space and two spaces, with no title, with null, with "" and with "   "
+		List<Response> responses = List.of(
+				setup.client().post(setup.items(), noteWithTitle("  Грамматика\u200B  ", "One")),
+				setup.client().post(setup.items(), noTitle),
+				setup.client().post(setup.items(), nullTitle),
+				setup.client().post(setup.items(), noteWithTitle("", "Four")),
+				setup.client().post(setup.items(), noteWithTitle("   ", "Five")));
+
+		// then every response is 201
+		for (Response response : responses) {
+			response.then().statusCode(201);
+		}
+		// and the first has the title "Грамматика" and the stored title is the same
+		assertEquals("Грамматика", responses.get(0).path("title"));
+		assertEquals("Грамматика", readItem(UUID.fromString(responses.get(0).path("id"))).title());
+		// and the other four have title null, present, and the stored title is NULL
+		for (Response response : responses.subList(1, 5)) {
+			assertTrue(response.<Map<String, Object>>path("$").containsKey("title"));
+			assertNull(response.path("title"));
+			assertNull(readItem(UUID.fromString(response.path("id"))).title());
+		}
+		// and the part has 5 items
+		assertEquals(5, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[items/R1-S14] A title must have 1-200 characters and a letter or digit")
+	void aTitleMustHaveOneToTwoHundredCharactersAndALetterOrDigit() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+
+		// when teacher A adds items with a title of 201 letters, "!!!", an inner NUL, an inner newline, 200 Cyrillic letters and 200 English letters
+		Response tooLong = setup.client().post(setup.items(), noteWithTitle("Я".repeat(201), "One"));
+		List<Response> invalidFormat = List.of(
+				setup.client().post(setup.items(), noteWithTitle("!!!", "Two")),
+				setup.client().post(setup.items(), noteWithTitle("a\u0000b", "Three")),
+				setup.client().post(setup.items(), noteWithTitle("a\nb", "Four")));
+		Response cyrillic = setup.client().post(setup.items(), noteWithTitle("Я".repeat(200), "Five"));
+		Response english = setup.client().post(setup.items(), noteWithTitle("a".repeat(200), "Six"));
+
+		// then the first response is 400 VALIDATION_FAILED with title TOO_LONG
+		expectValidation(tooLong, error("title", "TOO_LONG"));
+		// and the next three are 400 with title INVALID_FORMAT
+		for (Response response : invalidFormat) {
+			expectValidation(response, error("title", "INVALID_FORMAT"));
+		}
+		// and no body has a rejectedValue
+		expectNoRejectedValue(tooLong);
+		invalidFormat.forEach(AddItemTest::expectNoRejectedValue);
+		// and the last two are 201 with the title exactly as sent
+		cyrillic.then().statusCode(201).body("title", equalTo("Я".repeat(200)));
+		english.then().statusCode(201).body("title", equalTo("a".repeat(200)));
+		// and the part has exactly 2 items
+		assertEquals(2, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[items/R1-S15] A title that is not a string is rejected")
+	void aTitleThatIsNotAStringIsRejected() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+
+		// when teacher A adds items with a valid payload and the title 123, true, ["Intro"] and {"a": "Intro"}
+		List<Response> responses = List.of(
+				setup.client().post(setup.items(), noteWithTitle(123, "One")),
+				setup.client().post(setup.items(), noteWithTitle(true, "Two")),
+				setup.client().post(setup.items(), noteWithTitle(List.of("Intro"), "Three")),
+				setup.client().post(setup.items(), noteWithTitle(Map.of("a", "Intro"), "Four")));
+
+		// then every response is 400 VALIDATION_FAILED with title INVALID_TYPE
+		for (Response response : responses) {
+			expectValidation(response, error("title", "INVALID_TYPE"));
+			// and no body contains "Intro" or a rejectedValue
+			response.then().body(not(containsString("Intro")));
+			expectNoRejectedValue(response);
+		}
+		// and the part has no item
+		assertEquals(0, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[items/R1-S16] A title error joins the envelope errors and is reported before the payload checks")
+	void aTitleErrorJoinsTheEnvelopeErrors() {
+		// given a logged-in teacher A with a part, and the type test-note whose text is required
+		var setup = teacherWithPart();
+
+		// when teacher A adds a test-note item with the title "!!!" and no payload, then one with the title "!!!" and the payload {}, then one with no type, no payload and a title of 201 letters
+		Map<String, Object> noPayload = new HashMap<>();
+		noPayload.put("type", "test-note");
+		noPayload.put("title", "!!!");
+		var first = setup.client().post(setup.items(), noPayload);
+		Map<String, Object> emptyPayload = body("test-note", Map.of());
+		emptyPayload.put("title", "!!!");
+		var second = setup.client().post(setup.items(), emptyPayload);
+		var third = setup.client().post(setup.items(), Map.of("title", "Я".repeat(201)));
+
+		// then the first response is 400 with payload REQUIRED and title INVALID_FORMAT, sorted by field
+		expectValidation(first, error("payload", "REQUIRED"), error("title", "INVALID_FORMAT"));
+		// and the second has title INVALID_FORMAT only
+		expectValidation(second, error("title", "INVALID_FORMAT"));
+		// and the third has payload REQUIRED, title TOO_LONG and type REQUIRED
+		expectValidation(third, error("payload", "REQUIRED"), error("title", "TOO_LONG"), error("type", "REQUIRED"));
+		// and the part has no item
+		assertEquals(0, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[items/R1-S17] A non-string title is a binding error and hides the other envelope errors")
+	void aNonStringTitleIsABindingError() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+
+		// when teacher A adds a test-note item with the title 123 and no payload
+		Map<String, Object> request = new HashMap<>();
+		request.put("type", "test-note");
+		request.put("title", 123);
+		var response = setup.client().post(setup.items(), request);
+
+		// then the response is 400 with title INVALID_TYPE only
+		expectValidation(response, error("title", "INVALID_TYPE"));
+		// and the part has no item
+		assertEquals(0, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[items/R1-S18] A title with an unpaired surrogate is rejected")
+	void aTitleWithAnUnpairedSurrogateIsRejected() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+
+		// when teacher A adds items with a lone high and a lone low surrogate in the title, sent as JSON escapes
+		List<Response> responses = List.of(
+				setup.client().post(setup.items(), rawNoteWithTitle("a\\uD800b")),
+				setup.client().post(setup.items(), rawNoteWithTitle("a\\uDC00b")));
+
+		// then both responses are 400 VALIDATION_FAILED with title INVALID_FORMAT
+		for (Response response : responses) {
+			expectValidation(response, error("title", "INVALID_FORMAT"));
+			// and no body has a rejectedValue
+			expectNoRejectedValue(response);
+		}
+		// and the part has no item
+		assertEquals(0, countItems(setup.part()));
+	}
+
+	private static String rawNoteWithTitle(String escapedTitle) {
+		return "{\"type\":\"test-note\",\"payload\":{\"text\":\"Note\"},\"title\":\"" + escapedTitle + "\"}";
 	}
 }

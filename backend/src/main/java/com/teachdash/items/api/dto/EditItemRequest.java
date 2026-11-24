@@ -5,5 +5,6 @@ import java.util.Map;
 
 public record EditItemRequest(
 		BigInteger version,
+		String title,
 		Map<String, Object> payload) {
 }

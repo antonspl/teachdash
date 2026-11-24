@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,9 +28,9 @@ class ListItemsTest extends ItemApiTest {
 		var setup = teacherWithPart();
 		Instant created = Instant.now(clock);
 		String third = "Прочитайте текст вслух: ёж & ёлка.";
-		createItem(setup.teacher(), setup.part(), "test-note", "{\"text\": \"" + third + "\"}", 3, 3);
+		createItem(setup.teacher(), setup.part(), "test-note", "Немного теории", "{\"text\": \"" + third + "\"}", 3, 3);
 		createItem(setup.teacher(), setup.part(), "test-note", "{\"text\": \"Hi\"}", 1);
-		createItem(setup.teacher(), setup.part(), "test-note", "{\"text\": \"Read the story aloud.\"}", 2);
+		createItem(setup.teacher(), setup.part(), "test-note", "{\"text\": \"Read the story aloud.\"}", 2, "Reading aloud");
 
 		// when teacher A lists the items of the part
 		var response = setup.client().get(setup.items());
@@ -40,11 +41,12 @@ class ListItemsTest extends ItemApiTest {
 				.body("payload.text", equalTo(List.of("Hi", "Read the story aloud.", third)))
 				.body("position", equalTo(List.of(1, 2, 3)))
 				.body("type", equalTo(List.of("test-note", "test-note", "test-note")))
+				.body("title", equalTo(Arrays.asList(null, "Reading aloud", "Немного теории")))
 				.body("version", equalTo(List.of(1, 1, 3)));
 		// and every element has exactly the item properties
 		List<Map<String, Object>> elements = response.path("$");
 		for (Map<String, Object> element : elements) {
-			assertEquals(Set.of("id", "type", "payload", "position", "version", "createdAt", "updatedAt"),
+			assertEquals(Set.of("id", "type", "title", "payload", "position", "version", "createdAt", "updatedAt"),
 					element.keySet());
 			// and updatedAt equals createdAt
 			assertEquals(element.get("createdAt"), element.get("updatedAt"));

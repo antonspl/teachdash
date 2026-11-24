@@ -505,4 +505,30 @@ class CreatePartTest extends ApiTest {
 		// and no part row references it
 		assertEquals(0, countParts(lesson));
 	}
+
+	@Test
+	@DisplayName("[parts/R1-S14] A title with an unpaired surrogate is rejected")
+	void aTitleWithAnUnpairedSurrogateIsRejected() {
+		// given a logged-in teacher A with a lesson
+		UUID teacherA = createTeacher("a@example.com", "teacher-pass-1");
+		UUID course = createCourse(teacherA, "English B1", "en", "en");
+		UUID lesson = createLesson(teacherA, course, "Present Simple", 1);
+		TestClient teacher = loggedInAs("a@example.com");
+
+		// when teacher A creates parts with a lone high and a lone low surrogate in the title, sent as JSON escapes
+		List<Response> responses = List.of(
+				teacher.post(parts(course, lesson), "{\"title\":\"a\\uD800b\"}"),
+				teacher.post(parts(course, lesson), "{\"title\":\"a\\uDC00b\"}"));
+
+		// then both responses are 400 VALIDATION_FAILED with title INVALID_FORMAT
+		for (Response response : responses) {
+			response.then().statusCode(400)
+					.body("code", equalTo("VALIDATION_FAILED"))
+					.body("errors", equalTo(List.of(error("title", "INVALID_FORMAT"))))
+					// and no body has a rejectedValue
+					.body(not(containsString("rejectedValue")));
+		}
+		// and the lesson has no part
+		assertEquals(0, countParts(lesson));
+	}
 }

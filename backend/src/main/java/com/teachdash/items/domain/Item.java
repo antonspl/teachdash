@@ -8,6 +8,7 @@ import tools.jackson.databind.JsonNode;
 public record Item(
 		UUID id,
 		String type,
+		String title,
 		JsonNode payload,
 		int position,
 		long version,
