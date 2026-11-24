@@ -8,6 +8,9 @@
    - The domain governs data storage and protects access. The frontend presents data the user is allowed to see. [Anton's review comment](https://github.com/antonspl/teachdash/pull/189#discussion_r4659295751)
 2. **Which design direction should future frontend changes use?** The engineer chose Working desk after comparing two directions on the same profile and admin screens. It uses a dark blue header, compact aligned lists, and two profile forms side by side on desktop. At 360 px, forms and list content stack in reading order.
 3. **Where does the audit end?** Issue #171 covers the brief, design guidance, the screenshot baseline, and an ordered frontend backlog. Product UI, behavior, workflow configuration and the design reference sources are outside this change.
+4. **Can Login and Set password share a narrower form?** Yes. Use a top-aligned single column with an auth-specific maximum of `28rem` (448 CSS px at the default root size). Let it shrink within the 16 CSS px mobile insets.
+5. **Which color should Add teacher use?** Use the filled primary blue action at both widths. Success feedback and the active status remain green.
+6. **Which primary submits fill the form width at 360 CSS px?** The Login and Set password submits. Each uses its intrinsic width on desktop.
 
 ## Why
 

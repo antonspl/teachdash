@@ -30,15 +30,17 @@ The engineer chose the compact direction after comparing it with a roomier singl
 
 Map roles to existing tokens where the role already matches. The foundations follow-up will list existing tokens to replace and role-named tokens to add, including separate control and decorative borders. Record changes under C5 for the engineer to approve in that change. Verify contrast in the implemented palette, including controls, on-header focus and state labels. Use text alongside status colors.
 
-### Layout and components
+### UI design
 
 | Screen | Desktop | At 360 px |
 | --- | --- | --- |
-| Login and set password | One compact form with a clear heading and supporting text. Keep field errors beside their fields and form-level or link errors near the task. | Keep labels, fields, password visibility controls, errors and actions in reading order in one column. |
+| Login and set password | Use a top-aligned, single-column task layout with a shared maximum width of `28rem` (448 CSS px at the default root size). Keep the clear heading and supporting text, field errors beside their fields, and form-level or link errors near the task. The primary submit uses its intrinsic width. | Let the shared column shrink within the 16 CSS px side insets. Keep labels, fields, password visibility controls, errors and actions in reading order. The primary submit fills the available form width. |
 | Teacher and student cabinets | Shared header with identity, profile and logout. Keep the user's role and current cabinet content. | Wrap the header and keep its actions reachable. |
 | Profile | Put heading and account email above a 1040 px area with 55:45 form columns. Align form headings and keep a submit action for each form. | Put personal details above password changes, with actions following each form and long text wrapping. |
-| Teacher management | Use a 1120 px area. Place Add teacher beside the title and align identity, time zone, status and available actions in compact rows. Keep issued-link feedback with its row. | Move the add action below the title. Keep identity, time zone, status, feedback and actions grouped in each record and let actions wrap. |
+| Teacher management | Use a 1120 px area. Place Add teacher beside the title and give it the filled primary blue action style. Align identity, time zone, status and available actions in compact rows. Keep issued-link feedback with its row. | Move Add teacher below the title and keep its filled primary blue style. Keep identity, time zone, status, feedback and actions grouped in each record and let actions wrap. |
 | Not found | Present the heading, short explanation and route back home together. | Maintain the same order in one column. |
+
+The visual rollout uses one auth-specific role token for the shared `28rem` maximum. Not found and other default-width pages continue to use `--content-width`. At 360 CSS px, the full-width treatment applies only to the primary submits on Login and Set password. Password visibility buttons and other actions follow their existing sizing patterns. Add teacher uses the primary action role. Success feedback and the active status continue to use green. The dialog, its actions and the opening behavior follow the current specs.
 
 Inventory shared navigation and page headings, forms and field wrappers, native inputs and selects, password visibility, buttons, inline errors and form feedback, status labels, list rows, and dialogs. In the design code, map them to the existing shared components and use cases. Give layouts the same focus order as the rendered reading order. Record which existing states apply to each screen and keep current i18n copy and behavior as the reference, including loading, disabled, validation, server failure, success, and dialog states where supported. Test long names and email addresses in row layouts and plan space for English and Russian text.
 

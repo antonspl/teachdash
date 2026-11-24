@@ -2,7 +2,7 @@
 
 ## 1. Design code
 
-- [x] 1.1 Fill `.agents/design/design-code.md` with the Working desk foundations and token plan, shared component inventory and states, and layout guidance for all six screen families at desktop width and 360 px. Link to the four tracked layout sketches. In a clean checkout, check the link, role colors, typography, component anatomy and profile and admin layouts against the tracked design and C1–C24. Record the check in the PR.
+- [ ] 1.1 Fill `.agents/design/design-code.md` with the Working desk foundations and token plan, shared component inventory and states, and layout guidance for all six screen families at desktop width and 360 px. Link to the four tracked layout sketches. In a clean checkout, check the link, role colors, typography, component anatomy and profile and admin layouts against the tracked design and C1–C24. Verify that the guide records the shared `28rem` auth measure, the blue Add teacher action at both widths, and the full-width primary submits on Login and Set password at 360 CSS px with intrinsic width on desktop. Record the check in the PR.
 
 ## 2. Audit evidence and follow-up issues
 
