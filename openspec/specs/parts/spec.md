@@ -74,6 +74,11 @@ teacher creates, lists, renames, moves and deletes.
 - **WHEN** 1 request deleting the lesson and 4 requests creating a part in it are sent at the same time (`support.Parallel.run`)
 - **THEN** the delete response is 204, each create response is 201 or 404 and none is 500, the lesson is not stored, and no part row references it
 
+#### Scenario: parts/R1-S14 A title with an unpaired surrogate is rejected
+- **GIVEN** a logged-in teacher A with a lesson
+- **WHEN** teacher A creates a part with the title "a\uD800b" (an unpaired high surrogate between two letters, sent as the JSON escape), then a part with the title "a\uDC00b" (an unpaired low surrogate)
+- **THEN** both responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "title", code: "INVALID_FORMAT"}]`, no body has a `rejectedValue`, and the lesson has no part (rejected at JSON parsing by the existing NUL/surrogate rule, so items R1-S18 and the course and lesson titles follow it)
+
 ### Requirement: R2 A teacher lists the parts of a lesson
 `GET /api/teacher/courses/{courseId}/lessons/{lessonId}/parts` SHALL return 200 with the parts of the caller's lesson only, as an unpaginated JSON array ordered by `position`, each with the fields R1 returns. No parts gives an empty array; a foreign, unknown or malformed course or lesson, or a lesson of another course of the caller, gives 404 `NOT_FOUND`. Checks run in order as R1, without the input and limit steps.
 
