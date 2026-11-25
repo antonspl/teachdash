@@ -37,7 +37,7 @@ says something else, follow this file. The full order is in C0.
   design" section.
 - **C4** Text uses `--font-body`, the system stack. No web fonts and no "distinctive
   typeface".
-- **C5** The one `--radius` and `--shadow-card` are ours. Changing, renaming or
+- **C5** The one `--radius` and `--shadow-overlay` (overlays only) are ours. Changing, renaming or
   deleting them, or any other existing token, is an engineer decision. The
   frontend-implementer only adds new role-named tokens; when a slice seems to need an
   existing token changed, it stops and reports.
@@ -52,7 +52,7 @@ says something else, follow this file. The full order is in C0.
   `name`, `email`, `current-password` and `new-password`. Autocomplete is never
   turned off to avoid password managers.
 - **C9** The touch target floor is 24 CSS px (WCAG 2.5.8, AA). Controls use
-  `--control-height`.
+  `--control-height` (2.5rem with `pointer: fine`, 2.75rem on touch; row icon buttons 2rem with a mouse).
 - **C10** Copy is friendly, in the second person, with no apologies. A message says
   what happened and how to fix it.
 - **C11** Quotes follow each language's typography in the i18n files (ru uses «»).
@@ -89,7 +89,7 @@ says something else, follow this file. The full order is in C0.
   ("Touch & Interaction" priority); our floor is 24 CSS px (C9, WCAG 2.5.8 AA, as
   `accessibility.md` "Target size" states), met by `--control-height`. A target
   between 24 and 44 CSS px is not a finding. A new control is not made smaller than
-  `--control-height` because of this item.
+  `--control-height` (2.5rem `pointer: fine`, 2.75rem touch; row icon buttons 2rem) because of this item.
 - **C19** Landing and hero patterns do not apply. `ui-ux-pro-max/data/landing.csv`
   and the landing-page parts of the vendored sources describe marketing pages. A
   teachdash screen is a working screen: the page type and layout come from the
@@ -100,10 +100,10 @@ says something else, follow this file. The full order is in C0.
   directory, force, preview) or export tokens are removed in our copy, so the allowed
   command only prints. The tokens live in `frontend/src/styles/tokens.css` (C3, C5,
   base rules). Basis: `ui-ux-pro-max/NOTICE-teachdash.md`, G-38 and G-51.
-- **C21** "One radius, one soft shadow" is not a violation. The anti-pattern list in
+- **C21** "One radius, shadow only on overlays" is not a violation. The anti-pattern list in
   `frontend-design-principles.md` (the "SaaS-card kit") and the radius and shadow
   lines of `visual-passes.md` warn against one radius and the same soft shadow on
-  everything. teachdash has exactly one `--radius` and one `--shadow-card` by design
+  everything. teachdash has exactly one `--radius` and `--shadow-overlay` (overlays only) by design
   (C5, `refactoring-ui.md` section 5, `refactoring-ui-patterns.md` "Radius"). Flag
   only what the spec's "UI design" section does not support: a card around
   everything, or decoration with no meaning (`visual-criteria.md`).
