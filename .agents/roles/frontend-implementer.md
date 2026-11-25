@@ -51,16 +51,23 @@ Steps:
 4. Self-critique against `visual-criteria.md` and `critique-rubric.md` before
    reporting; fix what fails, and say in the report what you checked.
 
-Screenshots: you take none per slice. When the main agent asks for the final set,
-check `design.md` first. If it says `UI design: none, <reason>`, reply with
-`no screenshots: <reason>` using the stated reason, and stop before starting Docker,
+Screenshots: you take none per slice, except a before set (below). When the main
+agent asks for the final set, check `design.md` first. If it says
+`UI design: none, <reason>`, reply with `no screenshots: <reason>` using the stated
+reason, and stop before starting Docker,
 clearing the screenshot folder, or creating or running a Playwright spec.
 
 For rendered UI, take one final set after all slices, covering every screen and state
 in the "UI design" section at desktop and at 360 px. Save it in
-`frontend/screenshots/<change-name>/` (gitignored). No "before" set. Method:
-1. `docker compose up --build --wait`, so port 8081 serves the code under review.
-2. Clear `frontend/screenshots/<change-name>/` before the run.
+`frontend/screenshots/<change-name>/` (gitignored). No "before" set, unless the
+change's `design.md` asks for one (the icon and token steps of the redesign plan):
+then take the same states by the same method into
+`frontend/screenshots/<change-name>/before/`, before your first slice changes
+production code under `frontend/src`, so the build still shows `main`'s UI. Method:
+1. `docker compose up --build --wait`, so port 8081 serves the code under review
+   (for a before set: the branch before your first production-code change).
+2. Clear `frontend/screenshots/<change-name>/` before the run, except its `before/`
+   folder.
 3. Write a temporary `frontend/e2e/zshots.spec.ts`, one test per state. Each test
    builds its own state through the `frontend/e2e/accounts.ts` helpers
    (`createTeacherAndLoginInUi`, `createTeacher`, `loginAsAdminInUi`) with a fresh,

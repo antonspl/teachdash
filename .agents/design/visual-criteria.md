@@ -29,7 +29,7 @@ Sources: [typography](refactoring-ui.md#3-typography), [type system](visual-type
 ## 4. Colour roles
 
 - Is every colour a role token (C3), with no raw hex or one-off value?
-- Is accent colour kept for actions and state, and does colour never carry meaning alone?
+- Is accent colour kept for actions and place, never for status, and does colour never carry meaning alone?
 - Does text keep AA contrast on its background in every state shown (default, hover, disabled, error)?
 
 Sources: [colour](refactoring-ui.md#4-colour), [colour at system scale](visual-colour.md#apply-at-system-scale), [colour audit](visual-colour.md#audit-before-choosing).

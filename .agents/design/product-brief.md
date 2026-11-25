@@ -30,7 +30,7 @@ Success: a teacher prepares a lesson once and runs it for many students without 
 ## Operating Context
 
 - UI in English and Russian, separate from course languages; Cyrillic must work everywhere; Russian strings are longer. Users on fixed-line internet in Russia and the EU; no third-party CDNs or web fonts (§10, `project-rules.md`).
-- Devices: teachers prepare content at a desk on a laptop; teacher editors are designed for desktop (#115–#120, #132, #133, #138). Students are desktop-first too; by default every page, editors included, must also look good on a phone (360 CSS px) (code owner, 2026-11-22). `specs/web-client` R7 (fits 360 CSS px, no horizontal scroll) is the minimum.
+- Devices: teachers prepare content at a desk on a laptop; teacher editors are also designed for phones, like every page (design code; #115–#120, #132, #133, #138). Students are desktop-first too; by default every page, editors included, must also look good on a phone (360 CSS px) (code owner, 2026-11-22). `specs/web-client` R7 (fits 360 CSS px, no horizontal scroll) is the minimum.
 - A student may have a lesson open next to a live video call, in a narrow window with split attention.
 - Frequency: teachers daily; students a few times a week; admins rarely (creating a teacher, issuing a reset link). Admin screens can be plain; teacher screens must be fast (engineer, 2026-11-22).
 - Time zones matter for schedules: teachers and students both have a time zone (`specs/web-profile`, `specs/student-enrolment`).
