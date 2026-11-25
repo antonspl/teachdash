@@ -291,7 +291,7 @@ Native `<dialog>`: width `min(var(--dialog-width), 100% - 2 * var(--space-group)
 
 ### Menu
 
-A popover (profile menu): `--menu-width`, padding `--space-adjacent`, `--border-width` `--color-control-border`, `--radius`, surface fill, `--shadow-overlay`. Items are `--control-height` high, icon + word, hover and focus on the sunken fill. A menu starts with a non-clickable head (the signed-in person's name in 600 and the role in muted `--text-small`); the menu's `aria-labelledby` points at that head. Then come the items, separated by dividers: Profile, the language choice, and Log out last. Opening the menu focuses the first actionable item (not the head); Arrow keys, Home and End move; Escape and an outside click close it and return focus to the trigger. In the chosen mockup the language choice was a muted label and `menuitemradio` items inside the menu, a `check` icon on the chosen one, each name in its own `lang`; decided in the app frame issue (plan step 5a).
+A popover (profile menu): `--menu-width`, padding `--space-adjacent`, `--border-width` `--color-control-border`, `--radius`, surface fill, `--shadow-overlay`. Items are `--control-height` high, icon + word, hover and focus on the sunken fill. A menu starts with a non-clickable head (the signed-in person's name in 600 and the role in muted `--text-small`); the menu's `aria-labelledby` points at that head. Then come the items, separated by dividers: Profile, the language choice, and Log out last. Opening the menu focuses the first actionable item (not the head); Arrow keys, Home and End move; Escape closes it and returns focus to the trigger; an outside click closes it and leaves focus where the click put it; for a chosen item, focus follows the Accessibility focus rule. In the chosen mockup the language choice was a muted label and `menuitemradio` items inside the menu, a `check` icon on the chosen one, each name in its own `lang`; decided in the app frame issue (plan step 5a).
 
 ### Rail and phone tab bar
 
@@ -306,9 +306,9 @@ A flex row: the title and the count (muted) on the left, the page action on the 
 
 ### Data table
 
-- Semantics stay: a real table (headers are `th`), also when it is built with grid and subgrid. Columns: name with the email under it, status badge, time zone, row actions.
+- Semantics: the table always carries explicit ARIA roles, because its component always changes the display of table elements (grid and subgrid on wide screens, block on phones) and Safari then stops exposing it as a table: `role="table"` on the table, `role="rowgroup"` on `thead` and `tbody`, `role="row"` on each `tr`, `role="columnheader"` on header cells, `role="cell"` on data cells. Header cells stay `th` with `scope="col"`. Columns: name with the email under it, status badge, time zone, row actions.
 - Wide: one grid whose first and last tracks are the gutters, so a row's divider and hover fill run to the edge of the main area while the content stops at `--list-width`; no outer box, a divider above and below the table and between rows, `--color-surface` rows, hover `--color-surface-sunken`. Spare width is shared name 2 : status 1 : time zone 1. Header cells are `--text-small`, muted, 600. The left edge lines up with the page header.
-- Narrow: the header row is visually hidden; each row is a block with the name and status on the first line, the email and the time zone on the second (time zone on the email line at 360), the actions below; dividers between rows, the table edge to edge.
+- Narrow: the header row is visually hidden with the visually hidden technique (never `display: none`, see Semantics), so its cells stay in the accessibility tree; each row is a block with the name and status on the first line, the email and the time zone on the second (time zone on the email line at 360), the actions below; dividers between rows, the table edge to edge.
 - Search and paging (a search field with a label, "Page 1 of 5" with previous and next buttons above and below) are part of the direction but ship later with the backend (a separate issue).
 
 ### Short link list
@@ -375,7 +375,7 @@ A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordma
 - Keyboard: native elements first (project rules C7); the profile menu follows the Menu rules above; the picker's roles and keyboard are open (builder issue #116/#117); Escape hides a tooltip without moving focus; it closes an overlay (menu, drawer, picker, dialog) and returns focus to its opener.
 - Target size: controls are `--control-height`; row icon buttons are `2rem` with a mouse, above the 24px floor (WCAG 2.5.8).
 - Contrast: every text and control pair in Colour meets WCAG 2.2 AA; focus ring 3:1 on every fill it meets.
-- Focus after actions. Delete of a part or an item moves focus to the next item, else the previous one, else the part's "Add item". Picking an item type moves focus to the new item's first field. Closing the picker with Escape returns focus to its opener. A Profile menu item returns focus to the menu button, so a language switch keeps focus on it. A dialog that closes returns focus to the element that opened it.
+- Focus after actions. Delete of a part or an item moves focus to the next item, else the previous one, else the part's "Add item". Picking an item type moves focus to the new item's first field. Closing the picker with Escape returns focus to its opener. After a Profile menu item: only an item that keeps the person on the page (the language switch) closes the menu and returns focus to the menu button. Profile opens the Profile page and focus goes to that page's heading (h1, `tabindex="-1"`). Log out opens the login page and focus goes to the login page's heading (h1, `tabindex="-1"`). A dialog that closes returns focus to the element that opened it.
 - Content blocks in a lesson carry the course's `lang`; the UI carries the UI language (#172 folds into #102).
 
 ## Departures from the project rules
