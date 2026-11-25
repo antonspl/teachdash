@@ -41,6 +41,9 @@ Decisions by the engineer for issue #171, second of two changes (part 1 is the a
 34. "pause" and "menu" stay in the icon-only universal-symbol list (pause pairs with play).
 35. Type label width: fixed to the longest short type name in each language (`--type-label-width` 3rem en, 5.5rem ru), not `max-content` (amends 10).
 36. "A delete that acts at once is never muted" stays (a corollary of the Delete rule).
+37. From the code owner's final review: the data table always carries explicit ARIA roles, because its component always changes the display of table elements (grid and subgrid on wide screens, block on phones): `role="table"` on the table, `role="rowgroup"` on thead and tbody, `role="row"` on each tr, `role="columnheader"` on header cells, `role="cell"` on data cells. Header cells stay `th` with `scope="col"`. On phones the header row is hidden visually (the visually hidden technique, never `display: none`), so its cells stay in the accessibility tree. Amends 22.
+38. From the code owner's final review: focus after a Profile menu item: only an item that keeps the person on the page (the language switch) closes the menu and returns focus to the menu button. Profile opens the Profile page and focus goes to that page's heading (h1, `tabindex="-1"`). Log out opens the login page and focus goes to the login page's heading (h1, `tabindex="-1"`). Amends 33.
+39. From the code owner's final review: an outside click closes the menu and leaves focus where the click put it. Focus returns to the trigger only on Escape, or when an item is chosen (per 38).
 
 Plan step numbers: the code-review round put the shared icon set first, so the redesign plan in `design.md` numbers the app frame 5a and 5b (Clarifications 30 and 32 and the note below say 4a and 4b as first written) and admin 6a and 6b.
 
