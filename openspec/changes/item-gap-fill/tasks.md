@@ -4,8 +4,8 @@
 
 - [ ] 1.1 Add stubs so the tests compile and fail at their THEN step: `GapFillPayload`, `GapFillSegment` and `GapFillItemType` (code `gap-fill`; `studentView` and `extraChecks` return a placeholder, each marked STUB); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
 - [ ] 1.2 Write tests for item-gap-fill R1-S1 to R1-S7 in `items/api/GapFillItemTest` (helpers of `ItemApiTest`: `teacherWithPart`, `body`, `expectValidation`, `expectNotFound`, `assertStoredPayload`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step
-- [ ] 1.3 Write tests for item-gap-fill R1-S8 and R1-S9 in `items/domain/gapfill/GapFillItemTypeTest` (unit level, application JSON mapper for the serialisation test); verify each fails at its THEN step
-- [ ] 1.4 Write tests for item-gap-fill R2-S1 to R2-S11 in `items/api/GapFillPayloadTest`; build the large payloads (101 segments, 1000-letter texts, 200-letter answers, emoji answers) in test helpers; verify each fails at its THEN step
+- [ ] 1.3 Write tests for item-gap-fill R1-S8 and R1-S9 in `items/domain/gapfill/GapFillItemTypeTest` (unit level; both assert the `{"segments": [...]}` wrapper; application JSON mapper for the serialisation test); verify each fails at its THEN step
+- [ ] 1.4 Write tests for item-gap-fill R2-S1 to R2-S15 in `items/api/GapFillPayloadTest`; build the large payloads (51 segments, 500-letter texts, 100-letter answers, emoji texts and answers counted in UTF-16 units: 250 and 251 emoji in a text, 50 and 51 in an answer) in test helpers; verify each fails at its THEN step
 - [ ] 1.5 Write one unit test without a scenario ID: the strict mapper still gives `UNKNOWN_FIELD` for an unknown property on `GapFillSegment` (design D2)
 - [ ] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test fails at its THEN step, not in setup, and every scenario ID has a test
 
@@ -15,9 +15,9 @@
 
 ## 3. Implementation (backend)
 
-- [ ] 3.1 `GapFillPayload` and `GapFillSegment` with the Bean Validation of design D3 (`@NotEmpty @Size(max = 101)` and `List<@Valid GapFillSegment>`, `@Size(max = 1000)` on `text`, `@Size(max = 10)` on `answers`); verify R2-S1 (limits), R2-S2 (a), (d), (e) and R2-S10 pass
-- [ ] 3.2 `GapFillItemType.extraChecks`: the per-segment rules, adjacent texts, answer rules, the 50-gap limit and the gap-less payload (design D3); verify R2-S2 (b), (c), R2-S3 to R2-S9 and R2-S11 pass
-- [ ] 3.3 `GapFillItemType.studentView` as an allowlist (design D5); verify R1-S8 and R1-S9 pass
+- [ ] 3.1 `GapFillPayload` and `GapFillSegment` with the Bean Validation of design D3 (`@NotEmpty @Size(max = 51)` and `List<@Valid GapFillSegment>`, `@Size(max = 500)` on `text`, `@Size(max = 5)` on `answers`). `GapFillItemType.extraChecks` stays the empty placeholder from 1.1 (no errors) until 3.2, so in this step R2-S1 (limits, all four payloads are valid), R2-S2 (a), (b), (e), (f) and R2-S10 pass because Bean Validation and the JSON reading already give the expected errors, and every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
+- [ ] 3.2 `GapFillItemType.extraChecks`: the per-segment rules, adjacent texts, answer rules, the 50-gap limit and the gap-less payload (design D3); the empty-text rule rejects only "" (not `@NotBlank`), whitespace-only text is accepted, and a gap with missing or empty `answers` counts as a gap while a null, typeless or unknown-type segment does not; verify R2-S2 (c), (d), R2-S3 to R2-S9, R2-S11, R2-S12, R2-S13, R2-S14 and R2-S15 pass
+- [ ] 3.3 `GapFillItemType.studentView` as an allowlist (design D5); returns the `{"segments": [...]}` envelope; verify R1-S8 and R1-S9 pass
 - [ ] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, and that no answer or text is logged (constitution section 5)
 - [ ] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
