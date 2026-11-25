@@ -16,9 +16,9 @@ This is a tooling change with `skip_specs: true`: no "Failing tests" section and
 ## 2. Workflow follow-up
 
 - [x] 2.1 Spec gate: the engineer approves the spec (the mockup stays outside the repository, Clarification 23; its screenshots are in PR #194 comment 7156421470).
-- [ ] 2.2 Code review gate: run the `code-gate-reviewer` on the PR; the engineer approves the code gate.
-- [ ] 2.3 Archive the change in the same PR (`openspec archive`; nothing merges into `openspec/specs/`).
-- [ ] 2.4 Mark the PR ready for the final code owner review. The PR closes #171.
+- [x] 2.2 Code review gate: run the `code-gate-reviewer` on the PR; the engineer approves the code gate.
+- [x] 2.3 Archive the change in the same PR (`openspec archive`; nothing merges into `openspec/specs/`).
+- [x] 2.4 Mark the PR ready for the final code owner review. The PR closes #171.
 
 ## 3. Issues to file after the change (not an implementer task)
 
