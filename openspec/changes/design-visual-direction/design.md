@@ -2,7 +2,7 @@
 
 ## Context
 
-See proposal.md. `.agents/design/design-code.md` is a stub. This change writes it from the text between the DESIGN-CODE markers in D1. The values and rules in D1 are taken from the r3 mockup's files (`css/tokens.css`, `css/components.css`, `js/ui.js`, `build.py`, its 18 HTML states and their screenshots at 1920, 1280, 1024 and 360) and from the engineer's decisions (proposal, decisions 1-30); contrast figures are from the mockup's `contrast.py`. The mockup is outside the repository (decision 23: its screenshots are in PR comments only), so D1 writes every value and rule out and does not refer the reader to it or depend on it.
+See proposal.md. `.agents/design/design-code.md` is a stub. This change writes it from the text between the DESIGN-CODE markers in D1. The values and rules in D1 are taken from the r3 mockup's files (`css/tokens.css`, `css/components.css`, `js/ui.js`, `build.py`, its 18 HTML states and their screenshots at 1920, 1280, 1024 and 360) and from the engineer's decisions (proposal, decisions 1-32); contrast figures are from the mockup's `contrast.py`. The mockup is outside the repository (decision 23: its screenshots are in PR comments only), so D1 writes every value and rule out and does not refer the reader to it or depend on it.
 
 UI design: none, only a document under `.agents/design/` changes. No `frontend/src` change, no new dependency, no Flyway migration, no spec delta (`skip_specs: true`).
 
@@ -150,7 +150,9 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 | `--underline-offset` | `0.15em` | link underline |
 | `--size-visually-hidden` | `1px` | visually hidden text |
 
-Media and container conditions are not tokens (the lint skips `@media` and `@container` conditions, because `var()` does not work in them): wide is `@media (min-width: 64rem)`, narrow is `@media (max-width: 63.999rem)`; touch sizes use `@media (pointer: fine)`; the tree is a drawer below `@media (max-width: 79.999rem)` (see Builder).
+Media and container conditions are not tokens (the lint skips `@media` and `@container` conditions, because `var()` does not work in them): wide is `@media (min-width: 64rem)`, narrow is `@media (max-width: 63.999rem)`; touch sizes use `@media (pointer: fine)`; the tree is a drawer between `64rem` and `79.999rem` (below `64rem` there is no drawer: the back button leads to the course screen; see Builder).
+
+The other conditions in the chosen mockup: `@media (hover: none)` (tooltips), `@media (prefers-reduced-motion: reduce)` (transitions), `@media (max-width: 63.999rem) and (pointer: coarse)` (the sticky editor's scroll padding), and `@container main (max-width: 56rem)`, which is in the mockup only: it is unreachable at `64rem` and wider (the main container is always at least `59rem` wide there) and is not carried into this design code, because English admin actions never wrap on wide.
 
 Two containers:
 
@@ -315,8 +317,8 @@ A popover (profile menu): `--menu-width`, padding `--space-adjacent`, `--border-
 
 - Wide: a sticky full-height rail, `--rail-width`, `--color-rail`, a divider on its right. The wordmark ("teachdash", `--text-small` 600, centred, `translate="no"`) sits at the top; items are `--rail-item-height` high, the icon (`--icon-size-rail`, muted) above a `--text-small` label, centred, hyphens auto and `overflow-wrap: break-word` as the fallback for long Russian words. Hover: sunken fill. Current: white surface, 3px accent bar on the left, weight 600, accent icon (`aria-current="page"`).
 - Narrow: the rail becomes a fixed bottom tab bar, `--tabbar-height`, a divider on top, the current bar on the top edge; no wordmark. A title bar (`--color-rail`, at least `--topbar-height`, a divider below) shows the page title (`--text-large` 600, one line with ellipsis), a small muted parent line above it when there is one, and a back icon button when the page has a parent.
-- The rail ships in plan step 4a with one item per role plus the Profile menu; the other tabs arrive with their features. At 4a: admin: Teachers (opens `/admin`) and Profile; teacher and student: a single item carrying the cabinet's name until real tabs arrive (it opens the cabinet page), and Profile. Courses and Students (teacher) and Home (student) are added by the features that build those pages and replace that item. The cabinet title (`cabinet.admin`, `cabinet.teacher`, `cabinet.student`, as `CabinetPage` shows today) is the page heading of the cabinet page, not a rail item; desktop has no top bar. The language select moves into the Profile menu once the person is logged in, and stays on the login band while logged out.
-- Profile is a menu button (`aria-haspopup="menu"`, `aria-expanded`, `aria-controls`) at every width, with a visible word. The menu opens to the right of the rail item on wide screens and above the tab bar, right edges aligned, on narrow ones. Log out lives only in this menu, and the menu ships with the desktop rail in step 4a, so desktop never lacks Log out; step 4b adds only the phone tab bar and title bar.
+- The rail ships in plan step 4a with one item per role plus the Profile menu; the other tabs arrive with their features. At 4a: admin: Teachers (opens `/admin`) and Profile; teacher and student: a single item carrying the cabinet's name until real tabs arrive (it opens the cabinet page), and Profile. Courses and Students (teacher) and Home (student) are added by the features that build those pages and replace that item. The cabinet title (`cabinet.admin`, `cabinet.teacher`, `cabinet.student`, as `CabinetPage` shows today) is the page heading of the cabinet page, not a rail item; desktop has no top bar. The language select moves into the Profile menu once the person is logged in, and stays on the login band while logged out. Below `64rem` the current header, with its Log out and language select, stays until step 4b ships the phone tab bar and title bar and removes it.
+- Profile is a menu button (`aria-haspopup="menu"`, `aria-expanded`, `aria-controls`) at every width, with a visible word. The menu opens to the right of the rail item on wide screens and above the tab bar, right edges aligned, on narrow ones. Log out lives only in this menu once the frame is complete. The menu ships with the desktop rail in step 4a, so desktop never lacks Log out; below `64rem` the current header keeps its Log out and language select until step 4b ships the phone tab bar and title bar and removes it.
 
 ### Page header
 
@@ -403,6 +405,7 @@ These follow from the engineer's decisions; this file ranks above `project-rules
 - C5 and C21 (the one `--radius` and `--shadow-card`): the radius is the new `0.25rem`; `--shadow-card` is replaced by `--shadow-overlay` (overlays only); the renames in the rename map are decided. A frontend-implementer may rename as that map says without stopping.
 - C9 and C18 (a control is not smaller than `--control-height`): `--control-height` is `2.5rem` with a mouse and `2.75rem` on touch; row icon buttons are `2rem` with a mouse. The 24px floor is still met.
 - Base rules ("a font is exactly one `var(...)`", "custom properties only in `tokens.css`") are unchanged.
+- Shadow: the vendored sources `refactoring-ui.md` and `refactoring-ui-patterns.md` advise a `--shadow-card` card; this file wins: shadow only on overlays.
 - Inline style: project rules forbid it. The one exception is the position helper in `src/ui` for the tooltip, menu and picker, which sets `left`, `top` and the like from code with `style.setProperty`; no other inline style is allowed.
 - The product brief's Devices line said teacher editors are designed for desktop; the builder here follows the same layout on phones, and the line is corrected.
 
@@ -432,8 +435,8 @@ Order of the issues to file after this change. The builder, student home, lesson
    - 3c: page header and data table components, before 5a.
    The lesson tree comes with #116/#117.
 4. App frame:
-   - 4a: the desktop rail and the Profile menu (name and role from `/api/me`, no backend change; Log out and the language select move into the menu; desktop has no top bar). Specs affected: `web-auth` R3 (it says the header shows the name, a "Profile" button and a "Log out" button) and the e2e `auth.spec.ts`;
-   - 4b: the phone tab bar and the title bar with the back button. Partly #57.
+   - 4a: the desktop rail and the Profile menu (name and role from `/api/me`, no backend change; on desktop Log out and the language select move into the menu and there is no top bar; below `64rem` the current header stays, with its Log out and language select, until 4b). Specs affected: `web-auth` R3 (it says the header shows the name, a "Profile" button and a "Log out" button) and the e2e `auth.spec.ts`;
+   - 4b: the phone tab bar and the title bar with the back button; it removes the old header, so Log out and the language select reach phones through the Profile menu. Partly #57.
 5. Admin teachers (`AdminTeachersPage.tsx`):
    - 5a: restyle with the current data;
    - 5b: search and paging, a new issue with the backend change;
