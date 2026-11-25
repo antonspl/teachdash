@@ -2,14 +2,14 @@
 
 ## Context
 
-See proposal.md. `.agents/design/design-code.md` is a stub. This change writes it from the text between the DESIGN-CODE markers in D1. The values and rules in D1 are taken from the r3 mockup's files (`css/tokens.css`, `css/components.css`, `js/ui.js`, `build.py`, its 18 HTML states and their screenshots at 1920, 1280, 1024 and 360) and from the engineer's decisions (proposal, decisions 1-22); contrast figures are from the mockup's `contrast.py`. The mockup is outside the repository (pending, decision 23), so D1 writes every value out and does not refer the reader to it.
+See proposal.md. `.agents/design/design-code.md` is a stub. This change writes it from the text between the DESIGN-CODE markers in D1. The values and rules in D1 are taken from the r3 mockup's files (`css/tokens.css`, `css/components.css`, `js/ui.js`, `build.py`, its 18 HTML states and their screenshots at 1920, 1280, 1024 and 360) and from the engineer's decisions (proposal, decisions 1-30); contrast figures are from the mockup's `contrast.py`. The mockup is outside the repository (decision 23: its screenshots are in PR comments only), so D1 writes every value and rule out and does not refer the reader to it or depend on it.
 
 UI design: none, only a document under `.agents/design/` changes. No `frontend/src` change, no new dependency, no Flyway migration, no spec delta (`skip_specs: true`).
 
 ## Goals / Non-Goals
 
 - Goal: one design code the frontend roles read first (README reading order) and the code-gate review checks against, self-contained, with the chosen direction and an ordered plan of redesign issues.
-- Non-goal: any code, any new decision, redesigning screens that are not built, or editing `project-rules.md`, `README.md` or the product brief.
+- Non-goal: any code, any new decision, redesigning screens that are not built, or editing `README.md`. The four stale lines in `project-rules.md`, the product brief and `visual-criteria.md` are edited by the implementer (D5).
 
 ## Decisions
 
@@ -20,7 +20,7 @@ The implementer writes the file from the text between the markers below, as it s
 <!-- DESIGN-CODE START -->
 # Design code
 
-The chosen visual direction for the teachdash web client (issue #171, part 2), and the order in which it reaches the code. It ranks above `project-rules.md` (README, C0): where the two differ, this file wins, and "Departures from the project rules" names each difference. The mockup it was chosen from is not part of the repository; every value and rule is written out here.
+The chosen visual direction for the teachdash web client (issue #171, part 2), and the order in which it reaches the code. It ranks above `project-rules.md` (README, C0): where the two differ, this file wins, and "Departures from the project rules" names each difference. The mockup it was chosen from is not part of the repository and nothing here depends on it; every value and rule is written out here. Where the mockup did something that no one has decided as a rule, the text says "in the chosen mockup: ...; decided in <issue>", and a builder or component issue decides it.
 
 Contents: Direction; Tokens; Colour; Type; Space and shape; States; Buttons, icons and tooltips; Components; Layout and screens; Copy and languages; Accessibility; Departures from the project rules; Deferred; Redesign plan.
 
@@ -28,7 +28,7 @@ Contents: Direction; Tokens; Colour; Type; Space and shape; States; Buttons, ico
 
 Base "r3": the layout of variant "Mulberry" with the colours of variant "Ink". A calm working tool, not a playful one (product brief): petrol ink on cool paper, a rail on the left, compact controls, flat surfaces with thin dividers.
 
-- One accent, petrol `#155770`, used rarely: primary buttons, links, the focus ring, the current-place and selected bars, the selected row's icon. Everything else is text colour, muted text and neutral fills. Item type icons are muted.
+- One accent, petrol `#155770`, used rarely, for actions and place, never for status: primary buttons, links, the focus ring, the current-place and selected bars. Everything else is text colour, muted text and neutral fills. Item type icons are muted.
 - "Current place" (the page in the rail, the lesson and part in the tree) = a white tab plus a 3px accent bar. "Selected" (an item row in the builder) = `accent-subtle` fill plus the same 3px bar. The 3px bar is reserved for these two meanings and is never used as decoration.
 - Dark mode is out of scope.
 - Status is never colour alone: success, neutral and danger always carry an icon and a word.
@@ -54,7 +54,7 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 | `--color-on-accent` | `#ffffff` | text on accent and on danger-action |
 | `--color-accent-subtle` | `#d9ebf4` | selected row |
 | `--color-control-border` | `#6b808b` | edges a person operates: inputs, selects, secondary buttons, menu and picker edges (at least 3:1) |
-| `--color-divider` | `#d3dce1` | decorative edges: rows, panes, bars, progress track |
+| `--color-divider` | `#d3dce1` | dividers between rows, panes and bars; the edge of builder item rows; the progress track. An edge a person must find to operate uses `--color-control-border` |
 | `--color-tree-guide` | `#9db0ba` | the nesting line under a lesson's parts |
 | `--color-focus-ring` | `var(--color-accent)` | focus outline |
 | `--color-neutral-background` / `-text` | `#e3e9ec` / `#283840` | neutral badge and banner; pressed quiet button |
@@ -68,10 +68,10 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 | Token | Value | Use |
 |---|---|---|
 | `--font-body` | `system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif` | all text (project rules C4) |
-| `--text-small` | `0.8125rem` | metadata, hints, table headers, badges, rail labels, item type names |
+| `--text-small` | `0.8125rem` | the smallest size, never undercut: metadata, hints, table headers, badges, rail labels, item type names |
 | `--text-base` | `1rem` | default |
 | `--text-reading` | `1.0625rem` | student lesson and homework text, the builder preview |
-| `--text-large` | `1.25rem` | course name, item editor title, lesson text headings, phone title bar, question numbers |
+| `--text-large` | `1.25rem` | dialog title and section heading, course name, item editor title, lesson text headings, phone title bar, question numbers |
 | `--text-title` | `1.5rem` | page title |
 | `--weight-regular` / `--weight-strong` | `400` / `600` | the only two weights |
 | `--line-height` | `1.45` | default |
@@ -89,7 +89,7 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 | `--space-group` | `0.75rem` | inside a group: row padding, narrow page gutter |
 | `--space-block` | `1.25rem` | between blocks of a group: fields, pane padding |
 | `--space-section` | `2rem` | between sections |
-| `--space-page` | `2rem` | page gutter on desktop |
+| `--space-page` | `2rem` | page gutter on desktop (narrow: `--space-block` by `--space-group`, see Layout) |
 | `--space-button-gap` | `0.75rem` | between buttons side by side |
 
 ### Shape and motion
@@ -103,7 +103,7 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 | `--opacity-disabled` | `0.6` | disabled controls |
 | `--shadow-overlay` | `0 6px 20px rgb(21 33 39 / 20%)` | overlays only: dialog, tooltip, menu, picker |
 | `--duration-fast` | `120ms` | colour, background and opacity transitions |
-| `--tooltip-delay` | `400ms` | hover delay before a tooltip shows |
+| `--tooltip-delay` | `400ms` | hover delay before a tooltip shows (the mockup's value; decided in the Tooltip issue) |
 
 ### Controls and icons
 
@@ -142,43 +142,53 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 | `--side-panel-min` / `--side-panel-max` | `15rem` / `24rem` | lesson and homework side panel |
 | `--side-panel-now` | `clamp(var(--side-panel-min), calc(100cqi - var(--reading-width) - 2 * var(--space-page)), var(--side-panel-max))` | panel width inside the main container |
 | `--list-gutter` | `max(var(--space-page), calc(100cqi - var(--space-page) - var(--list-width)))` | right gutter of a full-width list row |
-| `--editor-column-min` | `24rem` | builder editor: fields and preview side by side once both fit |
+| `--editor-column-min` | `24rem` | the mockup's editor two-column layout (decided in the builder issues #116-#118) |
 | `--progress-height` | `0.375rem` | lesson step bar |
 | `--tree-indent` | `calc(var(--space-adjacent) + var(--row-action-size) / 2)` | the guide line sits under the centre of a lesson's chevron |
-| `--login-top-offset` | `12vh` | login form top, fixed per window |
+| `--login-top-offset` | `12vh` | login form top, fixed per window (the mockup's value; decided in the login issue) |
 | `--name-min-width` | `8rem` | admin name on phones |
 | `--underline-offset` | `0.15em` | link underline |
 | `--size-visually-hidden` | `1px` | visually hidden text |
 
-Media and container conditions are not tokens (the lint skips `@media`): wide is `min-width: 64rem`, narrow is `max-width: 63.999rem`; the main container's queries are `59rem` (side panel), `56rem` and `72rem` (admin actions); the builder editor's is `50rem` (two `--editor-column-min` plus `--space-section`); the builder tree folds between `64rem` and `79.999rem`.
+Media and container conditions are not tokens (the lint skips `@media` and `@container` conditions, because `var()` does not work in them): wide is `@media (min-width: 64rem)`, narrow is `@media (max-width: 63.999rem)`; touch sizes use `@media (pointer: fine)`; the tree is a drawer below `@media (max-width: 79.999rem)` (see Builder).
 
-### Rename map from today's tokens (P1)
+Two containers:
+
+- `container: main / inline-size` on the app main area (the page area right of the rail; the lesson tree is not part of it). Its queries: `@container main (min-width: 59rem)` for the side panel (text column plus the page gutters plus `--side-panel-min`) and `@container main (max-width: 72rem)` for Russian admin actions. Tokens that use `cqi` for it: `--side-panel-now` and `--list-gutter`.
+- `container: editor / inline-size` on the builder editor. Its query in the mockup: `@container editor (min-width: 50rem)` (two `--editor-column-min` plus `--space-section`) for the two-column layout with the sticky preview. `--editor-column-min` is used only in that condition's arithmetic and in the column tracks.
+
+A custom property whose value uses `cqi` is not resolved where it is defined (in `tokens.css`, at `:root`): it is substituted and resolved at the point of use, against the nearest container of the element that reads it. A token such as `--list-gutter` must therefore be read only inside the main container, and `--side-panel-now` only inside it too.
+
+### Rename map from today's tokens
 
 Done across all `src/ui` CSS in one PR with before and after screenshots; no alias period (the lint would break mid-way otherwise). Map each use by its role, not by its value: some names keep their name and change meaning.
 
 - `--color-border` splits: `--color-control-border` for fields, selects, secondary buttons, the password toggle, the issued-link input, menu and picker edges; `--color-divider` for rows, panes, bars and card edges. This folds #168.
-- `--color-action-success-*` are removed. "Add teacher" and "Create teacher" become the accent primary.
+- `--color-action-success-*` are removed, and with them the Button `success` variant (green): "Add teacher" and "Create teacher" become the accent primary. The tokens issue (plan step 1) makes this change, because the rename is done in one PR with no aliases.
 - A danger button's fill moves from `--color-danger-text` to `--color-danger-action` (and `-hover`).
 - `--space-1..4` (0.5, 1, 1.5, 2.5rem) are replaced by the role names above; `--space-button-gap` stays at `0.75rem`.
-- Type: the old `--text-large` (1.5rem) is the new `--text-title`; the old `--text-title` (2rem) has no counterpart; the new `--text-large` is 1.25rem. `--text-small`, `--text-reading`, the two weights and `--line-height-*` are new (a raw `font-weight: 600` becomes `--weight-strong`).
-- `--radius` goes from `0.5rem` to `0.25rem`; `--shadow-card` is replaced by `--shadow-overlay`, used on overlays only (P2); `--line-height` goes from 1.5 to 1.45 and `--line-height-tight` from 1.25 to 1.2.
-- `--control-height` keeps its name; it is 2.5rem with a mouse. `--arrow-width` is not in the set: the select chevron is an inline icon at `--icon-size` (see Fields; #86).
-- New: the accent, rail, tree-guide, focus, tooltip, icon, rail and layout tokens above. A token is still added only when no existing one fits (project rules C3).
+- Type: map each use by its role.
+  - The page title (`Title.module.css`, the h1) takes the new `--text-title` (1.5rem) at every width; it used the old `--text-large` below `40rem` and the old `--text-title` (2rem) from `40rem`, and the width step is dropped. Today this is the only use of the old `--text-title`; the 2rem size has no counterpart.
+  - The dialog title (`Dialog.module.css`, `.title`) and the section heading (`Section.module.css`, `.heading`) are h2 and used the old `--text-large` (1.5rem): they keep the name `--text-large`, whose value is now 1.25rem.
+  - `--text-small`, `--text-reading`, the two weights and `--line-height-*` are new. The raw `font-weight: 600` in `Field`, `StatusBadge`, `Button`, `AppHeader` and `IssuedLink` becomes `--weight-strong`.
+- `--radius` goes from `0.5rem` to `0.25rem`; `--shadow-card` is replaced by `--shadow-overlay`, used on overlays only; `--line-height` goes from 1.5 to 1.45 and `--line-height-tight` from 1.25 to 1.2.
+- `--control-height` keeps its name; it is 2.5rem with a mouse. `--arrow-width` is removed, so the tokens issue (plan step 1) also reworks the select chevron in `Field.module.css` (it uses `--arrow-width` for its padding, width and height): the chevron becomes an inline icon at `--icon-size` (see Fields; #86). The rest of the buttons and fields is plan step 2a.
+- New: the accent, rail, tree-guide, focus, tooltip, icon, rail and the page, gutter and layout tokens above. A token is still added only when no existing one fits (project rules C3).
 
 ## Colour
 
 - Page text on surfaces, `--color-text` and `--color-text-muted` both pass 4.5:1 on surface, background, sunken, rail and accent-subtle (16.4, 7.0; 15.3, 6.5; 14.3, 6.0; 13.5, 5.7; 13.4, 5.7).
 - `--color-accent` on surface is 8.0:1 and on the rail 6.6:1: it is safe as link text and as a focus ring (3:1) on every neutral and tinted fill (6.5:1 or more).
-- `--color-control-border` is 4.1:1 on surface, 3.9 on background, 3.6 on sunken, 3.4 on the rail: a control edge meets 3:1 wherever it sits. `--color-divider` is decorative and is not used on an edge a person must find. `--color-tree-guide` sits between them (2.25:1 on surface).
+- `--color-control-border` is 4.1:1 on surface, 3.9 on background, 3.6 on sunken, 3.4 on the rail: a control edge meets 3:1 wherever it sits. `--color-divider` is below 3:1: it marks dividers between rows, panes and bars, the builder item rows (found by their fill and text, not by their edge) and the progress track; fields, selects, buttons, menu and picker edges use the control border. `--color-tree-guide` sits between them (2.25:1 on surface).
 - Pairs, all at least 4.5:1: on-accent on accent 8.0 (hover 10.3, active 12.4); on-accent on danger-action 7.1 (hover 9.2); neutral text on neutral background 9.9; success text on success background 7.0; danger text on danger background 6.9; surface on text (tooltip) 16.4.
 - The accent is for actions and place, never for status. Success is green and danger is red, because right and wrong are a domain convention; neutral is the blue-grey. There is no second chromatic role: the focus ring is the accent.
 
 ## Type
 
 - Page title: `--text-title`, weight 600, `--line-height-tight`. A page with a count puts it beside the title in muted text (`Teachers 42 teachers`).
-- `--text-large` 600: the course name in the tree, the item editor title, headings inside lesson text, the phone title bar, question numbers.
+- `--text-large` 600: dialog titles and section headings (h2), the course name in the tree, the item editor title, headings inside lesson text, the phone title bar, question numbers.
 - Body and field text: `--text-base`. Student reading text (lesson, homework, builder preview): `--text-reading` with `--line-height-reading`.
-- `--text-small` for secondary information only: hints, table headers, badges, rail labels, item type names, metadata, tooltips. Nothing the user must read to act is below `--text-small`; student content is never small.
+- Never below `--text-small`. It is the size for hints, table headers, badges, rail labels, item type names, metadata and tooltips; student content is never small.
 - Labels are 600 at base size. Headings use `text-wrap: balance`, paragraphs `text-wrap: pretty`. Numbers in columns and counters use `font-variant-numeric: tabular-nums`.
 - Hierarchy comes from size, weight and colour, never a second typeface (project rules C4, C23). Sentence case, no all-caps (C1, C2).
 
@@ -186,7 +196,7 @@ Done across all `src/ui` CSS in one PR with before and after screenshots; no ali
 
 - One radius, one border width, one focus ring. A box is a surface fill plus a divider; a card is not wrapped around everything. Rows in a data table have no outer box (see Layout).
 - Space by role: `--space-adjacent` inside a thing, `--space-inline` between siblings on a line, `--space-group` inside a group and as the narrow page gutter, `--space-block` between blocks and as pane padding, `--space-section` between sections and as the desktop page gutter. Parents lay children out with `gap`; components do not carry outer margins.
-- Shadow only on overlays (P2): dialog, tooltip, menu, picker. Not on cards, banners, the header or rows. The inline picker on phones is not an overlay and has no shadow.
+- Shadow only on overlays: dialog, tooltip, menu, picker. Not on cards, banners, the header or rows. The inline picker on phones is not an overlay and has no shadow.
 - Disabled = `--opacity-disabled`, `cursor: not-allowed` and the native `disabled` attribute.
 - Transitions: background-color, border-color, color and opacity only, `--duration-fast`. Reduced motion keeps state changes visible as an instant change (project rules C6).
 - Buttons never touch fields, cards or each other (`--space-button-gap` between buttons; `--space-adjacent` inside a word-button group). Native parts such as the select arrow are inset like text, by `--space-group`.
@@ -195,26 +205,26 @@ Done across all `src/ui` CSS in one PR with before and after screenshots; no ali
 
 The same grammar for every component.
 
-- Focus: `:focus-visible` shows a `--border-width-strong` outline in `--color-focus-ring` at `--focus-offset`, on every interactive element; `outline: none` is never used. Where a row meets a pane edge (rail items, tree rows, menu items, picker items, tree parts) the outline is inset by the border width so it is not clipped.
+- Focus: `:focus-visible` shows a `--border-width-strong` outline in `--color-focus-ring` at `--focus-offset`, on every interactive element; `outline: none` is never used. Where a row meets a pane edge the outline is inset so it is not clipped: rail items by `calc(-1 * var(--border-width-strong) - var(--focus-offset))` (that is -(2px + 2px)); menu items, tree lesson names, tree parts and picker items by `calc(-1 * var(--border-width-strong))` (-2px).
 - Hover: one step. Primary goes to `-hover`. Secondary, quiet and row-action controls take the `--color-surface-sunken` fill (links and text controls on a tinted pane too). Input borders go to `--color-text-muted`.
 - Active: one more step (`--color-accent-active`, `--color-neutral-background`), with no layout shift.
 - Disabled: see Space and shape.
-- Loading (a request in flight): the button is disabled, its label becomes the progressive form ("Saving…", "Sending…", "Signing in…"), `aria-busy="true"`, and its minimum width is kept so the layout does not jump. Page loading is the text "Loading…" in the page body, with the layout space kept (Q17: no spinner or skeleton until lists are real).
+- Loading (a request in flight): the button is disabled, its label becomes the progressive form ("Saving…", "Sending…", "Signing in…"), `aria-busy="true"`, and its minimum width is kept so the layout does not jump. Page loading is the text "Loading…" in the page body, with the layout space kept: no spinner or skeleton until lists are real.
 - Error: an input gets a `--border-width-strong` `--color-danger-text` border (padding reduced by one border width so the text does not move), an alert icon at `--icon-size-small` and the message below it in danger text at `--text-small`; `aria-invalid="true"` and `aria-describedby`. A form-level error is a banner.
-- Empty (Q16): text that says what is missing and, where there is one, a `src/ui/` action; no image assets (project rules C14).
+- Empty: text that says what is missing and, where there is one, a `src/ui/` action; no image assets (project rules C14).
 - Selected / current: `aria-current` (`page` in the rail, `true` for a part or item) plus the look in Direction.
 
 ## Buttons, icons and tooltips
 
 ### Button roles
 
-- Primary: accent fill, on-accent text; one primary per group. Secondary: surface fill, control border. Quiet: transparent, text colour, hover fill. Danger: `--color-danger-action` fill and on-accent text, only for the destructive confirmation in a dialog. Danger text: `--color-danger-text`, for a destructive row action.
+- Primary: accent fill, on-accent text; one primary per group. Secondary: surface fill, control border. Quiet: transparent, text colour, hover fill. Danger: `--color-danger-action` fill and on-accent text, only for the destructive confirmation inside a dialog. Danger text: `--color-danger-text`, only for admin account actions such as Deactivate.
 - Height `--control-height`, padding `0 var(--space-group)`, weight 600, `--space-inline` between icon and word (`--space-adjacent` and `--space-inline` padding for a compact one). A full-width variant exists for phones.
 - Create and page-level quiet actions are icon + word in text colour, including repeated "Add item", "Add lesson", "Add part" and "Add option". Their icon is `plus`.
 - Edit actions on part and item heads (Rename, Up, Down, Delete) are words only, in muted text colour (hover: text colour). Move actions are words ("Up", "Down") at every width, 360 included.
-- Icon-only buttons (R2-P4) only for repeated row actions (Remove option ×) and universal symbols (close, chevrons, back, pager, play, pause, menu). Form buttons, primary buttons, dialog buttons, rail items, status badges and "Send to Anna" keep their text.
-- Admin row actions are icon + word at every width, in `--text-small`, icon muted, hover on a neutral fill, "Deactivate" in danger text with a danger-background hover. When the words do not fit beside the name, the actions take their own line under it, still icon + word. The widths are fixed per language, no measuring script: the main area is `56rem` or less (English), `72rem` or less (Russian).
-- Delete: a muted, non-red "Delete" word button is allowed only because every Delete opens a confirmation dialog (#137, #121). A delete that acts at once is not allowed to be muted.
+- Icon-only buttons only for repeated row actions (Remove option ×) and universal symbols (close, chevrons, back, pager, play, pause, menu). Form buttons, primary buttons, dialog buttons, rail items, status badges and "Send to Anna" keep their text.
+- Admin row actions are icon + word at every width, in `--text-small`, icon muted, hover on a neutral fill, "Deactivate" in danger text with a danger-background hover. On wide screens the main container is always at least `59rem`, so English actions sit beside the name and never wrap there; in Russian, when the main container is `72rem` or less, the actions take their own line under the name, still icon + word. On narrow screens they always sit under the name. The width is fixed per language, no measuring script.
+- Danger and Delete: danger (red) text is only for admin account actions such as Deactivate; the builder's Delete is a muted, non-red word button. Both always open a confirmation dialog (#137, #121), and the danger button appears only for the destructive confirmation inside that dialog. A delete that acts at once is never muted.
 - Icons are never on "Save", "Sign in", "Discard" or other buttons with clear text, and never an arrow appended to button text.
 
 ### Icons
@@ -241,6 +251,7 @@ One set of inline SVG components in `src/ui/` (project rules C16; `PlusIcon` is 
 | log-out | `M8 4H5v12h3M12 6.5l3.5 3.5-3.5 3.5M15.5 10H8` |
 | globe | circle cx 10 cy 10 r 7 + `M3 10h14M10 3c2 2 2.8 4.4 2.8 7s-.8 5-2.8 7c-2-2-2.8-4.4-2.8-7S8 5 10 3z` |
 | menu | `M3.5 6h13M3.5 10h13M3.5 14h13` |
+| sidebar | rect x 3.5 y 4 w 13 h 12 rx 1.5 + `M8 4v12` |
 | t-theory | `M5 3.5h7l3 3v10H5zM12 3.5v3h3M7.5 10h5M7.5 13h5` |
 | t-image | rect x 3.5 y 4.5 w 13 h 11 rx 1.5 + circle cx 7.5 cy 8.5 r 1.25 + `M4 14l4-4 3 3 2-2 3.5 3.5` |
 | t-pick | rect x 3.5 y 6 w 13 h 8 rx 1.5 + `M11 9.25l1.5 1.5 1.5-1.5M6 10h3` |
@@ -260,14 +271,17 @@ One set of inline SVG components in `src/ui/` (project rules C16; `PlusIcon` is 
 | info | circle cx 10 cy 10 r 7 + `M10 9v4.5M10 6.5v.01` |
 | alert | `M10 3.5l7 12.5H3zM10 8.5v3.5M10 14v.01` |
 
-Meanings are fixed: `t-*` are item types; `right`, `wrong`, `clock` are answer results; `todo`, `send`, `right` are homework status; `lock` is a closed lesson; `user-off`, `user-check`, `link` are admin row actions; `eye` is "Preview as student"; `profile` is the profile menu; `check` marks the chosen language and a saved state. Never emoji (C16).
+Meanings are fixed: `t-*` are item types; `right`, `wrong`, `clock` are answer results; `todo`, `send`, `right` are homework status; `lock` is a closed lesson; `user-off`, `user-check`, `link` are admin row actions; `eye` is "Preview as student"; `sidebar` is "Show lessons" (and "Hide" where it exists); `chev-left` is the back button; `profile` is the profile menu; `check` marks the chosen language and a saved state. Never emoji (C16).
 
 ### Tooltips and icon-only buttons
 
 - An icon-only button is a native `<button>` with `aria-label`. The visible tooltip text and the `aria-label` come from one i18n key; a repeated button adds the object to the label, the tooltip keeps the start ("Move up: Warm-up" / "Move up"), so the visible text is the start of the accessible name (WCAG 2.5.3). No `title` attribute.
-- The tooltip is an `aria-hidden` sibling of the trigger (the name is already in `aria-label`). It shows on hover after `--tooltip-delay` and at once on `:focus-visible`; it stays while the pointer is on the trigger or on the tooltip (they touch: hoverable); Escape hides it without moving focus, and leaving the trigger resets it (WCAG 1.4.13). It sits above the trigger, centred; it flips below when there is no room above and slides sideways to stay inside the window (half a rem from the edge); in the rail it sits to the right (above the item in the phone tab bar). It never covers its trigger.
+- The tooltip is an `aria-hidden` sibling of the trigger (the name is already in `aria-label`). It meets WCAG 1.4.13: it can be dismissed without moving focus, it can be hovered, and it stays until dismissed or the trigger is left. It never covers its trigger.
+- In the chosen mockup the tooltip showed on hover after 400ms (`--tooltip-delay`) and at once on `:focus-visible`; Escape hid it without moving focus and leaving the trigger reset it; it stayed while the pointer was on the trigger or on the tooltip (they touch); it sat above the trigger, centred, flipped below when there was no room above, slid sideways to stay half a rem inside the window, and sat to the right in the rail and above the item in the phone tab bar. These timings and placements are not rules; they are decided in the Tooltip, IconButton and Menu issue (plan step 3).
+- Position (tooltip, menu and picker): a small helper in `src/ui` sets the position from code with `style.setProperty`, the only inline-style exception (see Departures).
 - Look: `--color-text` fill, `--color-surface` text, `--text-small`, `--line-height-small`, padding `--space-adjacent` by `--space-inline`, `--radius`, `--shadow-overlay`, `max-width: var(--tooltip-max-width)`, no arrow.
-- On `(hover: none)` the tooltip is not shown, so on a phone an icon-only button is used only for close, chevrons, back, pager, play and menu; everything else shows its word at 360.
+- On `(hover: none)` the tooltip is not shown, so on a phone an icon-only button is used only for close, chevrons, back, pager, play, pause and menu, and for "Remove option ×" (the option's text sits next to it); everything else shows its word at 360.
+- A touch device at `64rem` or wider (an iPad in landscape) shows the wide layout, and its icon-only buttons have no tooltip; their `aria-label` still applies (decided with the components issue, plan step 3).
 - A rail item with a visible word has no tooltip. The tooltip is hidden while the trigger's menu is open.
 
 ## Components
@@ -278,7 +292,7 @@ Meanings are fixed: `t-*` are item types; `right`, `wrong`, `clock` are answer r
 - Input, textarea and select: height `--control-height` (textarea: padding `--space-inline` and `--space-group`, vertical resize), padding `0 var(--space-group)`, `--border-width` `--color-control-border`, `--radius`, surface fill, text colour; placeholder muted.
 - Select: native `<select>` with `appearance: none` and an inset chevron icon (`--icon-size`, muted, `--space-group` from the right, `padding-right` for it) so the arrow sits as far in as the text (#86). A select that leads with an icon (language) has the icon on the left. An inline select inside a question uses `--text-reading`.
 - A text input with a search icon pads its text past the icon. The password toggle is the word "Show"/"Hide".
-- Optional fields get "(optional)" in the label (Q19, #165, its own change): the exceptions are marked, not the required fields.
+- Optional fields get "(optional)" in the label (#165, its own change): the exceptions are marked, not the required fields.
 - An input row (input + button) uses `--space-button-gap`.
 
 ### Badge
@@ -287,7 +301,7 @@ Icon (`--icon-size-small`) + word, `--text-small`, weight 600, padding `--space-
 
 ### Banner
 
-A block with the tone's fill and text, padding `--space-group`, `--radius`, icon at `--icon-size` and text side by side, no shadow (Q18). Error banners are `role="alert"`; success and neutral banners are `role="status"`. The icon is aligned to the first text line.
+A block with the tone's fill and text, padding `--space-group`, `--radius`, icon at `--icon-size` and text side by side, no shadow. Error banners are `role="alert"`; success and neutral banners are `role="status"`. The icon is aligned to the first text line.
 
 ### Dialog
 
@@ -295,25 +309,25 @@ Native `<dialog>`: width `min(var(--dialog-width), 100% - 2 * var(--space-group)
 
 ### Menu
 
-A popover (profile menu): `--menu-width`, padding `--space-adjacent`, `--border-width` `--color-control-border`, `--radius`, surface fill, `--shadow-overlay`. Items are `--control-height` high, icon + word, hover and focus on the sunken fill. A menu starts with a non-clickable head (the signed-in person's name in 600 and the role in muted `--text-small`) that labels the menu, then items, separated by dividers; the language group is a muted label and `menuitemradio` items with a `check` icon on the chosen one (its text is in its own `lang`); Log out is last. Opening focuses the first item; Arrow keys, Home and End move; Escape and an outside click close it and return focus to the trigger.
+A popover (profile menu): `--menu-width`, padding `--space-adjacent`, `--border-width` `--color-control-border`, `--radius`, surface fill, `--shadow-overlay`. Items are `--control-height` high, icon + word, hover and focus on the sunken fill. A menu starts with a non-clickable head (the signed-in person's name in 600 and the role in muted `--text-small`); the menu's `aria-labelledby` points at that head. Then come the items, separated by dividers: Profile, the language choice, and Log out last. Opening the menu focuses the first actionable item (not the head); Arrow keys, Home and End move; Escape and an outside click close it and return focus to the trigger. In the chosen mockup the language choice was a muted label and `menuitemradio` items inside the menu, a `check` icon on the chosen one, each name in its own `lang`; decided in the app frame issue (plan step 4a).
 
 ### Rail and phone tab bar
 
 - Wide: a sticky full-height rail, `--rail-width`, `--color-rail`, a divider on its right. The wordmark ("teachdash", `--text-small` 600, centred, `translate="no"`) sits at the top; items are `--rail-item-height` high, the icon (`--icon-size-rail`, muted) above a `--text-small` label, centred, hyphens auto and `overflow-wrap: break-word` as the fallback for long Russian words. Hover: sunken fill. Current: white surface, 3px accent bar on the left, weight 600, accent icon (`aria-current="page"`).
 - Narrow: the rail becomes a fixed bottom tab bar, `--tabbar-height`, a divider on top, the current bar on the top edge; no wordmark. A title bar (`--color-rail`, at least `--topbar-height`, a divider below) shows the page title (`--text-large` 600, one line with ellipsis), a small muted parent line above it when there is one, and a back icon button when the page has a parent.
-- The rail ships with the cabinet title and Profile only; tabs arrive with their features. Roles' rails: admin: Teachers; teacher: Courses, Students; student: Home; each ends with Profile.
-- Profile is a menu button (`aria-haspopup="menu"`, `aria-expanded`, `aria-controls`) at every width, with a visible word. The menu opens to the right of the rail item on wide screens and above the tab bar, right edges aligned, on narrow ones. Log out lives only in this menu.
+- The rail ships in plan step 4a with the cabinet title and the Profile menu; the other tabs arrive with their features. At 4a each role's rail shows: admin: the cabinet title, Teachers (that page exists) and Profile; teacher: the cabinet title and Profile; student: the cabinet title and Profile. Courses and Students (teacher) and Home (student) are added by the features that build those pages. The cabinet title is the `cabinet.admin`, `cabinet.teacher` or `cabinet.student` text that `CabinetPage` shows today, and it is shown in the rail (the rail ships with the cabinet title and Profile); desktop has no top bar. The language select moves into the Profile menu once the person is logged in, and stays on the login band while logged out.
+- Profile is a menu button (`aria-haspopup="menu"`, `aria-expanded`, `aria-controls`) at every width, with a visible word. The menu opens to the right of the rail item on wide screens and above the tab bar, right edges aligned, on narrow ones. Log out lives only in this menu, and the menu ships with the desktop rail in step 4a, so desktop never lacks Log out; step 4b adds only the phone tab bar and title bar.
 
 ### Page header
 
-A flex row: the title and the count (muted) on the left, the page action on the right (Q13), `--space-block` below. The action is the accent primary ("Add teacher"). Below `64rem` the action sits under the title bar next to the count and wraps under it when long. The header is capped to the same width as its list.
+A flex row: the title and the count (muted) on the left, the page action on the right, `--space-block` below. The action is the accent primary ("Add teacher"). Below `64rem` the action sits under the title bar next to the count and wraps under it when long. The header is capped to the same width as its list.
 
 ### Data table
 
-- Semantics stay: a real table (headers are `th`), also when it is built with grid and subgrid (decision 22). Columns: name with the email under it, status badge, time zone, row actions.
+- Semantics stay: a real table (headers are `th`), also when it is built with grid and subgrid. Columns: name with the email under it, status badge, time zone, row actions.
 - Wide: one grid whose first and last tracks are the gutters, so a row's divider and hover fill run to the edge of the main area while the content stops at `--list-width`; no outer box, a divider above and below the table and between rows, `--color-surface` rows, hover `--color-surface-sunken`. Spare width is shared name 2 : status 1 : time zone 1. Header cells are `--text-small`, muted, 600. The left edge lines up with the page header.
 - Narrow: the header row is visually hidden; each row is a block with the name and status on the first line, the email and the time zone on the second (time zone on the email line at 360), the actions below; dividers between rows, the table edge to edge.
-- Search and paging (a search field with a label, "Page 1 of 5" with previous and next buttons above and below) are part of the direction but ship later with the backend (decision 13).
+- Search and paging (a search field with a label, "Page 1 of 5" with previous and next buttons above and below) are part of the direction but ship later with the backend (a separate issue).
 
 ### Short link list
 
@@ -321,7 +335,7 @@ For short lists (student home): inset on wide screens, rows on the page backgrou
 
 ### Tree (lesson tree)
 
-Built with the first builder issue (#116/#117). Rail-coloured pane, `--tree-width`, padding `--space-group`. Top: a "Course" label (muted, `--text-small`) above the course name (`--text-large` 600) and a "Hide" button on its own line above the name. Then a nested list:
+Built with the first builder issue (#116/#117). Rail-coloured pane, `--tree-width`, padding `--space-group`. Top: a "Course" label (muted, `--text-small`) above the course name (`--text-large` 600); at `80rem` and wider a "Hide" button (icon `sidebar` + word) on its own line above the name. Then a nested list:
 
 - Lesson row: a chevron button (`aria-expanded`, `aria-controls`, `--icon-size-small`, turns 90 degrees when open) and the lesson name, a link that opens the lesson's first part; a muted state or count on the right. The current lesson is an expanded white tab (surface fill, `--radius`), its name 600.
 - Parts: a list indented by `--tree-indent` with a `--border-width` guide line in `--color-tree-guide` on its left; part names start where the lesson name starts; part rows are `--row-action-size` high, muted `--text-small`, hover on the sunken fill and text colour. The current part is text colour, 600, with a 3px accent bar over the guide line (`aria-current`). Below the lessons: a quiet "Add lesson" button (icon + word).
@@ -329,26 +343,32 @@ Built with the first builder issue (#116/#117). Rail-coloured pane, `--tree-widt
 
 ### Builder
 
-Three panes, full height, each scrolling alone: tree (`--tree-width`) | outline (`--outline-width`, `--color-background`) | editor (the rest, surface). Between `64rem` and `79.999rem` the tree is hidden: a "Show lessons" button brings it back and the course appears as a small muted line above the lesson title. Below `64rem` the tree is hidden and the builder is two views: the outline and the editor.
+Three panes, full height, each scrolling alone: tree (`--tree-width`) | outline (`--outline-width`, `--color-background`) | editor (the rest, surface).
 
-- Outline head: the lesson title (`--text-title`, the page title of the builder; on phones it is in the title bar) and "Rename" and "Preview" quiet buttons (icon + word). Parts are `--space-section` apart. A part head: the part name (600) with its item count (`--text-small`, muted) and, for a homework part, the "Students send it" badge; "Delete" (muted word) on the name line at the right; "Rename", "Up", "Down" (muted words) on a second line. On desktop these actions show only on the current part, the one holding the selected item; on phones every part head shows them. When a selection removes the action line above the row the person clicked, the outline pane's scroll is adjusted so the clicked row stays under the pointer.
-- Item row: a `button` row (no buttons inside): surface fill, divider edge, `--radius`; the type column is the type icon (`--icon-size`, muted) and the short type name (`--text-small`, muted, width `--type-label-width`, so the text of all rows lines up), then the item text (the first line, a gap shown as `___`, the answer options in bold), then metadata on the right (an audio length). Hover: sunken fill. Selected: `--color-accent-subtle` fill, a 3px accent bar over the left edge, the type icon in accent. Phones have no selected row. After the rows: a quiet "Add item" button (icon + word) and, after the last part, "Add part".
-- Item type picker: a popover `--picker-width` to the right of "Add item", top aligned with it (flipped up when there is no room), edge `--color-control-border`, `--shadow-overlay`; each entry is the type icon, the full name (600) and a muted `--text-small` line. On phones it is an inline panel under the button without a shadow. "Add item" has `aria-expanded`.
-- Editor: head: the type icon (muted), the item title (`--text-large`), "Item n of N in Part" (muted `--text-small`) and the word buttons "Up", "Down", "Delete" (muted); the whole line drops under the title when it does not fit. On phones "Delete" is on the title line at the right and "Up"/"Down" on the line below. Below: the form fields. When the editor is `50rem` or wider the fields and the student preview ("How students see it", a `--color-surface-sunken` box in `--text-reading`) sit side by side, the preview sticky; otherwise the preview is below. A phone shows the item type's name on a small muted line above the preview, in every language.
+- At `80rem` and wider the tree sits in place. "Hide" (icon `sidebar` + word, only at this width) collapses it in place and a "Show lessons" button replaces it; the same button opens it again.
+- Between `64rem` and `79.999rem` the lesson tree is an overlay drawer opened by a "Show lessons" button (icon `sidebar` + word), and the course appears as a small muted line above the lesson title. There is no "Hide" at this width.
+- Below `64rem` there is no drawer. The builder is two views, the outline and the editor, and to change lesson the back button in the title bar leads to a course screen with the lesson list.
+- Focus: opening the drawer focuses the current lesson or part in the tree. Closing it (Escape, or picking a part) returns focus to "Show lessons", the button that opened it; collapsing the tree with "Hide" at `80rem` and wider moves focus to the "Show lessons" button that replaces it.
+
+- Outline head: the lesson title (`--text-title`, the page title of the builder; on phones it is in the title bar) and "Rename" and "Preview" quiet buttons (icon + word). Parts are `--space-section` apart. A part head: the part name (600) with its item count (`--text-small`, muted) and, for a homework part, the "Students send it" badge; "Delete" (muted word) on the name line at the right; "Rename", "Up", "Down" (muted words) on a second line. On desktop these actions show only on the current part: the one holding the selected item, or the one that has focus, or the one where the last action happened (so an empty part's actions are reachable); on phones every part head shows them. When a selection removes the action line above the row the person clicked, the outline pane's scroll is adjusted so the clicked row stays under the pointer.
+- Item row: a `button` row (no buttons inside): surface fill, divider edge, `--radius`; the type column is the type icon (`--icon-size`, muted) and the short type name (`--text-small`, muted, width `--type-label-width`, so the text of all rows lines up), then the item text (the first line, a gap shown as `___`, the answer options in bold), then metadata on the right (an audio length). Hover: sunken fill. Selected: `--color-accent-subtle` fill and a 3px accent bar over the left edge (in the chosen mockup the type icon also turned accent on the selected row; decided in the builder issues #116-#118). Phones have no selected row. After the rows: a quiet "Add item" button (icon + word) and, after the last part, "Add part".
+- Item type picker: `--picker-width` wide, edge `--color-control-border`, `--shadow-overlay` when it floats; each entry is the type icon, the full name (600) and a muted `--text-small` line. "Add item" has `aria-expanded`. In the chosen mockup it was a popover to the right of "Add item", top aligned with it and flipped up when there was no room, on desktop, and an inline panel under the button without a shadow on phones; decided in the builder issues (#116-#118). Its roles and keyboard behaviour are open, decided in builder issue #116/#117 (in the chosen mockup it was a plain list of buttons with an `aria-label`, and no keyboard rules).
+- Editor: head: the type icon (muted), the item title (`--text-large`), "Item n of N in Part" (muted `--text-small`) and the word buttons "Up", "Down", "Delete" (muted); the whole line drops under the title when it does not fit. On phones "Delete" is on the title line at the right and "Up"/"Down" on the line below. Below: the form fields. The student preview is "How students see it", a `--color-surface-sunken` box in `--text-reading`. In the chosen mockup it sat below the fields, and beside them with the preview sticky when the editor was `50rem` or wider (an `@container editor` condition on `--editor-column-min`); decided in the builder issues #116-#118. A phone shows the item type's name on a small muted line above the preview, in every language.
 - Answer options: a three-column grid (the radio for the right answer, the text input, a Remove icon button ×), a column heading row, then a quiet "Add option" button (icon + word).
-- Editor footer: sticky at the bottom: "Save" (primary), "Discard" (secondary) and a status note ("Saved" with `check`, or "Unsaved changes", `--text-small`, muted); a divider on top only while the footer is pinned over the form. On phones it sits above the tab bar, the buttons share the width and the status note takes its own line above them.
+- Open, decided in builder issue #116/#117: an empty lesson and an empty course in the tree (the mockup showed none); the autosave failure state (the mockup showed only "Saved" and "Unsaved changes"); the tree's disabled and loading states (the mockup showed none).
+- Editor footer: "Save" (primary), "Discard" (secondary) and a status note ("Saved" with `check`, or "Unsaved changes", `--text-small`, muted). In the chosen mockup it was sticky at the bottom with a divider on top only while pinned over the form; on phones it sat above the tab bar, the buttons shared the width and the status note took its own line above them; decided in the builder issues (#116-#118).
 
 ### Lesson and homework (student)
 
 - The lesson pane (the same tree, with the student's current lesson open and closed lessons locked) is a sticky rail-coloured pane beside the text on wide screens; on phones an "In this lesson" disclosure above the text replaces it.
 - The text column is `--reading-width`, centred in a white reading area, `--text-reading` on `--line-height-reading`; headings `--text-large`; images in a 4:3 frame (a muted placeholder with a `--icon-size-placeholder` icon until loaded), a caption in muted `--text-small`; audio is a native `<audio controls>` with a "Show transcript" `<details>`.
-- Side panel (decision 5): lesson: progress (a step bar, `--progress-height`, current step in accent, the rest `--color-divider`) and what is next; homework: the question list ("Your answers": number, state, link to the question) and "When you send". It sits beside the text from a main width of `59rem` (text column plus the page gutters plus `--side-panel-min`), at `--side-panel-now` wide (between `--side-panel-min` and `--side-panel-max`), with a left divider and the page background; it is sticky and scrolls inside. Below `59rem` it moves below the text; on a homework page "Your answers" then folds behind a disclosure button, and beside the text it is always open. White space around the text at 1920 stays.
+- Side panel: lesson: progress (a step bar, `--progress-height`, current step in accent, the rest `--color-divider`) and what is next; homework: the question list ("Your answers": number, state, link to the question) and "When you send". It sits beside the text from a main width of `59rem` (text column plus the page gutters plus `--side-panel-min`), at `--side-panel-now` wide (between `--side-panel-min` and `--side-panel-max`), with a left divider and the page background; it is sticky and scrolls inside. Below `59rem` it moves below the text; on a homework page "Your answers" then folds behind a disclosure button, and beside the text it is always open. White space around the text at 1920 stays.
 - Homework: questions in a grid `--space-section` apart: a number column of `--control-height` (`--space-block` on phones) with the number in `--text-large` 600, a muted `--text-small` instruction, then the question text; inline answers are an inline select or a short input (`--answer-width`), and the full-sentence answer a textarea. Result lines are icon + word: right (success), not quite (danger), waiting for the teacher (neutral). A listening block is indented with the text and opened by a divider; it never uses the bar.
 - Action bar: sticky at the bottom of the text area (above the tab bar on phones), a divider on top, progress and the saved note on the left, "Send to Anna" (primary, text only) on the right.
 
 ### Login and set-password
 
-A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordmark in `--text-large` 600 on the left and the language select on the right. The form is centred, `--form-width` wide, at a fixed `--login-top-offset` from the band so an error banner grows the form downward only; labelled fields, one primary button, the help line muted. On phones the tagline is hidden and the form starts `--space-section` below the band.
+A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordmark in `--text-large` 600 on the left and the language select on the right. The form is centred, `--form-width` wide, with its top at `--login-top-offset` (in the chosen mockup `12vh`, fixed per window, so an error banner grows the form downward only; decided in the login issue, plan step 6); labelled fields, one primary button, the help line muted. On phones the tagline is hidden and the form starts `--space-section` below the band.
 
 ## Layout and screens
 
@@ -357,7 +377,7 @@ A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordma
 - Two list types: the data table (admin teachers; capped at `--list-width`; left-aligned beside the rail at 1920) and the short link list (student home; `--home-width`).
 - Forms and text pages (profile, set-password, not found) use `--content-width`.
 - At 360 every page fits without horizontal scroll (`specs/web-client` R7). The builder follows the same layout on phones: tree hidden, outline and editor as separate views, item reorder and delete inside the item view.
-- Russian runs 20 to 40 percent longer: layouts absorb it with wrapping and fixed per-language widths (`--type-label-width`, the admin action breakpoints), not by truncating.
+- Russian runs 20 to 40 percent longer: layouts absorb it with wrapping and fixed per-language widths (`--type-label-width`, the Russian admin actions' `72rem` container condition), not by truncating.
 
 ## Copy and languages
 
@@ -370,19 +390,21 @@ A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordma
 
 - `aria-current="page"` on the current rail item; `aria-current="true"` on the current part and the selected item; `aria-expanded` and `aria-controls` on every disclosure (tree chevron, "Add item", "Your answers", the profile menu button).
 - Error banners `role="alert"`, success and neutral `role="status"` (component rule of the banners issue). Icons that carry no information are `aria-hidden`.
-- Keyboard: native elements first (project rules C7); the profile menu and the picker follow the Menu rules above; Escape closes overlays and a tooltip without moving focus.
+- Keyboard: native elements first (project rules C7); the profile menu follows the Menu rules above; the picker's roles and keyboard are open (builder issue #116/#117); Escape closes overlays and a tooltip without moving focus.
 - Target size: controls are `--control-height`; row icon buttons are `2rem` with a mouse, above the 24px floor (WCAG 2.5.8).
 - Contrast: every text and control pair in Colour meets WCAG 2.2 AA; focus ring 3:1 on every fill it meets.
+- Focus after actions. Delete of a part or an item moves focus to the next item, else the previous one, else the part's "Add item". Picking an item type moves focus to the new item's first field. Closing the picker with Escape returns focus to its opener. A Profile menu item returns focus to the menu button, so a language switch keeps focus on it. A dialog that closes returns focus to the element that opened it.
 - Content blocks in a lesson carry the course's `lang`; the UI carries the UI language (#172 folds into #102).
 
 ## Departures from the project rules
 
-These follow from the engineer's decisions (proposal, decisions 4 and 18); this file ranks above `project-rules.md` (C0).
+These follow from the engineer's decisions; this file ranks above `project-rules.md` (C0). The stale lines in `project-rules.md`, the product brief and `visual-criteria.md` are brought in line in the same PR as this file.
 
 - C5 and C21 (the one `--radius` and `--shadow-card`): the radius is the new `0.25rem`; `--shadow-card` is replaced by `--shadow-overlay` (overlays only); the renames in the rename map are decided. A frontend-implementer may rename as that map says without stopping.
 - C9 and C18 (a control is not smaller than `--control-height`): `--control-height` is `2.5rem` with a mouse and `2.75rem` on touch; row icon buttons are `2rem` with a mouse. The 24px floor is still met.
 - Base rules ("a font is exactly one `var(...)`", "custom properties only in `tokens.css`") are unchanged.
-- The product brief's Devices line says teacher editors are designed for desktop; the builder here follows the same layout on phones (decision 15). The brief is not edited in this change.
+- Inline style: project rules forbid it. The one exception is the position helper in `src/ui` for the tooltip, menu and picker, which sets `left`, `top` and the like from code with `style.setProperty`; no other inline style is allowed.
+- The product brief's Devices line said teacher editors are designed for desktop; the builder here follows the same layout on phones, and the line is corrected.
 
 ## Deferred
 
@@ -393,21 +415,25 @@ These follow from the engineer's decisions (proposal, decisions 4 and 18); this 
 - Admin search and paging: a separate issue with a backend change (`GET /api/admin/teachers` is unpaged).
 - The "(optional)" marker: its own change (#165).
 - Dark mode.
-- Where the mockup lives in or beside the repository: pending the engineer.
+- The mockup-only behaviours listed above and the open builder items: decided in the issues named where each appears.
 
 ## Redesign plan
 
 Order of the issues to file after this change. The builder, student home, lesson and homework are not built (#115-#120, #134-#136, #56, #126): they get the rules above, not redesign issues, and the first screen of each follows this file when its feature issue builds it. The real app today is login, set-password, admin teachers, profile, not found and the cabinet stubs.
 
 0. #102 (locale switch), then #103 (Russian), land first; #172 folds into #102; the content language goes with #114.
-1. Tokens: `frontend/src/styles/tokens.css` and `base.css` to the values above, the rename map across `src/ui` CSS in the same PR with before and after screenshots; folds #168.
+1. Tokens: `frontend/src/styles/tokens.css` and `base.css` to the values above, including the page, gutter and layout tokens; the rename map across `src/ui` CSS in the same PR with before and after screenshots; folds #168. Because the rename has no aliases, this step also removes the Button `success` variant (green becomes the accent primary) and reworks the select chevron (`Field.module.css` uses `--arrow-width`).
 2. Primitives:
-   - 2a: buttons (role classes, no success variant, muted Delete), fields, the select arrow (#86), shadows removed. #165 is separate.
+   - 2a: the rest of buttons (role classes, muted Delete) and fields, the select arrow (#86), shadows removed. #165 is separate.
    - 2b: badge, banner (icon + text, `role="alert"` for errors), empty state, "Loading…", Dialog, IssuedLink.
-3. New components: Tooltip, IconButton, Menu. The lesson tree comes with #116/#117.
+3. New components:
+   - 3a: the shared icon set (only `PlusIcon` exists today);
+   - 3b: Tooltip, IconButton, Menu;
+   - 3c: page header and data table components, before 5a.
+   The lesson tree comes with #116/#117.
 4. App frame:
-   - 4a: desktop rail and top bar;
-   - 4b: phone tab bar and the Profile menu (name and role from `/api/me`, no backend change; Log out moves into the menu, so the e2e `auth.spec.ts` changes). Partly #57.
+   - 4a: the desktop rail and the Profile menu (name and role from `/api/me`, no backend change; Log out and the language select move into the menu; desktop has no top bar). Specs affected: `web-auth` R3 (it says the header shows the name, a "Profile" button and a "Log out" button) and the e2e `auth.spec.ts`;
+   - 4b: the phone tab bar and the title bar with the back button. Partly #57.
 5. Admin teachers (`AdminTeachersPage.tsx`):
    - 5a: restyle with the current data;
    - 5b: search and paging, a new issue with the backend change;
@@ -418,7 +444,7 @@ Order of the issues to file after this change. The builder, student home, lesson
 Small review items go to the issue that touches the code:
 
 - 2a and 2b: the space before a full stop after a control, the quiet button icon inset, the 2rem row focus ring meeting the border, "Hide" on its own line above the course name, the "Изображение" width.
-- 4b: the Russian Profile-menu role lowercase, the stale focus-tooltip caption, the "Lesson parts" tooltip covering the Homework row.
+- 4a: the Russian Profile-menu role lowercase, the stale focus-tooltip caption (3b), the "Lesson parts" tooltip covering the Homework row (3b).
 - 6: the login subtitle width and break.
 - Builder, #116-#118: the phone type name above the preview, the Russian tree "Future forms" wrap, the "Item n of N" position, the part actions.
 - #134 and #135: the To-do icon size and alignment, the 13px student text, the lesson and homework page title inconsistency, the checked result shown three times, the Russian 360 admin status badge position (the last one in 5a).
@@ -430,14 +456,41 @@ No capability spec changes: the change writes a document under `.agents/design/`
 
 ### D3. The redesign plan
 
-The order in the last section of D1 is research angle F's conclusion (dependency order: tokens before primitives before components before the frame before screens; #102 and #103 first by decision 14; the tree with the first builder issue by decision 19; search and paging as a backend issue by decision 13). Issues are filed after the change, not by an implementer.
+The order in the last section of D1 is research angle F's conclusion (dependency order: tokens before primitives before components before the frame before screens; #102 and #103 first by decision 14; the tree with the first builder issue by decision 19; search and paging as a backend issue by decision 13; the Profile menu with the desktop rail by decision 30). Issues are filed after the change, not by an implementer.
 
 ### D4. Departures and stale lines
 
-D1 states where it departs from `project-rules.md` (C5/C21, C9/C18) and from the product brief's Devices line. Editing those files is out of scope here (proposal); the design code's precedence (C0) makes them correct to follow meanwhile. They are listed in the report to the engineer so a later change or the tokens issue can bring them in line.
+D1 states where it departs from `project-rules.md` (C5/C21, C9/C18) and from the product brief's Devices line. The README asks that stale lines be fixed in the PR that makes them stale, so D5 lists the edits (decision 27).
+
+### D5. Stale lines fixed in this PR
+
+The implementer makes these one-line edits (they are outside the change folder). Each shows the line before and after.
+
+1. `.agents/design/product-brief.md`, the Devices line.
+   - Before: `teachers prepare content at a desk on a laptop; teacher editors are designed for desktop (#115–#120, #132, #133, #138).`
+   - After: `teachers prepare content at a desk on a laptop; teacher editors are also designed for phones, like every page (design code; #115–#120, #132, #133, #138).`
+2. `.agents/design/project-rules.md`, C5.
+   - Before: `- **C5** The one `--radius` and `--shadow-card` are ours. Changing, renaming or`
+   - After: `- **C5** The one `--radius` and `--shadow-overlay` (overlays only) are ours. Changing, renaming or`
+3. `.agents/design/project-rules.md`, C9.
+   - Before: `  `--control-height`.` (line 55, the end of C9)
+   - After: `  `--control-height` (2.5rem with `pointer: fine`, 2.75rem on touch; row icon buttons 2rem with a mouse).`
+4. `.agents/design/project-rules.md`, C18.
+   - Before: `  `--control-height` because of this item.` (line 92)
+   - After: `  `--control-height` (2.5rem `pointer: fine`, 2.75rem touch; row icon buttons 2rem) because of this item.`
+5. `.agents/design/project-rules.md`, C21, two lines.
+   - Before: `- **C21** "One radius, one soft shadow" is not a violation. The anti-pattern list in`
+   - After: `- **C21** "One radius, shadow only on overlays" is not a violation. The anti-pattern list in`
+   - Before: `  everything. teachdash has exactly one `--radius` and one `--shadow-card` by design`
+   - After: `  everything. teachdash has exactly one `--radius` and `--shadow-overlay` (overlays only) by design`
+6. `.agents/design/visual-criteria.md`, line 32.
+   - Before: `- Is accent colour kept for actions and state, and does colour never carry meaning alone?`
+   - After: `- Is accent colour kept for actions and place, never for status, and does colour never carry meaning alone?`
+
+C5's own wording ("an engineer decision") stays; the engineer's decision is the departure recorded in D1.
 
 ## Risks / Trade-offs
 
 - The design code is long (about 400 lines). Frontend roles read it in full at README's reading order, so every line is a rule or a value; the mockup's one-off specimen page, its static-state behaviours and its build scripts are left out.
-- The mockup stays outside the repository (decision 23 pending): the values here may drift from it. They are copied from `tokens.css`; task 1.3 compares them by script.
-- Two values are mockup behaviour rather than engineer decisions: the builder tree folding between `64rem` and `80rem`, and the picker placement rules. They are taken from the r3 files as part of the chosen visual plan.
+- The mockup stays outside the repository (decision 23): the values here may drift from it. They are copied from `tokens.css`; tasks 1.3 and 1.7 compare them by script on the engineer's machine, and the output is posted in a PR comment so the code owner can see it.
+- Mockup-only behaviours are recorded as such in D1 ("in the chosen mockup: ...; decided in <issue>"), not as rules; the builder tree breakpoints (`64rem` and `80rem`) are decision 24.

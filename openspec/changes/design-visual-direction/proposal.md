@@ -26,7 +26,16 @@ Decisions by the engineer for issue #171, second of two changes (part 1 is the a
 20. `role="alert"` for error banners is a component rule in the banners issue, not a deferred product question.
 21. Deferred to feature issues (not decided here): item type names, including the reviewer's "verbs" objection to Pick/Type ("Answer" would clash with students' answers) -> #118/#120; the right answer after a wrong pick, blank answers on send, the transcript -> #135/#126/#127; the homework concept and due dates -> #56/#135. The roles and reading-list workflow question stays open (needs Anton).
 22. Design-code note: an admin table built with grid/subgrid may drop table semantics; keep table semantics.
-23. **Pending the engineer (not decided):** the r3 mockup lives outside the repository, so other team members cannot see it. Options: (a) copy the r3 sources (HTML, CSS, JS and build scripts, no PNGs) into the repository, for example under `.agents/design/`; (b) keep it outside and let `design-code.md` carry all values and rules, self-contained; (c) something else. Until decided, this change does (b) in its text: `design-code.md` writes out every token value and rule and never says "see the mockup". If (a) or (c) is chosen, the engineer decides before the spec gate and a task is added.
+23. Mockup location: the r3 mockup is NOT added to the repository or to `.agents/design/`. Its screenshots live in PR comments (5 desktop shots, one main screen per role, are in PR #194 comment 7156421470). `design-code.md` stays self-contained (all values and rules written out) and does not link to or depend on the mockup. The PR comment is mentioned in this proposal only.
+24. Builder "Hide" / "Show lessons": below 80rem the lesson tree is an overlay drawer opened by "Show lessons"; "Hide" exists only at 80rem and wider, where it collapses the tree in place and a "Show lessons" button replaces it. The `sidebar` and `chev-left` icons are added to the icon table. Focus: opening the drawer focuses the current lesson or part in the tree; closing it (Escape, Hide, or picking a part) returns focus to the button that opened it / "Show lessons".
+25. Phone builder: to change lesson, the back button in the phone title bar leads to a course screen with the lesson list.
+26. Empty part on desktop: a part also counts as "current" (shows Rename/Up/Down/Delete) when it has focus or the last action was in it, so an empty part's actions are reachable.
+27. Stale lines are fixed in this PR, as the design README asks: `product-brief.md` Devices line (editors are also designed for phones, per Clarification 15); `project-rules.md` C5 and C21 (`--shadow-card`, "one soft shadow" become shadow only on overlays) and C9/C18 (compact controls 2.5rem `pointer: fine` / 2.75rem touch / 2rem row icon buttons); `visual-criteria.md` accent wording aligned with the design code ("actions and place, never status"). One-line edits each; tasks added; the implementer makes them (outside the change folder); exact before and after lines are in `design.md` D5.
+28. Mockup-only behaviours (tooltip flip, half-rem window clamp, 400ms delay and Escape/hover rules; editor two-column layout from 50rem with sticky preview; sticky editor footer with the divider only while pinned; login 12vh offset; language radio items inside the Profile menu; accent type icon on the selected row; item picker placement popover on desktop / inline panel on phones) are each decided in their own feature issue. `design-code.md` records each as "in the chosen mockup: <what it did>; decided in <issue>", not as a rule. Items with no decision (empty lesson, empty course in the tree, picker roles and keyboard, autosave failure state, tree disabled and loading states) are recorded as "open, decided in builder issue #116/#117", with what the mockup did if anything.
+29. Positioning of tooltip, menu and picker: a small `src/ui` helper sets the position from code with `style.setProperty`, recorded in "Departures" as an explicit exception to the project-rules no-inline-style rule.
+30. The Profile menu (with Log out and language) ships in redesign step 4a together with the desktop rail, so desktop never lacks Log out. 4b is the phone tab bar only.
+
+Specs affected later (not by this change): step 4a changes `web-auth` R3 (the header shows the name, a Profile button and a Log out button) and the e2e `auth.spec.ts`.
 
 Process notes (not engineer decisions): Codex's "Baseline · …" comments on #171 (2026-11-24) and PR #188 are not used by this change. `design-code.md` is written by the implementer from the text in `design.md` (as in part 1), because the spec-writer may write only under this change's folder.
 
@@ -37,9 +46,10 @@ Issue #171 asks for a design audit; part 1 wrote the product brief. `.agents/des
 ## What changes
 
 - `.agents/design/design-code.md` is written from the text in `design.md` (D1), replacing the stub entirely: direction, tokens (with the rename map from today's tokens), colour, type, space and shape, states, buttons and icons, components, layout, copy, accessibility, deferred points, and the redesign plan.
+- Four stale lines are fixed outside the change folder, by the implementer (decision 27; exact lines in `design.md` D5): `product-brief.md` (Devices), `project-rules.md` (C5, C9, C18, C21) and `visual-criteria.md` (accent wording).
 - Nothing else outside this change's folder.
 
-Departures from `project-rules.md` (C5 shadow and token renames, C9/C18 control height, C21 one shadow) are stated in the design code and win by C0 (the design code ranks above the project rules). `project-rules.md` itself is not edited here (see Out of scope).
+Departures from `project-rules.md` (C5 shadow and token renames, C9/C18 control height, C21 one shadow) are stated in the design code and win by C0 (the design code ranks above the project rules). `project-rules.md` has its stale C5, C9, C18 and C21 lines corrected in this PR (decision 27).
 
 ## Research angles
 
@@ -55,6 +65,6 @@ Agreed with the engineer:
 - Filing the redesign issues (done after the change, by the engineer or the main agent) and editing the existing issues #102, #115–#120, #132, #133, #138 (the desktop-only editor lines).
 - Dark mode (decision 2); admin search and paging (decision 13); the "(optional)" marker (decision 17, its own change); the lesson tree component (decision 19).
 - Designs for screens that are not built (builder, student home, lesson, homework): they get rules in the design code, not redesign issues.
-- Edits to roles, `project-rules.md`, `README.md`, vendored sources and permission files. Two lines stay stale until a later change or the tokens issue: the product brief's Devices line ("teacher editors are designed for desktop", brief) against decision 15, and `project-rules.md` C5/C21 (they name `--shadow-card`). The design code states that it wins (C0) and names both.
-- Copying the mockup sources into the repository (pending, decision 23).
+- Edits to roles, `README.md`, vendored sources and permission files, and any edit to `project-rules.md`, the product brief or `visual-criteria.md` beyond the lines in decision 27.
+- Copying the mockup sources into the repository (decided against, decision 23).
 - Closing #171: the PR closes it ("Closes #171"), because this change completes the issue.
