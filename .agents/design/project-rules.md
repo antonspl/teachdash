@@ -104,7 +104,7 @@ says something else, follow this file. The full order is in C0.
   `frontend-design-principles.md` (the "SaaS-card kit") and the radius and shadow
   lines of `visual-passes.md` warn against one radius and the same soft shadow on
   everything. teachdash has exactly one `--radius` and `--shadow-overlay` (overlays only) by design
-  (C5, `refactoring-ui.md` section 5, `refactoring-ui-patterns.md` "Radius"). Flag
+  (C5, `refactoring-ui-patterns.md` "Radius"). Flag
   only what the spec's "UI design" section does not support: a card around
   everything, or decoration with no meaning (`visual-criteria.md`).
 - **C22** Design system step. `ui-ux-pro-max/SKILL.md` Step 2 says generating a

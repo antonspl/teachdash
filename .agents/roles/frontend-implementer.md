@@ -58,7 +58,10 @@ clearing the screenshot folder, or creating or running a Playwright spec.
 
 For rendered UI, take one final set after all slices, covering every screen and state
 in the "UI design" section at desktop and at 360 px. Save it in
-`frontend/screenshots/<change-name>/` (gitignored). No "before" set. Method:
+`frontend/screenshots/<change-name>/` (gitignored). No "before" set, unless the change's `design.md` asks for one (the icon
+and token steps of the redesign plan): then, before the first slice, take the same states from
+`main` by the same method into `frontend/screenshots/<change-name>-before/` (a sibling
+folder, so step 2 never clears it). Method:
 1. `docker compose up --build --wait`, so port 8081 serves the code under review.
 2. Clear `frontend/screenshots/<change-name>/` before the run.
 3. Write a temporary `frontend/e2e/zshots.spec.ts`, one test per state. Each test
