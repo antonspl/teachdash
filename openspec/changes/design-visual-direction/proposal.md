@@ -35,6 +35,7 @@ Decisions by the engineer for issue #171, second of two changes (part 1 is the a
 29. Positioning of tooltip, menu and picker: a small `src/ui` helper sets the position from code with `style.setProperty`, recorded in "Departures" as an explicit exception to the project-rules no-inline-style rule.
 30. The Profile menu (with Log out and language) ships in redesign step 4a together with the desktop rail, so desktop never lacks Log out. 4b is the phone tab bar only.
 
+31. The cabinet title is not a rail item. Admin's single rail item is Teachers (opens `/admin`). For teacher and student, the single rail item carries the cabinet's name until real tabs arrive with their features (it opens the cabinet page). The cabinet title itself is the page heading of the cabinet page. The Profile menu stays as decided (30).
 Specs affected later (not by this change): step 4a changes `web-auth` R3 (the header shows the name, a Profile button and a Log out button) and the e2e `auth.spec.ts`.
 
 Process notes (not engineer decisions): Codex's "Baseline · …" comments on #171 (2026-11-24) and PR #188 are not used by this change. `design-code.md` is written by the implementer from the text in `design.md` (as in part 1), because the spec-writer may write only under this change's folder.
