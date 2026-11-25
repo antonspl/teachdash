@@ -64,12 +64,12 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 
 | Token | Value | Use |
 |---|---|---|
-| `--space-adjacent` | `0.25rem` | parts of one thing: icon and its word, label and field, buttons in a row group |
+| `--space-adjacent` | `0.25rem` | parts of one thing: label and field, buttons in a row group |
 | `--space-inline` | `0.5rem` | siblings on one line: words, chips, a control and its note |
 | `--space-group` | `0.75rem` | inside a group: row padding, narrow page gutter |
 | `--space-block` | `1.25rem` | between blocks of a group: fields, pane padding |
 | `--space-section` | `2rem` | between sections |
-| `--space-page` | `2rem` | page gutter on desktop (narrow: `--space-block` by `--space-group`, see Layout) |
+| `--space-page` | `2rem` | page gutter on desktop (narrow: `--space-block` vertical by `--space-group` horizontal, see Layout) |
 | `--space-button-gap` | `0.75rem` | between buttons side by side |
 
 ### Shape and motion
@@ -130,7 +130,7 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 | `--underline-offset` | `0.15em` | link underline |
 | `--size-visually-hidden` | `1px` | visually hidden text |
 
-Media and container conditions are not tokens (the lint skips `@media` and `@container` conditions, because `var()` does not work in them): wide is `@media (min-width: 64rem)`, narrow is `@media (max-width: 63.999rem)`; touch sizes use `@media (pointer: fine)`; the tree is a drawer between `64rem` and `79.999rem` (below `64rem` there is no drawer: the back button leads to the course screen; see Builder).
+Media and container conditions are not tokens (the lint skips `@media` and `@container` conditions, because `var()` does not work in them): wide is `@media (min-width: 64rem)`, narrow is `@media (max-width: 63.999rem)`; compact sizes use `@media (pointer: fine)` (the touch size is the default); the tree is a drawer between `64rem` and `79.999rem` (below `64rem` there is no drawer: the back button leads to the course screen; see Builder).
 
 The other conditions in the chosen mockup: `@media (hover: none)` (tooltips), `@media (prefers-reduced-motion: reduce)` (transitions), `@media (max-width: 63.999rem) and (pointer: coarse)` (the sticky editor's scroll padding), and `@container main (max-width: 56rem)`, which is in the mockup only: it is unreachable at `64rem` and wider (the main container is always at least `59rem` wide there) and is not carried into this design code, because English admin actions never wrap on wide.
 
@@ -146,7 +146,7 @@ A custom property whose value uses `cqi` is not resolved where it is defined (in
 Done across all `src/ui` CSS in one PR with before and after screenshots; no alias period (the lint would break mid-way otherwise). Map each use by its role, not by its value: some names keep their name and change meaning.
 
 - `--color-border` splits: `--color-control-border` for fields, selects, secondary buttons, the password toggle, the issued-link input, menu and picker edges; `--color-divider` for rows, panes, bars and card edges. This folds #168.
-- `--color-action-success-*` are removed, and with them the Button `success` variant (green): "Add teacher" and "Create teacher" become the accent primary. The tokens issue (plan step 1) makes this change, because the rename is done in one PR with no aliases.
+- `--color-action-success-*` are removed, and with them the Button `success` variant (green): "Add teacher" and "Create teacher" become the accent primary. The tokens issue (plan step 2) makes this change, because the rename is done in one PR with no aliases.
 - A danger button's fill moves from `--color-danger-text` to `--color-danger-action` (and `-hover`).
 - `--space-1..4` (0.5, 1, 1.5, 2.5rem) are replaced by the role names above; `--space-button-gap` stays at `0.75rem`.
 - Type: map each use by its role.
@@ -154,8 +154,8 @@ Done across all `src/ui` CSS in one PR with before and after screenshots; no ali
   - The dialog title (`Dialog.module.css`, `.title`) and the section heading (`Section.module.css`, `.heading`) are h2 and used the old `--text-large` (1.5rem): they keep the name `--text-large`, whose value is now 1.25rem.
   - `--text-small`, `--text-reading`, the two weights and `--line-height-*` are new. The raw `font-weight: 600` in `Field`, `StatusBadge`, `Button`, `AppHeader` and `IssuedLink` becomes `--weight-strong`.
 - `--radius` goes from `0.5rem` to `0.25rem`; `--shadow-card` is replaced by `--shadow-overlay`, used on overlays only; `--line-height` goes from 1.5 to 1.45 and `--line-height-tight` from 1.25 to 1.2.
-- `--control-height` keeps its name; it is 2.5rem with a mouse. `--arrow-width` is removed, so the tokens issue (plan step 1) also reworks the select chevron in `Field.module.css` (it uses `--arrow-width` for its padding, width and height): the chevron becomes an inline icon at `--icon-size` (see Fields; #86). The rest of the buttons and fields is plan step 2a.
-- New: the accent, rail, tree-guide, focus, tooltip, icon, rail and the page, gutter and layout tokens above. A token is still added only when no existing one fits (project rules C3).
+- `--control-height` keeps its name; it is 2.5rem with a mouse. `--arrow-width` is removed, so the tokens issue (plan step 2) also reworks the select chevron in `Field.module.css` (it uses `--arrow-width` for its padding, width and height): the chevron becomes an inline icon at `--icon-size` (see Fields; #86). The rest of the buttons and fields is plan step 3a.
+- New: the accent, rail, tree-guide, focus, tooltip, icon and the page, gutter and layout tokens above. A token is still added only when no existing one fits (project rules C3).
 
 ## Colour
 
@@ -177,7 +177,7 @@ Done across all `src/ui` CSS in one PR with before and after screenshots; no ali
 ## Space and shape
 
 - One radius, one border width, one focus ring. A box is a surface fill plus a divider; a card is not wrapped around everything. Rows in a data table have no outer box (see Layout).
-- Space by role: `--space-adjacent` inside a thing, `--space-inline` between siblings on a line, `--space-group` inside a group and as the narrow page gutter, `--space-block` between blocks and as pane padding, `--space-section` between sections and as the desktop page gutter. Parents lay children out with `gap`; components do not carry outer margins.
+- Space by role: `--space-adjacent` inside a thing, `--space-inline` between siblings on a line, `--space-group` inside a group and as the narrow page gutter, `--space-block` between blocks and as pane padding, `--space-section` between sections; `--space-page` is the desktop page gutter. Parents lay children out with `gap`; components do not carry outer margins.
 - Shadow only on overlays: dialog, tooltip, menu, picker. Not on cards, banners, the header or rows. The inline picker on phones is not an overlay and has no shadow.
 - Disabled = `--opacity-disabled`, `cursor: not-allowed` and the native `disabled` attribute.
 - Transitions: background-color, border-color, color and opacity only, `--duration-fast`. Reduced motion keeps state changes visible as an instant change (project rules C6).
@@ -257,13 +257,13 @@ Meanings are fixed: `t-*` are item types; `right`, `wrong`, `clock` are answer r
 
 ### Tooltips and icon-only buttons
 
-- An icon-only button is a native `<button>` with `aria-label`. The visible tooltip text and the `aria-label` come from one i18n key; a repeated button adds the object to the label, the tooltip keeps the start ("Move up: Warm-up" / "Move up"), so the visible text is the start of the accessible name (WCAG 2.5.3). No `title` attribute.
+- An icon-only button is a native `<button>` with `aria-label`. The `aria-label` is the tooltip's i18n text plus the object, built from the same key ("Move up: Warm-up"); the tooltip shows the key text alone ("Move up"), so the visible text is the start of the accessible name (WCAG 2.5.3). No `title` attribute.
 - The tooltip is an `aria-hidden` sibling of the trigger (the name is already in `aria-label`). It meets WCAG 1.4.13: it can be dismissed without moving focus, it can be hovered, and it stays until dismissed or the trigger is left. It never covers its trigger.
-- In the chosen mockup the tooltip showed on hover after 400ms (`--tooltip-delay`) and at once on `:focus-visible`; Escape hid it without moving focus and leaving the trigger reset it; it stayed while the pointer was on the trigger or on the tooltip (they touch); it sat above the trigger, centred, flipped below when there was no room above, slid sideways to stay half a rem inside the window, and sat to the right in the rail and above the item in the phone tab bar. These timings and placements are not rules; they are decided in the Tooltip, IconButton and Menu issue (plan step 3).
+- In the chosen mockup the tooltip showed on hover after 400ms (`--tooltip-delay`) and at once on `:focus-visible`; Escape hid it without moving focus and leaving the trigger reset it; it stayed while the pointer was on the trigger or on the tooltip (they touch); it sat above the trigger, centred, flipped below when there was no room above, slid sideways to stay half a rem inside the window, and sat to the right in the rail and above the item in the phone tab bar. These timings and placements are not rules; they are decided in the Tooltip, IconButton and Menu issue (plan step 4a).
 - Position (tooltip, menu and picker): a small helper in `src/ui` sets the position from code with `style.setProperty`, the only inline-style exception (see Departures).
 - Look: `--color-text` fill, `--color-surface` text, `--text-small`, `--line-height-small`, padding `--space-adjacent` by `--space-inline`, `--radius`, `--shadow-overlay`, `max-width: var(--tooltip-max-width)`, no arrow.
 - On `(hover: none)` the tooltip is not shown, so on a phone an icon-only button is used only for close, chevrons, back, pager, play, pause and menu, and for "Remove option ×" (the option's text sits next to it); everything else shows its word at 360.
-- A touch device at `64rem` or wider (an iPad in landscape) shows the wide layout, and its icon-only buttons have no tooltip; their `aria-label` still applies (decided with the components issue, plan step 3).
+- A touch device at `64rem` or wider (an iPad in landscape) shows the wide layout, and its icon-only buttons have no tooltip; their `aria-label` still applies (open, decided in the components issue, plan step 4a).
 - A rail item with a visible word has no tooltip. The tooltip is hidden while the trigger's menu is open.
 
 ## Components
@@ -287,18 +287,18 @@ A block with the tone's fill and text, padding `--space-group`, `--radius`, icon
 
 ### Dialog
 
-Native `<dialog>`: width `min(var(--dialog-width), 100% - 2 * var(--space-group))`, no border, `--radius`, surface fill, `--shadow-overlay`, backdrop `--color-backdrop`. Head: the title (h2) and a close icon button pulled `--space-inline` into the right padding; body; foot: buttons right-aligned, `--space-button-gap` apart, stacked in a column when narrow. The safe choice comes first and has focus ("Keep active", then "Deactivate" with the danger fill). Padding is `--space-block`.
+Native `<dialog>`: width `min(var(--dialog-width), 100% - 2 * var(--space-group))`, no border, `--radius`, surface fill, `--shadow-overlay`, backdrop `--color-backdrop`. Head: the title (h2) and a close icon button pulled `--space-inline` into the right padding; body; foot: buttons right-aligned, `--space-button-gap` apart, stacked in a column when narrow. The safe choice comes first ("Keep active", then "Deactivate" with the danger fill). First focus skips the head close button and goes to the first field, or to the safe choice when there are no fields. Padding is `--space-block`.
 
 ### Menu
 
-A popover (profile menu): `--menu-width`, padding `--space-adjacent`, `--border-width` `--color-control-border`, `--radius`, surface fill, `--shadow-overlay`. Items are `--control-height` high, icon + word, hover and focus on the sunken fill. A menu starts with a non-clickable head (the signed-in person's name in 600 and the role in muted `--text-small`); the menu's `aria-labelledby` points at that head. Then come the items, separated by dividers: Profile, the language choice, and Log out last. Opening the menu focuses the first actionable item (not the head); Arrow keys, Home and End move; Escape and an outside click close it and return focus to the trigger. In the chosen mockup the language choice was a muted label and `menuitemradio` items inside the menu, a `check` icon on the chosen one, each name in its own `lang`; decided in the app frame issue (plan step 4a).
+A popover (profile menu): `--menu-width`, padding `--space-adjacent`, `--border-width` `--color-control-border`, `--radius`, surface fill, `--shadow-overlay`. Items are `--control-height` high, icon + word, hover and focus on the sunken fill. A menu starts with a non-clickable head (the signed-in person's name in 600 and the role in muted `--text-small`); the menu's `aria-labelledby` points at that head. Then come the items, separated by dividers: Profile, the language choice, and Log out last. Opening the menu focuses the first actionable item (not the head); Arrow keys, Home and End move; Escape and an outside click close it and return focus to the trigger. In the chosen mockup the language choice was a muted label and `menuitemradio` items inside the menu, a `check` icon on the chosen one, each name in its own `lang`; decided in the app frame issue (plan step 5a).
 
 ### Rail and phone tab bar
 
 - Wide: a sticky full-height rail, `--rail-width`, `--color-rail`, a divider on its right. The wordmark ("teachdash", `--text-small` 600, centred, `translate="no"`) sits at the top; items are `--rail-item-height` high, the icon (`--icon-size-rail`, muted) above a `--text-small` label, centred, hyphens auto and `overflow-wrap: break-word` as the fallback for long Russian words. Hover: sunken fill. Current: white surface, 3px accent bar on the left, weight 600, accent icon (`aria-current="page"`).
 - Narrow: the rail becomes a fixed bottom tab bar, `--tabbar-height`, a divider on top, the current bar on the top edge; no wordmark. A title bar (`--color-rail`, at least `--topbar-height`, a divider below) shows the page title (`--text-large` 600, one line with ellipsis), a small muted parent line above it when there is one, and a back icon button when the page has a parent.
-- The rail ships in plan step 4a with one item per role plus the Profile menu; the other tabs arrive with their features. At 4a: admin: Teachers (opens `/admin`) and Profile; teacher and student: a single item carrying the cabinet's name until real tabs arrive (it opens the cabinet page), and Profile. Courses and Students (teacher) and Home (student) are added by the features that build those pages and replace that item. The cabinet title (`cabinet.admin`, `cabinet.teacher`, `cabinet.student`, as `CabinetPage` shows today) is the page heading of the cabinet page, not a rail item; desktop has no top bar. The language select moves into the Profile menu once the person is logged in, and stays on the login band while logged out. Below `64rem` the current header, with its Log out and language select, stays until step 4b ships the phone tab bar and title bar and removes it.
-- Profile is a menu button (`aria-haspopup="menu"`, `aria-expanded`, `aria-controls`) at every width, with a visible word. The menu opens to the right of the rail item on wide screens and above the tab bar, right edges aligned, on narrow ones. Log out lives only in this menu once the frame is complete. The menu ships with the desktop rail in step 4a, so desktop never lacks Log out; below `64rem` the current header keeps its Log out and language select until step 4b ships the phone tab bar and title bar and removes it.
+- The rail ships in plan step 5a with one item per role plus the Profile menu; the other tabs arrive with their features. At 5a: admin: Teachers (opens `/admin`) and Profile; teacher and student: a single item carrying the cabinet's name until real tabs arrive (it opens the cabinet page), and Profile. Courses and Students (teacher) and Home (student) are added by the features that build those pages and replace that item. The cabinet title (`cabinet.admin`, `cabinet.teacher`, `cabinet.student`, as `CabinetPage` shows today) is the page heading of the cabinet page, not a rail item; desktop has no top bar. The language select moves into the Profile menu once the person is logged in, and stays on the login band while logged out. Below `64rem` the current header, with its Log out and language select, stays until step 5b ships the phone tab bar and title bar and removes it.
+- Profile is a menu button (`aria-haspopup="menu"`, `aria-expanded`, `aria-controls`) at every width, with a visible word. The menu opens to the right of the rail item on wide screens and above the tab bar, right edges aligned, on narrow ones. Log out lives only in this menu once the frame is complete. The menu ships with the desktop rail in step 5a, so desktop never lacks Log out; below `64rem` the current header keeps its Log out and language select until step 5b ships the phone tab bar and title bar and removes it.
 
 ### Page header
 
@@ -350,11 +350,11 @@ Three panes, full height, each scrolling alone: tree (`--tree-width`) | outline 
 
 ### Login and set-password
 
-A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordmark in `--text-large` 600 on the left and the language select on the right. The form is centred, `--form-width` wide, with its top at `--login-top-offset` (in the chosen mockup `12vh`, fixed per window, so an error banner grows the form downward only; decided in the login issue, plan step 6); labelled fields, one primary button, the help line muted. On phones the tagline is hidden and the form starts `--space-section` below the band.
+A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordmark in `--text-large` 600 on the left and the language select on the right. The form is centred, `--form-width` wide, with its top at `--login-top-offset` (in the chosen mockup `12vh`, fixed per window, so an error banner grows the form downward only; decided in the login issue, plan step 7); labelled fields, one primary button, the help line muted. On phones the tagline is hidden and the form starts `--space-section` below the band.
 
 ## Layout and screens
 
-- Wide is `64rem` and up (rail); narrow is below (tab bar, title bar). The page gutter is `--space-page` wide and `--space-block` by `--space-group` narrow.
+- Wide is `64rem` and up (rail); narrow is below (tab bar, title bar). The page gutter is `--space-page` wide; narrow, the page padding is `--space-block` vertical by `--space-group` horizontal.
 - No dead space: a data table's rows reach the edge of the main area and their content is capped at `--list-width`; the builder panes fill the window; the editor takes what is left; a text page is a text column plus a side panel. A page whose content is narrow by nature (login, the short student list) is centred or left-aligned and capped on purpose.
 - Two list types: the data table (admin teachers; capped at `--list-width`; left-aligned beside the rail at 1920) and the short link list (student home; `--home-width`).
 - Forms and text pages (profile, set-password, not found) use `--content-width`.
@@ -370,9 +370,9 @@ A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordma
 
 ## Accessibility
 
-- `aria-current="page"` on the current rail item; `aria-current="true"` on the current part and the selected item; `aria-expanded` and `aria-controls` on every disclosure (tree chevron, "Add item", "Your answers", the profile menu button).
+- `aria-current="page"` on the current rail item; `aria-current="true"` on the current part and the selected item; `aria-expanded` and `aria-controls` on every disclosure (tree chevron, "Show lessons" (the drawer button), "Add item", "Your answers", the profile menu button).
 - Error banners `role="alert"`, success and neutral `role="status"` (component rule of the banners issue). Icons that carry no information are `aria-hidden`.
-- Keyboard: native elements first (project rules C7); the profile menu follows the Menu rules above; the picker's roles and keyboard are open (builder issue #116/#117); Escape closes overlays and a tooltip without moving focus.
+- Keyboard: native elements first (project rules C7); the profile menu follows the Menu rules above; the picker's roles and keyboard are open (builder issue #116/#117); Escape hides a tooltip without moving focus; it closes an overlay (menu, drawer, picker, dialog) and returns focus to its opener.
 - Target size: controls are `--control-height`; row icon buttons are `2rem` with a mouse, above the 24px floor (WCAG 2.5.8).
 - Contrast: every text and control pair in Colour meets WCAG 2.2 AA; focus ring 3:1 on every fill it meets.
 - Focus after actions. Delete of a part or an item moves focus to the next item, else the previous one, else the part's "Add item". Picking an item type moves focus to the new item's first field. Closing the picker with Escape returns focus to its opener. A Profile menu item returns focus to the menu button, so a language switch keeps focus on it. A dialog that closes returns focus to the element that opened it.
@@ -405,29 +405,30 @@ These follow from the engineer's decisions; this file ranks above `project-rules
 Order of the issues to file after this change. The builder, student home, lesson and homework are not built (#115-#120, #134-#136, #56, #126): they get the rules above, not redesign issues, and the first screen of each follows this file when its feature issue builds it. The real app today is login, set-password, admin teachers, profile, not found and the cabinet stubs.
 
 0. #102 (locale switch), then #103 (Russian), land first; #172 folds into #102; the content language goes with #114.
-1. Tokens: `frontend/src/styles/tokens.css` and `base.css` to the values above, including the page, gutter and layout tokens; the rename map across `src/ui` CSS in the same PR with before and after screenshots; folds #168. Because the rename has no aliases, this step also removes the Button `success` variant (green becomes the accent primary) and reworks the select chevron (`Field.module.css` uses `--arrow-width`).
-2. Primitives:
-   - 2a: the rest of buttons (role classes, muted Delete) and fields, the select arrow (#86), shadows removed. #165 is separate.
-   - 2b: badge, banner (icon + text, `role="alert"` for errors), empty state, "Loading…", Dialog, IssuedLink.
-3. New components:
-   - 3a: the shared icon set (only `PlusIcon` exists today);
-   - 3b: Tooltip, IconButton, Menu;
-   - 3c: page header and data table components, before 5a.
+1. The shared icon set in `src/ui` (only `PlusIcon` exists today), first, because the steps after it use icons: the select chevron (step 2), badge and banner with icon + word (3b) and the Dialog close button (3b).
+2. Tokens: `frontend/src/styles/tokens.css` and `base.css` to the values above, including the page, gutter and layout tokens; the rename map across `src/ui` CSS in the same PR with before and after screenshots; folds #168. Because the rename has no aliases, this step also removes the Button `success` variant (green becomes the accent primary), reworks the select chevron (`Field.module.css` uses `--arrow-width`; it becomes an inline icon from step 1; #86) and removes the shadows: dropping `--shadow-card` touches `List`, `StatusMessage`, `AppHeader` and `IssuedLink`, so their shadows go in this step.
+3. Primitives:
+   - 3a: the rest of buttons (role classes, muted Delete) and fields. #165 is separate.
+   - 3b: badge, banner (icon + text, `role="alert"` for errors), empty state, "Loading…", Dialog (its close button is built here as a plain button with the icon and `aria-label`; `IconButton` in 4a adopts it later), IssuedLink.
+4. New components:
+   - 4a: Tooltip, IconButton, Menu;
+   - 4b: page header and data table components, before 6a.
    The lesson tree comes with #116/#117.
-4. App frame:
-   - 4a: the desktop rail and the Profile menu (name and role from `/api/me`, no backend change; on desktop Log out and the language select move into the menu and there is no top bar; below `64rem` the current header stays, with its Log out and language select, until 4b). Specs affected: `web-auth` R3 (it says the header shows the name, a "Profile" button and a "Log out" button) and the e2e `auth.spec.ts`;
-   - 4b: the phone tab bar and the title bar with the back button; it removes the old header, so Log out and the language select reach phones through the Profile menu. Partly #57.
-5. Admin teachers (`AdminTeachersPage.tsx`):
-   - 5a: restyle with the current data;
-   - 5b: search and paging, a new issue with the backend change;
+5. App frame:
+   - 5a: the desktop rail and the Profile menu (name and role from `/api/me`, no backend change; on desktop Log out and the language select move into the menu and there is no top bar; below `64rem` the current header stays, with its Log out and language select, until 5b). Specs affected: `web-auth` R3 (it says the header shows the name, a "Profile" button and a "Log out" button) and the e2e `auth.spec.ts`;
+   - 5b: the phone tab bar and the title bar with the back button; it removes the old header, so Log out and the language select reach phones through the Profile menu. Partly #57.
+6. Admin teachers (`AdminTeachersPage.tsx`):
+   - 6a: restyle with the current data;
+   - 6b: search and paging, a new issue with the backend change;
    - optional folds: #73, #157.
-6. Login, set-password, not found; #87 and #89 only when they touch the same lines.
-7. Profile page.
+7. Login, set-password, not found; #87 and #89 only when they touch the same lines.
+8. Profile page.
 
 Small review items go to the issue that touches the code:
 
-- 2a and 2b: the space before a full stop after a control, the quiet button icon inset, the 2rem row focus ring meeting the border, "Hide" on its own line above the course name, the "Изображение" width.
-- 4a: the Russian Profile-menu role lowercase, the stale focus-tooltip caption (3b), the "Lesson parts" tooltip covering the Homework row (3b).
-- 6: the login subtitle width and break.
-- Builder, #116-#118: the phone type name above the preview, the Russian tree "Future forms" wrap, the "Item n of N" position, the part actions.
-- #134 and #135: the To-do icon size and alignment, the 13px student text, the lesson and homework page title inconsistency, the checked result shown three times, the Russian 360 admin status badge position (the last one in 5a).
+- 3a and 3b: the space before a full stop after a control, the quiet button icon inset, the 2rem row focus ring meeting the border.
+- 4a: a tooltip's text always matches its trigger's current label; a tooltip never covers the row below its trigger's row.
+- 5a: the Russian Profile-menu role lowercase.
+- 7: the login subtitle width and break.
+- Builder, #116-#118: the phone type name above the preview, the "Item n of N" position, the part actions; the tree's part names wrap within the fixed `14rem` tree width without overlapping the next row; "Hide" sits on its own line above the course name; type labels fit the longest name in each language.
+- #134 and #135: the To-do icon size and alignment, the 13px student text, the lesson and homework page title inconsistency, the checked result shown three times, the Russian 360 admin status badge position (the last one in 6a).

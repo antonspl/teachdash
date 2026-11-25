@@ -52,7 +52,7 @@ says something else, follow this file. The full order is in C0.
   `name`, `email`, `current-password` and `new-password`. Autocomplete is never
   turned off to avoid password managers.
 - **C9** The touch target floor is 24 CSS px (WCAG 2.5.8, AA). Controls use
-  `--control-height` (2.5rem with `pointer: fine`, 2.75rem on touch; row icon buttons 2rem with a mouse).
+  `--control-height` (2.5rem with `pointer: fine`, 2.75rem on touch); row icon buttons use `--row-action-size` (2rem with a mouse).
 - **C10** Copy is friendly, in the second person, with no apologies. A message says
   what happened and how to fix it.
 - **C11** Quotes follow each language's typography in the i18n files (ru uses «»).
@@ -89,7 +89,7 @@ says something else, follow this file. The full order is in C0.
   ("Touch & Interaction" priority); our floor is 24 CSS px (C9, WCAG 2.5.8 AA, as
   `accessibility.md` "Target size" states), met by `--control-height`. A target
   between 24 and 44 CSS px is not a finding. A new control is not made smaller than
-  `--control-height` (2.5rem `pointer: fine`, 2.75rem touch; row icon buttons 2rem) because of this item.
+  `--control-height` (2.5rem `pointer: fine`, 2.75rem touch; row icon buttons `--row-action-size`, 2rem with a mouse) because of this item.
 - **C19** Landing and hero patterns do not apply. `ui-ux-pro-max/data/landing.csv`
   and the landing-page parts of the vendored sources describe marketing pages. A
   teachdash screen is a working screen: the page type and layout come from the
