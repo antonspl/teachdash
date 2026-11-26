@@ -17,7 +17,7 @@ Decisions by the engineer:
 9. Glossary: учитель, ученик, администратор, учётная запись, деактивировать, ссылка для сброса пароля, часовой пояс, родной язык, кабинет, профиль; Вход (page title) / Войти (button) / Выйти; email = «Электронная почта»; session = «сеанс»; Reactivate = «Активировать снова».
 10. The admin row button for an active teacher without a password ("New invite link", `adminTeachers.actions.inviteLink`) is «Новое приглашение»; the one for a teacher with a password ("Password reset link") is «Ссылка для сброса пароля». «Новая ссылка-приглашение» was rejected as sounding odd.
 11. Teacher status badges agree with «учётная запись» (feminine): «Активна», «Ожидает пароля», «Деактивирована», «Только что добавлена».
-12. Names stay in the base case via colon forms: «Деактивировать: {{name}}?», «Ссылка для входа: {{name}}»; «Ученики будут откреплены от учителя.» instead of a demonstrative or a possessive pronoun (see 20). «Показать {{label}}» keeps the label as is (WCAG 2.5.3).
+12. Names stay in the base case via colon forms: «Деактивировать: {{name}}?», «Ссылка для входа: {{name}}»; «Ученики будут откреплены от учителя.» instead of a demonstrative or a possessive pronoun (see 20). «Показать: {{label}}» keeps the label as is (WCAG 2.5.3; see 19).
 13. The role in the app header is lower case in Russian: «Анна (учитель)».
 14. Always write ё. Also fix `en` "Loading..." to "Loading…" in this change.
 15. At 360 px the button pairs «Отмена» + «Создать учителя» (create dialog) and «Скопировать» + «Закрыть» (issued link) may go onto two lines; labels are not shortened. Admin action labels stay at most 24 characters (a bundle test checks `adminTeachers.actions.*`).
