@@ -275,7 +275,7 @@ test('[web-client/R15-S3] Russian pages show Russian text: the admin list and it
   expectNoEnglish('admin load error')
 })
 
-test('[web-client/R15-S3] Russian pages show Russian text: the create, deactivate and issued-link dialogs', async () => {
+test('[web-client/R15-S3] Russian pages show Russian text: the create and deactivate dialogs and the issued-link box', async () => {
   const listed = [...teachers]
   backend('ADMIN', {
     'GET admin/teachers': () => json(listed),

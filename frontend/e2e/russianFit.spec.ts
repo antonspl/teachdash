@@ -243,7 +243,7 @@ test('[web-client/R15-S6] Russian pages fit a phone screen: the admin page, its 
     .getByRole('button', { name: ru.adminTeachers.deactivate.cancel })
     .click()
 
-  // 768 px: the list with its longest row
+  // 768 px: the list with its two longest rows
   await page.setViewportSize({ width: 768, height: 900 })
   await expect(newRow.getByText(ru.adminTeachers.justAdded)).toBeVisible()
   await expectFits(page, 'admin list at 768 px')
