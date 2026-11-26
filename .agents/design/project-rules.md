@@ -18,8 +18,7 @@ says something else, follow this file. The full order is in C0.
     `src/ui/` components.
 - Nothing loads from third-party CDNs: no web fonts, scripts, styles or images from
   another domain (constitution §10).
-- UI copy goes through i18n (`frontend/src/i18n/`): sentence case, neutral tone,
-  no slang.
+- UI copy goes through i18n (`frontend/src/i18n/`): sentence case, neutral tone.
 - Buttons never touch fields, cards or each other. Native parts such as the select
   arrow are inset like text. Controls go exactly where the spec says.
 - New UI built in a change meets these rules and WCAG 2.2 AA.
