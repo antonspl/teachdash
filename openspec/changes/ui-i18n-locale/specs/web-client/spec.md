@@ -104,8 +104,8 @@ The login, set-password and header pages (cabinet, Profile, admin) SHALL show a 
 language select with a visually hidden label and the options "English" and "Русский", each
 with its own `lang`; the not-found and loading pages SHALL NOT. Choosing a language SHALL
 re-render at once, keep the focus on the select, store the choice and set `<html lang>`,
-with no reload and no toast; an error already on screen keeps its language until the next
-action. The select SHALL fit a 360-pixel screen.
+with no reload and no toast. An error already on screen SHALL NOT change language by
+itself (R20-S7). The select SHALL fit a 360-pixel screen.
 
 #### Scenario: web-client/R20-S1 The switch is on the pages that should have it
 - **GIVEN** an anonymous user, a logged-in teacher, student and admin
@@ -148,6 +148,7 @@ action. The select SHALL fit a 360-pixel screen.
 - **WHEN** the user picks "Русский" in the select
 - **THEN** the error text is unchanged
 - **AND** the next failed login shows the error in the language then active
+- **AND** on a page that reloads its data when the language changes (the admin teacher list), an error on screen may instead be cleared by that reload; it is never shown in the new language without a new action
 
 #### Scenario: web-client/R20-S8 The stored choice is used after a reload
 - **GIVEN** the local stack is running and `teachdash.lang` holds `ru`

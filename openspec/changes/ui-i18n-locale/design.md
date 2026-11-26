@@ -142,7 +142,7 @@ Later steps (not for this change): #201 and #202 replace the header slot with th
 - [Unit tests leak language or storage] -> order-dependent failures. Every test that changes them resets them in `afterEach` (D7).
 - [Name clash with `LanguageSelect`] -> a separate file and name, with a comment in each pointing to the other's role.
 - [The select is the first Tab stop on login and set-password] -> a keyboard user passes it before email (engineer's decision; the cost is one extra Tab on the pages that matter most for first-time users).
-- [An error on screen when the user switches stays in the old language until the next action, because `api/client.ts` resolves `errors.<code>` at throw time] -> accepted (R20-S7).
+- [An error on screen when the user switches stays in the old language until the next action, because `api/client.ts` resolves `errors.<code>` at throw time] -> accepted (R20-S7). On a page that reloads its data on a switch (the admin teacher list) the reload clears the error instead (Clarification 22).
 - [A Russian user sees mostly English until #103] -> accepted by the engineer (Clarifications 3).
 - [The hidden label is in the UI language, the options are endonyms] -> intended (D4).
 - [Design docs say informal] -> edited in the same change (task 6.1).
