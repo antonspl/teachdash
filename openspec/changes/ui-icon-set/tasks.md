@@ -7,7 +7,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 1. Before screenshots
 
-- [ ] 1.1 From `main`, before any other change, take the before set into `frontend/screenshots/ui-icon-set/before/`: `/admin` in en, at desktop and 360, "Add teacher" default, hover and keyboard focus and one 200% zoom shot of `/admin` on desktop; list unreachable states (disabled and loading "Add teacher")
+- [x] 1.1 From `main`, before any other change, take the before set into `frontend/screenshots/ui-icon-set/before/`: `/admin` in en, at desktop and 360, "Add teacher" default, hover and keyboard focus and one 200% zoom shot of `/admin` on desktop; list unreachable states (disabled and loading "Add teacher")
 
 ## 2. Icons and tokens
 
