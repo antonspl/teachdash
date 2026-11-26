@@ -17,6 +17,17 @@ Decisions by the engineer:
 9. Tokens: add `--lang-select-width: 9rem` and `--size-visually-hidden: 1px` to `tokens.css` now, with the names and values of `design-code.md:116` and `:131`; add a small visually hidden CSS class.
 10. Copy details: keep "Just added" (`design-code.md:311` uses it); keep "Please"; Russian strings in this change use the formal "вы"; the new `errors.TARGET_ACCOUNT_DEACTIVATED` is "This account has been deactivated, so a reset link cannot be created. Reload the list to see the current status."
 
+11. Login and set-password row spacing: add `--space-block` (1.25rem, name and value from `design-code.md:70`) to `tokens.css` now; the row sits `--space-block` above the title.
+12. On login and set-password the select is first in the DOM and in tab order (the first Tab stop, before email); visual order equals DOM order. The cost is in design Risks.
+13. Header at 360 px: when the select wraps under the buttons it is left-aligned (the `.user` flex-wrap default), with gap `--space-button-gap`. The login row is a right-aligned block in `<main>`, width `--lang-select-width`.
+14. An error already on screen when the user switches stays in the old language until the next action (`api/client.ts` resolves `errors.<code>` at throw time). Accepted; stated in R20 and its scenario R20-S7.
+15. The Russian `errors.TARGET_ACCOUNT_DEACTIVATED` is drafted by the spec-writer in formal "вы" (design D2) and the engineer approves it at the spec gate. A scenario with the Russian language active (R2-S5) keeps the key from going missing in `ru.json`.
+16. `login.linkHint` becomes "No password, or forgot it? Ask your teacher or administrator for a new link."
+17. Detection edge cases: if `navigator.languages` is empty or undefined, use `navigator.language`, then `en`; a stored value in another case ("RU") is lowercased before the supported check; if reading the `window.localStorage` property itself throws (SecurityError), not only `getItem` and `setItem`, the app starts with the choice kept in memory.
+18. No sync between tabs: another open tab keeps its language until it is reloaded.
+19. One function changes the language: `setUiLanguage(lng)` in the i18n module changes the language and persists it. `UiLanguageSelect` calls it now, the Profile menu (#201) later. Startup detection never writes storage. The `languageChanged` listener only sets `<html lang>`.
+20. Select states are described in "UI design / States per screen": hover, open, focus ring, and disabled (not used).
+
 ## Research angles and conclusions
 
 Angles agreed with the engineer: i18n and detection today (frontend), backend error handling and #92, unit and E2E test impact, copy audit, and the UI plan (`frontend-researcher`).
@@ -25,7 +36,7 @@ Angles agreed with the engineer: i18n and detection today (frontend), backend er
 - Backend: errors are codes translated in the frontend (`api/client.ts`, falls back to `errors.generic`); nothing depends on Accept-Language. The backend returns 409 `TARGET_ACCOUNT_DEACTIVATED` (`accounts` R8) and `en.json` lacks it, so users see `errors.generic`.
 - Unit tests: vitest + jsdom (`navigator.language` is `en-US`); tests import the `'../i18n'` singleton and reset with `changeLanguage('en')` and `localStorage.clear()` in `afterEach`. The detector is a pure function tested with a stubbed `navigator.languages`. `translations.test.tsx` R2-S1 uses its own instance with `lng:'en'`.
 - E2E: Playwright 1.64, three projects, no locale set; 119 role, text and label selectors assume English. With the pin, none break.
-- Copy audit: only two test literals break, `useFieldErrors.test.tsx:103` and `api/client.test.ts:76`; both switch to read `en.<key>`. No spec scenario quotes the rewritten strings. The constitution has no tone rule.
+- Copy audit: among the unit tests only two literals break, `useFieldErrors.test.tsx:103` and `api/client.test.ts:76`; both switch to read `en.<key>`. The audit did not cover the E2E specs and the other `*.test.tsx` files, so task 2.1 greps all of them for the old strings. No spec scenario quotes the rewritten strings. The constitution has no tone rule.
 - Risks (design): an unguarded localStorage throwing inside the top-level await would give a blank page; unit tests that do not clear storage become order-dependent; the name clash with `LanguageSelect`; the hidden label is in the current UI language while the option text is the endonym.
 
 ## What changes
@@ -33,13 +44,15 @@ Angles agreed with the engineer: i18n and detection today (frontend), backend er
 - `web-client` R2 modified (en and ru resources, per-key fallback, the `TARGET_ACCOUNT_DEACTIVATED` message); new R19 (detection, stored choice, `<html lang>`) and R20 (language switch).
 - Detection and storage in `frontend/src/i18n/`, `ru.json` with this change's strings, `errors.TARGET_ACCOUNT_DEACTIVATED` in both files.
 - `UiLanguageSelect` placed in the header and on the login and set-password pages.
-- Neutral rewrite of the informal `en` strings; the design docs' tone rules follow.
+- Neutral rewrite of the informal `en` strings; the design docs' tone rules follow (also `product-brief.md` lines 45 and 60 and `refactoring-ui-patterns.md:22`).
+- The placement (header, and inside `<main>` on login and set-password) is temporary: it is not the login band of `design-code.md:354`, until #201, #202 and #205.
 - Playwright locale pin and one stored-choice E2E test.
 
 ## Out of scope
 
 - The full Russian translation (#103, which also reserves R15-R16).
-- The content language of lessons (`lang` on content blocks, #114).
+- The content language of lessons (`lang` on content blocks, #114). #114 owns the second "Done when" bullet of #172; a task notes this on #172 when it is closed.
+- Synchronising the language between open tabs.
 - Moving the switch into the Profile menu or the login band (#201, #202, #205) and the icon-led select (#197).
 - Dark mode, a globe icon, detection libraries, backend changes, new dependencies.
 - A switch on the not-found page and on loading or guard pages.
