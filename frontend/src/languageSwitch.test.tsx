@@ -39,24 +39,31 @@ function problem(status: number, code: string) {
   return json({ status, code }, status, 'application/problem+json')
 }
 
-// Answers /api/me with the role's user, or as anonymous when `role` is undefined.
+// Answers /api/me with the role's user (and an empty teacher list), or as anonymous
+// when `role` is undefined.
 function backend(role?: string, routes: Record<string, () => Response> = {}) {
   fetchMock.mockImplementation((url: string) => {
     const path = String(url).replace('/api/', '')
     if (routes[path]) {
       return Promise.resolve(routes[path]())
     }
-    return Promise.resolve(
-      role && path === 'me'
-        ? json({
-            id: '1',
-            name: 'Anna Smith',
-            email: 'a@example.com',
-            role,
-            timeZone: 'UTC',
-          })
-        : problem(401, 'UNAUTHENTICATED'),
-    )
+    if (role && path === 'me') {
+      return Promise.resolve(
+        json({
+          id: '1',
+          name: 'Anna Smith',
+          email: 'a@example.com',
+          role,
+          timeZone: 'UTC',
+        }),
+      )
+    }
+    // The admin cabinet loads its teacher list. A 401 here would end the session
+    // and flip the page to the login form at a random moment.
+    if (role && path === 'admin/teachers') {
+      return Promise.resolve(json([]))
+    }
+    return Promise.resolve(problem(401, 'UNAUTHENTICATED'))
   })
 }
 
