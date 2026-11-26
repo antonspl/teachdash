@@ -211,6 +211,7 @@ test('[web-client/R5-S3] Real backend error is recognised as a problem response'
 
 test('[web-client/R8-S1] Page is served with security headers and works under them', async ({
   page,
+  browserName,
 }) => {
   const problems: string[] = []
   await page.addInitScript(() => {
@@ -256,11 +257,21 @@ test('[web-client/R8-S1] Page is served with security headers and works under th
   const headers = response!.headers()
   expectSecurityHeaders(headers)
   await expectIconLoads(page)
+  const hasNativeSelect = (await page.locator('select').count()) > 0
 
   await page.goto('/no-such-page')
   await expect(page.getByText(en.notFound.message)).toBeVisible()
   await expectIconLoads(page)
-  expect(problems).toEqual([])
+  // WebKit adds an internal inline style for a native <select>, which the CSP refuses
+  // (design D8). Ignore exactly these two messages there, nothing else.
+  const webkitSelectNoise = new Set([
+    "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' appears in neither the style-src directive nor the default-src directive of the Content Security Policy.",
+    'CSP violation: style-src-attr inline',
+  ])
+  const ignoreNoise = browserName === 'webkit' && hasNativeSelect
+  expect(
+    problems.filter((text) => !(ignoreNoise && webkitSelectNoise.has(text))),
+  ).toEqual([])
 })
 
 test('[web-client/R9-S1] Hashed asset is long-lived and compressed', async ({
