@@ -352,7 +352,7 @@ Three panes, full height, each scrolling alone: tree (`--tree-width`) | outline 
 
 ### Login and set-password
 
-A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordmark in `--text-large` 600 on the left and the language select on the right. The form is centred, `--form-width` wide, with its top at `--login-top-offset` (in the chosen mockup `12vh`, fixed per window, so an error banner grows the form downward only; decided in the login issue, plan step 7); labelled fields, one primary button, the help line muted. On phones the tagline is hidden and the form starts `--space-section` below the band. Temporary: this change puts the language select in the page header, and inside `<main>` on login and set-password (not in this band); that placement stays until #201, #202 and #205.
+A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordmark in `--text-large` 600 on the left and the language select on the right. The form is centred, `--form-width` wide, with its top at `--login-top-offset` (in the chosen mockup `12vh`, fixed per window, so an error banner grows the form downward only; decided in the login issue, plan step 7); labelled fields, one primary button, the help line muted. On phones the tagline is hidden and the form starts `--space-section` below the band. Temporary: this change puts the language select in today's app header, and inside `<main>` on login and set-password (not in this band); that placement stays until #201, #202 and #205.
 
 ## Layout and screens
 
