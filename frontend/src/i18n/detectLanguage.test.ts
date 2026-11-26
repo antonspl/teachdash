@@ -1,13 +1,48 @@
+import { cleanup, render, screen } from '@testing-library/react'
 import i18next from 'i18next'
-import { afterEach, expect, test, vi } from 'vitest'
+import { createElement } from 'react'
+import { I18nextProvider } from 'react-i18next'
+import { MemoryRouter } from 'react-router'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { App } from '../App'
 import { detectLanguage } from './detectLanguage'
 import { initI18n, LANGUAGE_STORAGE_KEY } from './initI18n'
 import en from './en.json'
 import { setUiLanguage } from '.'
 
 const supported = ['en', 'ru']
+const fetchMock = vi.fn()
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', fetchMock)
+  fetchMock.mockImplementation(() =>
+    Promise.resolve(
+      new Response(JSON.stringify({ status: 401, code: 'UNAUTHENTICATED' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    ),
+  )
+})
+
+function renderLogin(instance: ReturnType<typeof i18next.createInstance>) {
+  return render(
+    createElement(
+      I18nextProvider,
+      { i18n: instance },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ['/login'] },
+        createElement(App),
+      ),
+    ),
+  )
+}
 
 afterEach(async () => {
+  cleanup()
+  fetchMock.mockReset()
+  vi.unstubAllGlobals()
   await i18next.changeLanguage('en')
   localStorage.clear()
   document.documentElement.lang = 'en'
@@ -98,6 +133,7 @@ test('[web-client/R19-S7] Missing browser languages and a stored value in anothe
   expect(detectLanguage(supported, null, [], 'ru-RU')).toBe('ru')
   expect(detectLanguage(supported, null, undefined, 'ru-RU')).toBe('ru')
   expect(detectLanguage(supported, 'RU', ['en-US'], 'en-US')).toBe('ru')
+  expect(detectLanguage(supported, null, undefined, undefined)).toBe('en')
 })
 
 test('[web-client/R2-S2] A Russian string is shown when the UI language is Russian', async () => {
@@ -113,15 +149,19 @@ test('[web-client/R2-S2] A Russian string is shown when the UI language is Russi
       } as never,
     }),
   )
-  expect(instance.t('login.title')).toBe('Вход')
-  expect(instance.t('login.title')).not.toBe(en.login.title)
+  renderLogin(instance)
+  expect(await screen.findByRole('heading', { name: 'Вход' })).toBeTruthy()
+  expect(screen.queryByRole('heading', { name: en.login.title })).toBeNull()
 })
 
 test('[web-client/R2-S3] A key missing in Russian shows the English text', async () => {
   const instance = i18next.createInstance()
   await initI18n(instance, env({ languages: ['ru'], language: 'ru' }))
   expect(instance.language).toBe('ru')
-  expect(instance.t('login.title')).toBe(en.login.title)
+  renderLogin(instance)
+  expect(
+    await screen.findByRole('heading', { name: en.login.title }),
+  ).toBeTruthy()
 })
 
 test('setUiLanguage changes the language, persists it and sets lang', async () => {
