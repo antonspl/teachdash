@@ -22,7 +22,7 @@ A pure helper in `frontend/src/i18n/` takes two bundles and returns a list of pr
 - every `en` leaf has a non-empty `ru` leaf; a `ru` leaf without an `en` counterpart is a problem, except plural suffixes of a base that `en` has (R16);
 - a plural base is a key whose last segment ends in `_zero`, `_one`, `_two`, `_few`, `_many` or `_other`. Per language, the set of suffixes of each base equals `Intl.PluralRules(lang).resolvedOptions().pluralCategories` (`en`: one, other; `ru`: one, few, many, other);
 - the set of `{{variables}}` of every leaf, plain and plural, is the same in every language; for a plural base the baseline is the variable set of `en`'s `_other` text, and `ru` `_one`, `_few` and `_many` may drop only `count` from it (an extra variable fails);
-- every `ru` value contains a Cyrillic letter, except an explicit allow-list (`app.name` and the language endonyms `uiLanguage.name.*`); no `ru` value contains a deny-listed form («учетн», «пожалуйста», and the whole word «еще»), compared case-insensitively; this is part of the copy-rules check (R15-S5);
+- every `ru` value contains a Cyrillic letter, except an explicit allow-list (`app.name` and the language endonyms `uiLanguage.name.*`); no `ru` value contains a deny-listed form («учетн», «пожалуйста», and the whole word «еще»), compared case-insensitively; «еще» is matched with Unicode lookarounds, `(?<!\p{L})еще(?!\p{L})` with the `iu` flags (not `\b`, which is ASCII-only), proved on a synthetic bundle where «Еще раз» fails and «ещё» and «вещество» pass; this is part of the copy-rules check (R15-S5);
 - the failure message lists the key names, with the language and the problem.
 
 The real bundles have no plural base today, so the plural rules run only on synthetic bundles.
