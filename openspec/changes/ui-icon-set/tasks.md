@@ -21,8 +21,8 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 3. After screenshots
 
-- [ ] 3.1 Take the final screenshot set in `frontend/screenshots/ui-icon-set/`: same states and widths as the before set, including the 200% zoom shot of `/admin` on desktop; check by eye that the plus is optically centred on the label, the button is about 0.25rem wider with the same height, the focus ring is not clipped and the label stays on one line at 360; list unreachable states; if #211 is merged before the code gate, rebase and add an ru 360 shot, otherwise state in the PR that the ru fit was not checked
-- [ ] 3.2 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e`; all pass, and every `web-client` R21, R22 and R23 scenario has a test
+- [x] 3.1 Take the final screenshot set in `frontend/screenshots/ui-icon-set/`: same states and widths as the before set, including the 200% zoom shot of `/admin` on desktop; check by eye that the plus is optically centred on the label, the button is about 0.25rem wider with the same height, the focus ring is not clipped and the label stays on one line at 360; list unreachable states; if #211 is merged before the code gate, rebase and add an ru 360 shot, otherwise state in the PR that the ru fit was not checked
+- [x] 3.2 Run `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e`; all pass, and every `web-client` R21, R22 and R23 scenario has a test
 
 ## Workflow follow-up
 
