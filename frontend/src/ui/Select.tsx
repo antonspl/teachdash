@@ -15,6 +15,7 @@ export function Select({
   inputRef,
   hideLabel,
   optionLang,
+  flush,
 }: {
   label: string
   value: string
@@ -35,11 +36,13 @@ export function Select({
   hideLabel?: boolean
   // The `lang` of each option, by option value.
   optionLang?: Record<string, string>
+  // Drops the bottom margin, for a select that sits among buttons.
+  flush?: boolean
 }) {
   const id = useId()
   const errorId = `${id}-error`
   return (
-    <div className={styles.field}>
+    <div className={`${styles.field} ${flush ? styles.flush : ''}`}>
       <label
         htmlFor={id}
         className={`${styles.label} ${hideLabel ? styles.visuallyHidden : ''}`}

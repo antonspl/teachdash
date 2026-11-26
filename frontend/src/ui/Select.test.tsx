@@ -77,3 +77,19 @@ test('placeholder is not a selectable option and nothing is preselected', () => 
     '',
   )
 })
+
+test('flush adds its own class to the root, without it the default stays', () => {
+  const { rerender } = render(
+    <Select label="Zone" value="a" onChange={() => {}} options={['a']} />,
+  )
+  const rootOf = () =>
+    screen.getByLabelText('Zone').parentElement?.parentElement as HTMLElement
+  const plain = rootOf().className
+  expect(plain).not.toBe('')
+  rerender(
+    <Select label="Zone" value="a" onChange={() => {}} options={['a']} flush />,
+  )
+  const flushed = rootOf().className
+  expect(flushed.startsWith(plain)).toBe(true)
+  expect(flushed).not.toBe(plain)
+})
