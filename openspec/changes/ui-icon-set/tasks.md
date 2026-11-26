@@ -11,13 +11,13 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 2. Icons and tokens
 
-- [ ] 2.1 Add `--icon-size`, `--icon-size-small` and `--icon-size-rail` to `frontend/src/styles/tokens.css` (design D3); no `--icon-size-placeholder`
-- [ ] 2.2 Add `frontend/src/ui/icons.tsx` (`SvgIcon` and one named component per icon of the design-code table, geometry copied from it) and `icons.module.css` (three size classes, `flex: none`, no `em`); move `PlusIcon` into it; delete `PlusIcon.tsx` and `PlusIcon.module.css`; change only the import in `Button.tsx` (design D1, D2); verify `npm run lint` (token check) and `npm run build`
-- [ ] 2.3 First confirm whether Vitest gives distinct CSS-module class names in jsdom; if not, set `css.modules` (for example `classNameStrategy`) in `frontend/vite.config.ts` (Clarification 16)
-- [ ] 2.4 Vitest in `frontend/src/ui/icons.test.tsx` for web-client/R21-S1, R21-S2 and R21-S3 (table-driven; one hand-copied literal list per icon, Clarification 11)
-- [ ] 2.5 Vitest in `frontend/src/ui/icons.test.tsx` for web-client/R22-S1 (reads `tokens.css` as text) and R22-S2 (class per size, and the icon CSS module read as text: each size class sets width and height from its own token, no `em`)
-- [ ] 2.6 Vitest in `frontend/src/pages/AdminTeachersPage.test.tsx` for web-client/R23-S1 and R23-S2 (buttons read by role and name, including "Create teacher"); the existing `Button.test.tsx` stays green; verify `npm test`
-- [ ] 2.7 Playwright test for web-client/R22-S3 in `frontend/e2e/` (computed width and height of the plus on "Add teacher" are 20px, as `selectArrow.spec.ts:20-31` reads styles; on the phone project also no horizontal scroll on `/admin` at 360); verify `npm run test:e2e` on desktop and phone projects
+- [x] 2.1 Add `--icon-size`, `--icon-size-small` and `--icon-size-rail` to `frontend/src/styles/tokens.css` (design D3); no `--icon-size-placeholder`
+- [x] 2.2 Add `frontend/src/ui/icons.tsx` (`SvgIcon` and one named component per icon of the design-code table, geometry copied from it) and `icons.module.css` (three size classes, `flex: none`, no `em`); move `PlusIcon` into it; delete `PlusIcon.tsx` and `PlusIcon.module.css`; change only the import in `Button.tsx` (design D1, D2); verify `npm run lint` (token check) and `npm run build`
+- [x] 2.3 Not needed: Vitest gives distinct CSS-module class names in jsdom (`_default_c85afc`, `_small_c85afc`, `_rail_c85afc`), so `vite.config.ts` is unchanged. Was: first confirm whether Vitest gives distinct CSS-module class names in jsdom; if not, set `css.modules` (for example `classNameStrategy`) in `frontend/vite.config.ts` (Clarification 16)
+- [x] 2.4 Vitest in `frontend/src/ui/icons.test.tsx` for web-client/R21-S1, R21-S2 and R21-S3 (table-driven; one hand-copied literal list per icon, Clarification 11)
+- [x] 2.5 Vitest in `frontend/src/ui/icons.test.tsx` for web-client/R22-S1 (reads `tokens.css` as text) and R22-S2 (class per size, and the icon CSS module read as text: each size class sets width and height from its own token, no `em`)
+- [x] 2.6 Vitest in `frontend/src/pages/AdminTeachersPage.test.tsx` for web-client/R23-S1 and R23-S2 (buttons read by role and name, including "Create teacher"); the existing `Button.test.tsx` stays green; verify `npm test`
+- [x] 2.7 Playwright test for web-client/R22-S3 in `frontend/e2e/` (computed width and height of the plus on "Add teacher" are 20px, as `selectArrow.spec.ts:20-31` reads styles; on the phone project also no horizontal scroll on `/admin` at 360); verify `npm run test:e2e` on desktop and phone projects
 
 ## 3. After screenshots
 
