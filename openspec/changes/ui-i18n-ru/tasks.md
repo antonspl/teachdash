@@ -24,7 +24,7 @@ cast, `uiLanguage.spec.ts:34`. No rendering test moves to `I18nextProvider`: `i1
 ## 4. Design docs and follow-ups
 
 - [ ] 4.1 Add to `.agents/design/design-code.md` "Copy and languages" one rule per Clarification: 6 (formal «вы», «Учителя», «» quotes, `…`, non-breaking space between number and unit, wrap never truncate), 7 (action buttons in the infinitive, imperative messages; the exception: «Отмена», «Новое приглашение» and «Ссылка для сброса пароля» are nouns), 8 (no «пожалуйста»), 9 (glossary), 10 (admin invite and reset button names), 11 (feminine status badges), 12, 19 to 21 and 24 (colon forms for names and labels, «ученики будут откреплены от учителя», «сеансы завершены»; the toggle name keeps the label's case, «Показать: Новый пароль», Clarification 24), 13 (lower-case role), 14 (always ё), 15 (labels not shortened, at most 24 characters for admin actions); proof: the section lists each rule, none contradicts `design-code.md:364` (wrapping, no truncation) or the Russian admin actions' `72rem` condition, and it agrees with `project-rules.md`, recorded in the PR
-- [ ] 4.2 The main agent files two follow-up issues: native-language options sorted by the name in the current UI language (Clarification 16a), and translated time zone names (16b); link them in the PR description
+- [x] 4.2 The main agent files two follow-up issues: native-language options sorted by the name in the current UI language (Clarification 16a), and translated time zone names (16b); link them in the PR description (filed: #212, #213)
 
 ## 5. Final checks and screenshots
 
