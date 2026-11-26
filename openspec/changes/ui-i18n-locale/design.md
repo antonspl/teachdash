@@ -75,6 +75,10 @@ Kept as they are: `adminTeachers.justAdded` ("Just added"), `profile.title`, `pr
 - Playwright: `locale: 'en-US'` in `use` of `playwright.config.ts` pins all three projects, so the English selectors keep working; R20-S8 seeds `teachdash.lang` as `ru` before the page loads (`addInitScript`); R20-S9 checks the select is inside the viewport and there is no horizontal scroll at 360 with `ru` active.
 - Old strings: task 2.1 greps `frontend/e2e/*.spec.ts` and `frontend/src/**/*.test.tsx` for the old texts and switches matches to the `en.<key>` value or the new text.
 
+### D8 WebKit, native select and the CSP
+
+WebKit adds an internal inline style when a native `<select>` is on the page, even with no app CSS. The CSP has `default-src 'self'` and no `style-src`, so WebKit refuses it and logs two console messages ("Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' appears in neither the style-src directive nor the default-src directive of the Content Security Policy." and "CSP violation: style-src-attr inline"). The user sees nothing wrong. The `web-client` R8-S1 test fails on login now that the page has the switch. Decision: the R8-S1 test ignores exactly these two messages, only when the project is WebKit and the page has a `select` element; everything else still fails it. Rejected: (a) adding `style-src-attr 'unsafe-inline'` to the CSP, which weakens the policy for every page for a harmless message; (d) a custom listbox instead of the native select, which contradicts R20 and loses native keyboard and mobile behaviour.
+
 ## UI design
 
 ### Screens touched
@@ -142,6 +146,8 @@ Later steps (not for this change): #201 and #202 replace the header slot with th
 - [A Russian user sees mostly English until #103] -> accepted by the engineer (Clarifications 3).
 - [The hidden label is in the UI language, the options are endonyms] -> intended (D4).
 - [Design docs say informal] -> edited in the same change (task 6.1).
+
+- [WebKit logs two CSP console messages for any native select] -> the R8-S1 test ignores exactly those two, in WebKit only (D8); the CSP is unchanged.
 
 ## Migration Plan
 

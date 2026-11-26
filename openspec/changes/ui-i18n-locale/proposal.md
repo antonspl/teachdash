@@ -27,6 +27,7 @@ Decisions by the engineer:
 18. No sync between tabs: another open tab keeps its language until it is reloaded.
 19. One function changes the language: `setUiLanguage(lng)` in the i18n module changes the language and persists it. `UiLanguageSelect` calls it now, the Profile menu (#201) later. Startup detection never writes storage. The `languageChanged` listener only sets `<html lang>`.
 20. Select states are described in "UI design / States per screen": hover, open, focus ring, and disabled (not used).
+21. WebKit adds an internal inline style whenever a native `<select>` is on the page (reproduced with a bare `<select>` and no app CSS). The CSP (`default-src 'self'`, no `style-src`) blocks it, and WebKit logs "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' appears in neither the style-src directive nor the default-src directive of the Content Security Policy." and "CSP violation: style-src-attr inline". `[phone-safari] web-client/R8-S1` collects console errors and now fails, because the login page (where `/` redirects) has the switch. Decision (b): the CSP stays unchanged (no `style-src-attr 'unsafe-inline'`) and the native select stays. R8-S1 ignores exactly these two WebKit messages, only in WebKit and only when the page has a native `<select>`; any other console error or CSP violation still fails it. Rejected: (a) loosening the CSP, (d) a custom listbox (contradicts R20). The change therefore has four requirements: `web-client` R2, R8, R19 and R20.
 
 ## Research angles and conclusions
 
@@ -41,7 +42,7 @@ Angles agreed with the engineer: i18n and detection today (frontend), backend er
 
 ## What changes
 
-- `web-client` R2 modified (en and ru resources, per-key fallback, the `TARGET_ACCOUNT_DEACTIVATED` message); new R19 (detection, stored choice, `<html lang>`) and R20 (language switch).
+- `web-client` R2 modified (en and ru resources, per-key fallback, the `TARGET_ACCOUNT_DEACTIVATED` message); R8 modified (scenario R8-S1 ignores two WebKit console messages for a native `<select>`); new R19 (detection, stored choice, `<html lang>`) and R20 (language switch).
 - Detection and storage in `frontend/src/i18n/`, `ru.json` with this change's strings, `errors.TARGET_ACCOUNT_DEACTIVATED` in both files.
 - `UiLanguageSelect` placed in the header and on the login and set-password pages.
 - Neutral rewrite of the informal `en` strings; the design docs' tone rules follow (also `product-brief.md` lines 45 and 60 and `refactoring-ui-patterns.md:22`).

@@ -25,6 +25,7 @@ tests that change: the literals found in task 2.1.
 
 - [x] 5.1 Set `locale: 'en-US'` in `use` of `playwright.config.ts`; Playwright tests for web-client/R20-S8 and R20-S9 against `docker compose up --build --wait`, desktop and phone projects; verify `npm run test:e2e`
 - [x] 5.2 Take the final screenshot set in `frontend/screenshots/ui-i18n-locale/`: the header (cabinet, Profile, admin) and the login and set-password pages, at desktop and 360 px, in `en` and `ru`; check by eye that the select does not touch buttons or the title and that nothing overflows; list unreachable states; record the result in the PR
+- [ ] 5.3 Change the R8-S1 test (`frontend/e2e/skeleton.spec.ts`) to ignore exactly the two WebKit console messages of design D8, only in WebKit and only when the page has a native `<select>`; any other console error or CSP violation still fails it; verify the full `npm run test:e2e` on all three projects
 
 ## 6. Design docs
 

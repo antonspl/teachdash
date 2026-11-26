@@ -37,6 +37,19 @@ code SHALL have its own translated message in both languages.
 - **WHEN** the API client handles the response
 - **THEN** the caller gets the message from `ru.json` key `errors.TARGET_ACCOUNT_DEACTIVATED`, which is not the `en` text and not the generic message
 
+### Requirement: R8 Security headers
+
+Web application responses SHALL carry a Content Security Policy, `X-Content-Type-Options`
+and `Referrer-Policy` headers, and SHALL NOT allow other sites to frame the application.
+The application SHALL work under that policy.
+
+#### Scenario: web-client/R8-S1 Page is served with security headers and works under them
+- **GIVEN** the local stack is running
+- **WHEN** a user opens `/`
+- **THEN** the response has a Content Security Policy with `default-src 'self'` and `frame-ancestors 'none'`
+- **AND** the response has `X-Content-Type-Options: nosniff` and a `Referrer-Policy` header
+- **AND** the login page it redirects to renders with no Content Security Policy violations, except that in WebKit, when the page has a native `<select>`, the two console messages WebKit logs for its own internal inline style ("Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' appears in neither the style-src directive nor the default-src directive of the Content Security Policy." and "CSP violation: style-src-attr inline") are ignored; any other console error or violation still fails the scenario
+
 ## ADDED Requirements
 
 ### Requirement: R19 UI language detection and stored choice
