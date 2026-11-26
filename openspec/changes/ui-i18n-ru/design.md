@@ -2,7 +2,7 @@
 
 ## Context
 
-- `frontend/src/i18n/initI18n.ts` builds `resources = {en, ru}` (one namespace), computes `supported = Object.keys(bundles)` and starts i18next with `fallbackLng: 'en'`. `ru.json` has 4 leaves; `en.json` has 119. `detectLanguage.ts` needs no change.
+- `frontend/src/i18n/initI18n.ts` builds `resources = {en, ru}` (one namespace), computes `supported = Object.keys(bundles)` and starts i18next with `fallbackLng: 'en'`. `ru.json` has 4 leaves; `en.json` has 118. `detectLanguage.ts` needs no change.
 - With i18next 26.6.0, `Intl.PluralRules('ru')` gives one/few/many/other, and a Russian bundle without `_few` or `_many` silently shows the `en` `_other` text. Only a test can catch it.
 - `i18n/translations.test.tsx` already has `leaves()` and `setPath()` helpers.
 - `ui/UiLanguageSelect.tsx` hard-codes `['en','ru']` and `'en'`; its CSS removes the `Select` margin with `.wrap > div { margin: 0 }`; `initI18n` calls `.use(initReactI18next)` on every instance (#209).
@@ -33,7 +33,7 @@ i18next JSON v4 already selects `_one/_few/_many/_other` from `Intl.PluralRules`
 
 ### D3 `ru.json` and the existing tests (R2, R20-S5)
 
-`ru.json` gets all 119 leaves (table in "UI design / Copy"), the existing four keep their values. The tests that assumed an incomplete `ru` change:
+`ru.json` gets all 118 leaves (table in "UI design / Copy"), the existing four keep their values. The tests that assumed an incomplete `ru` change:
 
 - R2-S3 (`detectLanguage.test.ts:157`) uses a test `ru` bundle with a missing key through `initI18n`'s `resources` seam, instead of the real `ru`.
 - R20-S5 (`languageSwitch.test.tsx:182-183`) uses a test `ru` bundle with `uiLanguage.*` and no `login.title`, so the per-key fallback is still proved while the title stays English. `UiLanguageSelect` imports the global `setUiLanguage` (`UiLanguageSelect.tsx:2`), so a test `ru` bundle on a separate instance cannot drive it. The test swaps the bundle on the global instance: `removeResourceBundle('ru', 'translation')` then `addResourceBundle('ru', 'translation', {uiLanguage: …})`, and restores the real bundle in `afterEach`.
@@ -61,7 +61,7 @@ The rules are written into `.agents/design/design-code.md` "Copy and languages" 
 
 ### Screens touched
 
-Every existing screen, for text only: login, set-password, admin teachers (list, create dialog, deactivate dialog, issued-link dialog), Profile, the app header (cabinet, Profile, admin), not-found, teacher and student cabinet stubs, startup and loading states. No layout, CSS or token change.
+Every existing screen, for text only: login, set-password, admin teachers (list, create dialog, deactivate dialog, issued-link box), Profile, the app header (cabinet, Profile, admin), not-found, teacher and student cabinet stubs, startup and loading states. No layout, CSS or token change.
 
 ### Layout (desktop and 360 px)
 
@@ -76,7 +76,7 @@ No state is added or removed. Every existing state gets Russian text: login (def
 
 ### Copy
 
-The table lists every key of `en.json` (119 leaves) with its current `en` text and its `ru` value. The `ru` values are the proposal for the engineer's review at the spec gate. Three values hold a non-breaking space (U+00A0) between a number and its unit: `password.tooShort` («8 символов»), `password.tooLong` («72 байт») and `issuedLink.note` («7 дней»). In the table below `␣` marks each U+00A0 so the engineer can see it; in `ru.json` it is the real character U+00A0, not the symbol, and R15-S5 asserts the character code. `roles.*` are lower case in Russian because the header shows «Анна (учитель)». Only `ui.loading` changes in `en`.
+The table lists every key of `en.json` (118 leaves) with its current `en` text and its `ru` value. The `ru` values are the proposal for the engineer's review at the spec gate. Three values hold a non-breaking space (U+00A0) between a number and its unit: `password.tooShort` («8 символов»), `password.tooLong` («72 байт») and `issuedLink.note` («7 дней»). In the table below `␣` marks each U+00A0 so the engineer can see it; in `ru.json` it is the real character U+00A0, not the symbol, and R15-S5 asserts the character code. `roles.*` are lower case in Russian because the header shows «Анна (учитель)». Only `ui.loading` changes in `en`.
 
 | Key | en | ru |
 |---|---|---|
@@ -155,7 +155,6 @@ The table lists every key of `en.json` (119 leaves) with its current `en` text a
 | `issuedLink.close` | Close | Закрыть |
 | `issuedLink.copied` | Copied. | Скопировано. |
 | `issuedLink.copyByHand` | The link could not be copied. It is selected, so you can copy it by hand. | Не удалось скопировать ссылку. Она выделена, скопируйте её вручную. |
-| `adminTeachers.loadError` | Could not load the teachers. | Не удалось загрузить учителей. |
 | `adminTeachers.empty` | No teachers yet. Use the button above to add the first one. | Учителей пока нет. Добавьте первого с помощью кнопки выше. |
 | `adminTeachers.status.ACTIVE` | Active | Активна |
 | `adminTeachers.status.WAITING` | Waiting for password | Ожидает пароля |

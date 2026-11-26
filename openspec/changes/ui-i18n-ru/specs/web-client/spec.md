@@ -125,14 +125,14 @@ pixels.
 
 #### Scenario: web-client/R15-S3 Russian pages show Russian text
 - **GIVEN** the UI language is `ru`
-- **WHEN** the login page, the set-password page (with a token, and with an incomplete link), the not-found page, the teacher cabinet, the student cabinet («Кабинет ученика»), the Profile page and the admin teacher list with the create dialog, the deactivate dialog and the issued-link dialog open are rendered
-- **AND** the message states are rendered: the login banners `login.unreachable` and `login.sessionEnded`; `startup.error`; `header.logoutError`; `adminTeachers.loadError`; the status badges `ACTIVE`, `WAITING`, `DEACTIVATED` and «Только что добавлена»; one message of every `errors.*` and `fieldErrors.*` key; the Profile error banners `profile.validationFailed`, `profile.validationFailedTeacher`, `profile.wrongPassword` and `profile.passwordValidationFailed`, and the success states `profile.saved` and `profile.passwordChanged`; `issuedLink.copyByHand` and `issuedLink.copied`; `setPassword.incompleteLink`; `languages.loadFailed`, `languages.required` and the `languages.*` options; `adminTeachers.empty` and `adminTeachers.create.validationFailed`; `password.mismatch`, `password.tooShort` and `password.tooLong`; `ui.tryAgain`, `ui.loading`, `ui.show`, `ui.hide`, `ui.showPassword` and `ui.hidePassword`; `header.backToCabinet`
+- **WHEN** the login page, the set-password page (with a token, and with an incomplete link), the not-found page, the teacher cabinet, the student cabinet («Кабинет ученика»), the Profile page and the admin teacher list with the create dialog, the deactivate dialog and the issued-link box open are rendered
+- **AND** the message states are rendered: the login banners `login.unreachable` and `login.sessionEnded`; `startup.error`; `header.logoutError`; the admin list load error (an `errors.*` message with `ui.tryAgain`); the status badges `ACTIVE`, `WAITING`, `DEACTIVATED` and «Только что добавлена»; one message of every `errors.*` and `fieldErrors.*` key; the Profile error banners `profile.validationFailed`, `profile.validationFailedTeacher`, `profile.wrongPassword` and `profile.passwordValidationFailed`, and the success states `profile.saved` and `profile.passwordChanged`; `issuedLink.copyByHand` and `issuedLink.copied`; `setPassword.incompleteLink`; `languages.loadFailed`, `languages.required` and the `languages.*` options; `adminTeachers.empty` and `adminTeachers.create.validationFailed`; `password.mismatch`, `password.tooShort` and `password.tooLong`; `ui.tryAgain`, `ui.loading`, `ui.show`, `ui.hide`, `ui.showPassword` and `ui.hidePassword`; `header.backToCabinet`
 - **THEN** no text on them equals an `en` leaf value, except the values of an allow-list of three: `teachdash`, `English` and `Русский` (`app.name`, `uiLanguage.name.en`, and `languages.ru` together with `uiLanguage.name.ru`, which have the same text in `ru` and `en`); the text compared is the text content of every element and the `aria-label`, `title`, `placeholder` and `alt` attributes, trimmed, against every `en` leaf value minus that set
 - **AND** the page titles are «Вход», «Задайте пароль», «Страница не найдена», «Кабинет учителя», «Ваш профиль» and «Кабинет администратора»
 
 #### Scenario: web-client/R15-S4 Names and roles keep their case
 - **GIVEN** the UI language is `ru`, a logged-in teacher named "Анна", and an admin teacher list with an active teacher with a password and one without
-- **WHEN** the app header, the deactivate dialog and the issued-link dialog are shown for a teacher named "Анна"
+- **WHEN** the app header, the deactivate dialog and the issued-link box are shown for a teacher named "Анна"
 - **THEN** the header reads «Анна (учитель)»
 - **AND** the deactivate dialog title is «Деактивировать: Анна?» and the issued-link label is «Ссылка для входа: Анна»
 - **AND** the row button for the teacher without a password is «Новое приглашение» and for the teacher with a password is «Ссылка для сброса пароля»
@@ -149,10 +149,10 @@ pixels.
 #### Scenario: web-client/R15-S6 Russian pages fit a phone screen
 - **GIVEN** the local stack is running with an admin, a teacher without a password and a teacher with a password, the browser has a 360-pixel-wide screen and the UI language is `ru`
 - **WHEN** a user opens the login page, the set-password page, the not-found page, and a logged-in teacher and admin open the cabinet, Profile and admin pages
-- **AND** on the admin page the create dialog, the deactivate dialog and the issued-link dialog are opened in turn, the longest admin row is shown (name, «Только что добавлена», «Ссылка для сброса пароля», «Деактивировать»), and the banners are shown (login `login.unreachable` and `login.sessionEnded`, the Profile error banners, the admin load error)
+- **AND** on the admin page the create dialog, the deactivate dialog and the issued-link box are opened in turn, the two longest admin rows are shown (the just-added teacher: name, «Ожидает пароля», «Только что добавлена», «Новое приглашение», «Деактивировать»; and a teacher with a password: «Ссылка для сброса пароля», «Деактивировать»), and the banners are shown (login `login.unreachable` and `login.sessionEnded`, the Profile error banners, the admin load error)
 - **THEN** on every page and dialog `document.documentElement.scrollWidth <= clientWidth` and no element is wider than the viewport
-- **AND** the buttons of the create dialog and of the issued-link dialog may sit on two lines
-- **AND** with the browser 768 pixels wide, the admin list with its longest row meets the same two checks (the current CSS has no `72rem` container condition, so the existing wrapping rule applies between 360 and 72rem)
+- **AND** the buttons of the create dialog and of the issued-link box may sit on two lines
+- **AND** with the browser 768 pixels wide, the admin list with its two longest rows meets the same two checks (the current CSS has no `72rem` container condition, so the existing wrapping rule applies between 360 and 72rem)
 
 ### Requirement: R16 Russian plural forms
 

@@ -6,7 +6,7 @@ Issues: #103 (closes it) and #209 (closes it). Background: #102 (`ui-i18n-locale
 
 Decisions by the engineer:
 
-1. Scope: every key currently in `en.json` (119 leaves; #103's "76" is stale) gets a Russian value. #103's line "the language switch becomes visible" no longer applies (#102 Clarification 3).
+1. Scope: every key currently in `en.json` (118 leaves; #103's "76" is stale) gets a Russian value. #103's line "the language switch becomes visible" no longer applies (#102 Clarification 3).
 2. Russian plural forms are supported (`_one/_few/_many/_other`, i18next JSON v4) and tested on synthetic test bundles only. No real count key is added to the UI just for the test (no `{{count}}` exists in `en.json` today).
 3. The key-parity test is strict: every `en` leaf has a non-empty `ru` leaf; no `ru`-only keys except plural suffixes; each plural base has exactly the categories of `Intl.PluralRules(lang).resolvedOptions().pluralCategories` for its language (en one/other, ru one/few/many/other); the same set of `{{vars}}` for every leaf, plain and plural, in every language (for a plural base the baseline is `en`'s `_other` variable set; `ru` `_one`/`_few`/`_many` may drop only `count`); every `ru` value contains a Cyrillic letter except an explicit allow-list (`app.name`, the language endonyms), and no `ru` value holds a deny-listed form («учетн», «пожалуйста», the whole word «еще»; case-insensitive); failures list the key names.
 4. #209 "language list from resources" (`UiLanguageSelect.tsx` lists the instance's own supported languages, from `i18n.options.resources` or a `supported` list exported by `initI18n`, never the static `resources` export, so the select never lists a language `setUiLanguage` rejects; `FALLBACK_LANGUAGE` replaces the `'en'` literal) is a task with proof (a Vitest where the select lists exactly the instance's languages, including a third synthetic one), not a new scenario. R20-S4 already fixes the option order.
@@ -31,6 +31,9 @@ Decisions by the engineer:
 
 23. `issuedLink.label` is shared by the invite link and the reset link (one issued-link box, one title in `IssuedLink.tsx`), so it stays «Ссылка для входа: {{name}}» for both; the dialog's note explains the link. Decided by Claude on the engineer's delegation.
 24. The password toggle accessible name keeps the visible label's case: «Показать: Новый пароль» (a capital after the colon is accepted; WCAG 2.5.3 holds). The rule goes into `design-code.md` (task 4.1). Decided by Claude on the engineer's delegation.
+25. `adminTeachers.loadError` is a dead key: no code renders it; `frontend/src/pages/AdminTeachersPage.tsx:474` shows an `errors.*` message with `ui.tryAgain` through `ErrorWithRetry`. The key is removed from `en.json`, `ru.json` and the design copy table; the key count becomes 118. Decided by Claude on the engineer's delegation.
+26. R15-S6's "longest admin row" cannot occur (the «Только что добавлена» badge shows only on a just-created teacher, who has no password); it is reworded to the two real longest rows: the just-added teacher (name, «Ожидает пароля», «Только что добавлена», «Новое приглашение», «Деактивировать») and a teacher with a password («Ссылка для сброса пароля», «Деактивировать»), both at 360 and 768 px. The issued link is an inline box in the row, not a dialog, so "issued-link dialog" becomes "issued-link box". Decided by Claude on the engineer's delegation.
+27. The existing tests changed list in `tasks.md` adds R20-S7 (`languageSwitch.test.tsx`: `submit()` finds fields by the active language's labels, since the form is Russian after the switch) and R20-S9 (`e2e/uiLanguage.spec.ts`: clears `teachdash.lang` before the English-label login helper). Decided by Claude on the engineer's delegation.
 
 ## Research angles and conclusions
 
@@ -39,13 +42,13 @@ Angles agreed with the engineer: i18n plumbing and plurals (technical), and the 
 - Plumbing: `initI18n.ts` takes `resources {en, ru}` (one namespace), `supported = Object.keys(bundles)` and `fallbackLng: 'en'`. A full `ru.json` plugs in with no init change; `detectLanguage.ts` is unchanged.
 - Plurals: with i18next 26.6.0 on Node, `Intl.PluralRules('ru')` gives one/few/many/other. If `ru` lacks `_few` or `_many`, i18next falls back to the `en` `_other` text silently, so only the parity test catches it.
 - Tests: `translations.test.tsx` has `leaves()` and `setPath()` helpers that the parity test reuses through a shared helper. Tests that read the real `ru` today: `src/api/client.test.ts:578-586`, `e2e/uiLanguage.spec.ts`, and two that assume `ru` lacks `login.title`: `detectLanguage.test.ts:157` (R2-S3) and `languageSwitch.test.tsx:182-183` (R20-S5). Most page tests run in `en`.
-- UI: 115 of 119 leaves are missing in `ru` (adminTeachers 23, profile 18, errors 14, languages 13, login 7, ui 6, issuedLink 6, fieldErrors 5, setPassword 5, header 4, notFound/cabinet/roles/password 3 each, app 1, startup 1). Text outside i18n: IANA time zone ids (decision 16b), the browser `required` bubble (#165), `<title>` (the brand). From the CSS, nothing overflows; at 360 px two button rows wrap (decision 15). No CSS or token change, no conflict with `design-code.md`.
+- UI: 114 of 118 leaves are missing in `ru` (adminTeachers 22, profile 18, errors 14, languages 13, login 7, ui 6, issuedLink 6, fieldErrors 5, setPassword 5, header 4, notFound/cabinet/roles/password 3 each, app 1, startup 1). Text outside i18n: IANA time zone ids (decision 16b), the browser `required` bubble (#165), `<title>` (the brand). From the CSS, nothing overflows; at 360 px two button rows wrap (decision 15). No CSS or token change, no conflict with `design-code.md`.
 - Risks: removing `.use(initReactI18next)` from `initI18n` needs the app instance wired before init; a `Select` no-margin prop must not fall back to the default margin, or the header select drops by 1rem.
 
 ## What changes
 
 - `web-client` R2 modified (the `ru` resources are complete; a missing key still falls back to `en`; R2-S3 uses a test bundle). R20 modified (R20-S5 no longer relies on `ru.json` lacking `login.title`). New R15 (complete Russian strings, shown in Russian, key parity, copy rules, 360 px) and R16 (Russian plural forms).
-- `ru.json` gets all 119 leaves; `en.json` "Loading..." becomes "Loading…".
+- `ru.json` gets all 118 leaves; `en.json` "Loading..." becomes "Loading…".
 - A strict parity test and a plural test on synthetic bundles.
 - The #209 tidy-ups (language list from resources, `Select` no-margin prop, `Resource` typing and no global `initReactI18next` swap, one redundant e2e line).
 - The Russian copy rules go into `.agents/design/design-code.md`.

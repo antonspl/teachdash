@@ -2,7 +2,7 @@
 
 Frontend-only change: tests and code in one pass, reviewed together at the code gate
 (`openspec/config.yaml`). The title of every Vitest or Playwright test for a scenario
-starts with its `[<scenario ID>]`. Existing tests that change: R2-S3, R20-S5, the R2-S2
+starts with its `[<scenario ID>]`. Existing tests that change: R2-S3, R20-S5, R20-S7 (`languageSwitch.test.tsx`: `submit()` finds fields by the active language's labels, since the form is Russian after the switch), R20-S9 (`e2e/uiLanguage.spec.ts`: clears `teachdash.lang` before the English-label login helper), the R2-S2
 cast, `uiLanguage.spec.ts:34`. No rendering test moves to `I18nextProvider`: `i18n/detectLanguage.test.ts` and `i18n/translations.test.tsx` already use it, and no other test calls `initI18n`.
 
 ## 1. i18n core and tidy-ups
@@ -13,9 +13,9 @@ cast, `uiLanguage.spec.ts:34`. No rendering test moves to `I18nextProvider`: `i1
 
 ## 2. Russian copy
 
-- [x] 2.1 Fill `ru.json` with all 119 leaves from the table in design "UI design / Copy", keeping the existing four values; change `en.json` `ui.loading` to "Loading…"; check each value against the rules of Clarifications 6 to 14; Vitest for web-client/R15-S5 (copy rules, Cyrillic and deny-list checks on both bundles) and R15-S1; a bundle test that every `adminTeachers.actions.*` `ru` value is at most 24 characters; verify `npm test`
+- [x] 2.1 Fill `ru.json` with all 118 leaves from the table in design "UI design / Copy", keeping the existing four values; change `en.json` `ui.loading` to "Loading…"; check each value against the rules of Clarifications 6 to 14; Vitest for web-client/R15-S5 (copy rules, Cyrillic and deny-list checks on both bundles) and R15-S1; a bundle test that every `adminTeachers.actions.*` `ru` value is at most 24 characters; verify `npm test`
 - [x] 2.2 Vitest for web-client/R15-S3 (every page, dialog and message state of the scenario with `ru` active, no `en` text left, `aria-label`s included) and R15-S4 (header role in lower case, colon forms with the name, the two admin row buttons); verify `npm test`
-- [x] 2.3 Playwright for web-client/R15-S6 (Russian pages, dialogs and the longest admin row at 360 px, and the admin list at 768 px: `scrollWidth <= clientWidth` and no element wider than the viewport) against `docker compose up --build --wait`, phone projects; drop the redundant `toContainText('Русский')` in `frontend/e2e/uiLanguage.spec.ts:34`; verify `npm run test:e2e`
+- [x] 2.3 Playwright for web-client/R15-S6 (Russian pages, dialogs and the two longest admin rows (the just-added teacher, and a teacher with a password) at 360 px, and the admin list at 768 px: `scrollWidth <= clientWidth` and no element wider than the viewport) against `docker compose up --build --wait`, phone projects; drop the redundant `toContainText('Русский')` in `frontend/e2e/uiLanguage.spec.ts:34`; verify `npm run test:e2e`
 
 ## 3. The select
 
