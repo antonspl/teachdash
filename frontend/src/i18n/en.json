@@ -154,5 +154,12 @@
     "passwordChanged": "Your password has been changed. You were signed out on your other devices.",
     "wrongPassword": "The current password is incorrect. Please try again.",
     "passwordValidationFailed": "The passwords were not accepted. Please check them and try again."
+  },
+  "uiLanguage": {
+    "label": "Language",
+    "name": {
+      "en": "English",
+      "ru": "Русский"
+    }
   }
 }

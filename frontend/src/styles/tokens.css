@@ -31,10 +31,13 @@
   --space-3: 1.5rem;
   --space-4: 2.5rem;
   --space-button-gap: 0.75rem;
+  --space-block: 1.25rem;
 
   --border-width: 1px;
   --control-height: 2.75rem;
   --arrow-width: 0.75rem;
+  --lang-select-width: 9rem;
+  --size-visually-hidden: 1px;
   --radius: 0.5rem;
   --opacity-disabled: 0.6;
   --shadow-card: 0 1px 3px rgb(0 0 0 / 12%);

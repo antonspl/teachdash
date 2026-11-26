@@ -15,7 +15,7 @@ tests that change: the literals found in task 2.1.
 
 ## 3. The select
 
-- [ ] 3.1 Add `--lang-select-width`, `--size-visually-hidden` and `--space-block` to `tokens.css`, the `.visuallyHidden` class, the `hideLabel` and `optionLang` props of `Select`, and `ui/UiLanguageSelect.tsx` with the `uiLanguage.*` keys in both resource files (design D3 to D5); Vitest for web-client/R20-S4 and R20-S6 in `UiLanguageSelect.test.tsx`, and the `Select` tests unchanged; verify `npm run lint` (token check) and `npm test`
+- [x] 3.1 Add `--lang-select-width`, `--size-visually-hidden` and `--space-block` to `tokens.css`, the `.visuallyHidden` class, the `hideLabel` and `optionLang` props of `Select`, and `ui/UiLanguageSelect.tsx` with the `uiLanguage.*` keys in both resource files (design D3 to D5); Vitest for web-client/R20-S4 and R20-S6 in `UiLanguageSelect.test.tsx`, and the `Select` tests unchanged; verify `npm run lint` (token check) and `npm test`
 
 ## 4. Placement
 

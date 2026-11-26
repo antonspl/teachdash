@@ -13,6 +13,8 @@ export function Select({
   ariaRequired,
   disabled,
   inputRef,
+  hideLabel,
+  optionLang,
 }: {
   label: string
   value: string
@@ -29,12 +31,19 @@ export function Select({
   disabled?: boolean
   // Lets a form move the focus to the select.
   inputRef?: Ref<HTMLSelectElement>
+  // Keeps the label for assistive technology but hides it visually.
+  hideLabel?: boolean
+  // The `lang` of each option, by option value.
+  optionLang?: Record<string, string>
 }) {
   const id = useId()
   const errorId = `${id}-error`
   return (
     <div className={styles.field}>
-      <label htmlFor={id} className={styles.label}>
+      <label
+        htmlFor={id}
+        className={`${styles.label} ${hideLabel ? styles.visuallyHidden : ''}`}
+      >
         {label}
       </label>
       <div className={styles.selectWrap}>
@@ -56,7 +65,7 @@ export function Select({
             </option>
           )}
           {options.map((option) => (
-            <option key={option} value={option}>
+            <option key={option} value={option} lang={optionLang?.[option]}>
               {labels?.[option] ?? option}
             </option>
           ))}
