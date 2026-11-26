@@ -104,28 +104,30 @@ itself (R20-S7). The select SHALL fit a 360-pixel screen.
 
 ### Requirement: R15 Russian strings
 
-The `ru` resources SHALL hold a non-empty value for every leaf of `en`, and no key that
-`en` lacks except the plural suffixes of R16. With the UI language Russian, every page and
-dialog SHALL show Russian text. The copy SHALL follow `design-code.md` "Copy and languages"
-(R15-S5), text SHALL wrap and never be truncated, and every page SHALL fit 360 pixels in
-Russian.
+The `ru` resources SHALL hold a Russian value, with the same `{{variables}}`, for every
+leaf of `en`, and no key `en` lacks except the plural suffixes of R16. With the UI language
+Russian, every page, dialog and message state SHALL show Russian text that follows
+`design-code.md` "Copy and languages" (R15-S5), wraps and is never truncated, and fits 360
+pixels.
 
 #### Scenario: web-client/R15-S1 Every English string has a Russian one
 - **GIVEN** the bundled `en` and `ru` resources
 - **WHEN** the key-parity check runs
-- **THEN** every `en` leaf has a non-empty `ru` leaf and `ru` has no leaf that `en` lacks
+- **THEN** every `en` leaf has a non-empty `ru` leaf and `ru` has no leaf that `en` lacks, except plural suffixes (R16)
+- **AND** every leaf has the same set of `{{variables}}` in `en` and `ru`
 - **AND** the check reports no problem
 
 #### Scenario: web-client/R15-S2 The parity check names the keys that break it
-- **GIVEN** synthetic `en` and `ru` bundles where one `ru` key is missing, one is an empty string and one has no `en` counterpart
+- **GIVEN** synthetic `en` and `ru` bundles where one `ru` key is missing, one is an empty string, one has no `en` counterpart, one plain key drops a `{{variable}}` that `en` has, and one plain key renames it (`{{name}}` against `{{title}}`)
 - **WHEN** the key-parity check runs
 - **THEN** it fails
-- **AND** the failure lists each of the three key names with its problem
+- **AND** the failure lists each of the five key names with its problem
 
 #### Scenario: web-client/R15-S3 Russian pages show Russian text
 - **GIVEN** the UI language is `ru`
 - **WHEN** the login page, the set-password page (with a token, and with an incomplete link), the not-found page, the teacher cabinet, the Profile page and the admin teacher list with the create dialog, the deactivate dialog and the issued-link dialog open are rendered
-- **THEN** no text on them equals an `en` value, unless the `ru` value for that key is the same (`app.name`, the language endonyms)
+- **AND** the message states are rendered: the login banners `login.unreachable` and `login.sessionEnded`; `startup.error`; `header.logoutError`; `adminTeachers.loadError`; the status badges `ACTIVE`, `WAITING`, `DEACTIVATED` and «Только что добавлена»; one message of every `errors.*` and `fieldErrors.*` key; the Profile error banners and `profile.validationFailedTeacher`; `issuedLink.copyByHand` and `setPassword.incompleteLink`
+- **THEN** no text on them equals an `en` value, unless the `ru` value for that key is the same (`app.name`, the language endonyms); the text compared is the text content of every element and the `aria-label`, `title`, `placeholder` and `alt` attributes, trimmed
 - **AND** the page titles are «Вход», «Задайте пароль», «Страница не найдена», «Кабинет учителя», «Ваш профиль» and «Кабинет администратора»
 
 #### Scenario: web-client/R15-S4 Names and roles keep their case
@@ -138,15 +140,18 @@ Russian.
 #### Scenario: web-client/R15-S5 The Russian copy follows the typographic rules
 - **GIVEN** the bundled `ru` and `en` resources
 - **WHEN** the copy-rules check runs
-- **THEN** no `ru` value contains «пожалуйста», «преподавател», «учетн» or three dots in a row, and no `en` value contains three dots in a row
-- **AND** every `ru` value with a number followed by a unit («символов», «байт», «дней») has a non-breaking space between them
+- **THEN** no `ru` value contains «пожалуйста», «преподавател», «учетн», «еще» or three dots in a row, and no `en` value contains three dots in a row
+- **AND** every `ru` value contains a Cyrillic letter, except `app.name` and `uiLanguage.name.en`, which are on an explicit allow-list
+- **AND** every `ru` value with a number followed by a unit («символов», «байт», «дней») has a non-breaking space (U+00A0, asserted by character code) between them, so «8 символов», «72 байт» and «7 дней» use it
 - **AND** `app.name` has the same value in `en` and `ru`, and `uiLanguage.name.en` and `uiLanguage.name.ru` are the same in both
 
 #### Scenario: web-client/R15-S6 Russian pages fit a phone screen
-- **GIVEN** the local stack is running, the browser has a 360-pixel-wide screen and the UI language is `ru`
-- **WHEN** a user opens the login page, the set-password page, the not-found page, and a logged-in teacher and admin open the cabinet, Profile and admin pages, with the create dialog open on the admin page
-- **THEN** each page has no horizontal scrolling and no text is cut off
-- **AND** the buttons of the create dialog may sit on two lines
+- **GIVEN** the local stack is running with an admin, a teacher without a password and a teacher with a password, the browser has a 360-pixel-wide screen and the UI language is `ru`
+- **WHEN** a user opens the login page, the set-password page, the not-found page, and a logged-in teacher and admin open the cabinet, Profile and admin pages
+- **AND** on the admin page the create dialog, the deactivate dialog and the issued-link dialog are opened in turn, the longest admin row is shown (name, «Только что добавлена», «Ссылка для сброса пароля», «Деактивировать»), and the banners are shown (login `login.unreachable` and `login.sessionEnded`, the Profile error banners, the admin load error)
+- **THEN** on every page and dialog `document.documentElement.scrollWidth <= clientWidth` and no element is wider than the viewport
+- **AND** the buttons of the create dialog and of the issued-link dialog may sit on two lines
+- **AND** with the browser 768 pixels wide, the admin list with its longest row meets the same two checks (the current CSS has no `72rem` container condition, so the existing wrapping rule applies between 360 and 72rem)
 
 ### Requirement: R16 Russian plural forms
 
@@ -175,5 +180,6 @@ count string yet.
 
 #### Scenario: web-client/R16-S4 A count picks the right Russian form
 - **GIVEN** the UI language is `ru` on a synthetic bundle with all four categories for one key
-- **WHEN** the key is translated with the counts 1, 2, 5, 11, 21 and 22
-- **THEN** 1 and 21 give the `_one` text, 2 and 22 give the `_few` text, and 5 and 11 give the `_many` text
+- **WHEN** the key is translated with the counts 0, 1, 1.5, 2, 5, 11, 21 and 22, and the four texts are distinct
+- **THEN** 1 and 21 give the `_one` text, 2 and 22 give the `_few` text, and 0, 5 and 11 give the `_many` text
+- **AND** 1.5 gives the `_other` text
