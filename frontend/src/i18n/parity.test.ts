@@ -17,8 +17,7 @@ function keysOf(problems: ReturnType<typeof checkParity>) {
   return problems.map((p) => p.key).sort()
 }
 
-// TODO(task 2.1): ru.json is still incomplete; slice 2 fills it and removes `.fails`.
-test.fails('[web-client/R15-S1] Every English string has a Russian one', () => {
+test('[web-client/R15-S1] Every English string has a Russian one', () => {
   const problems = checkParity({ en, ru })
   expect(formatProblems(problems)).toBe('')
   expect(problems).toEqual([])

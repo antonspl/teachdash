@@ -37,7 +37,7 @@
     "showPassword": "Show {{label}}",
     "hidePassword": "Hide {{label}}",
     "tryAgain": "Try again",
-    "loading": "Loading..."
+    "loading": "Loading…"
   },
   "languages": {
     "choose": "Choose a language",

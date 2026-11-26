@@ -31,9 +31,6 @@ test('[web-client/R20-S8] The stored choice is used after a reload', async ({
   await expect(
     page.getByLabel(ru.uiLanguage.label, { exact: true }),
   ).toHaveValue('ru')
-  await expect(
-    page.getByLabel(ru.uiLanguage.label, { exact: true }),
-  ).toContainText(ru.uiLanguage.name.ru)
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
 })
 
@@ -48,6 +45,8 @@ test('[web-client/R20-S9] The switch fits a phone screen', async ({
   await page.reload()
   await expectSelectFits(page)
 
+  // the login helper uses the English labels
+  await page.evaluate(([key]) => localStorage.removeItem(key), [STORAGE_KEY])
   await createTeacherAndLoginInUi(page, playwright, baseURL, 'E2E Lang Teacher')
   await page.evaluate(([key]) => localStorage.setItem(key, 'ru'), [STORAGE_KEY])
   await page.reload()

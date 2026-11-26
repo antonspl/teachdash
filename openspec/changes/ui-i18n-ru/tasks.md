@@ -13,9 +13,9 @@ cast, `uiLanguage.spec.ts:34`. No rendering test moves to `I18nextProvider`: `i1
 
 ## 2. Russian copy
 
-- [ ] 2.1 Fill `ru.json` with all 119 leaves from the table in design "UI design / Copy", keeping the existing four values; change `en.json` `ui.loading` to "Loading…"; check each value against the rules of Clarifications 6 to 14; Vitest for web-client/R15-S5 (copy rules, Cyrillic and deny-list checks on both bundles) and R15-S1; a bundle test that every `adminTeachers.actions.*` `ru` value is at most 24 characters; verify `npm test`
-- [ ] 2.2 Vitest for web-client/R15-S3 (every page, dialog and message state of the scenario with `ru` active, no `en` text left, `aria-label`s included) and R15-S4 (header role in lower case, colon forms with the name, the two admin row buttons); verify `npm test`
-- [ ] 2.3 Playwright for web-client/R15-S6 (Russian pages, dialogs and the longest admin row at 360 px, and the admin list at 768 px: `scrollWidth <= clientWidth` and no element wider than the viewport) against `docker compose up --build --wait`, phone projects; drop the redundant `toContainText('Русский')` in `frontend/e2e/uiLanguage.spec.ts:34`; verify `npm run test:e2e`
+- [x] 2.1 Fill `ru.json` with all 119 leaves from the table in design "UI design / Copy", keeping the existing four values; change `en.json` `ui.loading` to "Loading…"; check each value against the rules of Clarifications 6 to 14; Vitest for web-client/R15-S5 (copy rules, Cyrillic and deny-list checks on both bundles) and R15-S1; a bundle test that every `adminTeachers.actions.*` `ru` value is at most 24 characters; verify `npm test`
+- [x] 2.2 Vitest for web-client/R15-S3 (every page, dialog and message state of the scenario with `ru` active, no `en` text left, `aria-label`s included) and R15-S4 (header role in lower case, colon forms with the name, the two admin row buttons); verify `npm test`
+- [x] 2.3 Playwright for web-client/R15-S6 (Russian pages, dialogs and the longest admin row at 360 px, and the admin list at 768 px: `scrollWidth <= clientWidth` and no element wider than the viewport) against `docker compose up --build --wait`, phone projects; drop the redundant `toContainText('Русский')` in `frontend/e2e/uiLanguage.spec.ts:34`; verify `npm run test:e2e`
 
 ## 3. The select
 

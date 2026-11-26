@@ -201,14 +201,17 @@ test('[web-client/R20-S7] A message on screen keeps its language until the next 
     'auth/login': () => problem(401, 'INVALID_CREDENTIALS'),
   })
   open('/login')
+  // the form labels follow the language active at the time of the call
   async function submit() {
-    fireEvent.change(await screen.findByLabelText(en.login.email), {
+    fireEvent.change(await screen.findByLabelText(i18next.t('login.email')), {
       target: { value: 'a@example.com' },
     })
-    fireEvent.change(screen.getByLabelText(en.login.password), {
+    fireEvent.change(screen.getByLabelText(i18next.t('login.password')), {
       target: { value: 'secret-pass' },
     })
-    fireEvent.click(screen.getByRole('button', { name: en.login.submit }))
+    fireEvent.click(
+      screen.getByRole('button', { name: i18next.t('login.submit') }),
+    )
   }
   await submit()
   expect(await screen.findByText(en.errors.INVALID_CREDENTIALS)).toBeTruthy()
