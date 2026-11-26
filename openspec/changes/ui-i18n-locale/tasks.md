@@ -11,7 +11,7 @@ tests that change: the literals found in task 2.1.
 
 ## 2. Copy
 
-- [ ] 2.1 Rewrite the `en.json` strings of design D6 after checking each current text; add `errors.TARGET_ACCOUNT_DEACTIVATED` to `en.json` and `ru.json`; grep the old strings of D6 in `frontend/e2e/*.spec.ts` and `frontend/src/**/*.test.tsx` and switch every match (at least `useFieldErrors.test.tsx:103` and `api/client.test.ts:76`) to the `en.<key>` value or the new text; Vitest for web-client/R2-S4 and R2-S5 in `client.test.ts`; verify `npm test`
+- [x] 2.1 Rewrite the `en.json` strings of design D6 after checking each current text; add `errors.TARGET_ACCOUNT_DEACTIVATED` to `en.json` and `ru.json`; grep the old strings of D6 in `frontend/e2e/*.spec.ts` and `frontend/src/**/*.test.tsx` and switch every match (at least `useFieldErrors.test.tsx:103` and `api/client.test.ts:76`) to the `en.<key>` value or the new text; Vitest for web-client/R2-S4 and R2-S5 in `client.test.ts`; verify `npm test`
 
 ## 3. The select
 

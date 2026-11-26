@@ -2,6 +2,7 @@ import { act, cleanup, render, screen } from '@testing-library/react'
 import { StrictMode, useEffect, useRef } from 'react'
 import { afterEach, expect, test, vi } from 'vitest'
 import '../i18n'
+import en from '../i18n/en.json'
 import { ApiError } from '../api/client'
 import { useFieldErrors } from './useFieldErrors'
 
@@ -100,7 +101,7 @@ test('first entry per field wins', () => {
   expect(h.place(problem(['name', 'TOO_SHORT'], ['name', 'REQUIRED']))).toBe(
     true,
   )
-  expect(h.shown()).toEqual({ name: "Hmm, that's too short." })
+  expect(h.shown()).toEqual({ name: en.fieldErrors.TOO_SHORT })
 })
 
 test('focus goes to the topmost field in field order', () => {
