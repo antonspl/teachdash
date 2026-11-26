@@ -4,9 +4,10 @@ import { loginAsAdminInUi } from './accounts'
 
 test('[web-client/R22-S3] The plus on Add teacher is 20 pixels', async ({
   page,
-}, testInfo) => {
+  isMobile,
+}) => {
   // given a logged-in admin on /admin
-  if (testInfo.project.name === 'phone-chrome') {
+  if (isMobile) {
     await page.setViewportSize({ width: 360, height: 800 })
   }
   await loginAsAdminInUi(page)
@@ -27,7 +28,7 @@ test('[web-client/R22-S3] The plus on Add teacher is 20 pixels', async ({
   expect(size).toEqual({ width: '20px', height: '20px' })
 
   // and on the phone project there is no horizontal scroll at 360 pixels
-  if (testInfo.project.name === 'phone-chrome') {
+  if (isMobile) {
     const fits = await page.evaluate(
       () =>
         document.documentElement.scrollWidth <=

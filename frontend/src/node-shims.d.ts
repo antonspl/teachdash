@@ -8,3 +8,7 @@ declare module 'node:fs' {
 declare module 'node:path' {
   export function resolve(...parts: string[]): string
 }
+interface ImportMeta {
+  /** Directory of the current file; Vitest sets it. */
+  readonly dirname: string
+}

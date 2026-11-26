@@ -2,13 +2,15 @@ import { render } from '@testing-library/react'
 import type { ComponentType } from 'react'
 import { expect, test } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import * as icons from './icons'
 
 // Vitest does not hand out the text of a CSS file through `?raw`, so read it from disk
-// (the tests run from `frontend/`).
-const tokensCss = readFileSync(resolve('src/styles/tokens.css'), 'utf8')
-const iconsCss = readFileSync(resolve('src/ui/icons.module.css'), 'utf8')
+// (paths come from this file's own location, so the working directory does not matter).
+const tokensCss = readFileSync(
+  `${import.meta.dirname}/../styles/tokens.css`,
+  'utf8',
+)
+const iconsCss = readFileSync(`${import.meta.dirname}/icons.module.css`, 'utf8')
 
 type Shape = Record<string, string>
 type Icon = { name: string; component: string; shapes: Shape[] }
@@ -21,14 +23,13 @@ const c = (cx: string, cy: string, r: string, extra: Shape = {}): Shape => ({
   r,
   ...extra,
 })
-const r = (x: string, y: string, width: string, height: string): Shape => ({
-  tag: 'rect',
-  x,
-  y,
-  width,
-  height,
-  rx: '1.5',
-})
+const r = (
+  x: string,
+  y: string,
+  width: string,
+  height: string,
+  rx: string,
+): Shape => ({ tag: 'rect', x, y, width, height, rx })
 const filled = { fill: 'currentColor', stroke: 'none' }
 
 // Copied by hand from .agents/design/design-code.md, "Icons", in the table's order.
@@ -161,7 +162,7 @@ const table: Icon[] = [
   {
     name: 'sidebar',
     component: 'SidebarIcon',
-    shapes: [r('3.5', '4', '13', '12'), p('M8 4v12')],
+    shapes: [r('3.5', '4', '13', '12', '1.5'), p('M8 4v12')],
   },
   {
     name: 't-theory',
@@ -172,7 +173,7 @@ const table: Icon[] = [
     name: 't-image',
     component: 'TImageIcon',
     shapes: [
-      r('3.5', '4.5', '13', '11'),
+      r('3.5', '4.5', '13', '11', '1.5'),
       c('7.5', '8.5', '1.25'),
       p('M4 14l4-4 3 3 2-2 3.5 3.5'),
     ],
@@ -180,7 +181,10 @@ const table: Icon[] = [
   {
     name: 't-pick',
     component: 'TPickIcon',
-    shapes: [r('3.5', '6', '13', '8'), p('M11 9.25l1.5 1.5 1.5-1.5M6 10h3')],
+    shapes: [
+      r('3.5', '6', '13', '8', '1.5'),
+      p('M11 9.25l1.5 1.5 1.5-1.5M6 10h3'),
+    ],
   },
   {
     name: 't-type',
@@ -238,7 +242,7 @@ const table: Icon[] = [
   {
     name: 'lock',
     component: 'LockIcon',
-    shapes: [r('5', '9', '10', '7.5'), p('M7 9V7a3 3 0 0 1 6 0v2')],
+    shapes: [r('5', '9', '10', '7.5', '1.5'), p('M7 9V7a3 3 0 0 1 6 0v2')],
   },
   {
     name: 'todo',
