@@ -1,12 +1,12 @@
 import i18next from 'i18next'
-import { initReactI18next } from 'react-i18next'
-import en from './en.json'
+import { initI18n } from './initI18n'
 
-await i18next.use(initReactI18next).init({
-  lng: 'en',
-  fallbackLng: 'en',
-  resources: { en: { translation: en } },
-  interpolation: { escapeValue: false },
+const { setUiLanguage } = await initI18n(i18next, {
+  storage: window,
+  languages: navigator.languages,
+  language: navigator.language,
+  root: document.documentElement,
 })
 
+export { setUiLanguage }
 export default i18next

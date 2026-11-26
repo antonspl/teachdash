@@ -7,7 +7,7 @@ tests that change: the literals found in task 2.1.
 
 ## 1. Language core
 
-- [ ] 1.1 Add `i18n/detectLanguage.ts` (pure detector), the storage wrapper, `initI18n(instance, env)`, `setUiLanguage` and `ru.json`; change `i18n/index.ts` to call `initI18n` before render (design D1, D2); Vitest for web-client/R19-S1 to R19-S7, R2-S2 and R2-S3, resetting language, storage and `lang` in `afterEach`; verify `npm test` and `i18n/translations.test.tsx`
+- [x] 1.1 Add `i18n/detectLanguage.ts` (pure detector), the storage wrapper, `initI18n(instance, env)`, `setUiLanguage` and `ru.json`; change `i18n/index.ts` to call `initI18n` before render (design D1, D2); Vitest for web-client/R19-S1 to R19-S7, R2-S2 and R2-S3, resetting language, storage and `lang` in `afterEach`; verify `npm test` and `i18n/translations.test.tsx`
 
 ## 2. Copy
 
