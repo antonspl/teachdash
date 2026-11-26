@@ -26,6 +26,10 @@ async function expectFits(page: Page, where: string) {
   expect(result.wide, `${where}: elements wider than the viewport`).toEqual([])
 }
 
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function problem(status: number, code: string) {
   return {
     status,
@@ -213,7 +217,9 @@ test('[web-client/R15-S6] Russian pages fit a phone screen: the admin page, its 
   await newRow.getByRole('button', { name: ru.issuedLink.copy }).click()
   await expect(
     newRow.getByText(
-      new RegExp(`${ru.issuedLink.copied}|Не удалось скопировать`),
+      new RegExp(
+        `${escapeRegExp(ru.issuedLink.copied)}|Не удалось скопировать`,
+      ),
     ),
   ).toBeVisible()
   await expectFits(page, 'issued link banner')
@@ -242,6 +248,17 @@ test('[web-client/R15-S6] Russian pages fit a phone screen: the admin page, its 
   await expect(newRow.getByText(ru.adminTeachers.justAdded)).toBeVisible()
   await expectFits(page, 'admin list at 768 px')
   await page.setViewportSize({ width: 360, height: 800 })
+
+  // the admin's own Profile
+  await page.goto('/profile')
+  await expect(
+    page.getByRole('heading', { name: ru.profile.title }),
+  ).toBeVisible()
+  await expectFits(page, 'admin profile')
+  await page.goto('/admin')
+  await expect(
+    page.getByRole('heading', { name: ru.cabinet.admin }),
+  ).toBeVisible()
 
   // the load error banner
   await page.route('**/api/admin/teachers', (route) =>

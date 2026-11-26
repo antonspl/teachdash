@@ -42,7 +42,7 @@ export function Select({
   const id = useId()
   const errorId = `${id}-error`
   return (
-    <div className={`${styles.field} ${flush ? styles.flush : ''}`}>
+    <div className={flush ? `${styles.field} ${styles.flush}` : styles.field}>
       <label
         htmlFor={id}
         className={`${styles.label} ${hideLabel ? styles.visuallyHidden : ''}`}

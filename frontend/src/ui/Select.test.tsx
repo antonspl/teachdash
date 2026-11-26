@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, expect, test } from 'vitest'
+import styles from './Field.module.css'
 import { Select } from './Select'
 
 afterEach(cleanup)
@@ -84,12 +85,11 @@ test('flush adds its own class to the root, without it the default stays', () =>
   )
   const rootOf = () =>
     screen.getByLabelText('Zone').parentElement?.parentElement as HTMLElement
-  const plain = rootOf().className
-  expect(plain).not.toBe('')
+  expect(rootOf().className).toContain(styles.field)
+  expect(rootOf().className).not.toContain(styles.flush)
   rerender(
     <Select label="Zone" value="a" onChange={() => {}} options={['a']} flush />,
   )
-  const flushed = rootOf().className
-  expect(flushed.startsWith(plain)).toBe(true)
-  expect(flushed).not.toBe(plain)
+  expect(rootOf().className).toContain(styles.field)
+  expect(rootOf().className).toContain(styles.flush)
 })
