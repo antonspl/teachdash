@@ -7,6 +7,7 @@ import { cabinetPath } from '../auth/guards'
 import { passwordHints, passwordProblem } from '../passwordRules'
 import { Button } from '../ui/Button'
 import { Form } from '../ui/Form'
+import { LanguageRow } from '../ui/LanguageRow'
 import { Page } from '../ui/Page'
 import { PasswordInput } from '../ui/PasswordInput'
 import { StatusMessage } from '../ui/StatusMessage'
@@ -83,6 +84,7 @@ export function SetPasswordPage() {
 
   return (
     <Page>
+      <LanguageRow />
       <Title>{t('setPassword.title')}</Title>
       {token === undefined ? (
         <StatusMessage tone="danger">

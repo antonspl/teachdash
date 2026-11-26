@@ -18,8 +18,7 @@ says something else, follow this file. The full order is in C0.
     `src/ui/` components.
 - Nothing loads from third-party CDNs: no web fonts, scripts, styles or images from
   another domain (constitution §10).
-- UI copy goes through i18n (`frontend/src/i18n/`): sentence case, informal and
-  friendly, like talking to a friend.
+- UI copy goes through i18n (`frontend/src/i18n/`): sentence case, neutral tone.
 - Buttons never touch fields, cards or each other. Native parts such as the select
   arrow are inset like text. Controls go exactly where the spec says.
 - New UI built in a change meets these rules and WCAG 2.2 AA.
@@ -53,7 +52,7 @@ says something else, follow this file. The full order is in C0.
   turned off to avoid password managers.
 - **C9** The touch target floor is 24 CSS px (WCAG 2.5.8, AA). Controls use
   `--control-height` (2.5rem with `pointer: fine`, 2.75rem on touch); row icon buttons use `--row-action-size` (2rem with a mouse).
-- **C10** Copy is friendly, in the second person, with no apologies. A message says
+- **C10** Copy is neutral, in the second person, with no apologies. A message says
   what happened and how to fix it.
 - **C11** Quotes follow each language's typography in the i18n files (ru uses «»).
 - **C12** Focus on error follows the specs: `openspec/specs/web-client/spec.md` R14

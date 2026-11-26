@@ -21,14 +21,15 @@
     "LINK_INVALID": "This link is not valid or has expired. Please ask for a new one.",
     "ACCOUNT_DEACTIVATED": "This account is deactivated.",
     "WRONG_PASSWORD": "The password is incorrect.",
-    "INVALID_CREDENTIALS": "That email and password don't match."
+    "INVALID_CREDENTIALS": "The email and password do not match.",
+    "TARGET_ACCOUNT_DEACTIVATED": "This account has been deactivated, so a reset link cannot be created. Reload the list to see the current status."
   },
   "fieldErrors": {
     "REQUIRED": "Please fill this in.",
-    "TOO_SHORT": "Hmm, that's too short.",
-    "TOO_LONG": "Hmm, that's too long.",
-    "INVALID_FORMAT": "Hmm, that doesn't look right. Please check it.",
-    "INVALID_TYPE": "Hmm, that doesn't look right. Please check it."
+    "TOO_SHORT": "This value is too short.",
+    "TOO_LONG": "This value is too long.",
+    "INVALID_FORMAT": "This value is not valid. Please check it.",
+    "INVALID_TYPE": "This value is not valid. Please check it."
   },
   "ui": {
     "show": "Show",
@@ -58,7 +59,7 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
-    "linkHint": "Don't have a password, or forgot it? Ask your teacher or administrator for a new link.",
+    "linkHint": "No password, or forgot it? Ask your teacher or administrator for a new link.",
     "sessionEnded": "Your session has ended. Please sign in again.",
     "unreachable": "The server cannot be reached."
   },
@@ -95,15 +96,15 @@
   },
   "issuedLink": {
     "label": "Link for {{name}}",
-    "note": "Heads up: you can only see this link right now. It works once, within 7 days, and replaces any earlier unused link. Don't open it in this browser, or you'll be signed out of your admin session.",
+    "note": "You can see this link only now. It works once, within 7 days, and replaces any earlier unused link. Do not open it in this browser, or your admin session will end.",
     "copy": "Copy",
     "close": "Close",
-    "copied": "Copied, ready to paste!",
-    "copyByHand": "Couldn't copy it for you. The link is selected, so just copy it by hand."
+    "copied": "Copied.",
+    "copyByHand": "The link could not be copied. It is selected, so you can copy it by hand."
   },
   "adminTeachers": {
     "loadError": "Could not load the teachers.",
-    "empty": "No teachers yet. Add the first one with the button above!",
+    "empty": "No teachers yet. Use the button above to add the first one.",
     "status": {
       "ACTIVE": "Active",
       "WAITING": "Waiting for password",
@@ -119,7 +120,7 @@
       "timeZone": "Time zone",
       "nativeLanguage": "Native language",
       "submit": "Create teacher",
-      "validationFailed": "Hmm, the backend didn't accept those values. Please check the name, the email, the time zone and the native language."
+      "validationFailed": "Some values were not accepted. Please check the name, the email, the time zone and the native language."
     },
     "actions": {
       "deactivate": "Deactivate",
@@ -129,7 +130,7 @@
     },
     "deactivate": {
       "title": "Deactivate {{name}}?",
-      "body": "{{name}} won't be able to sign in anymore, and their students will be released. The students won't come back if you reactivate them later.",
+      "body": "{{name}} will no longer be able to sign in, and their students will be released. The students are not restored if you reactivate the account later.",
       "confirm": "Confirm",
       "cancel": "Cancel"
     }
@@ -143,15 +144,22 @@
     "timeZone": "Time zone",
     "nativeLanguage": "Native language",
     "save": "Save",
-    "saved": "Saved, all done!",
-    "validationFailed": "Hmm, the backend didn't accept those values. Please check the name and the time zone.",
-    "validationFailedTeacher": "Hmm, the backend didn't accept those values. Please check the name, the time zone and the native language.",
+    "saved": "Saved.",
+    "validationFailed": "Some values were not accepted. Please check the name and the time zone.",
+    "validationFailedTeacher": "Some values were not accepted. Please check the name, the time zone and the native language.",
     "currentPassword": "Current password",
     "newPassword": "New password",
     "repeatPassword": "Repeat the new password",
     "changePassword": "Change password",
-    "passwordChanged": "Done, your password is changed! We logged you out on your other devices.",
-    "wrongPassword": "Hmm, that current password doesn't look right. Give it another try.",
-    "passwordValidationFailed": "Hmm, the backend didn't accept those passwords. Please check them and try again."
+    "passwordChanged": "Your password has been changed. You were signed out on your other devices.",
+    "wrongPassword": "The current password is incorrect. Please try again.",
+    "passwordValidationFailed": "The passwords were not accepted. Please check them and try again."
+  },
+  "uiLanguage": {
+    "label": "Language",
+    "name": {
+      "en": "English",
+      "ru": "Русский"
+    }
   }
 }

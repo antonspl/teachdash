@@ -133,7 +133,7 @@ reports, the `code-gate-reviewer` on the diff, the `frontend-researcher` at Clar
 - Numerals for counts: "8 deployments" not "eight"
 - Specific button labels: "Save password" not "Continue"
 - Error messages say what happened and how to fix it, not just the problem (C10)
-- Second person, friendly, no apologies; avoid first person (C10)
+- Second person, neutral tone, no apologies; avoid first person (C10)
 
 ### Extra checks
 

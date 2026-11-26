@@ -299,6 +299,7 @@ A popover (profile menu): `--menu-width`, padding `--space-adjacent`, `--border-
 - Narrow: the rail becomes a fixed bottom tab bar, `--tabbar-height`, a divider on top, the current bar on the top edge; no wordmark. A title bar (`--color-rail`, at least `--topbar-height`, a divider below; it scrolls with the page and is not sticky or fixed, because it wraps and grows) shows the page title (`--text-large` 600, wrapping onto as many lines as it needs, never an ellipsis; the bar grows, at least `--topbar-height`), a small muted parent line above it when there is one, and a back icon button when the page has a parent.
 - The rail ships in plan step 5a with one item per role plus the Profile menu; the other tabs arrive with their features. At 5a: admin: Teachers (opens `/admin`) and Profile; teacher and student: a single item carrying the cabinet's name until real tabs arrive (it opens the cabinet page), and Profile. Courses (teacher) is added by #115, Students (teacher) by #35 and Home (student) by #134, each replacing that item; each depends on #201 and #202 (steps 5a and 5b), not #57. The cabinet title (`cabinet.teacher`, `cabinet.student`, as `CabinetPage` shows today) is the page heading (h1) of the teacher and student cabinet pages, not a rail item; `/admin` has one h1, "Teachers" with the count beside it (the page header), and "Admin cabinet" (`cabinet.admin`) is no longer shown there (plan step 6a); desktop has no top bar. The language select moves into the Profile menu once the person is logged in, and stays on the login band while logged out. Below `64rem` the current header, with its Log out and language select, stays until step 5b ships the phone tab bar and title bar and removes it.
 - Profile is a menu button (`aria-haspopup="menu"`, `aria-expanded`, `aria-controls`) at every width, with a visible word. The menu opens to the right of the rail item on wide screens and above the tab bar, right edges aligned, on narrow ones. Log out lives only in this menu once the frame is complete. The menu ships with the desktop rail in step 5a, so desktop never lacks Log out; below `64rem` the current header keeps its Log out and language select until step 5b ships the phone tab bar and title bar and removes it.
+- Temporary: until #201, #202 and #205, `ui-i18n-locale` puts the language select last in today's app header, and inside `<main>` on login and set-password (not the login band).
 
 ### Page header
 
@@ -351,7 +352,7 @@ Three panes, full height, each scrolling alone: tree (`--tree-width`) | outline 
 
 ### Login and set-password
 
-A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordmark in `--text-large` 600 on the left and the language select on the right. The form is centred, `--form-width` wide, with its top at `--login-top-offset` (in the chosen mockup `12vh`, fixed per window, so an error banner grows the form downward only; decided in the login issue, plan step 7); labelled fields, one primary button, the help line muted. On phones the tagline is hidden and the form starts `--space-section` below the band.
+A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordmark in `--text-large` 600 on the left and the language select on the right. The form is centred, `--form-width` wide, with its top at `--login-top-offset` (in the chosen mockup `12vh`, fixed per window, so an error banner grows the form downward only; decided in the login issue, plan step 7); labelled fields, one primary button, the help line muted. On phones the tagline is hidden and the form starts `--space-section` below the band. Temporary: this change puts the language select in today's app header, and inside `<main>` on login and set-password (not in this band); that placement stays until #201, #202 and #205.
 
 ## Layout and screens
 
@@ -364,7 +365,7 @@ A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordma
 
 ## Copy and languages
 
-- UI copy is informal and friendly, sentence case, second person, no apologies (project rules C1, C10).
+- UI copy is neutral, sentence case, second person, no apologies (project rules C1, C10).
 - Item type names (builder rows use the short name, the editor and picker the full one): Theory / Theory; Image / Image; Audio / Audio; Pick / Pick from a list; Type / Type the answer. Russian: Теория, Изображение, Аудио, Выбор / Выбор из списка, Ввод / Ответ своими словами. The final names are decided in #118 and #120.
 - Russian rail labels are short words chosen for the rail: Курсы, Ученики, Главная, Учителя, Профиль; `hyphens: auto` is only the fallback. Russian uses "Учителя" everywhere (rail, page title, headings). The profile menu role is lowercase ("учитель").
 - Quotes follow each language (ru «»); a language switch item shows its own language name in its own `lang`.

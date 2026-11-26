@@ -42,7 +42,7 @@ Success: a teacher prepares a lesson once and runs it for many students without 
 - Planned (backlog, not order): course editors (#115-#120), student course and lesson views (#134, #135), assign screens (#132), lesson access (#133), results (#138), cabinet tabs (#57), students list (#35), join page (#37), schedule (#14), groups (#54), homework (#56), media (#55), language switch (#102, #103).
 - Exercise types, planned and not built (only gap fill is scheduled so far, #120, #135): gap fill, dropdown, free text, matching; images; theory in Markdown with KaTeX maths (the backend already stores theory text, `specs/items` R5; showing it is planned, #13, #119). Limits: at most 20 courses per teacher and course titles 1-200 characters (`specs/courses` R1); 100 lessons per course (`specs/lessons` R1), 20 parts per lesson (`specs/parts` R1), 50 items per part (`specs/items` R1). YouTube embeds in lessons; other video URLs show as links (§10).
 - Terminology: lesson = content, class = scheduled call; never mixed (§3).
-- Voice: copy is informal, friendly, sentence case, second person, no apologies (`project-rules.md`). `project-rules.md` wins over the "neutral tone" lines in #102, #115–#120, #132, #133 and #138.
+- Voice: copy is neutral, sentence case, second person, no apologies (`project-rules.md`).
 - Personality: calm, not playful. Every concrete visual choice (palette, type, layout, chrome) belongs in `design-code.md`, not here.
 - Name and brand: no logo and no brand colour yet; the working name "teachdash" may change.
 
@@ -57,7 +57,7 @@ Success: a teacher prepares a lesson once and runs it for many students without 
 2. On a phone, no one loses the next action.
 3. Every language is first-class: Russian text is as long as it gets, and nothing breaks in either language.
 4. Teacher data is private and its owner is always clear.
-5. Friendly words, calm personality.
+5. Neutral words, calm personality.
 
 ## Accessibility & Inclusion
 

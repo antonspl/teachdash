@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import en from '../i18n/en.json'
+import ru from '../i18n/ru.json'
+import i18n from '../i18n'
 import { ApiError, apiRequest, setUnauthorizedHandler } from './client'
 
 function problem(
@@ -73,7 +75,7 @@ test('[web-client/R5-S4] Failed login message does not repeat the link hint', as
   const error = await failureOf(apiRequest('auth/login', { method: 'POST' }))
 
   // then
-  expect(error.message).toMatch(/email and password don't match/i)
+  expect(error.message).toBe(en.errors.INVALID_CREDENTIALS)
   expect(error.message).not.toMatch(/link|set a password|set password|forgot/i)
 })
 
@@ -553,5 +555,38 @@ test('[web-client/R5-S6] Broken field errors are left out', async () => {
     // then
     expect(error.message).toBe(en.errors.VALIDATION_FAILED)
     expect(error.fieldErrors).toEqual(expected)
+  }
+})
+
+test('[web-client/R2-S4] Deactivated target account has its own message', async () => {
+  // given
+  fetchMock.mockResolvedValue(problem('TARGET_ACCOUNT_DEACTIVATED', 409))
+
+  // when
+  const error = await failureOf(apiRequest('x', { method: 'POST' }))
+
+  // then
+  expect(error.message).toBe(
+    'This account has been deactivated, so a reset link cannot be created. Reload the list to see the current status.',
+  )
+  expect(error.message).toBe(en.errors.TARGET_ACCOUNT_DEACTIVATED)
+  expect(error.message).not.toBe(en.errors.generic)
+})
+
+test('[web-client/R2-S5] Deactivated target account has its Russian message', async () => {
+  // given
+  await i18n.changeLanguage('ru')
+  fetchMock.mockResolvedValue(problem('TARGET_ACCOUNT_DEACTIVATED', 409))
+
+  try {
+    // when
+    const error = await failureOf(apiRequest('x', { method: 'POST' }))
+
+    // then
+    expect(error.message).toBe(ru.errors.TARGET_ACCOUNT_DEACTIVATED)
+    expect(error.message).not.toBe(en.errors.TARGET_ACCOUNT_DEACTIVATED)
+    expect(error.message).not.toBe(en.errors.generic)
+  } finally {
+    await i18n.changeLanguage('en')
   }
 })

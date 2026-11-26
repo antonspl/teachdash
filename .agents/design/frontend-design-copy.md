@@ -31,4 +31,4 @@ Use active voice by default. A button says exactly what happens when it is used:
 
 Treat failure and emptiness as moments for direction, not mood. Say what went wrong and how to fix it (C10). Errors don't apologise and are never vague about what happened. An empty screen is an invitation to act: text plus a `src/ui/` action (C14).
 
-Keep the tone friendly and informal, like talking to a friend, in the second person (C10): plain verbs, sentence case (C1), no filler. Let each piece of text do exactly one job. All copy goes through i18n, with each language's own typography (C11).
+Keep the tone neutral, in the second person (C10): plain verbs, sentence case (C1), no filler. Let each piece of text do exactly one job. All copy goes through i18n, with each language's own typography (C11).
