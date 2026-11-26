@@ -21,15 +21,15 @@ A pure helper in `frontend/src/i18n/` takes two bundles and returns a list of pr
 
 - every `en` leaf has a non-empty `ru` leaf; a `ru` leaf without an `en` counterpart is a problem, except plural suffixes of a base that `en` has (R16);
 - a plural base is a key whose last segment ends in `_zero`, `_one`, `_two`, `_few`, `_many` or `_other`. Per language, the set of suffixes of each base equals `Intl.PluralRules(lang).resolvedOptions().pluralCategories` (`en`: one, other; `ru`: one, few, many, other);
-- the set of `{{variables}}` of every leaf, plain and plural, is the same in every language; `count` may be absent in `_one`, `_few` and `_many`;
-- every `ru` value contains a Cyrillic letter, except an explicit allow-list (`app.name` and the language endonyms `uiLanguage.name.*`); no `ru` value contains a deny-listed form («еще», «учетн», «пожалуйста», each written without ё or banned); this is part of the copy-rules check (R15-S5);
+- the set of `{{variables}}` of every leaf, plain and plural, is the same in every language; for a plural base the baseline is the variable set of `en`'s `_other` text, and `ru` `_one`, `_few` and `_many` may drop only `count` from it (an extra variable fails);
+- every `ru` value contains a Cyrillic letter, except an explicit allow-list (`app.name` and the language endonyms `uiLanguage.name.*`); no `ru` value contains a deny-listed form («учетн», «пожалуйста», and the whole word «еще»), compared case-insensitively; this is part of the copy-rules check (R15-S5);
 - the failure message lists the key names, with the language and the problem.
 
 The real bundles have no plural base today, so the plural rules run only on synthetic bundles.
 
 ### D2 Plural forms (R16-S4)
 
-i18next JSON v4 already selects `_one/_few/_many/_other` from `Intl.PluralRules`. The code needs no change. The test creates a synthetic `ru` instance with one count key in four categories and checks the counts 1, 2, 5, 11, 21 and 22. No count key is added to `en.json` or `ru.json`.
+i18next JSON v4 already selects `_one/_few/_many/_other` from `Intl.PluralRules`. The code needs no change. The test creates a synthetic `ru` instance with one count key in four categories and checks the counts 0, 1, 1.5, 2, 5, 11, 21 and 22 with four distinct texts: 1 and 21 give `_one`, 2 and 22 `_few`, 0, 5 and 11 `_many`, and 1.5 `_other`. No count key is added to `en.json` or `ru.json`.
 
 ### D3 `ru.json` and the existing tests (R2, R20-S5)
 
@@ -53,7 +53,7 @@ The rules are written into `.agents/design/design-code.md` "Copy and languages" 
 
 ### D6 Tests and screenshots
 
-- Vitest: parity and copy-rules tests (R15-S1, R15-S2, R15-S5, R16-S1 to R16-S4); a bundle test that every `adminTeachers.actions.*` `ru` value is at most 24 characters; page tests with `ru` active for R15-S3 and R15-S4 (pages in a shared render helper with the real `ru`). R15-S3 computes «no text equals an `en` value» as follows: collect the text content of every rendered element and the `aria-label`, `title`, `placeholder` and `alt` attributes of every element, trim them, and fail when one equals an `en` value of the same key's set (any `en` leaf) unless it is on the allow-list.
+- Vitest: parity and copy-rules tests (R15-S1, R15-S2, R15-S5, R16-S1 to R16-S4); a bundle test that every `adminTeachers.actions.*` `ru` value is at most 24 characters; page tests with `ru` active for R15-S3 and R15-S4 (pages in a shared render helper with the real `ru`). R15-S3 computes «no text equals an `en` value» as follows: collect the text content of every rendered element and the `aria-label`, `title`, `placeholder` and `alt` attributes of every element, trim them, and fail when one equals an `en` leaf value, comparing against every `en` leaf value minus the allow-list of three values (`teachdash`, `English`, `Русский`; `Русский` is both `languages.ru` in `ru` and the `en` value of `uiLanguage.name.ru`). The page list and the message-state sweep are the explicit list in R15-S3; check it against `en.json` once more at implementation.
 - Playwright: R15-S6 at 360 px, and at 768 px for the admin list, in `ru`, for the pages and dialogs of the scenario.
 - Final screenshot set: every screen and state of the visual plan in `ru` and `en`, at 1280 and 360 px, in `frontend/screenshots/ui-i18n-ru/`.
 
@@ -229,7 +229,7 @@ All screens: no layout, CSS or token changes; the existing tokens are reused and
   - Actions «Ссылка для сброса пароля» / «Новое приглашение» + «Деактивировать» fit on one line at 1280. At 360 they stack. Each label is at most 24 characters. Between 360 px and 72rem: the current CSS has no `72rem` container condition (it comes with the app frame, #201), so the existing wrapping and stacking rule applies; R15-S6 checks the list at 768 px.
 - Admin teachers, loading / empty / load error: «Загрузка…»; the empty-list text pointing to the button above; error text + «Повторить попытку». Same spacing as today.
 - Create dialog: title, four labelled fields, error banner. Buttons «Отмена» (secondary) and «Создать учителя» (primary). At 360 they may sit on two lines, with `--space-button-gap` between them.
-- Deactivate dialog: title in colon form with the name. Body «Ученики будут откреплены от учителя.» (no demonstrative or possessive pronoun). Buttons «Отмена» / «Подтвердить», as web-admin-teachers R4 requires until 6a.
+- Deactivate dialog: title in colon form with the name. The phrase «Ученики будут откреплены от учителя» replaces «ученики этого учителя будут освобождены» inside the full body of the table (`adminTeachers.deactivate.body`: «{{name}} больше не сможет войти в систему, а ученики будут откреплены от учителя. …»), with no demonstrative or possessive pronoun. Buttons «Отмена» / «Подтвердить», as web-admin-teachers R4 requires until 6a.
 - Issued link: label «Ссылка для входа: {{name}}»; muted note («в течение 7 дней», non-breaking space). Buttons «Скопировать» / «Закрыть» may sit on two lines at 360. Banners «Скопировано.» and the copy-by-hand text.
 - Profile (default, saved, errors, password changed):
   - Primary: the title and each section's button («Сохранить», «Изменить пароль»).

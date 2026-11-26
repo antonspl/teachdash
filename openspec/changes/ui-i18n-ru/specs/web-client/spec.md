@@ -125,9 +125,9 @@ pixels.
 
 #### Scenario: web-client/R15-S3 Russian pages show Russian text
 - **GIVEN** the UI language is `ru`
-- **WHEN** the login page, the set-password page (with a token, and with an incomplete link), the not-found page, the teacher cabinet, the Profile page and the admin teacher list with the create dialog, the deactivate dialog and the issued-link dialog open are rendered
-- **AND** the message states are rendered: the login banners `login.unreachable` and `login.sessionEnded`; `startup.error`; `header.logoutError`; `adminTeachers.loadError`; the status badges `ACTIVE`, `WAITING`, `DEACTIVATED` and «Только что добавлена»; one message of every `errors.*` and `fieldErrors.*` key; the Profile error banners and `profile.validationFailedTeacher`; `issuedLink.copyByHand` and `setPassword.incompleteLink`
-- **THEN** no text on them equals an `en` value, unless the `ru` value for that key is the same (`app.name`, the language endonyms); the text compared is the text content of every element and the `aria-label`, `title`, `placeholder` and `alt` attributes, trimmed
+- **WHEN** the login page, the set-password page (with a token, and with an incomplete link), the not-found page, the teacher cabinet, the student cabinet («Кабинет ученика»), the Profile page and the admin teacher list with the create dialog, the deactivate dialog and the issued-link dialog open are rendered
+- **AND** the message states are rendered: the login banners `login.unreachable` and `login.sessionEnded`; `startup.error`; `header.logoutError`; `adminTeachers.loadError`; the status badges `ACTIVE`, `WAITING`, `DEACTIVATED` and «Только что добавлена»; one message of every `errors.*` and `fieldErrors.*` key; the Profile error banners `profile.validationFailed`, `profile.validationFailedTeacher`, `profile.wrongPassword` and `profile.passwordValidationFailed`, and the success states `profile.saved` and `profile.passwordChanged`; `issuedLink.copyByHand` and `issuedLink.copied`; `setPassword.incompleteLink`; `languages.loadFailed`, `languages.required` and the `languages.*` options; `adminTeachers.empty` and `adminTeachers.create.validationFailed`; `password.mismatch`, `password.tooShort` and `password.tooLong`; `ui.tryAgain`, `ui.loading`, `ui.show`, `ui.hide`, `ui.showPassword` and `ui.hidePassword`; `header.backToCabinet`
+- **THEN** no text on them equals an `en` leaf value, except the values of an allow-list of three: `teachdash`, `English` and `Русский` (`app.name`, `uiLanguage.name.en`, and `languages.ru` together with `uiLanguage.name.ru`, which have the same text in `ru` and `en`); the text compared is the text content of every element and the `aria-label`, `title`, `placeholder` and `alt` attributes, trimmed, against every `en` leaf value minus that set
 - **AND** the page titles are «Вход», «Задайте пароль», «Страница не найдена», «Кабинет учителя», «Ваш профиль» and «Кабинет администратора»
 
 #### Scenario: web-client/R15-S4 Names and roles keep their case
@@ -140,10 +140,11 @@ pixels.
 #### Scenario: web-client/R15-S5 The Russian copy follows the typographic rules
 - **GIVEN** the bundled `ru` and `en` resources
 - **WHEN** the copy-rules check runs
-- **THEN** no `ru` value contains «пожалуйста», «преподавател», «учетн», «еще» or three dots in a row, and no `en` value contains three dots in a row
+- **THEN** no `ru` value contains «пожалуйста», «преподавател», «учетн» or three dots in a row, or the whole word «еще», compared case-insensitively, and no `en` value contains three dots in a row
 - **AND** every `ru` value contains a Cyrillic letter, except `app.name` and `uiLanguage.name.en`, which are on an explicit allow-list
 - **AND** every `ru` value with a number followed by a unit («символов», «байт», «дней») has a non-breaking space (U+00A0, asserted by character code) between them, so «8 символов», «72 байт» and «7 дней» use it
 - **AND** `app.name` has the same value in `en` and `ru`, and `uiLanguage.name.en` and `uiLanguage.name.ru` are the same in both
+- **AND** every `adminTeachers.actions.*` `ru` value is at most 24 characters
 
 #### Scenario: web-client/R15-S6 Russian pages fit a phone screen
 - **GIVEN** the local stack is running with an admin, a teacher without a password and a teacher with a password, the browser has a 360-pixel-wide screen and the UI language is `ru`
@@ -158,9 +159,8 @@ pixels.
 The UI SHALL support the plural forms of each language through i18next JSON v4 suffixes
 (`_one`, `_few`, `_many`, `_other`). Each plural base key SHALL have exactly the categories
 of `Intl.PluralRules(lang).resolvedOptions().pluralCategories` for its language, and the
-same set of `{{variables}}` in every language, except that `count` MAY be absent in
-`_one`, `_few` and `_many`. Russian plurals are proved on synthetic bundles; the UI has no
-count string yet.
+variables of the `en` `_other` text in every language and category, except that `count` MAY
+be absent in `_one`, `_few` and `_many`. Russian plurals are proved on synthetic bundles.
 
 #### Scenario: web-client/R16-S1 The parity check accepts the Russian categories
 - **GIVEN** synthetic bundles where `en` has `item_one` and `item_other`, and `ru` has `item_one`, `item_few`, `item_many` and `item_other`
@@ -173,10 +173,11 @@ count string yet.
 - **THEN** it fails and the failure lists `item_few` and `thing_few` with the language and the expected categories
 
 #### Scenario: web-client/R16-S3 The variables of a plural base match
-- **GIVEN** synthetic bundles where `ru` `item_one` has no `{{count}}`, and where `ru` `item_other` uses `{{total}}` while `en` uses `{{count}}`
+- **GIVEN** synthetic bundles where `ru` `item_one` has no `{{count}}`, and where `ru` `item_other` uses `{{total}}` while `en` uses `{{count}}`, and where `ru` `item_few` has an extra `{{x}}`
 - **WHEN** the key-parity check runs
 - **THEN** the missing `count` in `item_one` is accepted
 - **AND** the `{{total}}` against `{{count}}` mismatch fails and names the key
+- **AND** the extra `{{x}}` in `ru` `item_few` fails and names the key
 
 #### Scenario: web-client/R16-S4 A count picks the right Russian form
 - **GIVEN** the UI language is `ru` on a synthetic bundle with all four categories for one key
