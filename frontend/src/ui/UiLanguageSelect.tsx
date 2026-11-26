@@ -11,7 +11,10 @@ export function UiLanguageSelect() {
   const labels: Record<string, string> = {}
   const optionLang: Record<string, string> = {}
   for (const code of LANGUAGES) {
-    labels[code] = t(`uiLanguage.name.${code}`, { lng: code })
+    labels[code] = t(`uiLanguage.name.${code}`, {
+      lng: code,
+      fallbackLng: 'en',
+    })
     optionLang[code] = code
   }
   const current = LANGUAGES.includes(i18n.language) ? i18n.language : 'en'

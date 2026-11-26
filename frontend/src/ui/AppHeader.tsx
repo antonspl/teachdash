@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import styles from './AppHeader.module.css'
 import { Button } from './Button'
+import { UiLanguageSelect } from './UiLanguageSelect'
 
 // The button before "Log out" shows `navLabel` and goes to `navTo` on click.
 export function AppHeader({
@@ -32,6 +33,7 @@ export function AppHeader({
         <Button variant="secondary" onClick={onLogout}>
           {t('header.logout')}
         </Button>
+        <UiLanguageSelect />
       </div>
     </header>
   )

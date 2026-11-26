@@ -19,7 +19,7 @@ tests that change: the literals found in task 2.1.
 
 ## 4. Placement
 
-- [ ] 4.1 Put the select last in `AppHeader`'s user group, and as a right-aligned first row inside `<main>` of `LoginPage` and `SetPasswordPage`, outside the form, `--space-block` between it and the title (first in the DOM and the first Tab stop on those two pages; left-aligned when it wraps in the header at 360); none on the not-found, loading, guard and `HomeRedirect` states; Vitest for web-client/R20-S1 to R20-S3, R20-S5 and R20-S7; verify `npm test`, with the existing header tests unchanged
+- [x] 4.1 Put the select last in `AppHeader`'s user group, and as a right-aligned first row inside `<main>` of `LoginPage` and `SetPasswordPage`, outside the form, `--space-block` between it and the title (first in the DOM and the first Tab stop on those two pages; left-aligned when it wraps in the header at 360); none on the not-found, loading, guard and `HomeRedirect` states; Vitest for web-client/R20-S1 to R20-S3, R20-S5 and R20-S7; verify `npm test`, with the existing header tests unchanged
 
 ## 5. End to end
 
