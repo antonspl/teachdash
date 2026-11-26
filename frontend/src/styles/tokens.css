@@ -35,6 +35,9 @@
 
   --border-width: 1px;
   --control-height: 2.75rem;
+  --icon-size: 1.25rem;
+  --icon-size-small: 1rem;
+  --icon-size-rail: 1.5rem;
   --arrow-width: 0.75rem;
   --lang-select-width: 9rem;
   --size-visually-hidden: 1px;

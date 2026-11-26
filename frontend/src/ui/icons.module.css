@@ -1,0 +1,17 @@
+.default {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+}
+
+.small {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+  flex: none;
+}
+
+.rail {
+  width: var(--icon-size-rail);
+  height: var(--icon-size-rail);
+  flex: none;
+}
