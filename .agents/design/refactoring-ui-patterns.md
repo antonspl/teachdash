@@ -19,7 +19,7 @@ Good: "No lessons yet. Add your first one and it shows up here."
       [+ Add lesson]
 ```
 
-**Match the tone:** friendly, second person, like talking to a friend (C10). Copy goes through i18n.
+**Match the tone:** neutral, second person (C10). Copy goes through i18n.
 
 ## Form design
 

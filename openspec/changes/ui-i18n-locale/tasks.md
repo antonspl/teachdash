@@ -28,8 +28,8 @@ tests that change: the literals found in task 2.1.
 
 ## 6. Design docs
 
-- [ ] 6.1 Replace "informal and friendly, like talking to a friend" with a neutral tone in `.agents/design/design-code.md:367`, `.agents/design/project-rules.md:21-22` and C10, `.agents/design/frontend-design-copy.md:34`, `.agents/design/checklist.md:136`, `.agents/design/product-brief.md:45` and `:60` ("Friendly words, calm personality"), and `.agents/design/refactoring-ui-patterns.md:22`, keeping the other rules; proof: `grep -rn "informal\|friend" .agents/design/` shows no remaining requirement of informal copy in those files, recorded in the PR
-- [ ] 6.2 In `.agents/design/design-code.md` (login and header sections) add one sentence that this change's placement (header, and inside `<main>` on login and set-password, not the login band of line 354) is temporary until #201, #202 and #205
+- [x] 6.1 Replace "informal and friendly, like talking to a friend" with a neutral tone in `.agents/design/design-code.md:367`, `.agents/design/project-rules.md:21-22` and C10, `.agents/design/frontend-design-copy.md:34`, `.agents/design/checklist.md:136`, `.agents/design/product-brief.md:45` and `:60` ("Friendly words, calm personality"), and `.agents/design/refactoring-ui-patterns.md:22`, keeping the other rules; proof: `grep -rn "informal\|friend" .agents/design/` shows no remaining requirement of informal copy in those files, recorded in the PR
+- [x] 6.2 In `.agents/design/design-code.md` (login and header sections) add one sentence that this change's placement (header, and inside `<main>` on login and set-password, not the login band of line 354) is temporary until #201, #202 and #205
 
 ## 7. Final checks
 
