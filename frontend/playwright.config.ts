@@ -14,6 +14,7 @@ export default defineConfig({
   ],
   use: {
     baseURL: 'http://localhost:8081',
+    locale: 'en-US',
   },
   projects: [
     {

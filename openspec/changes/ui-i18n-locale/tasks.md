@@ -23,8 +23,8 @@ tests that change: the literals found in task 2.1.
 
 ## 5. End to end
 
-- [ ] 5.1 Set `locale: 'en-US'` in `use` of `playwright.config.ts`; Playwright tests for web-client/R20-S8 and R20-S9 against `docker compose up --build --wait`, desktop and phone projects; verify `npm run test:e2e`
-- [ ] 5.2 Take the final screenshot set in `frontend/screenshots/ui-i18n-locale/`: the header (cabinet, Profile, admin) and the login and set-password pages, at desktop and 360 px, in `en` and `ru`; check by eye that the select does not touch buttons or the title and that nothing overflows; list unreachable states; record the result in the PR
+- [x] 5.1 Set `locale: 'en-US'` in `use` of `playwright.config.ts`; Playwright tests for web-client/R20-S8 and R20-S9 against `docker compose up --build --wait`, desktop and phone projects; verify `npm run test:e2e`
+- [x] 5.2 Take the final screenshot set in `frontend/screenshots/ui-i18n-locale/`: the header (cabinet, Profile, admin) and the login and set-password pages, at desktop and 360 px, in `en` and `ru`; check by eye that the select does not touch buttons or the title and that nothing overflows; list unreachable states; record the result in the PR
 
 ## 6. Design docs
 
