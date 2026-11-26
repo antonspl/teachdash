@@ -1,0 +1,45 @@
+# Proposal
+
+Issues: #102 (closes it), #92 (closes it), #172 (closes it, except the content-language part, which goes to #114).
+
+## Clarifications
+
+Decisions by the engineer:
+
+1. New requirement numbers are `web-client` R19-R20. R13, R14, R17 and R18 are taken; R15-R16 stay reserved for #103.
+2. UI copy uses a neutral tone in both UI languages. This change rewrites the informal `en` strings (table in design D6) and edits the design docs that still require informal copy, so they agree: `.agents/design/design-code.md:367`, `.agents/design/project-rules.md:21-22` and rule C10 (around line 56), `.agents/design/frontend-design-copy.md:34`, `.agents/design/checklist.md:136`. "Informal and friendly, like talking to a friend" becomes a neutral tone; the rest of those rules (sentence case, second person, no apologies, plain verbs) stays unless it contradicts neutral. Editing `.agents/design/` is required by the task (AGENTS.md permits it then); it is a tooling/docs change per constitution section 1.
+3. The language switch is visible in this change. `ru.json` ships with only this change's own strings (switch label, language names, `errors.TARGET_ACCOUNT_DEACTIVATED`); i18next falls back per key to `en`, so a Russian user sees mostly English until #103 delivers the full Russian strings. #103's line "the language switch becomes visible" is superseded by this change.
+4. Control: a new component `UiLanguageSelect` in `frontend/src/ui/`, not the existing `LanguageSelect` (which picks course and native languages and stays separate). A native `<select>` reusing the `Select` styling (R13 arrow), with a visually hidden label "Language" / "Язык". Options are endonyms "English" and "Русский", each `<option>` with its own `lang`. Endonyms live in keys `uiLanguage.name.en` and `uiLanguage.name.ru` with the same value in both resource files (the `languages.*` keys are not reused). Width `--lang-select-width` (9rem).
+5. Placement: the cabinet, Profile and admin pages show it as the last control in `AppHeader`'s user group, after "Log out", wrapping with the buttons at 360 px. The login and set-password pages show it in a right-aligned first row inside `<main>`, `--space-block` above the title, outside the form. No switch on the not-found page or on loading and guard pages. #201, #202 and #205 later move it and reuse the component.
+6. On change: immediate re-render, focus stays on the select, the choice is saved to localStorage, `document.documentElement.lang` is set at start and on every change. No reload, no toast.
+7. Detection: own code in `frontend/src/i18n/` (about 15 lines, no new dependency): stored choice, then `navigator.languages` in order with the primary subtag lowercased (`ru-RU` becomes `ru`), first supported, then `en`. localStorage key `teachdash.lang`. The supported list is derived from the keys of the bundled resources. A stored value that is not supported is ignored (and not overwritten until the user picks again). localStorage get and set are wrapped in try/catch: on failure the choice is kept in memory for the session and the app still starts. Detection runs before the first render (the existing top-level `await` init in `i18n/index.ts`). `index.html` keeps `lang="en"` as a fallback; no inline script.
+8. E2E: `locale: 'en-US'` in `use` of `frontend/playwright.config.ts`, applying to all three projects (desktop-chromium, Pixel 7, iPhone 14), plus one E2E test that seeds `ru` as the stored choice and checks the stored-choice path (the switch shows "Русский", `<html lang="ru">`).
+9. Tokens: add `--lang-select-width: 9rem` and `--size-visually-hidden: 1px` to `tokens.css` now, with the names and values of `design-code.md:116` and `:131`; add a small visually hidden CSS class.
+10. Copy details: keep "Just added" (`design-code.md:311` uses it); keep "Please"; Russian strings in this change use the formal "вы"; the new `errors.TARGET_ACCOUNT_DEACTIVATED` is "This account has been deactivated, so a reset link cannot be created. Reload the list to see the current status."
+
+## Research angles and conclusions
+
+Angles agreed with the engineer: i18n and detection today (frontend), backend error handling and #92, unit and E2E test impact, copy audit, and the UI plan (`frontend-researcher`).
+
+- i18n today: `frontend/src/i18n/index.ts` runs a top-level `await init({lng:'en', fallbackLng:'en', resources:{en}})`, and `main.tsx` imports it before render. Only `i18next` 26.6.0 and `react-i18next` 17.1.10 are installed, no detector. `index.html` has `<html lang="en">` and nothing sets it. `web-client` R2 says "English is the only UI language for now" and must change. Constitution section 9: UI in en and ru, every UI string through i18n.
+- Backend: errors are codes translated in the frontend (`api/client.ts`, falls back to `errors.generic`); nothing depends on Accept-Language. The backend returns 409 `TARGET_ACCOUNT_DEACTIVATED` (`accounts` R8) and `en.json` lacks it, so users see `errors.generic`.
+- Unit tests: vitest + jsdom (`navigator.language` is `en-US`); tests import the `'../i18n'` singleton and reset with `changeLanguage('en')` and `localStorage.clear()` in `afterEach`. The detector is a pure function tested with a stubbed `navigator.languages`. `translations.test.tsx` R2-S1 uses its own instance with `lng:'en'`.
+- E2E: Playwright 1.64, three projects, no locale set; 119 role, text and label selectors assume English. With the pin, none break.
+- Copy audit: only two test literals break, `useFieldErrors.test.tsx:103` and `api/client.test.ts:76`; both switch to read `en.<key>`. No spec scenario quotes the rewritten strings. The constitution has no tone rule.
+- Risks (design): an unguarded localStorage throwing inside the top-level await would give a blank page; unit tests that do not clear storage become order-dependent; the name clash with `LanguageSelect`; the hidden label is in the current UI language while the option text is the endonym.
+
+## What changes
+
+- `web-client` R2 modified (en and ru resources, per-key fallback, the `TARGET_ACCOUNT_DEACTIVATED` message); new R19 (detection, stored choice, `<html lang>`) and R20 (language switch).
+- Detection and storage in `frontend/src/i18n/`, `ru.json` with this change's strings, `errors.TARGET_ACCOUNT_DEACTIVATED` in both files.
+- `UiLanguageSelect` placed in the header and on the login and set-password pages.
+- Neutral rewrite of the informal `en` strings; the design docs' tone rules follow.
+- Playwright locale pin and one stored-choice E2E test.
+
+## Out of scope
+
+- The full Russian translation (#103, which also reserves R15-R16).
+- The content language of lessons (`lang` on content blocks, #114).
+- Moving the switch into the Profile menu or the login band (#201, #202, #205) and the icon-led select (#197).
+- Dark mode, a globe icon, detection libraries, backend changes, new dependencies.
+- A switch on the not-found page and on loading or guard pages.
