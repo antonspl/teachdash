@@ -46,7 +46,7 @@ The type `matching` SHALL have the payload `{pairs: [{left, right}]}`, added wit
 #### Scenario: item-matching/R1-S9 The shuffled order is the same on every call, in Russian too
 - **GIVEN** the `matching` type and a payload with the pairs `[{"left": "Москва", "right": "Russia"}, {"left": "Париж", "right": "France"}, {"left": "Лондон", "right": "England"}, {"left": "Берлин", "right": "Germany"}]` (unit level)
 - **WHEN** `studentView` is called three times with the same payload, and once with a payload where only the order of the pairs differs
-- **THEN** the three results are equal, each with `left` equal to `["Москва", "Париж", "Лондон", "Берлин"]` and `right` equal to `["France", "England", "Germany", "Russia"]` (the sorted rights `["England", "France", "Germany", "Russia"]` shuffled with the seed `552194029`), and the result of the reordered payload has its lefts in its own stored order and is also a permutation of the same four rights
+- **THEN** the three results are equal, each with `left` equal to `["Москва", "Париж", "Лондон", "Берлин"]` and `right` equal to `["France", "England", "Germany", "Russia"]` (the sorted rights `["England", "France", "Germany", "Russia"]` shuffled with the seed `552194029`), and the payload with the same pairs in the reverse order (`Берлин`, `Лондон`, `Париж`, `Москва` with `Germany`, `England`, `France`, `Russia`) gives `left` equal to `["Берлин", "Лондон", "Париж", "Москва"]` and `right` equal to `["France", "Germany", "England", "Russia"]` (seed `1068013747`), a different order from the first
 
 #### Scenario: item-matching/R1-S10 The serialised student view has no pairing, in English and Russian
 - **GIVEN** the `matching` type and two payloads: an English one with the pairs `{"cat", "кошка"}`, `{"dog", "собака"}` and a Russian one with the pairs `{"Ёжик", "hedgehog"}`, `{"мышь", "mouse"}` (unit level)
@@ -54,12 +54,12 @@ The type `matching` SHALL have the payload `{pairs: [{left, right}]}`, added wit
 - **THEN** the JSON of each view is an object with exactly the properties `left` and `right`, each an array of the same length as the number of pairs, and it contains no property name `pairs`, no index and no other property, and every left and every right appears exactly once as an array element
 
 #### Scenario: item-matching/R1-S11 The student view of corrupt data fails without echoing the stored values
-- **GIVEN** the `matching` type and corrupt payloads built in the test: a `null` pair, a pair with a `null` left and a pair with a `null` right, each next to a valid pair with the text "secret-pair" (unit level)
+- **GIVEN** the `matching` type and corrupt payloads built in the test: `pairs` `null`, a `null` pair, a pair with a `null` left and a pair with a `null` right, each (except the first) next to a valid pair with the text "secret-pair" (unit level)
 - **WHEN** `studentView` is called with each payload
-- **THEN** each call throws `IllegalStateException`, and no message contains "secret-pair" or any stored value
+- **THEN** each of the four calls throws `IllegalStateException`, and no message contains "secret-pair" or any stored value
 
 ### Requirement: R2 A matching payload follows the limits and structure rules
-A `matching` payload SHALL follow items R2. `pairs`: missing, `null` or empty is `REQUIRED`, 1 is `TOO_SHORT`, over 25 is `TOO_LONG` (checked first); a `null` pair is `REQUIRED`. `left` and `right`: missing, `null` or blank is `REQUIRED`, over 100 UTF-16 characters `TOO_LONG`, an exact repeat on the same side `INVALID_FORMAT` at the later one; a value with its own error is not compared; a left may equal a right.
+A `matching` payload SHALL follow items R2. `pairs`: missing, `null` or empty is `REQUIRED`, 1 is `TOO_SHORT`, over 25 is `TOO_LONG` (checked first); a `null` pair is `REQUIRED`. `left` and `right`: missing, `null` or blank is `REQUIRED`, over 100 UTF-16 code units `TOO_LONG`, an exact repeat on the same side `INVALID_FORMAT` at the later one; a value with its own error is not compared; a left may equal a right.
 
 #### Scenario: item-matching/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
