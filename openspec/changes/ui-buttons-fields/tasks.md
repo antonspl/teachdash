@@ -18,10 +18,10 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 3. Fields and the icon-led select (design D5 to D8)
 
-- [ ] 3.1 `FieldError` component; `TextInput` and `Select` use it; `.invalid` and the message rules in `Field.module.css`; hover (inside `@media (hover: hover)`, with `[readonly]`, not `:read-only`; a computed hover check on a select), disabled and read-only rules; `cssRules.test.ts` R26-S2 for the 2px border (web-client/R26-S2, R30-S3, R30-S4, R30-S6, R30-S7)
-- [ ] 3.2 `PasswordInput`: the toggle is a `Button` (secondary, `aria-pressed`, passed-through aria-label, native `disabled`); delete `.toggle` (web-client/R30-S8)
-- [ ] 3.3 `Select` `icon` prop and the icon-led select rules; `UiLanguageSelect` passes the globe; the wrapper uses `--lang-select-width` (web-client/R13-S6; R28-S2 and R28-S3 stay green)
-- [ ] 3.4 Playwright: the focused invalid field shows border and ring (web-client/R30-S2), the long message wraps and nothing moves, and the error icon's vertical centre lies within the first text line's box (R30-S4, R30-S5), the icon-led select gaps in en and ru, desktop and 360, in `selectArrow.spec.ts` with its own measure (R13-S5; R13-S1 to R13-S4 unchanged on the default select)
+- [x] 3.1 `FieldError` component; `TextInput` and `Select` use it; `.invalid` and the message rules in `Field.module.css`; hover (inside `@media (hover: hover)`, with `[readonly]`, not `:read-only`; a computed hover check on a select), disabled and read-only rules; `cssRules.test.ts` R26-S2 for the 2px border (web-client/R26-S2, R30-S3, R30-S4, R30-S6, R30-S7)
+- [x] 3.2 `PasswordInput`: the toggle is a `Button` (secondary, `aria-pressed`, passed-through aria-label, native `disabled`); delete `.toggle` (web-client/R30-S8)
+- [x] 3.3 `Select` `icon` prop and the icon-led select rules; `UiLanguageSelect` passes the globe; the wrapper uses `--lang-select-width` (web-client/R13-S6; R28-S2 and R28-S3 stay green)
+- [x] 3.4 Playwright: the focused invalid field shows border and ring (web-client/R30-S2), the long message wraps and nothing moves, and the error icon's vertical centre lies within the first text line's box (R30-S4, R30-S5), the icon-led select gaps in en and ru, desktop and 360, in `selectArrow.spec.ts` with its own measure (R13-S5; R13-S1 to R13-S4 unchanged on the default select)
 
 ## 4. Busy labels (design D2, D9)
 
