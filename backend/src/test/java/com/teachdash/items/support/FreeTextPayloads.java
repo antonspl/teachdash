@@ -30,10 +30,32 @@ public final class FreeTextPayloads {
 
 	/** A raw payload JSON with the prompt as a JSON string and the given extra members, such as {@code "minLength": 5}. */
 	public static String raw(String prompt, String... members) {
-		StringBuilder json = new StringBuilder("{\"prompt\": \"").append(prompt).append('"');
+		StringBuilder json = new StringBuilder("{\"prompt\": \"").append(escape(prompt)).append('"');
 		for (String member : members) {
 			json.append(", ").append(member);
 		}
 		return json.append('}').toString();
+	}
+
+	private static String escape(String text) {
+		StringBuilder escaped = new StringBuilder();
+		for (char c : text.toCharArray()) {
+			switch (c) {
+				case '"' -> escaped.append("\\\"");
+				case '\\' -> escaped.append("\\\\");
+				case '\n' -> escaped.append("\\n");
+				case '\r' -> escaped.append("\\r");
+				case '\t' -> escaped.append("\\t");
+				default -> {
+					if (c < 0x20) {
+						escaped.append(String.format("\\u%04x", (int) c));
+					}
+					else {
+						escaped.append(c);
+					}
+				}
+			}
+		}
+		return escaped.toString();
 	}
 }

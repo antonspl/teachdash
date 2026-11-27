@@ -36,22 +36,23 @@ class FreeTextItemTypeTest {
 
 		// then each view is an instance of the allowlist record FreeTextStudentView with exactly the fields prompt, minLength and maxLength
 		for (Object view : Arrays.asList(bothView, maxOnlyView, noneView)) {
-			assertThat(view).isNotNull();
-			assertThat(view.getClass().getSimpleName()).isEqualTo("FreeTextStudentView");
-			assertThat(view.getClass().isRecord()).isTrue();
-			assertThat(Arrays.stream(view.getClass().getRecordComponents()).map(c -> c.getName()).toList())
-					.containsExactly("prompt", "minLength", "maxLength");
+			assertThat(view).isInstanceOf(FreeTextStudentView.class);
 		}
+		assertThat(Arrays.stream(FreeTextStudentView.class.getRecordComponents()).map(c -> c.getName()).toList())
+				.containsExactly("prompt", "minLength", "maxLength");
 		// and they hold the prompt exactly as stored and the limits 50 and 500, no minLength and 300, and no limit
-		assertThat(component(bothView, "prompt")).isEqualTo("Describe your day.");
-		assertThat(component(bothView, "minLength")).isEqualTo(50);
-		assertThat(component(bothView, "maxLength")).isEqualTo(500);
-		assertThat(component(maxOnlyView, "prompt")).isEqualTo("Опишите ёлку.");
-		assertThat(component(maxOnlyView, "minLength")).isNull();
-		assertThat(component(maxOnlyView, "maxLength")).isEqualTo(300);
-		assertThat(component(noneView, "prompt")).isEqualTo("Write.");
-		assertThat(component(noneView, "minLength")).isNull();
-		assertThat(component(noneView, "maxLength")).isNull();
+		var bothTyped = (FreeTextStudentView) bothView;
+		var maxOnlyTyped = (FreeTextStudentView) maxOnlyView;
+		var noneTyped = (FreeTextStudentView) noneView;
+		assertThat(bothTyped.prompt()).isEqualTo("Describe your day.");
+		assertThat(bothTyped.minLength()).isEqualTo(50);
+		assertThat(bothTyped.maxLength()).isEqualTo(500);
+		assertThat(maxOnlyTyped.prompt()).isEqualTo("Опишите ёлку.");
+		assertThat(maxOnlyTyped.minLength()).isNull();
+		assertThat(maxOnlyTyped.maxLength()).isEqualTo(300);
+		assertThat(noneTyped.prompt()).isEqualTo("Write.");
+		assertThat(noneTyped.minLength()).isNull();
+		assertThat(noneTyped.maxLength()).isNull();
 	}
 
 	@Test
@@ -77,20 +78,5 @@ class FreeTextItemTypeTest {
 		assertThat(russianTree.get("prompt").asString()).isEqualTo("Опишите «ёлку».");
 		assertThat(russianTree.get("maxLength").asInt()).isEqualTo(300);
 		assertThat(russianJson).doesNotContain("null");
-	}
-
-	private static Object component(Object view, String name) {
-		try {
-			var component = Arrays.stream(view.getClass().getRecordComponents())
-					.filter(c -> c.getName().equals(name))
-					.findFirst()
-					.orElseThrow();
-			var accessor = component.getAccessor();
-			accessor.setAccessible(true);
-			return accessor.invoke(view);
-		}
-		catch (ReflectiveOperationException e) {
-			throw new AssertionError(e);
-		}
 	}
 }
