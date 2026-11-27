@@ -18,26 +18,26 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 3. Fields and the icon-led select (design D5 to D8)
 
-- [ ] 3.1 `FieldError` component; `TextInput` and `Select` use it; `.invalid` and the message rules in `Field.module.css`; hover, disabled and read-only rules; `cssRules.test.ts` R26-S2 for the 2px border (web-client/R26-S2, R30-S3, R30-S4, R30-S6, R30-S7)
+- [ ] 3.1 `FieldError` component; `TextInput` and `Select` use it; `.invalid` and the message rules in `Field.module.css`; hover (inside `@media (hover: hover)`, with `[readonly]`, not `:read-only`; a computed hover check on a select), disabled and read-only rules; `cssRules.test.ts` R26-S2 for the 2px border (web-client/R26-S2, R30-S3, R30-S4, R30-S6, R30-S7)
 - [ ] 3.2 `PasswordInput`: the toggle is a `Button` (secondary, `aria-pressed`, passed-through aria-label, native `disabled`); delete `.toggle` (web-client/R30-S8)
 - [ ] 3.3 `Select` `icon` prop and the icon-led select rules; `UiLanguageSelect` passes the globe; the wrapper uses `--lang-select-width` (web-client/R13-S6; R28-S2 and R28-S3 stay green)
-- [ ] 3.4 Playwright: the focused invalid field shows border and ring (web-client/R30-S2), the long message wraps and nothing moves (R30-S5), the icon-led select gaps in en and ru, desktop and 360, in `selectArrow.spec.ts` with its own measure (R13-S5; R13-S1 to R13-S4 unchanged on the default select)
+- [ ] 3.4 Playwright: the focused invalid field shows border and ring (web-client/R30-S2), the long message wraps and nothing moves, and the error icon's vertical centre lies within the first text line's box (R30-S4, R30-S5), the icon-led select gaps in en and ru, desktop and 360, in `selectArrow.spec.ts` with its own measure (R13-S5; R13-S1 to R13-S4 unchanged on the default select)
 
 ## 4. Busy labels (design D2, D9)
 
-- [ ] 4.1 `Button` `busy` and `busyLabel` (two labels in one grid cell, `disabled`, `aria-busy`); the nine keys of design D9 in `en.json` and `ru.json`; `parity.test.ts` and `copyRules.test.ts` cover them (web-client/R29-S1, R29-S2 CSS half, R29-S5)
+- [ ] 4.1 `Button` `busy` and `busyLabel` (two labels in one grid cell, `disabled`, `aria-busy`); the nine keys of design D9 (labels mirror the idle names) in `en.json` and `ru.json`; `parity.test.ts` and `copyRules.test.ts` cover them (web-client/R29-S1, R29-S2 CSS half, R29-S5)
 - [ ] 4.2 `LoginPage`, `SetPasswordPage`, `ProfileForm`, `PasswordForm` and the create dialog pass `busy` and `busyLabel` to their submit; update the tests that read the button by its idle name mid-request (design D10 list, held element reference where a test re-queries): `App.test.tsx` (web-auth/R1-S4), `ProfilePage.test.tsx` (web-profile/R2-S8, R3-S9) and `AdminTeachersPage.test.tsx` `submitButton()` (web-admin-teachers/R2-S5) (web-client/R29-S3, R29-S7)
 - [ ] 4.3 `AdminTeachersPage`: `runRowAction` takes the pressed action, the per-row busy state records it, the pressed row button and the deactivate Confirm show their busy labels; update `deactivateButton(row)` use in R5-S4 and `confirm()` (web-admin-teachers/R4-S2, R5-S4; web-client/R29-S4)
-- [ ] 4.4 Playwright: the button keeps its width while busy, in en and ru at desktop and 360 (web-client/R29-S2); the Russian busy labels fit at 360 in `e2e/russianFit.spec.ts` (web-client/R29-S6)
+- [ ] 4.4 Playwright: the button keeps its width while busy, in en and ru at desktop and, at 360, on a button that is not full width (profile Save, "Create teacher" or a row button; the login button only at desktop) (web-client/R29-S2); the Russian busy labels fit at 360 in `e2e/russianFit.spec.ts` (web-client/R29-S6)
 
 ## 5. After screenshots
 
-- [ ] 5.1 Take the final set in `frontend/screenshots/ui-buttons-fields/`: same states and widths as the before set, plus the busy label of each button (en and ru at 360), a focused invalid field and the icon-led language select (header and login, en and ru); check by eye the icon inset of "Add teacher", the field error, the focus ring, the icon-led select margins, 360 and Russian wrapping; list unreachable states (design D12)
+- [ ] 5.1 Take the final set in `frontend/screenshots/ui-buttons-fields/`: same states and widths as the before set, plus the busy label of each button (en and ru at 360), a focused invalid field and the icon-led language select (header and login, en and ru); check by eye the error icon on the first text line (rendered, not just the CSS), the icon inset of "Add teacher", the field error, the focus ring, the icon-led select margins, 360 and Russian wrapping; list unreachable states (design D12)
 - [ ] 5.2 Verify `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (re-run at 360 in en and ru: R7-S1, R13-S2, `skeleton.spec.ts`, `russianFit.spec.ts`)
 
 ## 6. Design docs (design D11)
 
-- [ ] 6.1 `.agents/design/design-code.md`: the busy-label noun rule in "Copy and languages", the `--button-icon-inset` row and the `--lang-select-width` value in the token tables, the small-items line moved to 4a; `refactoring-ui-patterns.md:91` and `accessibility-patterns.md:29`, each with the exact before and after lines of design D11
+- [ ] 6.1 `.agents/design/design-code.md`: the busy-label noun rule in "Copy and languages", the `--button-icon-inset` row and the `--lang-select-width` value in the token tables, the small-items line moved to 4a, the hover line and the Loading width line in States; `refactoring-ui-patterns.md:91` and `accessibility-patterns.md:29`, and the stale focus statements of `accessibility.md`, `refactoring-ui-patterns.md:99` and `checklist.md:28`, each with the exact before and after lines of design D11
 
 ## Workflow follow-up
 

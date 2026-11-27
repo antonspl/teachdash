@@ -4,7 +4,7 @@
 
 ### Requirement: R29 Busy button
 
-A button whose request is in flight SHALL be natively disabled, have `aria-busy="true"` and show its own busy label, with no spinner and no change of width. This covers every form submit, the deactivate "Confirm" and the pressed row button. A busy label ends with "…" and, in Russian, is a noun. Starting a request SHALL announce nothing.
+A button whose request is in flight SHALL be natively disabled, have `aria-busy="true"` and show its own busy label, with no spinner and no change of width. This covers the form submits, the deactivate "Confirm" and the pressed row button, and nothing else (not Log out, not "Try again"). A busy label ends with "…" and, in Russian, is a noun. Starting a request SHALL announce nothing.
 
 #### Scenario: web-client/R29-S1 A busy button is disabled, marked busy and named by its busy label
 - **GIVEN** a `Button` with an idle label and a busy label, rendered idle and then busy (a unit test)
@@ -13,8 +13,8 @@ A button whose request is in flight SHALL be natively disabled, have `aria-busy=
 - **AND** busy, it is found by the busy label, is `disabled` and has `aria-busy="true"`, the idle label is not part of its accessible name (it is `aria-hidden`), no `svg` was added, and pressing it calls no handler
 
 #### Scenario: web-client/R29-S2 The busy button keeps its width
-- **GIVEN** `Button.module.css`, read as text, and the login page in `en` and in `ru`, on the desktop and the 360-pixel phone projects, with the login request held
-- **WHEN** the submit button is pressed
+- **GIVEN** `Button.module.css`, read as text, and in `en` and in `ru` the login page on the desktop project and, on the 360-pixel phone project, a button that is not full width (profile Save, "Create teacher" or a row button), each with its request held
+- **WHEN** the button is pressed
 - **THEN** the button's width and height are the same before and while the request runs
 - **AND** the CSS puts the two labels in one grid cell, the inactive one with `visibility: hidden`, and the button has no `style` attribute
 
@@ -22,7 +22,7 @@ A button whose request is in flight SHALL be natively disabled, have `aria-busy=
 - **GIVEN** the login page, the set-password page, the profile form, the profile password form and the "Add teacher" dialog, each with its request held
 - **WHEN** each form is submitted
 - **THEN** the submit button is found by the text of its own key, `login.submitting`, `setPassword.submitting`, `profile.saving`, `profile.changingPassword` and `adminTeachers.create.submitting` in turn, and is `disabled` with `aria-busy="true"`
-- **AND** when the request ends, the button is found by its idle label again and has no `aria-busy="true"`
+- **AND** when the request fails, the button is found by its idle label again and has no `aria-busy="true"`; when it succeeds the button is gone (the route changed or the dialog closed) or, for Save and Change password, idle again
 
 #### Scenario: web-client/R29-S4 The pressed row button and Confirm show their busy labels
 - **GIVEN** an admin page with an active teacher without a password, one with a password and a deactivated one, and the deactivate dialog open, each request held
@@ -44,7 +44,7 @@ A button whose request is in flight SHALL be natively disabled, have `aria-busy=
 #### Scenario: web-client/R29-S7 Starting a request announces nothing and moves no focus
 - **GIVEN** the login page, with the request held, and in a second run a form whose request then fails with field errors (R17-S1)
 - **WHEN** the submit button is pressed
-- **THEN** no element with `role="status"` or `role="alert"` and no live region appears while the request runs, and the focus is not moved by the busy state
+- **THEN** no element with `role="status"` or `role="alert"` and no live region appears while the request runs, and `document.activeElement` is the same element before the press and while the request runs when the form was submitted from a field (not moved by the busy state)
 - **AND** when the request fails with field errors, the focus goes to the topmost invalid field as web-client R17 says, and when it fails without them the button is enabled again with its idle label
 
 ### Requirement: R30 Field focus, error and states
@@ -73,7 +73,7 @@ Every interactive element SHALL show one global `:focus-visible` ring and never 
 - **GIVEN** `Field.module.css`, read as text
 - **WHEN** the invalid and message rules are read
 - **THEN** the invalid rule has a border of `--border-width-strong` in `--color-danger-text` and `padding-inline-start: calc(var(--space-group) - var(--border-width))`, and no `outline: none`
-- **AND** the message rule is a flex row with `gap: var(--space-inline)`, `--text-small`, `--line-height-small` and `--color-danger-text`, has no `text-overflow`, `white-space: nowrap` or `overflow: hidden`, and the icon sits on the first line of the text
+- **AND** the message rule is a flex row with `gap: var(--space-inline)`, `--text-small`, `--line-height-small` and `--color-danger-text`, has no `text-overflow`, `white-space: nowrap` or `overflow: hidden`, and the icon sits on the first line of the text; a Playwright check shows the icon's vertical centre within the first text line's box
 
 #### Scenario: web-client/R30-S5 A long error message wraps under its text
 - **GIVEN** a text input and the time zone select with a long error text (the longest Russian field error), at 360 pixels, and the same controls without an error
@@ -90,7 +90,7 @@ Every interactive element SHALL show one global `:focus-visible` ring and never 
 #### Scenario: web-client/R30-S7 Fields hover, disabled and read-only
 - **GIVEN** `Field.module.css`, read as text
 - **WHEN** the input and select rules are read
-- **THEN** an enabled, writable, valid input has a hover border of `--color-text-muted`; an invalid, a disabled or a read-only one has no hover rule; a field keeps `min-height: var(--control-height)`
+- **THEN** an enabled, writable, valid input or select has a hover border of `--color-text-muted`, in a rule inside `@media (hover: hover)` that does not use `:read-only` (a computed hover check on a select shows the border); an invalid, a disabled or a read-only (`[readonly]`) one has no hover rule; a field keeps `min-height: var(--control-height)`
 - **AND** a disabled input or select (and its arrow) has `opacity: var(--opacity-disabled)` and `cursor: not-allowed`, and the read-only issued-link input keeps its `--color-surface-sunken` fill
 
 #### Scenario: web-client/R30-S8 The password toggle is a Button
@@ -145,12 +145,14 @@ the arrow SHALL reach the field, as a click on its text does.
 - **WHEN** the select is shown
 - **THEN** it has a globe icon that is `aria-hidden="true"`, is not inside the `[data-select-arrow]` element, and is muted like the arrow; the `[data-select-arrow]` element still holds only the chevron
 - **AND** the distance from the icon's left edge to the inner edge of the left border equals the distance from the arrow's right edge to the inner edge of the right border, within 1 pixel, and both are `--space-group`
-- **AND** the select's left padding equals `--space-group` plus `--icon-size` plus `--space-inline`, and the selected language name is not cut off (the width of its text is at most the width of the text area)
+- **AND** the select's left padding equals `--space-group` plus `--icon-size` plus `--space-inline`, and the selected language name is not cut off (its text width, measured with `canvas.measureText` using the select's computed font, is at most the width of the text area)
+- **AND** with the select disabled, and in a run where it has an error (the test passes one), the icon is dimmed with the select, and the icon and the text start do not move by more than 1 pixel
 
 #### Scenario: web-client/R13-S6 Only a select with an icon gets the icon rules
 - **GIVEN** `Select.tsx` and `Field.module.css`, read as text, and rendered selects with and without the `icon` prop
 - **WHEN** the select, icon and arrow rules are read, and the markup is read
 - **THEN** a select given an icon renders the icon with its own data attribute, `aria-hidden="true"`, outside `[data-select-arrow]`, at `left: calc(var(--border-width) + var(--space-group))`, and a select class with `padding-inline-start: calc(var(--space-group) + var(--icon-size) + var(--space-inline))`
+- **AND** the arrow stays the element right after the select (`.select:disabled + .arrow` still matches) and a disabled icon-led select dims the icon too, and an invalid one has a rule that keeps the icon-led start padding minus one `--border-width`
 - **AND** a select without the prop renders no icon and gets none of those rules, and the arrow and select rules of web-client R28-S2 are unchanged
 
 ### Requirement: R24 Design tokens
@@ -216,8 +218,7 @@ and `danger`, and no green variant. "Add teacher" (with its plus icon) and "Crea
 teacher" SHALL be the primary variant (accent fill with `--color-on-accent` text). The
 danger variant SHALL fill with `--color-danger-action`. The row "Deactivate" button SHALL
 stay a filled danger button until the admin row actions are restyled. The secondary
-variant SHALL have `--color-text` text. Every variant SHALL have hover, active, disabled
-and focus states made only of design tokens. The `icon` prop SHALL accept any icon of the
+variant SHALL have `--color-text` text. Every variant SHALL have hover (only under `@media (hover: hover)`), disabled and focus states, and an active state except the danger fill, made only of design tokens. The `icon` prop SHALL accept any icon of the
 shared set, and a button that leads with an icon SHALL start its padding
 `--button-icon-inset` closer to the edge than `--space-group`. A full-width variant for
 phones SHALL be used only by the lone submit button of the login and set-password pages.
@@ -248,7 +249,7 @@ phones SHALL be used only by the lone submit button of the login and set-passwor
 - **GIVEN** `Button.tsx` and `Button.module.css`, read as text, and a `Button` rendered with each of `quiet`, `dangerText` and `muted` in a unit test (no screen uses them yet)
 - **WHEN** each button's classes and the CSS rules are read
 - **THEN** each carries its own variant class and no other, and the label is shown
-- **AND** `quiet` is transparent with `--color-text` text and the `--color-surface-sunken` hover fill, `dangerText` has `--color-danger-text` text and a `--color-danger-background` hover fill, and `muted` has `--color-text-muted` text that goes to `--color-text` on hover
+- **AND** `quiet` is transparent with `--color-text` text and the `--color-surface-sunken` hover fill, `dangerText` has `--color-danger-text` text and a `--color-danger-background` hover fill, and `muted` has `--color-text-muted` text that goes to `--color-text` on hover; both have an active fill of `--color-neutral-background`
 
 #### Scenario: web-client/R27-S6 The secondary button has text colour
 - **GIVEN** `Button.module.css`, read as text
@@ -260,7 +261,7 @@ phones SHALL be used only by the lone submit button of the login and set-passwor
 - **GIVEN** `Button.module.css`, read as text
 - **WHEN** the base, hover, active and disabled rules are read
 - **THEN** the base has `min-height: var(--control-height)`, `padding: 0 var(--space-group)`, `font-weight: var(--weight-strong)` and `line-height: var(--line-height-tight)`
-- **AND** hover (on an enabled button only) is `--color-accent-hover` for primary, `--color-surface-sunken` for secondary and quiet, and `--color-danger-action-hover` for danger; active is `--color-accent-active` for primary and `--color-neutral-background` for secondary and quiet
+- **AND** hover (on an enabled button only) is `--color-accent-hover` for primary, `--color-surface-sunken` for secondary and quiet, and `--color-danger-action-hover` for danger; active is `--color-accent-active` for primary and `--color-neutral-background` for secondary, quiet, `dangerText` and `muted`, and the danger fill has no active step; primary and danger change fill and border together on hover and active, and every hover rule is inside `@media (hover: hover)`
 - **AND** disabled is `opacity: var(--opacity-disabled)` with `cursor: not-allowed`, and the transitions use `--duration-fast` on `background-color`, `border-color`, `color` and `opacity` only
 
 #### Scenario: web-client/R27-S8 The icon prop takes any icon and insets an icon-led button

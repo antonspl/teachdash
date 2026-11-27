@@ -160,3 +160,4 @@ is sending, the other's button SHALL be disabled.
 - **GIVEN** a password change request is still running
 - **WHEN** the teacher looks at the profile form, and in a second run a save is running and the teacher looks at the password form
 - **THEN** in both runs the other form's button is disabled until the request ends, and enabled after it
+- **AND** that other button is not marked busy (no `aria-busy="true"`) and keeps its idle label
