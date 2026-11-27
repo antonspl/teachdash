@@ -74,7 +74,6 @@ class ReorderPayloadTest extends ItemApiTest {
 				entry("ch", "a", EMOJI.repeat(2)),
 				entry("e\u0301", "a"));
 		var twoHundredUnits = payload("letters", fullEntries(8));
-		var nullHint = payload("words", entryWithHint(null, "a", "b"));
 		var responses = List.of(
 				add(setup, twoUnits),
 				add(setup, twentyFiveEntries),

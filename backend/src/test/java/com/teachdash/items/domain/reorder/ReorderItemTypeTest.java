@@ -65,17 +65,17 @@ class ReorderItemTypeTest {
 		// and the first entry has exactly units and hint, in this order, with the seeded shuffle and the stored hint
 		JsonNode first = entryAt(view, 0);
 		assertThat(first.propertyNames()).containsExactly("units", "hint");
-		assertThat(units(first)).containsExactly("green", "apples", "like", "I");
+		assertThat(units(first)).containsExactly("apples", "green", "I", "like");
 		assertThat(first.get("hint").asString()).isEqualTo("Я люблю зелёные яблоки");
 		// and the second entry has exactly the property units, with the seeded shuffle
 		JsonNode second = entryAt(view, 1);
 		assertThat(second.propertyNames()).containsExactly("units");
-		assertThat(units(second)).containsExactly("книги", "читать", "люблю", "Я");
+		assertThat(units(second)).containsExactly("Я", "читать", "люблю", "книги");
 	}
 
 	@Test
-	@DisplayName("[item-reorder/R3-S2] A shuffle equal to the correct order is rotated left by one")
-	void aShuffleEqualToTheCorrectOrderIsRotated() {
+	@DisplayName("[item-reorder/R3-S2] Sentences are shuffled with the seed of the sorted units, and a chance match is kept")
+	void sentencesAreShuffledAndAChanceMatchIsKept() {
 		// given the reorder type and a payload with three Russian sentences and with go, went
 		var payload = new ReorderPayload("sentences", List.of(
 				entry("Сначала мы позавтракали.", "Потом пошли в школу.", "После уроков вернулись домой."),
@@ -84,19 +84,17 @@ class ReorderItemTypeTest {
 		// when studentView is called with the payload
 		JsonNode view = mapper.valueToTree(type.studentView(payload));
 
-		// then the first entry's units are the stored order rotated left by one
-		JsonNode first = entryAt(view, 0);
-		assertThat(units(first)).containsExactly(
-				"Потом пошли в школу.",
+		// then the first entry's units are the seeded shuffle of the sorted sentences
+		assertThat(units(entryAt(view, 0))).containsExactly(
 				"После уроков вернулись домой.",
-				"Сначала мы позавтракали.");
-		// and the second entry's units are went, go: the shuffle gave go, went, which was rotated
-		JsonNode second = entryAt(view, 1);
-		assertThat(units(second)).containsExactly("went", "go");
+				"Сначала мы позавтракали.",
+				"Потом пошли в школу.");
+		// and the second entry's units are go, went: equal to the stored order, a chance match that is not rotated
+		assertThat(units(entryAt(view, 1))).containsExactly("go", "went");
 	}
 
 	@Test
-	@DisplayName("[item-reorder/R3-S3] The shuffled order is the same on every call, depends on the stored order, and keeps repeated units")
+	@DisplayName("[item-reorder/R3-S3] The shuffled order is the same on every call and for every stored order of the same units, and keeps repeated units")
 	void theShuffledOrderIsStableAndKeepsRepeatedUnits() {
 		// given three letters payloads with the units a, b and b, a and a, b, a
 		var ab = new ReorderPayload("letters", List.of(entry("a", "b")));
@@ -110,14 +108,15 @@ class ReorderItemTypeTest {
 		JsonNode reversed = mapper.valueToTree(type.studentView(ba));
 		JsonNode repeated = mapper.valueToTree(type.studentView(aba));
 
-		// then the three results are equal, with the units b, a (rotated)
+		// then the three results are equal, with the units a, b
 		assertThat(second).isEqualTo(first);
 		assertThat(third).isEqualTo(first);
-		assertThat(units(entryAt(first, 0))).containsExactly("b", "a");
-		// and b, a gives a, b, a different order from the first
+		assertThat(units(entryAt(first, 0))).containsExactly("a", "b");
+		// and b, a gives the same view as a, b
+		assertThat(reversed).isEqualTo(first);
 		assertThat(units(entryAt(reversed, 0))).containsExactly("a", "b");
-		// and a, b, a gives a, a, b with both a kept
-		assertThat(units(entryAt(repeated, 0))).containsExactly("a", "a", "b");
+		// and a, b, a gives b, a, a with both a kept
+		assertThat(units(entryAt(repeated, 0))).containsExactly("b", "a", "a");
 	}
 
 	@Test
@@ -165,7 +164,7 @@ class ReorderItemTypeTest {
 		corrupt.put("null entries", new ReorderPayload("words", null));
 		corrupt.put("null entry", new ReorderPayload("words", Arrays.asList(valid, null)));
 		corrupt.put("null units", new ReorderPayload("words", List.of(valid, new ReorderEntry(null, null))));
-		corrupt.put("null unit", new ReorderPayload("words", List.of(valid, entry("a", null))));
+		corrupt.put("null unit", new ReorderPayload("words", List.of(valid, new ReorderEntry(Arrays.asList("a", null), null))));
 		corrupt.put("empty units", new ReorderPayload("words", List.of(valid, entry())));
 		corrupt.put("one distinct unit", new ReorderPayload("words", List.of(valid, entry("x", "x"))));
 
