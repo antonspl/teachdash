@@ -46,7 +46,7 @@ public class NumericItemType implements ItemType<NumericPayload> {
 		return new IllegalStateException("Cannot build a student view for a numeric " + part + " with missing data");
 	}
 
-	/** Runs only when Bean Validation passed, so the list is non-empty and the texts and numbers are set. */
+	/** Runs only when Bean Validation passed, so the list is non-empty and at most 25 long, and every non-null question has its text and numbers set; elements may still be null. */
 	@Override
 	public List<FieldErrorDetail> extraChecks(NumericPayload payload) {
 		List<FieldErrorDetail> errors = new ArrayList<>();
