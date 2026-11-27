@@ -2,11 +2,11 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add stubs so the tests compile and fail at their THEN step: `FreeTextPayload` (the record without annotations) and `FreeTextItemType` (code `free-text`; `studentView` returns `null`, marked STUB; `extraChecks` empty); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
-- [ ] 1.2 Write tests for item-free-text R1-S1 to R1-S6 in `items/api/FreeTextItemTest` (helpers of `ItemApiTest`: `teacherWithPart`, `body`, `expectValidation`, `expectNotFound`, `assertStoredPayload`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step (those the generic code already provides are expected green on the stubs)
-- [ ] 1.3 Write tests for item-free-text R1-S7 and R1-S8 in `items/domain/freetext/FreeTextItemTypeTest` (unit level; application JSON mapper for the serialisation test, English and Russian); verify each fails at its THEN step
-- [ ] 1.4 Write tests for item-free-text R2-S1 to R2-S7 in `items/api/FreeTextPayloadTest`; build the large prompts (20000 and 20001 letters, 10000 and 10001 emoji) in a test helper; verify each fails at its THEN step
-- [ ] 1.5 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test whose behaviour is missing fails at its THEN step, not in setup (tests whose behaviour the generic code already provides are expected green on the stubs: add, edit, list, scoping, the accept paths, JSON type errors, unknown property), and every scenario ID has a test
+- [x] 1.1 Add stubs so the tests compile and fail at their THEN step: `FreeTextPayload` (the record without annotations) and `FreeTextItemType` (code `free-text`; `studentView` returns `null`, marked STUB; `extraChecks` empty); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
+- [x] 1.2 Write tests for item-free-text R1-S1 to R1-S6 in `items/api/FreeTextItemTest` (helpers of `ItemApiTest`: `teacherWithPart`, `body`, `expectValidation`, `expectNotFound`, `assertStoredPayload`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step (those the generic code already provides are expected green on the stubs)
+- [x] 1.3 Write tests for item-free-text R1-S7 and R1-S8 in `items/domain/freetext/FreeTextItemTypeTest` (unit level; application JSON mapper for the serialisation test, English and Russian); verify each fails at its THEN step
+- [x] 1.4 Write tests for item-free-text R2-S1 to R2-S7 in `items/api/FreeTextPayloadTest`; build the large prompts (20000 and 20001 letters, 10000 and 10001 emoji) in a test helper; verify each fails at its THEN step
+- [x] 1.5 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test whose behaviour is missing fails at its THEN step, not in setup (tests whose behaviour the generic code already provides are expected green on the stubs: add, edit, list, scoping, the accept paths, JSON type errors, unknown property), and every scenario ID has a test
 
 ## 2. Test review
 
