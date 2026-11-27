@@ -49,15 +49,29 @@ public class MatchingItemType implements ItemType<MatchingPayload> {
 		}
 	}
 
-	/** The sort makes the shuffle input canonical; the seed depends on the stored order of the values. */
+	/**
+	 * The seed depends only on the sorted values, not on which right belongs to which left, so every pairing of the
+	 * same values gives the same view. If the shuffle leaves the stored pairing, the list is rotated.
+	 */
 	private List<String> shuffledRights(List<String> lefts, List<String> rights) {
-		List<String> shuffled = new ArrayList<>(rights);
-		Collections.sort(shuffled);
-		List<String> all = new ArrayList<>(lefts);
-		all.addAll(rights);
-		long seed = String.join("\u0000", all).hashCode();
-		Collections.shuffle(shuffled, new Random(seed));
+		List<String> shuffled = sorted(rights);
+		Collections.shuffle(shuffled, new Random(seed(lefts, rights)));
+		if (shuffled.size() > 1 && shuffled.equals(rights)) {
+			Collections.rotate(shuffled, -1);
+		}
 		return shuffled;
+	}
+
+	private long seed(List<String> lefts, List<String> rights) {
+		List<String> values = sorted(lefts);
+		values.addAll(sorted(rights));
+		return String.join("\u0000", values).hashCode();
+	}
+
+	private List<String> sorted(List<String> values) {
+		List<String> copy = new ArrayList<>(values);
+		Collections.sort(copy);
+		return copy;
 	}
 
 	@Override
