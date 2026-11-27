@@ -3,7 +3,6 @@ package com.teachdash.items.domain.gapfill;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
@@ -35,17 +34,37 @@ public class GapFillItemType implements ItemType<GapFillPayload> {
 
 	@Override
 	public Object studentView(GapFillPayload payload) {
-		List<Map<String, String>> segments = payload.segments().stream()
+		List<StudentSegment> segments = payload.segments().stream()
 				.map(this::studentSegment)
 				.toList();
-		return Map.of("segments", segments);
+		return new StudentView(segments);
 	}
 
-	private Map<String, String> studentSegment(GapFillSegment segment) {
-		if (TEXT.equals(segment.type())) {
-			return Map.of("type", TEXT, "text", segment.text());
+	private StudentSegment studentSegment(GapFillSegment segment) {
+		String type = segment.type();
+		if (TEXT.equals(type) && segment.text() != null) {
+			return new TextView(TEXT, segment.text());
 		}
-		return Map.of("type", GAP);
+		if (GAP.equals(type)) {
+			return new GapView(GAP);
+		}
+		throw new IllegalStateException("Cannot build a student view for a gap-fill segment of type " + type);
+	}
+
+	public record StudentView(
+			List<StudentSegment> segments) {
+	}
+
+	public sealed interface StudentSegment permits TextView, GapView {
+	}
+
+	public record TextView(
+			String type,
+			String text) implements StudentSegment {
+	}
+
+	public record GapView(
+			String type) implements StudentSegment {
 	}
 
 	@Override

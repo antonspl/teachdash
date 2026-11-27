@@ -1,6 +1,7 @@
 package com.teachdash.items.domain.gapfill;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 
@@ -86,5 +87,21 @@ class GapFillItemTypeTest {
 				.filter(segment -> segment.has("text"))
 				.map(segment -> segment.get("text").asString())
 				.toList();
+	}
+
+	@Test
+	@DisplayName("The student view of a segment that is neither text nor gap is rejected")
+	void anUnknownSegmentTypeHasNoStudentView() {
+		var payload = new GapFillPayload(List.of(new GapFillSegment("image", null, null)));
+
+		assertThatThrownBy(() -> type.studentView(payload)).isInstanceOf(IllegalStateException.class);
+	}
+
+	@Test
+	@DisplayName("The student view of a text segment without text is rejected")
+	void aTextSegmentWithoutTextHasNoStudentView() {
+		var payload = new GapFillPayload(List.of(new GapFillSegment("text", null, null)));
+
+		assertThatThrownBy(() -> type.studentView(payload)).isInstanceOf(IllegalStateException.class);
 	}
 }

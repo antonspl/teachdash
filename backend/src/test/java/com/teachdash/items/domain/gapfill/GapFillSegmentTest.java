@@ -9,13 +9,17 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.json.JsonTest;
+import org.springframework.boot.validation.autoconfigure.ValidationAutoConfiguration;
+import org.springframework.context.annotation.Import;
 
 import com.teachdash.common.ApiException;
 import com.teachdash.common.FieldErrorDetail;
 import com.teachdash.items.domain.ItemPayloadValidator;
-import com.teachdash.support.ApiTest;
 
-class GapFillSegmentTest extends ApiTest {
+@JsonTest
+@Import({ItemPayloadValidator.class, ValidationAutoConfiguration.class})
+class GapFillSegmentTest {
 
 	@Autowired
 	private ItemPayloadValidator validator;
