@@ -329,6 +329,21 @@ class DropdownPayloadTest extends ItemApiTest {
 	}
 
 	@Test
+	@DisplayName("[item-dropdown/R2-S9] A `correct` outside the range of an Integer is rejected with its path")
+	void aCorrectOutsideTheIntegerRangeIsRejectedWithItsPath() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+
+		// when teacher A adds an item of the type dropdown with a gap whose correct is 2147483648
+		var overflowing = addRaw(setup, "{\"segments\": [{\"type\": \"gap\", \"options\": [\"a\", \"b\"], \"correct\": 2147483648}]}");
+
+		// then the response is 400 VALIDATION_FAILED with INVALID_TYPE at payload.segments[0].correct
+		expectValidation(overflowing, error("payload.segments[0].correct", "INVALID_TYPE"));
+		// and the part has no item
+		assertEquals(0, countItems(setup.part()));
+	}
+
+	@Test
 	@DisplayName("[item-dropdown/R2-S10] `correct` is required and must point at an option")
 	void correctIsRequiredAndMustPointAtAnOption() {
 		// given a logged-in teacher A with a part

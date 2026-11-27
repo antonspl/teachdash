@@ -308,6 +308,29 @@ class ItemPayloadTest extends ItemApiTest {
 	}
 
 	@Test
+	@DisplayName("[items/R2-S14] A JSON integer outside the range of an Integer field is rejected as INVALID_TYPE")
+	void aJsonIntegerOutsideTheRangeOfAnIntegerFieldIsRejectedAsInvalidType() {
+		// given a logged-in teacher A with a part, and the type test-note whose optional rating is an Integer
+		var setup = teacherWithPart();
+
+		// when teacher A adds items of the type test-note with the ratings 2147483648, -2147483649 and 99999999999999999999, and then 2147483647
+		List<Response> overflowing = List.of(
+				setup.client().post(setup.items(), raw("test-note", "{\"text\": \"ok\", \"rating\": 2147483648}")),
+				setup.client().post(setup.items(), raw("test-note", "{\"text\": \"ok\", \"rating\": -2147483649}")),
+				setup.client().post(setup.items(), raw("test-note", "{\"text\": \"ok\", \"rating\": 99999999999999999999}")));
+		var maximum = setup.client().post(setup.items(), raw("test-note", "{\"text\": \"ok\", \"rating\": 2147483647}"));
+
+		// then the first three responses are 400 VALIDATION_FAILED with payload.rating INVALID_TYPE only
+		for (Response response : overflowing) {
+			assertValidation(response, error("payload.rating", "INVALID_TYPE"));
+		}
+		// and the last is 201 with rating 2147483647
+		maximum.then().statusCode(201).body("payload.rating", equalTo(2147483647));
+		// and the part has exactly 1 item
+		assertEquals(1, countItems(setup.part()));
+	}
+
+	@Test
 	@DisplayName("[items/R2-S13] A key is never echoed, even when its value is rejected")
 	void aKeyIsNeverEchoedEvenWhenItsValueIsRejected() {
 		// given a logged-in teacher A with a part
