@@ -141,15 +141,16 @@ class WordBoxItemTypeTest {
 	@Test
 	@DisplayName("[item-gap-fill-word-box/R1-S11] The student view of corrupt data throws")
 	void theStudentViewOfCorruptDataThrows() {
-		// given payload records built directly: an unknown segment type, a text without text, a null segment and a gap without an answer
+		// given payload records built directly: an unknown segment type, a text without text, a null segment a gap without an answer and a null extra word
 		var unknownType = new WordBoxPayload(List.of(new WordBoxSegment("image", null, null), gap("go")), null);
 		var nullText = new WordBoxPayload(List.of(new WordBoxSegment("text", null, null), gap("go")), null);
 		var nullSegment = new WordBoxPayload(Arrays.asList(gap("go"), null), null);
 		var nullAnswer = new WordBoxPayload(List.of(text("I "), new WordBoxSegment("gap", null, null)), null);
+		var nullExtraWord = new WordBoxPayload(List.of(text("I "), gap("go")), Arrays.asList("x", null));
 
 		// when studentView is called with each payload
 		// then each call throws IllegalStateException
-		for (WordBoxPayload payload : List.of(unknownType, nullText, nullSegment, nullAnswer)) {
+		for (WordBoxPayload payload : List.of(unknownType, nullText, nullSegment, nullAnswer, nullExtraWord)) {
 			assertThatThrownBy(() -> type.studentView(payload)).isInstanceOf(IllegalStateException.class);
 		}
 	}
