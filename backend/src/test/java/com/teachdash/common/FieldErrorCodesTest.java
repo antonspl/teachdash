@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 
+import jakarta.validation.Validation;
+import jakarta.validation.constraints.Size;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -67,5 +70,21 @@ class FieldErrorCodesTest {
 				.toList();
 
 		assertThat(fields).containsExactlyInAnyOrder("a[x]", "a.x", "a.b", "a..b", "a[01]", "a[1]");
+	}
+
+	private record Options(
+			@Size(min = 2, max = 5) List<String> options) {
+	}
+
+	@Test
+	@DisplayName("A list shorter than the Size minimum is TOO_SHORT and a longer than the maximum is TOO_LONG")
+	void aListBelowTheSizeMinimumIsTooShort() {
+		var validator = Validation.buildDefaultValidatorFactory().getValidator();
+
+		var tooShort = FieldErrorCodes.fromViolations(validator.validate(new Options(List.of("a"))));
+		var tooLong = FieldErrorCodes.fromViolations(validator.validate(new Options(List.of("a", "b", "c", "d", "e", "f"))));
+
+		assertThat(tooShort).containsExactly(new FieldErrorDetail("options", "TOO_SHORT"));
+		assertThat(tooLong).containsExactly(new FieldErrorDetail("options", "TOO_LONG"));
 	}
 }

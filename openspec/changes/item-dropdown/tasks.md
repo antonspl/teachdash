@@ -2,13 +2,13 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add stubs so the tests compile and fail at their THEN step: `DropdownPayload`, `DropdownSegment` and `DropdownItemType` (code `dropdown`; `studentView` and `extraChecks` return a placeholder, each marked STUB); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
-- [ ] 1.2 Add the test helper `items/support/DropdownPayloads` (copied from `GapFillPayloads`, adapted to `options` and `correct`)
-- [ ] 1.3 Write tests for item-dropdown R1-S1 to R1-S7 in `items/api/DropdownItemTest` (helpers of `ItemApiTest`: `teacherWithPart`, `body`, `expectValidation`, `expectNotFound`, `assertStoredPayload`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step
-- [ ] 1.4 Write tests for item-dropdown R1-S8 and R1-S9 in `items/domain/dropdown/DropdownItemTypeTest` (unit level; both assert the `{"segments": [...]}` wrapper; application JSON mapper for the serialisation test); verify each fails at its THEN step
-- [ ] 1.5 Write tests for item-dropdown R2-S1 to R2-S14 in `items/api/DropdownPayloadTest`; build the large payloads (51 segments, 500-letter texts, 100-letter options, emoji texts and options counted in UTF-16 units: 250 and 251 emoji in a text, 50 and 51 in an option) in test helpers; verify each fails at its THEN step
-- [ ] 1.6 Write unit tests without a scenario ID: the strict mapper still gives `UNKNOWN_FIELD` for an unknown property on `DropdownSegment`, and `INVALID_TYPE` for a string boolean or fractional `correct` (design D2); and `@Size(min = 2)` on a list gives `TOO_SHORT` in `FieldErrorCodes` (design D3)
-- [ ] 1.7 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test whose behaviour is missing fails at its THEN step, not in setup (tests whose behaviour the generic code already provides are expected green on the stubs: generic add/edit/list/scoping, accept paths, NUL/surrogate handling, JSON type errors, the D2 strict-mapper tests), and every scenario ID has a test
+- [x] 1.1 Add stubs so the tests compile and fail at their THEN step: `DropdownPayload`, `DropdownSegment` and `DropdownItemType` (code `dropdown`; `studentView` and `extraChecks` return a placeholder, each marked STUB); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
+- [x] 1.2 Add the test helper `items/support/DropdownPayloads` (copied from `GapFillPayloads`, adapted to `options` and `correct`)
+- [x] 1.3 Write tests for item-dropdown R1-S1 to R1-S7 in `items/api/DropdownItemTest` (helpers of `ItemApiTest`: `teacherWithPart`, `body`, `expectValidation`, `expectNotFound`, `assertStoredPayload`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step
+- [x] 1.4 Write tests for item-dropdown R1-S8 and R1-S9 in `items/domain/dropdown/DropdownItemTypeTest` (unit level; both assert the `{"segments": [...]}` wrapper; application JSON mapper for the serialisation test); verify each fails at its THEN step
+- [x] 1.5 Write tests for item-dropdown R2-S1 to R2-S14 in `items/api/DropdownPayloadTest`; build the large payloads (51 segments, 500-letter texts, 100-letter options, emoji texts and options counted in UTF-16 units: 250 and 251 emoji in a text, 50 and 51 in an option) in test helpers; verify each fails at its THEN step
+- [x] 1.6 Write unit tests without a scenario ID: the strict mapper still gives `UNKNOWN_FIELD` for an unknown property on `DropdownSegment`, and `INVALID_TYPE` for a string boolean or fractional `correct` (design D2); and `@Size(min = 2)` on a list gives `TOO_SHORT` in `FieldErrorCodes` (design D3)
+- [x] 1.7 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test whose behaviour is missing fails at its THEN step, not in setup (tests whose behaviour the generic code already provides are expected green on the stubs: generic add/edit/list/scoping, accept paths, NUL/surrogate handling, JSON type errors, the D2 strict-mapper tests), and every scenario ID has a test
 
 ## 2. Test review
 
