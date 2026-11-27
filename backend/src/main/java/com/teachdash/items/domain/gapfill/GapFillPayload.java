@@ -2,7 +2,10 @@ package com.teachdash.items.domain.gapfill;
 
 import java.util.List;
 
-// STUB: no validation yet (task 3.1)
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
 public record GapFillPayload(
-		List<GapFillSegment> segments) {
+		@NotEmpty @Size(max = 51) List<@Valid GapFillSegment> segments) {
 }

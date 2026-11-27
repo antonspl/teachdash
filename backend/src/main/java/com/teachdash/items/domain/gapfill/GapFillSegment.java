@@ -2,9 +2,10 @@ package com.teachdash.items.domain.gapfill;
 
 import java.util.List;
 
-// STUB: no validation yet (task 3.1)
+import jakarta.validation.constraints.Size;
+
 public record GapFillSegment(
 		String type,
-		String text,
-		List<String> answers) {
+		@Size(max = 500) String text,
+		@Size(max = 5) List<String> answers) {
 }
