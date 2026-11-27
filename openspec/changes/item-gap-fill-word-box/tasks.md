@@ -24,6 +24,7 @@
 - [x] 3.6 `WordBoxItemType.studentView` as an allowlist (design D5): the `{"segments", "wordBox"}` envelope, the sorted and seeded shuffle, throws on corrupt data; verify R1-S8 to R1-S11 pass
 - [x] 3.7 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no answer or word is logged (constitution section 5)
 - [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.9 Code-gate fixes: `wordBox` throws on a null word, `checkWord` returns whether the word is valid, the student-view records move to the end of the class, design D4 states that a word with a length or blank error is not checked for duplicates
 
 ## Workflow follow-up
 

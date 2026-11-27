@@ -59,11 +59,13 @@ public class WordBoxItemType implements ItemType<WordBoxPayload> {
 
 	private List<String> wordBox(WordBoxPayload payload) {
 		List<String> words = new ArrayList<>();
-		payload.segments().stream()
-				.filter(segment -> GAP.equals(segment.type()))
-				.forEach(segment -> words.add(segment.answer()));
+		for (WordBoxSegment segment : payload.segments()) {
+			if (GAP.equals(segment.type())) {
+				words.add(requireWord(segment.answer()));
+			}
+		}
 		if (payload.extraWords() != null) {
-			words.addAll(payload.extraWords());
+			payload.extraWords().forEach(word -> words.add(requireWord(word)));
 		}
 		Collections.sort(words);
 		long seed = String.join("\u0000", words).hashCode();
@@ -71,29 +73,11 @@ public class WordBoxItemType implements ItemType<WordBoxPayload> {
 		return words;
 	}
 
-	record StudentView(
-			List<StudentSegment> segments,
-			List<String> wordBox) {
-	}
-
-	sealed interface StudentSegment permits TextView, GapView {
-	}
-
-	record TextView(
-			String text) implements StudentSegment {
-
-		@JsonProperty(value = "type", index = 0)
-		public String type() {
-			return TEXT;
+	private String requireWord(String word) {
+		if (word == null) {
+			throw new IllegalStateException("Cannot build a word box with a null word");
 		}
-	}
-
-	record GapView() implements StudentSegment {
-
-		@JsonProperty("type")
-		public String type() {
-			return GAP;
-		}
+		return word;
 	}
 
 	@Override
@@ -163,13 +147,16 @@ public class WordBoxItemType implements ItemType<WordBoxPayload> {
 		checkWord(segment.answer(), path + ".answer", errors);
 	}
 
-	private void checkWord(String word, String path, List<FieldErrorDetail> errors) {
+	private boolean checkWord(String word, String path, List<FieldErrorDetail> errors) {
 		if (word == null || word.isBlank()) {
 			errors.add(new FieldErrorDetail(path, FieldErrorCodes.REQUIRED));
+			return false;
 		}
-		else if (word.length() > MAX_WORD_LENGTH) {
+		if (word.length() > MAX_WORD_LENGTH) {
 			errors.add(new FieldErrorDetail(path, FieldErrorCodes.TOO_LONG));
+			return false;
 		}
+		return true;
 	}
 
 	private void checkExtraWords(WordBoxPayload payload, List<FieldErrorDetail> errors) {
@@ -180,9 +167,7 @@ public class WordBoxItemType implements ItemType<WordBoxPayload> {
 		for (int i = 0; i < payload.extraWords().size(); i++) {
 			String word = payload.extraWords().get(i);
 			String path = "extraWords[" + i + "]";
-			int before = errors.size();
-			checkWord(word, path, errors);
-			if (errors.size() == before && !taken.add(word)) {
+			if (checkWord(word, path, errors) && !taken.add(word)) {
 				errors.add(new FieldErrorDetail(path, FieldErrorCodes.INVALID_FORMAT));
 			}
 		}
@@ -196,5 +181,30 @@ public class WordBoxItemType implements ItemType<WordBoxPayload> {
 			}
 		}
 		return answers;
+	}
+
+	record StudentView(
+			List<StudentSegment> segments,
+			List<String> wordBox) {
+	}
+
+	sealed interface StudentSegment permits TextView, GapView {
+	}
+
+	record TextView(
+			String text) implements StudentSegment {
+
+		@JsonProperty(value = "type", index = 0)
+		public String type() {
+			return TEXT;
+		}
+	}
+
+	record GapView() implements StudentSegment {
+
+		@JsonProperty("type")
+		public String type() {
+			return GAP;
+		}
 	}
 }
