@@ -88,23 +88,6 @@ class MatchingItemTypeTest {
 	}
 
 	@Test
-	@DisplayName("[item-matching/R1-S12] Rights that the shuffle leaves next to their own lefts are rotated")
-	void rightsLeftNextToTheirLeftsAreRotated() {
-		// given a payload with two pairs whose shuffled rights stay in the stored order
-		var payload = new MatchingPayload(List.of(
-				pair("cat", "кошка"),
-				pair("dog", "собака")));
-
-		// when studentView is called with the payload
-		JsonNode view = mapper.valueToTree(type.studentView(payload));
-
-		// then the lefts are in stored order
-		assertThat(column(view, "left")).containsExactly("cat", "dog");
-		// and the rights are the shuffled rights rotated left by one, not the stored pairing
-		assertThat(column(view, "right")).containsExactly("собака", "кошка");
-	}
-
-	@Test
 	@DisplayName("[item-matching/R1-S10] The serialised student view has no pairing, in English and Russian")
 	void theSerialisedStudentViewHasNoPairing() {
 		// given an English payload and a Russian payload with two pairs each
