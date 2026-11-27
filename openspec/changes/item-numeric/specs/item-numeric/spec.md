@@ -49,7 +49,7 @@ The type `numeric` SHALL have the payload `{questions: [{text, answer, tolerance
 - **THEN** each call throws `IllegalStateException` and returns no view, and no message contains a stored text, number or unit
 
 ### Requirement: R2 A numeric payload follows the limits and format rules
-A `numeric` payload SHALL follow items R2. Questions: 1 to 25; `text` non-blank, at most 500 (UTF-16); `unit` optional, when present non-blank, at most 20. `answer` and `tolerance` match `-?` digits `(.digits)?` with 1-15 integer and 1-10 fraction digits (`tolerance` without the minus). Missing, `null` or blank lists, texts, numbers and a `null` question or blank unit: `REQUIRED`; over a maximum `TOO_LONG`; a number off the format `INVALID_FORMAT`; wrong JSON type `INVALID_TYPE`.
+A `numeric` payload SHALL follow items R2. Questions: 1 to 25; `text` non-blank, at most 500 (UTF-16); `unit` optional, when present non-blank (checked first), at most 20. `answer` and `tolerance`: digits with an optional "." part, 1-15 and 1-10 digits; `answer` may have a minus, `tolerance` not ("-0" is rejected). Missing, `null` or blank values, a `null` question, a blank unit: `REQUIRED`; over a maximum `TOO_LONG`; bad number `INVALID_FORMAT`; wrong JSON type `INVALID_TYPE`.
 
 #### Scenario: item-numeric/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
@@ -73,8 +73,8 @@ A `numeric` payload SHALL follow items R2. Questions: 1 to 25; `text` non-blank,
 
 #### Scenario: item-numeric/R2-S5 A unit may be absent or null, but a present unit must not be blank
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `numeric` with one question `{"text": "Q", "answer": "1", "tolerance": "0"}` that has no `unit`, `"unit": null`, `"unit": ""`, `"unit": "   "` and `"unit": "\t"`
-- **THEN** the first two responses are 201 and the stored payload has no `unit` property (the `null` is dropped), the last three are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].unit", code: "REQUIRED"}]`, and the part has exactly two items
+- **WHEN** teacher A adds items of the type `numeric` with one question `{"text": "Q", "answer": "1", "tolerance": "0"}` that has no `unit`, `"unit": null`, `"unit": ""`, `"unit": "   "`, `"unit": "\t"` and a `unit` of 21 spaces
+- **THEN** the first two responses are 201 and the stored payload has no `unit` property (the `null` is dropped), the last four are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].unit", code: "REQUIRED"}]`, and the part has exactly two items (21 spaces are blank, not too long)
 
 #### Scenario: item-numeric/R2-S6 A missing, null, empty or blank answer or tolerance is required
 - **GIVEN** a logged-in teacher A with a part
@@ -111,7 +111,7 @@ A `numeric` payload SHALL follow items R2. Questions: 1 to 25; `text` non-blank,
 - **WHEN** teacher A adds items of the type `numeric` with a question `{"text": "a\u0000b", "answer": "1", "tolerance": "0"}`, with a question whose unit is `"k\u0000m"`, and with a question text `"a\ud800b"` (JSON escapes: a NUL and a lone high surrogate are characters of the string)
 - **THEN** all three responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_FORMAT"}]` (no nested path, not 500), no body contains the rejected value, and the part has no item
 
-#### Scenario: item-numeric/R2-S13 Bean Validation errors come together, a null question and a blank unit come after
+#### Scenario: item-numeric/R2-S13 Bean Validation errors come together, a null question and a bad unit come after
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `numeric` with: (a) one question with a text of 501 English letters ("a"), the answer "abc" and the tolerance "-1"; (b) the questions `[{"text": "Q1", "answer": "1", "tolerance": "0", "unit": "  "}, null]`; (c) the questions `[{"text": "Q1", "answer": "1", "tolerance": "0", "unit": "  "}, null, {"text": "Q3", "answer": "x", "tolerance": "0"}]`
-- **THEN** (a) is 400 with `errors` exactly `[{field: "payload.questions[0].answer", code: "INVALID_FORMAT"}, {field: "payload.questions[0].text", code: "TOO_LONG"}, {field: "payload.questions[0].tolerance", code: "INVALID_FORMAT"}]` (sorted by field), (b) has `errors` exactly `[{field: "payload.questions[0].unit", code: "REQUIRED"}, {field: "payload.questions[1]", code: "REQUIRED"}]`, (c) has `errors` exactly `[{field: "payload.questions[2].answer", code: "INVALID_FORMAT"}]` (the blank unit and the null question are not reported yet), and the part has no item
+- **WHEN** teacher A adds items of the type `numeric` with: (a) one question with a text of 501 English letters ("a"), the answer "abc" and the tolerance "-1"; (b) the questions `[{"text": "Q1", "answer": "1", "tolerance": "0", "unit": "  "}, null]`; (c) the questions `[{"text": "Q1", "answer": "1", "tolerance": "0", "unit": "  "}, null, {"text": "Q3", "answer": "x", "tolerance": "0"}]`; (d) 26 questions, the first 25 valid `{"text": "Q", "answer": "1", "tolerance": "0"}` and the 26th `null`
+- **THEN** (a) is 400 with `errors` exactly `[{field: "payload.questions[0].answer", code: "INVALID_FORMAT"}, {field: "payload.questions[0].text", code: "TOO_LONG"}, {field: "payload.questions[0].tolerance", code: "INVALID_FORMAT"}]` (sorted by field), (b) has `errors` exactly `[{field: "payload.questions[0].unit", code: "REQUIRED"}, {field: "payload.questions[1]", code: "REQUIRED"}]`, (c) has `errors` exactly `[{field: "payload.questions[2].answer", code: "INVALID_FORMAT"}]` (the blank unit and the null question are not reported yet), (d) has `errors` exactly `[{field: "payload.questions", code: "TOO_LONG"}]` (the null question is not reported yet), and the part has no item
