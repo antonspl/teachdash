@@ -251,7 +251,7 @@ class GapFillPayloadTest extends ItemApiTest {
 			expectValidation(response, error("payload", "UNKNOWN_FIELD"));
 		}
 		assertNoEcho(unknownInSegment, "hint");
-		assertNoEcho(unknownInPayload, "title");
+		assertNoEcho(unknownInPayload, "Intro");
 		assertNoEcho(gapWithId, "seg-7731");
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
