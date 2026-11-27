@@ -12,11 +12,12 @@ Issue #218. The engineer's decisions, as given:
 | 4 | Limits? | At most 51 segments and at most 25 gaps (`TOO_LONG` at `payload.segments`); text at most 500 characters; 2 to 5 options per gap (`TOO_SHORT` or `TOO_LONG` at `.options`; missing or `null` options is `REQUIRED`); option at most 100 characters; lengths in UTF-16 units as items R5. |
 | 5 | Option rules? | A null or blank option (`Character.isWhitespace` rule, as gap-fill Clarification 16) is `REQUIRED` at `options[j]`; an exact-match duplicate in one gap is `INVALID_FORMAT` at the later index; no trim and no case folding ("Go" and "go" differ; "ё" and "е" differ); the same option in two gaps is allowed; options are stored raw. |
 | 6 | `correct`? | Missing or `null` is `REQUIRED` at `.correct`; out of range (below 0 or at least the options size) is `INVALID_FORMAT` at `.correct`; a wrong JSON type is `INVALID_TYPE` (binding). The range check is skipped when `options` itself has an error. |
-| 7 | Migration, error codes, items spec? | No Flyway migration, no new error code, no change to `openspec/specs/items/spec.md` (no `items` delta, so parallel item-type branches do not conflict; the generic rules already apply). |
+| 7 | Migration, error codes, items spec? | No Flyway migration, no new error code, no change to `openspec/specs/items/spec.md` (amended by Clarification 12) (no `items` delta, so parallel item-type branches do not conflict; the generic rules already apply). |
 | 8 | Student view? | `studentView` is an allowlist returning `{"segments": [...]}`: text segments as `{type, text}`, gaps as `{type: "gap", options: [...]}` with the options in stored order, no `correct` and no index; a fixed key order (`type` first); it throws on an unknown type (corrupt data only). Unit tests, including a serialisation test that the JSON contains no `correct` key. No REST scenario until #125. |
 | 9 | Error order? | Errors are sorted by field with list indexes compared as numbers (already in the generic code). |
 | 10 | Out of scope? | Answer checking (#126), the student endpoint (#125), the editor (a frontend issue like #120), shuffling of options, per-gap points and hints. |
 | 11 | Amends 4: the `@Size(min)` fallback? | Dropped: `FieldErrorCodes` maps `@Size(min)` to `TOO_SHORT`, so the minimum is `@Size(min = 2)` in Bean Validation with no fallback. A unit test keeps the mapping checked. |
+| 12 | A JSON integer out of the `Integer` range? | It gives 500 on `main` today: Jackson's `InputCoercionException` is not a `DatabindException`, so `JacksonErrors.codeOf` and `ApiException.fromJackson` rethrow it (verified by a probe). It is fixed in this PR as a generic rule: such a value (for example `correct` or test-note `rating` 2147483648, -2147483649 or 99999999999999999999) gives 400 `VALIDATION_FAILED` with `INVALID_TYPE` at the field path, the same as a float in an integer field, never 500. |
 
 ## Research angles
 
@@ -35,7 +36,7 @@ Gap-fill asks the student to type a word. A dropdown item ("choose the option") 
 - New item type `dropdown` with the payload `{segments: [{type: "text", text} | {type: "gap", options: [...], correct}]}`, added and edited through the existing item endpoints (items R1, R4).
 - Limits and per-type validation (design D2, D3), reported with the existing error codes.
 - `DropdownItemType.studentView`: an allowlist projection with the options and without `correct`. No endpoint uses it yet (#125).
-- No migration, no new error code, no change to existing endpoints and no change to the `items` spec (Clarification 7).
+- No migration, no new error code, no change to existing endpoints and, except the generic integer-overflow rule (Clarification 12), no change to the `items` spec.
 
 ## Capabilities
 
@@ -43,12 +44,13 @@ Gap-fill asks the student to type a word. A dropdown item ("choose the option") 
 - `item-dropdown`: R1 (a teacher adds and edits a dropdown item; the student view hides the correct mark) and R2 (limits and validation of the payload).
 
 ### Modified Capabilities
-None.
+- `items`: R2 gets one sentence and a scenario (R2-S14): a JSON integer outside the `Integer` range gives `INVALID_TYPE`, not 500 (Clarification 12). Other item types with `Integer` fields rely on it. This is the only `items` change.
 
 ## Impact
 
-- Backend: new `items/domain/dropdown/DropdownItemType`, `DropdownPayload` and `DropdownSegment`. No controller, service, repository, registry or shared-class change.
+- Backend: new `items/domain/dropdown/DropdownItemType`, `DropdownPayload` and `DropdownSegment`. No controller, service, repository or registry change; the only shared-class change is the integer-overflow fix (Clarification 12).
 - Tests: `items/api/DropdownItemTest` (REST scenarios R1-S1 to R1-S7), `items/api/DropdownPayloadTest` (REST scenarios R2-S1 to R2-S14), `items/domain/dropdown/DropdownItemTypeTest` (unit scenarios R1-S8, R1-S9) and the helper `items/support/DropdownPayloads`.
+- Shared code, by Clarification 12: `JacksonErrors` and `ApiException.fromJackson` map `InputCoercionException` to `INVALID_TYPE`. Test: items R2-S14 in the items tests.
 - No new dependency, no migration, no new error code, no change to security configuration or Caddy.
 
 ## Out of scope

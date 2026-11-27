@@ -26,6 +26,13 @@
 - [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 - [x] 3.9 Slice-review fixes: `checkType` and `checkGapCount` helpers extracted from `extraChecks`; the limits are public constants in `DropdownItemType`, also used by the record annotations
 
+## 4. Integer overflow (amendment)
+
+- [ ] 4.1 Failing tests: items R2-S14 (test-note `rating` 2147483648, -2147483649, 99999999999999999999 and the accepted 2147483647) in the items payload tests, and the `correct` 2147483648 case of item-dropdown R2-S9; verify each overflow case fails at its THEN step with 500 (not in setup)
+- [ ] 4.2 Engineer approves the tests of 4.1 in the PR. HARD STOP: no production code before approval
+- [ ] 4.3 Map `InputCoercionException` to `INVALID_TYPE` at the field path in `JacksonErrors` and `ApiException.fromJackson` (design D8); verify items R2-S14 and R2-S9 pass
+- [ ] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+
 ## Workflow follow-up
 
 - Code review gate: the `code-gate-reviewer` runs, then the engineer approves the code in the PR.

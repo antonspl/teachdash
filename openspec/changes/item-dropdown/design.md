@@ -34,6 +34,8 @@ See proposal.md. Items hold a registered type (`ItemType<P>`, collected by `Item
 
 **D7. Teacher scoping and languages.** Unchanged: every query on items is scoped by the current teacher (constitution section 8; items R1-S6, R1-S7 and the edit equivalents); R1-S7 here checks the dropdown add and edit with another teacher. Content is plain Unicode text; scenarios use English and Russian (constitution section 9) and no language is hard-coded. No option text is logged (constitution section 5).
 
+**D8. Integer overflow is `INVALID_TYPE` (Clarification 12).** Jackson reports a JSON integer outside the `Integer` range (for `correct`, or test-note `rating`) as `InputCoercionException`, which is not a `DatabindException`; `JacksonErrors.codeOf` and `ApiException.fromJackson` rethrow it, giving 500. Both map it to `INVALID_TYPE` at the field path, as for a float in an integer field. This changes shared classes, accepted here because it is a generic bug that every item type with an `Integer` field would hit; the dropdown rules above stay inside their package. Covered by items R2-S14 and the `correct` case of item-dropdown R2-S9.
+
 ## Risks / Trade-offs
 
 - [The correct option is only an index, so reordering options in an editor must update it] -> An editor concern; the backend validates the pair on every write (D4).
