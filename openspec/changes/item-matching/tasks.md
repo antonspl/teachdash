@@ -15,11 +15,11 @@
 
 ## 3. Implementation (backend)
 
-- [ ] 3.1 `MatchingPayload` and `MatchingPair` with the Bean Validation of design D2 (`@NotEmpty @Size(min = 2, max = 25)` and `List<@Valid MatchingPair>`). `MatchingItemType.extraChecks` stays the empty placeholder from 1.1 until 3.2, so in this step R2-S1, R2-S2 (a), R2-S3 (the `{}`, `null`, `[]` and one-pair cases), R2-S9, R2-S10 (a) and (b) and R2-S11 pass; every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
-- [ ] 3.2 `MatchingItemType.extraChecks`: the null pair, the `left` and `right` rules (blank, length, exact duplicates per side, a value with its own error not compared; design D2); verify R1-S6, R2-S2 (b) to (e), R2-S4, R2-S5, R2-S6, R2-S7, R2-S8 and R2-S10 (c) pass
-- [ ] 3.3 `MatchingItemType.studentView` as an allowlist with the sort, the seed and the shuffle of design D4, throwing on corrupt data; verify R1-S8, R1-S9, R1-S10 and R1-S11 pass
-- [ ] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5 and R1-S7); check that the payload records have `@Size` on the list, no `Map` field, and that no pair text is logged (constitution section 5)
-- [ ] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `MatchingPayload` and `MatchingPair` with the Bean Validation of design D2 (`@NotEmpty @Size(min = 2, max = 25)` and `List<@Valid MatchingPair>`). `MatchingItemType.extraChecks` stays the empty placeholder from 1.1 until 3.2, so in this step R2-S1, R2-S2 (a), R2-S3 (the `{}`, `null`, `[]` and one-pair cases), R2-S9, R2-S10 (a) and (b) and R2-S11 pass; every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
+- [x] 3.2 `MatchingItemType.extraChecks`: the null pair, the `left` and `right` rules (blank, length, exact duplicates per side, a value with its own error not compared; design D2); verify R1-S6, R2-S2 (b) to (e), R2-S4, R2-S5, R2-S6, R2-S7, R2-S8 and R2-S10 (c) pass
+- [x] 3.3 `MatchingItemType.studentView` as an allowlist with the sort, the seed and the shuffle of design D4, throwing on corrupt data; verify R1-S8, R1-S9, R1-S10 and R1-S11 pass
+- [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5 and R1-S7); check that the payload records have `@Size` on the list, no `Map` field, and that no pair text is logged (constitution section 5)
+- [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
