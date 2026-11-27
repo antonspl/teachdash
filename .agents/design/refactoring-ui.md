@@ -54,7 +54,7 @@ See `refactoring-ui-patterns.md` for components beyond static layout: interactio
 
 | Context | Spacing strategy | Example |
 |---------|-----------------|---------|
-| **Icon + label** | Tight coupling | `--space-adjacent` keeps them connected |
+| **Icon + label** | Tight coupling | `--space-inline` keeps them connected |
 | **Field to field** | Between blocks of a group | `--space-block` |
 | **Box sections** | Inside a group | `--space-group` between title, content and actions |
 | **Page sections** | Major sections | `--space-section` |

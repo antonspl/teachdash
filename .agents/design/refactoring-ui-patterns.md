@@ -69,7 +69,7 @@ Buttons sit in a `src/ui/` ButtonRow (`--space-button-gap`) and never touch fiel
 ## Icon usage
 
 - **Sizing:** icons balance with the text next to them: about the height of a capital letter inline, a bit larger in icon-only buttons. Size them in `em` or through a role-named token, so they follow the text.
-- **Pairing:** align the icon centre with the text centre, with a consistent gap (`--space-adjacent`), as the `src/ui/` Button does for its `plus` icon.
+- **Pairing:** align the icon centre with the text centre, with a consistent gap (`--space-inline`), as the `src/ui/` Button does for its `plus` icon.
 - **Use icons for:** navigation items; common actions (edit, delete, share); status, always with text (`src/ui/` StatusBadge); feature lists, with caution.
 - **Don't use icons:** to fill space; on buttons with clear text ("Save", "Continue"); as decoration that adds no meaning. When a decorative icon stays, give it `aria-hidden="true"`.
 
