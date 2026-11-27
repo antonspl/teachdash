@@ -64,6 +64,8 @@ Space, each use by role (file:line, old to new):
 | `List:36` badges gap | `--space-inline` |
 | `List:41` details margin-top | `--space-adjacent` |
 | `List:46` extra margin-top | `--space-group` |
+| `List .details` (a column of detail lines, each its own `Text`) | `display: flex; flex-direction: column; gap: var(--space-adjacent)`, and `.details > * { margin: 0; }` resets the children's margins (Clarification 18); the buttons keep their ButtonRow spacing |
+| `Page .page > [role='status']` (new rule, kept from 7bec8f3) | `margin-bottom: var(--space-block)`: space below a banner directly in the page (login session-ended, admin action-error, cabinet logout-error); follows `.form > [role='status']` (Clarification 17) |
 | `ErrorWithRetry:5` gap | `--space-group` |
 | `Text:2` margin-bottom | `--space-block` |
 | `Form:2` margin-bottom | `--space-block` (Clarification 14) |
@@ -109,13 +111,13 @@ The decorative edges are below 3:1 by design (design-code "Colour"), so `--color
 
 ### D9 Interim deviations for 3b
 
-Two things differ from the design code on purpose until 3b (#198) finishes them: the Dialog edge is `--color-divider` (the design code wants no border and `--shadow-overlay`, Clarification 3), and the IssuedLink input has the sunken fill (3b territory, pulled in by Clarification 10). The PR description mentions both.
+Two things differ from the design code on purpose until 3b (#198) finishes them: the Dialog edge is `--color-divider` (the design code wants no border and `--shadow-overlay`, Clarification 3), and the IssuedLink input has the sunken fill (3b territory, pulled in by Clarification 10). The PR description mentions both. Also for 3b: the `Page` banner rule `.page > [role='status']` (D3, Clarification 17) must be extended to `[role='alert']` when #198 turns error banners into `role="alert"`.
 
 ## UI design
 
 ### Screens touched
 
-Every screen, through shared tokens and `src/ui` components: login, set-password, admin teachers (list and dialogs), profile, cabinet stubs, not found and the startup error. No layout or markup changes except the select chevron (D5), the removed green variant and the header edge.
+Every screen, through shared tokens and `src/ui` components: login, set-password, admin teachers (list and dialogs), profile, cabinet stubs, not found and the startup error. No layout or markup changes except the select chevron (D5), the removed green variant, the header edge and two spacing rules: the space below a banner directly in the page (`Page`, login, admin and cabinet banners; Clarification 17) and the column of detail lines in an admin card (`List .details`; Clarification 18).
 
 ### Layout (desktop and 360)
 

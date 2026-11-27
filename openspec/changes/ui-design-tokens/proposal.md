@@ -22,6 +22,8 @@ Decisions by the engineer:
 14. List row gap is `--space-group`; List and Form bottom margin are `--space-block` (screens keep tightening).
 15. IssuedLink inner gap (label, input, note in a column) is `--space-inline`.
 16. AppHeader padding stays two-axis: `var(--space-inline) var(--space-group)` (vertical, horizontal); its gap is `var(--space-inline) var(--space-group)`.
+17. Keep the rule added in 7bec8f3: `frontend/src/ui/Page.module.css` `.page > [role='status'] { margin-bottom: var(--space-block); }`, the space below a banner that sits directly in the page (login session-ended, admin action-error, cabinet logout-error). The defect was already on `main`; the rule follows the existing `.form > [role='status']` pattern (the parent spaces its child). #198 turns error banners into `role="alert"` and must extend this selector to `[role='alert']`.
+18. Fix the inverted admin card spacing this PR introduced: each detail line in a card is its own `<Text>` with `margin-bottom: var(--space-block)` (20px), while the card padding and the gap between cards are `--space-group` (12px). In `List.module.css`, `.details` becomes a column with `gap: var(--space-adjacent)` and its children's margins are reset (`.details > * { margin: 0; }`); the buttons keep their ButtonRow spacing.
 
 ## Research angles and conclusions
 

@@ -27,6 +27,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 ## 4. After screenshots
 
 - [x] 4.1 Take the final set in `frontend/screenshots/ui-design-tokens/`: same states and widths as the before set; check by eye the tightened spacing, header edge, chevron inset, 360 and Russian wrapping, control borders; list unreachable states
+- [ ] 4.2 Review fixes: anchor the R27-S2 test; normalise whitespace in the R28-S2 test; in two vendored-doc lines change `--space-adjacent` to `--space-inline` for icon and label; `List .details` spacing (Clarification 18); keep the `Page` banner rule (Clarification 17); retake the whole screenshot set
 
 ## 5. Decorative borders note
 
