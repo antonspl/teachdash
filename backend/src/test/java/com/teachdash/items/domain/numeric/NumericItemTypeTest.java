@@ -88,6 +88,7 @@ class NumericItemTypeTest {
 
 		// then both views are equal and their question texts are exactly Q3, Q1, Q2
 		assertThat(second).isEqualTo(first);
+		assertThat(propertyNames(first)).containsExactly("questions");
 		assertThat(textsOf(first)).containsExactly("Q3", "Q1", "Q2");
 	}
 
