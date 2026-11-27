@@ -15,11 +15,11 @@
 
 ## 3. Implementation (backend)
 
-- [ ] 3.1 `NumericPayload` and `NumericQuestion` with the Bean Validation of design D3 (`@NotEmpty @Size(max = 25)` and `List<@Valid NumericQuestion>`; `@NotBlank @Size(max = 500)` on `text`; `@NotBlank @Pattern` on `answer` and `tolerance`; no Bean Validation on `unit`). `extraChecks` stays the empty placeholder until 3.2, so in this step R1-S1 to R1-S5, R2-S1, R2-S2 (a), (b), (e), R2-S4, R2-S6 to R2-S12 and the Bean Validation cases of R2-S13 pass, and the scenarios that need `extraChecks` (the `null` question in R2-S3, the `unit` cases of R2-S2 (c), (d) and R2-S5, the `extraChecks` cases of R2-S13) still fail at their THEN step; verify exactly that
-- [ ] 3.2 `extraChecks`: a `null` question (`REQUIRED`); a present `unit`, blank first (`REQUIRED` at `.unit`) then over 20 (`TOO_LONG`); verify R2-S2 (c), (d), R2-S3, R2-S5 and R2-S13 pass
-- [ ] 3.3 `NumericItemType.studentView` as an allowlist (design D5): the `{"questions"}` envelope, `unit` only when present, stored order, throws on corrupt data; verify R1-S6 to R1-S9 pass
-- [ ] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5); check that the payload records have `@Size` on the list and on each text field, no `Map` field, that no shared class changed, and that no question, number or unit is logged (constitution section 5)
-- [ ] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `NumericPayload` and `NumericQuestion` with the Bean Validation of design D3 (`@NotEmpty @Size(max = 25)` and `List<@Valid NumericQuestion>`; `@NotBlank @Size(max = 500)` on `text`; `@NotBlank @Pattern` on `answer` and `tolerance`; no Bean Validation on `unit`). `extraChecks` stays the empty placeholder until 3.2, so in this step R1-S1 to R1-S5, R2-S1, R2-S2 (a), (b), (e), R2-S4, R2-S6 to R2-S12 and the Bean Validation cases of R2-S13 pass, and the scenarios that need `extraChecks` (the `null` question in R2-S3, the `unit` cases of R2-S2 (c), (d) and R2-S5, the `extraChecks` cases of R2-S13) still fail at their THEN step; verify exactly that
+- [x] 3.2 `extraChecks`: a `null` question (`REQUIRED`); a present `unit`, blank first (`REQUIRED` at `.unit`) then over 20 (`TOO_LONG`); verify R2-S2 (c), (d), R2-S3, R2-S5 and R2-S13 pass
+- [x] 3.3 `NumericItemType.studentView` as an allowlist (design D5): the `{"questions"}` envelope, `unit` only when present, stored order, throws on corrupt data; verify R1-S6 to R1-S9 pass
+- [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5); check that the payload records have `@Size` on the list and on each text field, no `Map` field, that no shared class changed, and that no question, number or unit is logged (constitution section 5)
+- [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

@@ -2,7 +2,12 @@ package com.teachdash.items.domain.numeric;
 
 import java.util.List;
 
-// STUB: no validation yet (tasks 3.1)
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
 public record NumericPayload(
-		List<NumericQuestion> questions) {
+		@NotEmpty @Size(max = MAX_QUESTIONS) List<@Valid NumericQuestion> questions) {
+
+	public static final int MAX_QUESTIONS = 25;
 }
