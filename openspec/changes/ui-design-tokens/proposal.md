@@ -17,6 +17,11 @@ Decisions by the engineer:
 9. #168: a Vitest test computes contrast from the `tokens.css` values: `--color-control-border` is at least 3:1 against every background it can sit on (surface, background, surface-sunken, rail, accent-subtle, and the neutral, success and danger backgrounds). `design.md` lists the decorative borders (divider and tree-guide: List item edge, IssuedLink box, Dialog edge, AppHeader bottom, rows, panes, bars, the progress track) as decorative, below 3:1 by design (design-code "Colour").
 10. Confirmed as decided by the sources: the Button `success` variant and `--color-action-success-*` are removed; "Add teacher" (keeps its plus icon) and "Create teacher" use the default accent primary. `Button.danger` fill moves to `--color-danger-action` (its hover token is unused until 3a). The IssuedLink input fill is `--color-surface-sunken` with a control-border edge. StatusMessage loses its shadow with no replacement. List item and IssuedLink box keep a divider edge and have no shadow. The row "Deactivate" (`AdminTeachersPage.tsx:114`) stays a filled danger button until 3a or 6a. Only overlays keep `--shadow-overlay` (unused until later steps). `tokens.css` holds exactly the design-code token tables, including tokens nothing uses yet.
 11. Before screenshots: the `frontend-implementer` takes the before set from `main` before the first slice (its role's before-set exception) into `frontend/screenshots/ui-design-tokens/before/`, reusing the design-audit state list (login x5, set-password x6, admin x11 including dialogs, profile x9, cabinet x2, not found, startup error), at desktop and 360. The after set has the same states. This is the first task.
+12. R26 gets a text-contrast scenario (R26-S3): with the same contrast helper, every text, link and on-colour pair of the design-code "Colour" section meets its stated ratio (4.5:1 for body text): text and text-muted on surface, background, sunken, rail and accent-subtle; accent (links) on surface and rail; on-accent on accent and on danger-action; neutral, success and danger text on their backgrounds.
+13. Section heading margin-bottom and Dialog title margin-bottom are `--space-group`.
+14. List row gap is `--space-group`; List and Form bottom margin are `--space-block` (screens keep tightening).
+15. IssuedLink inner gap (label, input, note in a column) is `--space-inline`.
+16. AppHeader padding stays two-axis: `var(--space-inline) var(--space-group)` (vertical, horizontal); its gap is `var(--space-inline) var(--space-group)`.
 
 ## Research angles and conclusions
 
@@ -34,7 +39,7 @@ Angles: the token usage and the rename map in the code, the specs and tests affe
 - Shadows are removed from List item, StatusMessage, AppHeader (a divider bottom border instead) and IssuedLink. The select chevron is `ChevDownIcon`.
 - `check-design-tokens.mjs` also fails on undefined `var(--name)`.
 - Vendored design docs get the new token names, in a separate commit.
-- `web-client` gets R24 (design tokens), R25 (no removed or undefined token), R26 (control border contrast, closes #168), R27 (Button roles) and R28 (no card shadows, shared select chevron).
+- `web-client` gets R24 (design tokens), R25 (no removed or undefined token), R26 (control and text contrast, closes #168), R27 (Button roles) and R28 (no card shadows, shared select chevron).
 - Tests: Vitest on `tokens.css` and the CSS as text, a Vitest of the lint script, page and component tests, one Playwright check of the chevron size. Before and after screenshots of every page state.
 
 ## Out of scope

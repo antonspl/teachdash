@@ -49,16 +49,16 @@ Space, each use by role (file:line, old to new):
 | `StatusMessage:3` padding | `--space-group` |
 | `ButtonRow:5` margin-top | `--space-block` |
 | `Section:2` margin-top | `--space-section` |
-| `Section:6` heading margin-bottom | `--space-group` |
+| `Section:6` heading margin-bottom | `--space-group` (Clarification 13) |
 | `Button:5` icon and label gap | `--space-inline` |
 | `Button:7` padding | `0 var(--space-group)` |
 | `StatusBadge:3` padding | `--space-inline` |
 | `AppHeader:6` gap | `var(--space-inline) var(--space-group)` |
-| `AppHeader:7` padding | `var(--space-group)` |
+| `AppHeader:7` padding (two-axis, vertical then horizontal) | `var(--space-inline) var(--space-group)` (Clarification 16) |
 | `Page:4` padding (narrow) | `var(--space-block) var(--space-group)` |
 | `Page:9` padding (from 40rem) | `var(--space-page)` |
-| `List:4` gap between rows | `--space-block` |
-| `List:5` margin-bottom | `--space-section` |
+| `List:4` gap between rows | `--space-group` (Clarification 14) |
+| `List:5` margin-bottom | `--space-block` (Clarification 14) |
 | `List:11` item padding | `--space-group` |
 | `List:23` head gap | `--space-inline` |
 | `List:36` badges gap | `--space-inline` |
@@ -66,23 +66,25 @@ Space, each use by role (file:line, old to new):
 | `List:46` extra margin-top | `--space-group` |
 | `ErrorWithRetry:5` gap | `--space-group` |
 | `Text:2` margin-bottom | `--space-block` |
-| `Form:2` margin-bottom | `--space-section` |
+| `Form:2` margin-bottom | `--space-block` (Clarification 14) |
 | `Form:6` status margin-bottom | `--space-block` |
 | `Dialog:2` width margin (`2 *`) | `--space-group` |
 | `Dialog:4` padding | `--space-block` |
-| `Dialog:12` title margin-bottom | `--space-group` |
+| `Dialog:12` title margin-bottom | `--space-group` (Clarification 13) |
 | `Toolbar:4` padding | `var(--space-group) var(--space-group) 0` |
-| `IssuedLink:4` gap | `--space-adjacent` |
+| `IssuedLink:4` gap | `--space-inline` (Clarification 15) |
 | `IssuedLink:6` padding | `--space-group` |
 | `IssuedLink:21` input padding | `--space-group` |
 | `IssuedLink:37` margin-bottom | `--space-block` |
 | `Title:2` margin-bottom | `--space-block` |
 
+The outer margins of Field, Section, Form, List, Text and ButtonRow are consciously kept in step 2, although the design code says components carry no outer margins (parents lay out with `gap`); that move belongs to a later step. `AppHeader:7` and `StatusMessage:3` were two-axis paddings: AppHeader stays two-axis (Clarification 16); StatusMessage collapses to `--space-group` on both axes, which matches the design-code Banner rule.
+
 `ButtonRow:4`, `AppHeader:22` (`--space-button-gap`) and `LanguageRow:4` (`--space-block`) keep their tokens. Line numbers are those of `main` today; the implementer re-reads each rule. A row that cannot be mapped by role stops the slice and is reported.
 
 ### D4 Undefined tokens fail the lint
 
-`frontend/scripts/check-design-tokens.mjs` collects the names defined in `tokens.css` and reports every `var(--name)` in `src/**/*.css` and in `.ts` and `.tsx` files whose name is not among them, with file and line. A `var()` with a fallback is checked too. The script accepts an optional folder argument (default: `src`), so a Vitest can run it on a temporary folder (R25-S3). A leftover removed name is caught because the removed names are not defined.
+`frontend/scripts/check-design-tokens.mjs` collects the names defined in `tokens.css` and reports every `var(--name)` in `.css` files and in non-test `.ts` and `.tsx` files whose name is not among them, with file and line. Test files (`*.test.ts` and `*.test.tsx`) are excluded from this check, because they hold removed names and fixtures as text (R25). A `var()` with a fallback is checked too. The script takes one optional argument, the folder that is the equivalent of `src` (default: `src` of the package). Its layout is fixed: the tokens are at `<folder>/styles/tokens.css` (skipped from the raw-value checks as today), the `src/pages` rules apply to `<folder>/pages`, and paths in the output are relative to the folder and go to stderr; the exit code is 1 on any problem. The R25-S3 test writes such a folder to a temporary directory at run time, building the token name in the test, so no source file contains a literal undefined `var(--...)` for the lint to find. A leftover removed name is caught because the removed names are not defined.
 
 ### D5 Select chevron
 
@@ -90,12 +92,12 @@ Space, each use by role (file:line, old to new):
 
 ### D6 Tests
 
-- `frontend/src/styles/tokens.test.ts` reads `tokens.css` as text: the token name list and values (R24-S1, R24-S2; one literal list copied by hand from the design-code tables, as in `ui-icon-set`), and the contrast ratios of `--color-control-border` (R26-S1; WCAG relative luminance computed in the test; the tokens are hex).
-- `frontend/src/styles/cssRules.test.ts` reads `src/ui/*.module.css` and the TSX files as text for R24-S3, R24-S4, R25-S1, R25-S2, R26-S2, R27-S2, R27-S3 (CSS part) and R28-S1, R28-S2 (CSS part). It spawns `check-design-tokens.mjs` on a temporary folder for R25-S3.
-- Page and component tests (`AdminTeachersPage.test.tsx`, `Select.test.tsx` or the existing `Field` tests) read buttons by role and name for R27-S1 and R27-S3 (class names are distinct in jsdom, see `ui-icon-set`) and the chevron markup for R28-S2.
-- One Playwright check for R28-S3 in `frontend/e2e/`, next to `icons.spec.ts`.
+- `frontend/src/styles/tokens.test.ts` reads `tokens.css` as text: the token name list and values (R24-S1, R24-S2; one literal list of 89 names, copied by hand from the design-code tables, as in `ui-icon-set`: it proves `tokens.css` equals the test's list, not `design-code.md` itself), the contrast ratios of `--color-control-border` (R26-S1) and the text pairs (R26-S3), with one WCAG relative-luminance helper in the test (the tokens are hex).
+- `frontend/src/styles/cssRules.test.ts` reads `src/ui/*.module.css` and the TSX files as text for R24-S3, R24-S4, R25-S1, R25-S2, R26-S2, R27-S2, R27-S3, R28-S1 and R28-S2. It spawns `check-design-tokens.mjs` on a temporary folder for R25-S3.
+- Page and component tests (`AdminTeachersPage.test.tsx`, `Select.test.tsx` or the existing `Field` tests) read buttons by role and name for R27-S1 and R27-S4 (class names are distinct in jsdom, see `ui-icon-set`) and the chevron markup for R28-S3.
+- One Playwright check for R28-S4 in `frontend/e2e/`, next to `icons.spec.ts`.
 - Every test title starts with `[web-client/R<n>-S<n>]`.
-- Re-run in en and ru at 360: R7-S1, R13-S2, `skeleton.spec.ts`, `russianFit.spec.ts` (R15-S6). No approved test should change; if one does, the slice stops.
+- Re-run in en and ru at 360: R7-S1, R13-S2, `skeleton.spec.ts`, `russianFit.spec.ts` (R15-S6). No approved test should change; if one does, the slice stops. Watch the R13-S2 text-fit assertion at 360 in Russian on the profile time zone select: its text area shrinks by about 16px (the arrow clearance grows from `--space-1` + 0.75rem + `--space-1` to `--space-group` + 1.25rem + `--space-inline`).
 
 ### D7 Decorative edges (#168)
 
@@ -103,7 +105,11 @@ The decorative edges are below 3:1 by design (design-code "Colour"), so `--color
 
 ### D8 Vendored design docs
 
-`refactoring-ui.md`, `refactoring-ui-patterns.md`, `accessibility.md`, `accessibility-patterns.md` and any other file under `.agents/design` that names a removed token (`--shadow-card`, `--color-border`, `--space-1` to `--space-4`, `--color-action-success-*`, the success variant or `--arrow-width`; `design-code.md` itself describes the rename and is kept) are updated to the new names in a separate commit, with the engineer's approval (Clarification 7). `ui-ux-pro-max/` data and scripts are checked and changed only where they name a removed token as the project's own.
+`refactoring-ui.md`, `refactoring-ui-patterns.md`, `accessibility.md`, `accessibility-patterns.md` and any other file under `.agents/design` that names a removed token (`--shadow-card`, `--color-border`, `--space-1` to `--space-4`, `--color-action-success-*`, the success variant or `--arrow-width`; `design-code.md` itself describes the rename and is kept) are updated in a separate commit, with the engineer's approval (Clarification 7). `.agents/design/ui-ux-pro-max/**` is excluded outright: it is upstream, byte-identical, with generic output. A passage that would be false after the rename is rewritten to match the design code, not just renamed: for example `refactoring-ui.md:102,107` ("teachdash has one shadow", "Cards get `--shadow-card`") becomes shadows on overlays only with `--shadow-overlay`, and the `--space-1` to `--space-4` scale table at `refactoring-ui.md:49-60` becomes the space-by-role names (`--space-adjacent`, `--space-inline`, `--space-group`, `--space-block`, `--space-section`); the same applies to the card shadows at `refactoring-ui.md:145,164` and to the card shadow and success tokens in `refactoring-ui-patterns.md`.
+
+### D9 Interim deviations for 3b
+
+Two things differ from the design code on purpose until 3b (#198) finishes them: the Dialog edge is `--color-divider` (the design code wants no border and `--shadow-overlay`, Clarification 3), and the IssuedLink input has the sunken fill (3b territory, pulled in by Clarification 10). The PR description mentions both.
 
 ## UI design
 
@@ -117,7 +123,7 @@ Unchanged structure. Density tightens: button padding 24px to 12px, controls 44p
 
 ### States per screen
 
-Login, set-password, admin list and dialogs, profile: empty, filled, errors, loading, disabled and success as they exist today; their behaviour is unchanged. Screenshot states follow Clarification 11.
+Login, set-password, admin list and dialogs, profile: empty, filled, errors, loading, disabled and success as they exist today; their behaviour is unchanged. The startup error and the "Loading..." text get the new tokens only (their restyle is 3b). Screenshot states follow Clarification 11.
 
 ### Copy
 
