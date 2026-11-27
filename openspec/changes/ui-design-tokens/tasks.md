@@ -18,11 +18,11 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 3. Tests
 
-- [ ] 3.1 Vitest in `frontend/src/styles/tokens.test.ts` for web-client/R24-S1, R24-S2, R26-S1 and R26-S3 (hand-copied list of 89 names; one contrast helper, ratios computed from the hex values)
-- [ ] 3.2 Vitest in `frontend/src/styles/cssRules.test.ts` for web-client/R24-S3, R24-S4, R25-S1, R25-S2, R25-S3, R26-S2, R27-S2, R27-S3, R28-S1 and R28-S2
-- [ ] 3.3 Vitest in `AdminTeachersPage.test.tsx` and the select tests for web-client/R27-S1, R27-S4 and R28-S3 (buttons by role and name)
-- [ ] 3.4 Playwright test for web-client/R28-S4 in `frontend/e2e/` (desktop and phone projects); re-run at 360 in en and ru: R7-S1, R13-S2 (watch its text-fit assertion in Russian on the profile time zone select: the text area shrinks about 16px), `skeleton.spec.ts`, `russianFit.spec.ts`; no approved test changes
-- [ ] 3.5 Verify `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e`
+- [x] 3.1 Vitest in `frontend/src/styles/tokens.test.ts` for web-client/R24-S1, R24-S2, R26-S1 and R26-S3 (hand-copied list of 89 names; one contrast helper, ratios computed from the hex values)
+- [x] 3.2 Vitest in `frontend/src/styles/cssRules.test.ts` for web-client/R24-S3, R24-S4, R25-S1, R25-S2, R25-S3, R26-S2, R27-S2, R27-S3, R28-S1 and R28-S2
+- [x] 3.3 Vitest in `AdminTeachersPage.test.tsx` and the select tests for web-client/R27-S1, R27-S4 and R28-S3 (buttons by role and name)
+- [x] 3.4 Playwright test for web-client/R28-S4 in `frontend/e2e/` (desktop and phone projects); re-run at 360 in en and ru: R7-S1, R13-S2 (watch its text-fit assertion in Russian on the profile time zone select: the text area shrinks about 16px), `skeleton.spec.ts`, `russianFit.spec.ts`; no approved test changes
+- [x] 3.5 Verify `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e`
 
 ## 4. After screenshots
 

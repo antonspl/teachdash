@@ -11,6 +11,9 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import '../i18n'
 import { App } from '../App'
 import en from '../i18n/en.json'
+import buttonStyles from '../ui/Button.module.css'
+import iconStyles from '../ui/icons.module.css'
+import { readFileSync } from 'node:fs'
 
 const fetchMock = vi.fn()
 
@@ -1561,4 +1564,65 @@ test('[web-client/R23-S2] Create teacher and the other dialog buttons have no ic
   for (const button of buttons) {
     expect(button.querySelector('svg')).toBeNull()
   }
+})
+
+test('[web-client/R27-S1] Add teacher and Create teacher are the accent primary', async () => {
+  // given a logged-in admin on /admin
+  backend({ list: () => json([]) })
+  open()
+
+  // when the two buttons are read by role and name
+  const add = await addButton()
+  await openDialog()
+  const create = submitButton()
+
+  // then each has the primary class of Button and no other variant class
+  for (const button of [add, create]) {
+    expect(button.className).toContain(buttonStyles.primary)
+    expect(button.className).not.toContain(buttonStyles.secondary)
+    expect(button.className).not.toContain(buttonStyles.danger)
+  }
+
+  // and the primary rule fills with the accent and sets the on-accent text
+  const css = readFileSync(
+    `${import.meta.dirname}/../ui/Button.module.css`,
+    'utf8',
+  )
+  const primary = /\.primary\s*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+  expect(primary).toContain('color: var(--color-on-accent);')
+  expect(primary).toContain('background: var(--color-accent);')
+})
+
+test('[web-client/R27-S4] The row Deactivate button stays a danger button', async () => {
+  // given an admin page with an active teacher
+  world([teacher()], {})
+  open()
+  const row = await rowOf('Anna Smith')
+
+  // when the row Deactivate button is read by role and name
+  const button = deactivateButton(row)
+
+  // then it has the danger class of Button
+  expect(button.className).toContain(buttonStyles.danger)
+})
+
+test('[web-client/R28-S3] The time zone select of the Add teacher dialog has the shared chevron', async () => {
+  // given the Add teacher dialog is open
+  backend({ list: () => json([]) })
+  open()
+  const dialog = await openDialog()
+
+  // when the arrow of the time zone select is read
+  const select = within(dialog).getByLabelText(en.adminTeachers.create.timeZone)
+  const arrow = select.parentElement!.querySelector('[data-select-arrow]')!
+
+  // then it is hidden and holds only the chevron svg of the icon table
+  expect(arrow.getAttribute('aria-hidden')).toBe('true')
+  expect(arrow.querySelectorAll('svg')).toHaveLength(1)
+  expect(arrow.querySelector('svg path')?.getAttribute('d')).toBe(
+    'M5 8l5 5 5-5',
+  )
+  expect(arrow.querySelector('svg')?.getAttribute('class')).toBe(
+    iconStyles.default,
+  )
 })

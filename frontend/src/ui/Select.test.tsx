@@ -2,6 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, expect, test } from 'vitest'
 import styles from './Field.module.css'
+import iconStyles from './icons.module.css'
 import { Select } from './Select'
 
 afterEach(cleanup)
@@ -92,4 +93,22 @@ test('flush adds its own class to the root, without it the default stays', () =>
   )
   expect(rootOf().className).toContain(styles.field)
   expect(rootOf().className).toContain(styles.flush)
+})
+
+test('[web-client/R28-S3] The arrow of a Select holds only the shared chevron', () => {
+  // given a rendered Select
+  const select = renderSelect()
+
+  // when the [data-select-arrow] element is read
+  const arrow = select.parentElement!.querySelector('[data-select-arrow]')!
+
+  // then it is hidden and holds the one chevron svg with the default size class
+  expect(arrow.getAttribute('aria-hidden')).toBe('true')
+  expect(arrow.querySelectorAll('svg')).toHaveLength(1)
+  expect(arrow.querySelector('svg path')?.getAttribute('d')).toBe(
+    'M5 8l5 5 5-5',
+  )
+  expect(arrow.querySelector('svg')?.getAttribute('class')).toBe(
+    iconStyles.default,
+  )
 })
