@@ -7,7 +7,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 1. Before screenshots
 
-- [ ] 1.1 From `main`, before any other change, take the before set into `frontend/screenshots/ui-design-tokens/before/`: the design-audit state list (login x5, set-password x6, admin x11 including dialogs, profile x9, cabinet x2, not found, startup error), at desktop and 360; list unreachable states
+- [x] 1.1 From `main`, before any other change, take the before set into `frontend/screenshots/ui-design-tokens/before/`: the design-audit state list (login x5, set-password x6, admin x11 including dialogs, profile x9, cabinet x2, not found, startup error), at desktop and 360; list unreachable states
 
 ## 2. Tokens and rename (one slice, design D1)
 
