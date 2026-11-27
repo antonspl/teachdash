@@ -27,6 +27,9 @@ public class TestItemType implements ItemType<TestPayload> {
 
 	@Override
 	public Object studentView(TestPayload payload) {
+		if (payload.questions() == null) {
+			throw corrupt("question list");
+		}
 		List<StudentQuestion> questions = payload.questions().stream()
 				.map(this::studentQuestion)
 				.toList();
@@ -35,29 +38,28 @@ public class TestItemType implements ItemType<TestPayload> {
 
 	private StudentQuestion studentQuestion(TestQuestion question) {
 		if (question == null || question.text() == null || question.options() == null) {
-			throw new IllegalStateException("Cannot build a student view for a test question with missing data");
+			throw corrupt("question");
 		}
-		long correctOptions = question.options().stream()
-				.filter(this::isCorrect)
-				.count();
-		List<StudentOption> options = question.options().stream()
-				.map(this::studentOption)
-				.toList();
+		List<StudentOption> options = new ArrayList<>();
+		int correctOptions = 0;
+		for (TestOption option : question.options()) {
+			requireComplete(option);
+			options.add(new StudentOption(option.text()));
+			if (option.correct()) {
+				correctOptions++;
+			}
+		}
 		return new StudentQuestion(question.text(), correctOptions > 1, options);
 	}
 
-	private boolean isCorrect(TestOption option) {
-		if (option == null || option.correct() == null) {
-			throw new IllegalStateException("Cannot build a student view for a test option with missing data");
+	private void requireComplete(TestOption option) {
+		if (option == null || option.text() == null || option.correct() == null) {
+			throw corrupt("option");
 		}
-		return option.correct();
 	}
 
-	private StudentOption studentOption(TestOption option) {
-		if (option.text() == null) {
-			throw new IllegalStateException("Cannot build a student view for a test option with missing data");
-		}
-		return new StudentOption(option.text());
+	private IllegalStateException corrupt(String part) {
+		return new IllegalStateException("Cannot build a student view for a test " + part + " with missing data");
 	}
 
 	record StudentView(
