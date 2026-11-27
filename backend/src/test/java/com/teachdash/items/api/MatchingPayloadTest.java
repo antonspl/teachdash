@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -336,7 +337,7 @@ class MatchingPayloadTest extends ItemApiTest {
 		// and no body contains the rejected value
 		assertNoEcho(nul, "a\\u0000b", "a\u0000b");
 		assertNoEcho(surrogate, "y\\ud800z", "\\uD800", "\\ud800", "\\UD800", "\uFFFD");
-		assertEquals(false, surrogate.asString().toLowerCase().contains("ud800"));
+		assertFalse(surrogate.asString().toLowerCase().contains("ud800"));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}
