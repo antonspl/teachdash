@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.teachdash.common.validation.MaxUtf8Bytes;
 import com.teachdash.languages.api.validation.ContentLanguage;
@@ -25,6 +27,8 @@ public final class FieldErrorCodes {
 	public static final String UNSUPPORTED_COURSE_LANGUAGE = "UNSUPPORTED_COURSE_LANGUAGE";
 	public static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
 	public static final String UNKNOWN_FIELD = "UNKNOWN_FIELD";
+
+	private static final Pattern PATH_PART = Pattern.compile("\\[(\\d+)]|([^.\\[\\]]+)");
 
 	private FieldErrorCodes() {
 	}
@@ -69,11 +73,42 @@ public final class FieldErrorCodes {
 	}
 
 	static List<FieldErrorDetail> reduce(Collection<FieldErrorDetail> details) {
-		Map<String, FieldErrorDetail> byField = new TreeMap<>();
+		Map<String, FieldErrorDetail> byField = new TreeMap<>(FieldErrorCodes::comparePaths);
 		for (FieldErrorDetail detail : details) {
 			byField.merge(detail.field(), detail, FieldErrorCodes::higherPriority);
 		}
 		return List.copyOf(byField.values());
+	}
+
+	private static int comparePaths(String a, String b) {
+		Matcher left = PATH_PART.matcher(a);
+		Matcher right = PATH_PART.matcher(b);
+		while (true) {
+			boolean hasLeft = left.find();
+			boolean hasRight = right.find();
+			if (!hasLeft && !hasRight) {
+				return a.compareTo(b);
+			}
+			if (!hasLeft || !hasRight) {
+				return Boolean.compare(hasLeft, hasRight);
+			}
+			int result = comparePart(left, right);
+			if (result != 0) {
+				return result;
+			}
+		}
+	}
+
+	private static int comparePart(Matcher left, Matcher right) {
+		String leftIndex = left.group(1);
+		String rightIndex = right.group(1);
+		if (leftIndex != null && rightIndex != null) {
+			return Integer.compare(Integer.parseInt(leftIndex), Integer.parseInt(rightIndex));
+		}
+		if (leftIndex != null || rightIndex != null) {
+			return leftIndex != null ? 1 : -1;
+		}
+		return left.group(2).compareTo(right.group(2));
 	}
 
 	private static FieldErrorDetail higherPriority(FieldErrorDetail a, FieldErrorDetail b) {
