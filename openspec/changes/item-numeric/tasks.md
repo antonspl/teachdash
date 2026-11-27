@@ -2,12 +2,12 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add stubs so the tests compile and fail at their THEN step: `NumericPayload`, `NumericQuestion` and `NumericItemType` (code `numeric`; `studentView` and `extraChecks` return a placeholder, each marked STUB); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
-- [ ] 1.2 Add the test helper `items/support/NumericPayloads` (copied from the gap-fill payload helper, adapted to `text`, `answer`, `tolerance`, `unit`)
-- [ ] 1.3 Write tests for item-numeric R1-S1 to R1-S5 in `items/api/NumericItemTest` (helpers of `ItemApiTest`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step or is green on the stubs (generic add, edit, list and scoping)
-- [ ] 1.4 Write tests for item-numeric R1-S6 to R1-S9 in `items/domain/numeric/NumericItemTypeTest` (unit level; the application JSON mapper for the serialisation test); verify each fails at its THEN step
-- [ ] 1.5 Write tests for item-numeric R2-S1 to R2-S13 in `items/api/NumericPayloadTest`; build the large payloads (25 questions, 500-letter texts, emoji texts counted in UTF-16 units) in test helpers; verify each fails at its THEN step
-- [ ] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every scenario ID has a test and every test whose behaviour is missing fails at its THEN step, not in setup (tests whose behaviour the generic code already provides are expected green on the stubs: add, edit, list, scoping, accept paths, NUL and surrogate handling, JSON type errors)
+- [x] 1.1 Add stubs so the tests compile and fail at their THEN step: `NumericPayload`, `NumericQuestion` and `NumericItemType` (code `numeric`; `studentView` and `extraChecks` return a placeholder, each marked STUB); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
+- [x] 1.2 Add the test helper `items/support/NumericPayloads` (copied from the gap-fill payload helper, adapted to `text`, `answer`, `tolerance`, `unit`)
+- [x] 1.3 Write tests for item-numeric R1-S1 to R1-S5 in `items/api/NumericItemTest` (helpers of `ItemApiTest`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step or is green on the stubs (generic add, edit, list and scoping)
+- [x] 1.4 Write tests for item-numeric R1-S6 to R1-S9 in `items/domain/numeric/NumericItemTypeTest` (unit level; the application JSON mapper for the serialisation test); verify each fails at its THEN step
+- [x] 1.5 Write tests for item-numeric R2-S1 to R2-S13 in `items/api/NumericPayloadTest`; build the large payloads (25 questions, 500-letter texts, emoji texts counted in UTF-16 units) in test helpers; verify each fails at its THEN step
+- [x] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every scenario ID has a test and every test whose behaviour is missing fails at its THEN step, not in setup (tests whose behaviour the generic code already provides are expected green on the stubs: add, edit, list, scoping, accept paths, NUL and surrogate handling, JSON type errors)
 
 ## 2. Test review
 
