@@ -43,7 +43,7 @@ class MatchingItemTypeTest {
 				pair("apple", "яблоко"),
 				pair("dog", "собака"),
 				pair("house", "дом"),
-				pair("book", "книга")));
+				pair("tree", "дерево")));
 
 		// when studentView is called with the payload
 		JsonNode view = mapper.valueToTree(type.studentView(payload));
@@ -51,12 +51,12 @@ class MatchingItemTypeTest {
 		// then the result has exactly the properties left and right, in this order
 		assertThat(view.propertyNames()).containsExactly("left", "right");
 		// and left is in stored order and right is the seeded shuffle of the sorted rights
-		assertThat(column(view, "left")).containsExactly("apple", "dog", "house", "book");
-		assertThat(column(view, "right")).containsExactly("книга", "яблоко", "собака", "дом");
+		assertThat(column(view, "left")).containsExactly("apple", "dog", "house", "tree");
+		assertThat(column(view, "right")).containsExactly("собака", "яблоко", "дом", "дерево");
 	}
 
 	@Test
-	@DisplayName("[item-matching/R1-S9] The shuffled order is the same on every call, in Russian too")
+	@DisplayName("[item-matching/R1-S9] The shuffled order is the same on every call and does not depend on the pairing, in Russian too")
 	void theShuffledOrderIsTheSameOnEveryCall() {
 		// given a payload with four Russian lefts and English rights, and the same pairs in the reverse order
 		var payload = new MatchingPayload(List.of(
@@ -81,10 +81,27 @@ class MatchingItemTypeTest {
 		assertThat(third).isEqualTo(first);
 		// and each has the lefts in stored order and the rights in the seeded order
 		assertThat(column(first, "left")).containsExactly("Москва", "Париж", "Лондон", "Берлин");
-		assertThat(column(first, "right")).containsExactly("France", "England", "Germany", "Russia");
-		// and the reversed payload gives a different order
+		assertThat(column(first, "right")).containsExactly("Germany", "France", "Russia", "England");
+		// and the reversed payload gives the same right order, whatever the pairing
 		assertThat(column(reversedView, "left")).containsExactly("Берлин", "Лондон", "Париж", "Москва");
-		assertThat(column(reversedView, "right")).containsExactly("France", "Germany", "England", "Russia");
+		assertThat(column(reversedView, "right")).containsExactly("Germany", "France", "Russia", "England");
+	}
+
+	@Test
+	@DisplayName("[item-matching/R1-S12] Rights that the shuffle leaves next to their own lefts are rotated")
+	void rightsLeftNextToTheirLeftsAreRotated() {
+		// given a payload with two pairs whose shuffled rights stay in the stored order
+		var payload = new MatchingPayload(List.of(
+				pair("cat", "кошка"),
+				pair("dog", "собака")));
+
+		// when studentView is called with the payload
+		JsonNode view = mapper.valueToTree(type.studentView(payload));
+
+		// then the lefts are in stored order
+		assertThat(column(view, "left")).containsExactly("cat", "dog");
+		// and the rights are the shuffled rights rotated left by one, not the stored pairing
+		assertThat(column(view, "right")).containsExactly("собака", "кошка");
 	}
 
 	@Test

@@ -24,7 +24,7 @@
 
 ## 4. Code-owner review fixes
 
-- [ ] 4.1 Update the `MatchingItemTypeTest` tests of R1-S8 and R1-S9 to the new pinned orders (R1-S9 also asserts the reversed-pairs payload gives the same rights order) and add the test of R1-S12 (rotate); verify each fails at its THEN step on the current code
+- [x] 4.1 Update the `MatchingItemTypeTest` tests of R1-S8 and R1-S9 to the new pinned orders (R1-S9 also asserts the reversed-pairs payload gives the same rights order) and add the test of R1-S12 (rotate); verify each fails at its THEN step on the current code
 - [ ] 4.2 Test review stop: the engineer approves the changed tests in the PR. HARD STOP: no production code before approval
 - [ ] 4.3 `MatchingItemType.studentView`: seed from the sorted lefts and the sorted rights, and the rotate rule of design D4; verify R1-S8, R1-S9, R1-S12 and the other R1 unit scenarios pass
 - [ ] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and every scenario ID has a test
