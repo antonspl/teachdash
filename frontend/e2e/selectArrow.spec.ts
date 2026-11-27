@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import en from '../src/i18n/en.json' with { type: 'json' }
+import ru from '../src/i18n/ru.json' with { type: 'json' }
 import { createTeacherAndLoginInUi, loginAsAdminInUi } from './accounts'
 
 const LONG_ZONE = 'America/Argentina/ComodRivadavia'
@@ -190,4 +191,146 @@ test('[web-client/R13-S4] Disabled select keeps the arrow', async ({
     await saved
     await page.unrouteAll({ behavior: 'ignoreErrors' })
   }
+})
+
+/** Everything R13-S5 reads about an icon-led select, in one page-side pass. */
+function iconSelectShape(select: Locator) {
+  return select.evaluate((element) => {
+    const el = element as HTMLSelectElement
+    const style = getComputedStyle(el)
+    const wrap = el.parentElement!
+    const icon = wrap.querySelector('[data-select-icon]')
+    const arrow = wrap.querySelector('[data-select-arrow]')
+    if (!icon || !arrow) return null
+    const box = el.getBoundingClientRect()
+    const iconBox = icon.querySelector('svg')!.getBoundingClientRect()
+    const arrowBox = arrow.querySelector('svg')!.getBoundingClientRect()
+    const borderLeft = parseFloat(style.borderLeftWidth)
+    const borderRight = parseFloat(style.borderRightWidth)
+    const canvas = document.createElement('canvas').getContext('2d')!
+    canvas.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+    const textWidth = canvas.measureText(
+      el.selectedOptions[0]?.textContent ?? '',
+    ).width
+    return {
+      iconHidden: icon.getAttribute('aria-hidden') === 'true',
+      iconInArrow: arrow.contains(icon),
+      arrowSvgCount: arrow.querySelectorAll('svg').length,
+      iconColour: getComputedStyle(icon).color,
+      arrowColour: getComputedStyle(arrow).color,
+      iconOpacity: getComputedStyle(icon).opacity,
+      arrowOpacity: getComputedStyle(arrow).opacity,
+      iconGap: iconBox.left - (box.left + borderLeft),
+      arrowGap: box.right - borderRight - arrowBox.right,
+      iconWidth: iconBox.width,
+      paddingLeft: parseFloat(style.paddingLeft),
+      paddingRight: parseFloat(style.paddingRight),
+      textStart: box.left + borderLeft + parseFloat(style.paddingLeft),
+      iconLeft: iconBox.left,
+      arrowLeft: arrowBox.left,
+      textArea:
+        box.width -
+        borderLeft -
+        borderRight -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight),
+      textWidth,
+      invalidClass: Array.from(document.styleSheets)
+        .flatMap((sheet) => Array.from(sheet.cssRules))
+        .map((rule) => (rule as CSSStyleRule).selectorText ?? '')
+        .map((selector) => /^\.(_?invalid[\w-]*)$/.exec(selector)?.[1])
+        .find((name) => name),
+    }
+  })
+}
+
+async function checkIconSelect(page: Page, label: string) {
+  const select = page.getByLabel(label, { exact: true })
+  await expect(select).toBeVisible()
+  const shape = (await iconSelectShape(select))!
+  expect(shape, 'the select has an icon and an arrow').not.toBeNull()
+
+  // the globe is hidden, outside the arrow, and muted like the arrow; the arrow holds the chevron only
+  expect(shape.iconHidden).toBe(true)
+  expect(shape.iconInArrow).toBe(false)
+  expect(shape.arrowSvgCount).toBe(1)
+  expect(shape.iconColour).toBe(shape.arrowColour)
+
+  // both gaps are the group space (12px), within a pixel
+  expect(Math.abs(shape.iconGap - shape.arrowGap)).toBeLessThanOrEqual(1)
+  expect(Math.abs(shape.iconGap - 12)).toBeLessThanOrEqual(1)
+
+  // the left padding is the group space, the icon and the inline space (8px)
+  expect(
+    Math.abs(shape.paddingLeft - (12 + shape.iconWidth + 8)),
+  ).toBeLessThanOrEqual(1)
+
+  // the language name fits the text area
+  expect(shape.textWidth).toBeLessThanOrEqual(shape.textArea)
+
+  // disabled: the icon and the arrow dim together and nothing moves
+  await select.evaluate((element) => {
+    ;(element as HTMLSelectElement).disabled = true
+  })
+  const disabled = (await iconSelectShape(select))!
+  expect(disabled.iconOpacity).toBe(disabled.arrowOpacity)
+  expect(Number(disabled.iconOpacity)).toBeLessThan(1)
+  expect(Math.abs(disabled.iconLeft - shape.iconLeft)).toBeLessThanOrEqual(1)
+  expect(Math.abs(disabled.textStart - shape.textStart)).toBeLessThanOrEqual(1)
+  await select.evaluate((element) => {
+    ;(element as HTMLSelectElement).disabled = false
+  })
+
+  // invalid: the icon and the text start stay put
+  expect(
+    shape.invalidClass,
+    'the invalid class is in the stylesheet',
+  ).toBeTruthy()
+  await select.evaluate(
+    (element, name) => element.classList.add(name!),
+    shape.invalidClass,
+  )
+  const invalid = (await iconSelectShape(select))!
+  expect(Math.abs(invalid.iconLeft - shape.iconLeft)).toBeLessThanOrEqual(1)
+  expect(Math.abs(invalid.textStart - shape.textStart)).toBeLessThanOrEqual(1)
+  expect(Math.abs(invalid.arrowLeft - shape.arrowLeft)).toBeLessThanOrEqual(1)
+  await select.evaluate(
+    (element, name) => element.classList.remove(name!),
+    shape.invalidClass,
+  )
+}
+
+test('[web-client/R13-S5] The icon-led language select has equal gaps for the globe and the chevron, in en and ru', async ({
+  page,
+  playwright,
+  baseURL,
+  isMobile,
+}) => {
+  if (isMobile) {
+    await page.setViewportSize({ width: 360, height: 800 })
+  }
+
+  // given the login page, in English and in Russian
+  await page.goto('/login')
+  await checkIconSelect(page, en.uiLanguage.label)
+  await page.evaluate(
+    ([key]) => localStorage.setItem(key, 'ru'),
+    ['teachdash.lang'],
+  )
+  await page.reload()
+  await checkIconSelect(page, ru.uiLanguage.label)
+
+  // and the header of a logged-in teacher, in Russian and in English
+  await page.evaluate(
+    ([key]) => localStorage.removeItem(key),
+    ['teachdash.lang'],
+  )
+  await createTeacherAndLoginInUi(page, playwright, baseURL, 'Anna')
+  await checkIconSelect(page, en.uiLanguage.label)
+  await page.evaluate(
+    ([key]) => localStorage.setItem(key, 'ru'),
+    ['teachdash.lang'],
+  )
+  await page.reload()
+  await checkIconSelect(page, ru.uiLanguage.label)
 })
