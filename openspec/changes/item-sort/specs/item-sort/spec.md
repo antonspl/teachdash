@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### Requirement: R1 A teacher adds and edits a sort item, and the student view hides which word is in which column
+### Requirement: R1 A teacher adds and edits a sort item, and the student view does not show which word is in which column
 The type `sort` SHALL have the payload `{columns: [{title, words: [...]}]}`, added with items R1 and edited with items R4, values stored as sent. `studentView` SHALL return `{"titles": [...], "words": [...]}`: `titles` in stored order, `words` all words sorted by `String.compareTo` then `Collections.shuffle(list, new Random(seed))`, seed = `String.join("\u0000", all words in stored reading order).hashCode()`; no column per word. No student endpoint yet (#125): unit scenarios only.
 
 #### Scenario: item-sort/R1-S1 Add an English sort item, it is stored and listed exactly
@@ -113,8 +113,8 @@ A `sort` payload SHALL follow items R2. `columns`: missing, `null` or empty is `
 
 #### Scenario: item-sort/R2-S12 The count limits are checked first, the structure rules after, and all structure errors come together
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `sort` with (written as {title, words}): (a) 11 columns "T1" to "T11" with one word "w1" to "w11" each, where the first title is ""; (b) the single column `{"", [a]}`; (c) the columns `[{"", [a]}, {B, []}]`; (d) the columns `[{A, [go, go, " "]}, {A, [x]}, null]`
-- **THEN** (a) is 400 with `errors` exactly `[{field: "payload.columns", code: "TOO_LONG"}]`, (b) is 400 with `errors` exactly `[{field: "payload.columns", code: "TOO_SHORT"}]`, (c) is 400 with `errors` exactly `[{field: "payload.columns[1].words", code: "REQUIRED"}]` (the empty title is not reported until the words are fixed), and (d) is 400 with `errors` exactly `[{field: "payload.columns[0].words[1]", code: "INVALID_FORMAT"}, {field: "payload.columns[0].words[2]", code: "REQUIRED"}, {field: "payload.columns[1].title", code: "INVALID_FORMAT"}, {field: "payload.columns[2]", code: "REQUIRED"}]` (sorted by field, indexes as numbers), and the part has no item
+- **WHEN** teacher A adds items of the type `sort` with (written as {title, words}): (a) 11 columns "T1" to "T11" with one word "w1" to "w11" each, where the first title is ""; (b) the single column `{"", [a]}`; (c) the columns `[{"", [a]}, {B, []}]`; (d) the columns `[{A, [go, go, " "]}, {A, [x]}, null]`; (e) 11 columns "T1" to "T11" where the first has 26 words "w1" to "w26" and each other has one word
+- **THEN** (a) is 400 with `errors` exactly `[{field: "payload.columns", code: "TOO_LONG"}]`, (b) is 400 with `errors` exactly `[{field: "payload.columns", code: "TOO_SHORT"}]`, (c) is 400 with `errors` exactly `[{field: "payload.columns[1].words", code: "REQUIRED"}]` (the empty title is not reported until the words are fixed), and (d) is 400 with `errors` exactly `[{field: "payload.columns[0].words[1]", code: "INVALID_FORMAT"}, {field: "payload.columns[0].words[2]", code: "REQUIRED"}, {field: "payload.columns[1].title", code: "INVALID_FORMAT"}, {field: "payload.columns[2]", code: "REQUIRED"}]` (sorted by field, indexes as numbers), and (e) is 400 with `errors` exactly `[{field: "payload.columns", code: "TOO_LONG"}, {field: "payload.columns[0].words", code: "TOO_LONG"}]` (both count limits are reported together), and the part has no item
 
 #### Scenario: item-sort/R2-S13 A NUL and a lone surrogate in a value are rejected as `payload`
 - **GIVEN** a logged-in teacher A with a part

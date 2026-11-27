@@ -14,11 +14,12 @@ Issue #224. The engineer's decisions, as given:
 | 6 | A word in one column only? | An exact-match duplicate word, within one column or across columns, gives `INVALID_FORMAT` at the later occurrence (`columns[j].words[k]`), in reading order: column by column, word by word. A value with its own error is not compared. The match is exact ("Go" and "go", "ё" and "е" differ); values are stored raw. Accepted risk (Risks): invisible differences pass. |
 | 7 | Student view? | `studentView` returns the allowlist `{"titles": [stored order], "words": [all words, sorted by String.compareTo then Collections.shuffle(list, new Random(seed)), seed = String.join("\u0000", all words in stored reading order).hashCode()]}`. No column per word. The concrete orders are pinned in scenarios (computed with a Java run). It throws `IllegalStateException` on corrupt data, with no stored value in the message. |
 | 8 | Pointer in `items`, migration, error codes? | No cross-reference in `items`: items R2's pointer names only gap-fill and stays as is; each type has its own capability (this avoids conflicts between parallel item branches). No migration, no new error code. |
+| 10 | Is the shuffled view a secret? | No. The seed comes from the content, so anyone with the view can brute-force the shuffle and recover the column of each word; the view is not a secret boundary. #125 must re-shuffle with server-side randomness. |
 | 9 | Out of scope? | Answer checking (#126), the student endpoint (#125), the editor, a word in several columns, images, partial credit. |
 
 ## Research angles
 
-The engineer agreed on this conclusion: the plug-in point and the test layout are the same as for gap-fill and matching.
+The engineer agreed on this conclusion: the plug-in point and the test layout are the same as for gap-fill.
 
 - **Plug-in point.** A new `@Component` `items/domain/sort/SortItemType` implements `ItemType<SortPayload>` (code `sort`), with the records `SortPayload` and `SortColumn`, mirroring `GapFillItemType`. `ItemTypeRegistry` collects it by injection; no controller, service or registry change. The `items.type` column has no per-type check.
 - **Validation pipeline.** `ItemPayloadValidator` reads the payload with a strict Jackson mapper (an unknown property is `UNKNOWN_FIELD` reported as `payload`; a wrong JSON type is `INVALID_TYPE` with the path; a lone surrogate or NUL is `INVALID_FORMAT` at `payload`), then runs Bean Validation, then `ItemType.extraChecks` only if Bean Validation passed. `@NotEmpty` gives `REQUIRED`, `@Size` gives `TOO_SHORT` or `TOO_LONG`. The title and word rules and the duplicate rules go in `extraChecks` with the existing codes.
@@ -27,7 +28,7 @@ The engineer agreed on this conclusion: the plug-in point and the test layout ar
 
 ## Why
 
-"Sort into columns" is a common exercise for vocabulary and grammar (words by part of speech, nouns by gender, words by topic). The items core holds registered types; this change adds `sort`: columns with a title and the words that belong in each, stored as structured JSON, and a student view that shows the column titles and all the words mixed, without telling which word belongs where.
+"Sort into columns" is a common exercise for vocabulary and grammar (words by part of speech, nouns by gender, words by topic). The items core holds registered types; this change adds `sort`: columns with a title and the words that belong in each, stored as structured JSON, and a student view that shows the column titles and all the words mixed, without showing which word belongs where.
 
 ## What Changes
 
@@ -39,7 +40,7 @@ The engineer agreed on this conclusion: the plug-in point and the test layout ar
 ## Capabilities
 
 ### New Capabilities
-- `item-sort`: R1 (a teacher adds and edits a sort item; the student view hides which word is in which column) and R2 (limits and validation of the payload).
+- `item-sort`: R1 (a teacher adds and edits a sort item; the student view does not show which word is in which column) and R2 (limits and validation of the payload).
 
 ### Modified Capabilities
 None.

@@ -2,7 +2,7 @@
 
 ## Context
 
-See proposal.md. Items hold a registered type (`ItemType<P>`, collected by `ItemTypeRegistry`); `ItemPayloadValidator` reads the payload map into the type's record with a strict Jackson mapper, runs Bean Validation, and calls `extraChecks` only when Bean Validation passed. `theory`, `gap-fill` and `matching` are existing types. This change adds `sort` in the same way.
+See proposal.md. Items hold a registered type (`ItemType<P>`, collected by `ItemTypeRegistry`); `ItemPayloadValidator` reads the payload map into the type's record with a strict Jackson mapper, runs Bean Validation, and calls `extraChecks` only when Bean Validation passed. `theory` and `gap-fill` are existing types. This change adds `sort` in the same way.
 
 ## Goals / Non-Goals
 
@@ -25,7 +25,7 @@ See proposal.md. Items hold a registered type (`ItemType<P>`, collected by `Item
 
 **D3. A word belongs to one column.** The duplicate-word rule spans all columns (Clarification 6), so a word cannot be in two columns and the answer for each word is unique. The comparison is exact: "Go" and "go", "ё" and "е", a composed and a decomposed "é" are different values.
 
-**D4. Student projection.** `studentView` returns a new envelope `{"titles": [...], "words": [...]}`, built field by field (an allowlist, fixed key order `titles` then `words`); there is no column field per word and no nesting of words under a title. It throws `IllegalStateException` on corrupt data (`columns` `null`, a `null` column, a `null` title, `words` `null`, a `null` word), without a stored value in the message; stored payloads are always validated, so this only catches corrupt data.
+**D4. Student projection.** `studentView` returns a new envelope `{"titles": [...], "words": [...]}`, built field by field (an allowlist, fixed key order `titles` then `words`); there is no column field per word and no nesting of words under a title. It throws `IllegalStateException` on corrupt data; it only checks for `null` (`columns` `null`, a `null` column, a `null` title, `words` `null`, a `null` word), without a stored value in the message; stored payloads are always validated, so this only catches corrupt data.
 - `titles`: the titles in stored order.
 - `words`: all words of all columns in stored reading order, copied into a list, sorted with `String.compareTo` (natural order), then `Collections.shuffle(list, new Random(seed))` with `seed = String.join("\u0000", all words in stored reading order).hashCode()` (an `int` widened to `long`). The sort only makes the shuffle input canonical. The seed depends on the stored order, so reordering words or columns changes the seed and so the order; every student and every call sees the same order for the same stored payload.
 - The shuffle may leave the words in an order that follows the columns (for few words the chance is high). This is accepted (Risks); #125 may re-shuffle per student or per view.
@@ -38,6 +38,7 @@ See proposal.md. Items hold a registered type (`ItemType<P>`, collected by `Item
 ## Risks / Trade-offs
 
 - [The shuffle may leave the words in column order, so a student sees the answer key] -> Accepted (Clarification 7); #125 may re-shuffle, and the same order for every student is a known limit.
+- [The seed comes from the content, so the shuffle is reproducible: anyone holding the view can brute-force it and recover the column of each word] -> Accepted (Clarification 10); the view is not a secret boundary, and #125 must re-shuffle with server-side randomness before a student endpoint exists.
 - [Invisible differences pass the duplicate checks: a trailing space, a composed against a decomposed letter] -> Accepted (Clarification 6); values are raw, as in the other types. Two words may then differ only invisibly, so a student sees two identical-looking words.
 - [U+00A0 and U+200B are non-blank, so a value of only those is accepted] -> Known limit, kept so one blank rule applies to every field (items R5).
 - [A rollback after use leaves `sort` rows with an unknown type, and there is no tooling yet to find or clean them] -> Accepted; the rows stay inert.
