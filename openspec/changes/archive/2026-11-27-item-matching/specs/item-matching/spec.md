@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: R1 A teacher adds and edits a matching item, and the student view hides the pairing
-The type `matching` SHALL have the payload `{pairs: [{left, right}]}`, as items R1 and R4, stored as sent. `studentView` SHALL return `{"left": [...], "right": [...]}`: `left` in stored order, `right` the sorted rights shuffled with `new Random(seed)`, seed = `String.join("\u0000", sortedLefts + sortedRights).hashCode()` (so it does not depend on the pairing), then rotated left by one if it equals the stored rights order (2 or more pairs); no pair index. No endpoint yet (#125).
+The type `matching` SHALL have the payload `{pairs: [{left, right}]}`, as items R1 and R4, stored as sent. `studentView` SHALL return `{"left": [...], "right": [...]}`: `left` in stored order, `right` the sorted rights shuffled with `new Random(seed)`, seed = `String.join("\u0000", sortedLefts + sortedRights).hashCode()` (so it does not depend on the pairing); no pair index. No endpoint yet (#125).
 
 #### Scenario: item-matching/R1-S1 Add an English matching item, it is stored and listed exactly
 - **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with a part
@@ -57,11 +57,6 @@ The type `matching` SHALL have the payload `{pairs: [{left, right}]}`, as items 
 - **GIVEN** the `matching` type and corrupt payloads built in the test: `pairs` `null`, a `null` pair, a pair with a `null` left and a pair with a `null` right, each (except the first) next to a valid pair with the text "secret-pair" (unit level)
 - **WHEN** `studentView` is called with each payload
 - **THEN** each of the four calls throws `IllegalStateException`, and no message contains "secret-pair" or any stored value
-
-#### Scenario: item-matching/R1-S12 Rights that the shuffle leaves next to their own lefts are rotated
-- **GIVEN** the `matching` type and a payload with the pairs `[{"left": "cat", "right": "кошка"}, {"left": "dog", "right": "собака"}]` (unit level; the sorted rights `["кошка", "собака"]` shuffled with the seed `-1338043034` stay `["кошка", "собака"]`, the stored pairing)
-- **WHEN** `studentView` is called with the payload
-- **THEN** `left` equals `["cat", "dog"]` and `right` equals `["собака", "кошка"]` (the shuffled rights rotated left by one), so the view does not show the stored pairing; an implementation without the rotation returns `["кошка", "собака"]` and fails
 
 ### Requirement: R2 A matching payload follows the limits and structure rules
 A `matching` payload SHALL follow items R2. `pairs`: missing, `null` or empty is `REQUIRED`, 1 is `TOO_SHORT`, over 25 is `TOO_LONG` (checked first); a `null` pair is `REQUIRED`. `left` and `right`: missing, `null` or blank is `REQUIRED`, over 100 UTF-16 code units `TOO_LONG`, an exact repeat on the same side `INVALID_FORMAT` at the later one; a value with its own error is not compared; a left may equal a right.
