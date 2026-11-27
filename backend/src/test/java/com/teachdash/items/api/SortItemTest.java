@@ -117,8 +117,8 @@ class SortItemTest extends ItemApiTest {
 		var setup = teacherWithPart();
 
 		// when teacher A adds an item with spaces, different case, and a composed and a decomposed "é"
-		String composed = "é";
-		String decomposed = "é";
+		String composed = "\u00e9";
+		String decomposed = "e\u0301";
 		var sent = payload(
 				column(" Verbs ", " Go ", "GO", "go"),
 				column("Accents", composed, decomposed));
