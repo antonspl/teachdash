@@ -11,10 +11,10 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 2. Buttons, token and focus ring (design D1 to D4)
 
-- [ ] 2.1 `tokens.css`: add `--button-icon-inset: 0.1875rem` and set `--lang-select-width` to `10.5rem`; `tokens.test.ts` has 90 names and the two values (web-client/R24-S1, R24-S2)
-- [ ] 2.2 `Button.tsx` and `Button.module.css`: the variants `quiet`, `dangerText` and `muted`; `icon` takes any shared icon (a name union and one name-to-component map in `icons.tsx`); the icon-led class with the inset; the state rules and transitions; secondary text `--color-text`; the `ariaLabel`, `ariaPressed` and `fullWidth` props (web-client/R27-S1, R27-S2, R27-S5, R27-S6, R27-S7, R27-S8, R27-S9; R23 stays green)
-- [ ] 2.3 `base.css`: the one global `:focus-visible` rule; no `outline: none` or `outline: 0` anywhere in `src` (web-client/R30-S1, Vitest part and a Playwright check of the computed ring)
-- [ ] 2.4 `LoginPage` and `SetPasswordPage` submit use `fullWidth` (web-client/R27-S9)
+- [x] 2.1 `tokens.css`: add `--button-icon-inset: 0.1875rem` and set `--lang-select-width` to `10.5rem`; `tokens.test.ts` has 90 names and the two values (web-client/R24-S1, R24-S2)
+- [x] 2.2 `Button.tsx` and `Button.module.css`: the variants `quiet`, `dangerText` and `muted`; `icon` takes any shared icon (a name union and one name-to-component map in `icons.tsx`); the icon-led class with the inset; the state rules and transitions; secondary text `--color-text`; the `ariaLabel`, `ariaPressed` and `fullWidth` props (web-client/R27-S1, R27-S2, R27-S5, R27-S6, R27-S7, R27-S8, R27-S9; R23 stays green)
+- [x] 2.3 `base.css`: the one global `:focus-visible` rule; no `outline: none` or `outline: 0` anywhere in `src` (web-client/R30-S1, Vitest part and a Playwright check of the computed ring)
+- [x] 2.4 `LoginPage` and `SetPasswordPage` submit use `fullWidth` (web-client/R27-S9)
 
 ## 3. Fields and the icon-led select (design D5 to D8)
 
