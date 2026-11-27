@@ -21,7 +21,8 @@ function filesUnder(dir: string) {
 
 const read = (file: string) => readFileSync(file, 'utf8')
 const ui = (name: string) => read(join(srcDir, 'ui', `${name}.module.css`))
-const squash = (text: string) => text.replace(/\s+/g, ' ').trim()
+const squash = (text: string) =>
+  text.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim()
 
 // The declarations of the rule `selector { ... }` (not inside a media block), squashed.
 function rule(css: string, selector: string) {
@@ -184,7 +185,7 @@ test('[web-client/R27-S2] There is no success variant', () => {
 
   // when the variants are read
   // then the variant type is primary, secondary and danger only
-  expect(tsx).toContain("variant?: 'primary' | 'secondary' | 'danger'")
+  expect(tsx).toMatch(/variant\?: 'primary' \| 'secondary' \| 'danger'\n/)
 
   // and the CSS has no success rule and no success token
   expect(css).not.toMatch(/\.success/)
@@ -247,7 +248,7 @@ test('[web-client/R28-S2] The select chevron rules', () => {
   // and the select drops the native look and clears the chevron
   expect(select).toContain('appearance: none;')
   expect(select).toContain(
-    'padding-right: calc( var(--space-group) + var(--icon-size) + var(--space-inline) );',
+    'padding-right: calc(var(--space-group) + var(--icon-size) + var(--space-inline));',
   )
 
   // and there is no .arrowIcon rule

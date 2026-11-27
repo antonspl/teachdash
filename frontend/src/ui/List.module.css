@@ -37,8 +37,15 @@
 }
 
 .details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-adjacent);
   margin-top: var(--space-adjacent);
   color: var(--color-text-muted);
+}
+
+.details > * {
+  margin: 0;
 }
 
 .extra {
