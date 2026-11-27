@@ -38,8 +38,8 @@ async function sizeOf(button: Locator) {
   return { width: box!.width, height: box!.height }
 }
 
-// Presses `idle`, waits for the busy label on the same button, and compares the boxes.
-async function expectSameBox(
+// Presses `idle`, waits for the busy label on the same button, and checks that it did not shrink.
+async function expectNotNarrower(
   page: Page,
   idleName: string,
   busyName: string,
@@ -53,7 +53,10 @@ async function expectSameBox(
   await expect(busy).toBeDisabled()
   await expect(busy).toHaveAttribute('aria-busy', 'true')
   const during = await sizeOf(busy)
-  expect(during.width, `${where}: width`).toBeCloseTo(before.width, 1)
+  // never narrower; it grows only where the busy label is longer than the idle one
+  expect(during.width, `${where}: width`).toBeGreaterThanOrEqual(
+    before.width - 0.01,
+  )
   expect(during.height, `${where}: height`).toBeCloseTo(before.height, 1)
   expect(
     before.width,
@@ -61,7 +64,7 @@ async function expectSameBox(
   ).toBeGreaterThan(0)
 }
 
-test('[web-client/R29-S2] The login button keeps its width and height while the request runs (en and ru, desktop only)', async ({
+test('[web-client/R29-S2] The login button never gets narrower while the request runs (en and ru, desktop only)', async ({
   page,
 }, testInfo) => {
   test.skip(
@@ -76,7 +79,7 @@ test('[web-client/R29-S2] The login button keeps its width and height while the 
       .getByLabel(t.login.password, { exact: true })
       .fill('wrong-pass-1')
     const hold = await holdRequest(page, '**/api/auth/login', 'POST')
-    await expectSameBox(
+    await expectNotNarrower(
       page,
       t.login.submit,
       t.login.submitting,
@@ -90,7 +93,7 @@ test('[web-client/R29-S2] The login button keeps its width and height while the 
   }
 })
 
-test('[web-client/R29-S2] The profile Save and Change password buttons keep their box while the request runs (en and ru; 360 on the phone project)', async ({
+test('[web-client/R29-S2] The profile Save and Change password buttons never get narrower while the request runs (en and ru; 360 on the phone project)', async ({
   page,
   playwright,
   baseURL,
@@ -104,7 +107,7 @@ test('[web-client/R29-S2] The profile Save and Change password buttons keep thei
       page.getByRole('heading', { name: t.profile.title }),
     ).toBeVisible()
     const save = await holdRequest(page, '**/api/me', 'PATCH')
-    await expectSameBox(
+    await expectNotNarrower(
       page,
       t.profile.save,
       t.profile.saving,
@@ -126,7 +129,7 @@ test('[web-client/R29-S2] The profile Save and Change password buttons keep thei
       .getByLabel(t.profile.repeatPassword, { exact: true })
       .fill('teacher-pass-2')
     const change = await holdRequest(page, '**/api/me/password', 'POST')
-    await expectSameBox(
+    await expectNotNarrower(
       page,
       t.profile.changePassword,
       t.profile.changingPassword,
@@ -143,7 +146,7 @@ test('[web-client/R29-S2] The profile Save and Change password buttons keep thei
   }
 })
 
-test('[web-client/R29-S2] Create teacher and a row button keep their box while the request runs (en and ru; 360 on the phone project)', async ({
+test('[web-client/R29-S2] Create teacher and a row button never get narrower while the request runs (en and ru; 360 on the phone project)', async ({
   page,
   playwright,
   baseURL,
@@ -168,7 +171,7 @@ test('[web-client/R29-S2] Create teacher and a row button keep their box while t
       '**/api/admin/users/*/reset-link',
       'POST',
     )
-    await expectSameBox(
+    await expectNotNarrower(
       page,
       t.adminTeachers.actions.resetLink,
       t.adminTeachers.busy.resetLink,
@@ -195,7 +198,7 @@ test('[web-client/R29-S2] Create teacher and a row button keep their box while t
       .getByLabel(t.adminTeachers.create.nativeLanguage)
       .selectOption('de')
     const create = await holdRequest(page, '**/api/admin/teachers', 'POST')
-    await expectSameBox(
+    await expectNotNarrower(
       page,
       t.adminTeachers.create.submit,
       t.adminTeachers.create.submitting,

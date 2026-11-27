@@ -22,8 +22,9 @@ export function Button({
   variant?:
     'primary' | 'secondary' | 'quiet' | 'dangerText' | 'muted' | 'danger'
   disabled?: boolean
-  // A request is in flight: native disabled, aria-busy and the busy label in place
-  // of the idle one. Both labels stay in one grid cell, so the width never changes.
+  // A request is in flight: native disabled, aria-busy and the busy label. Idle, only
+  // the idle label is in the DOM; busy, both share one grid cell (the idle one hidden),
+  // so the button never gets narrower and grows only when the busy label is longer.
   busy?: boolean
   busyLabel?: string
   icon?: IconName
@@ -48,23 +49,15 @@ export function Button({
       onClick={onClick}
     >
       {Icon && <Icon />}
-      {busyLabel === undefined ? (
-        children
-      ) : (
+      {busy && busyLabel !== undefined ? (
         <span className={styles.labels}>
-          <span
-            className={busy ? styles.inactive : styles.label}
-            aria-hidden={busy ? true : undefined}
-          >
+          <span className={styles.inactive} aria-hidden="true">
             {children}
           </span>
-          <span
-            className={busy ? styles.label : styles.inactive}
-            aria-hidden={busy ? undefined : true}
-          >
-            {busyLabel}
-          </span>
+          <span className={styles.label}>{busyLabel}</span>
         </span>
+      ) : (
+        children
       )}
     </button>
   )

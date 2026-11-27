@@ -18,8 +18,8 @@
     opacity var(--duration-fast);
 }
 
-/* The idle and the busy label share one grid cell; the inactive one is hidden, so the
-   button keeps the width of the longer label and the layout does not jump. */
+/* Only while busy: the idle and the busy label share one grid cell and the idle one is
+   hidden, so the button is as wide as the longer label and never narrower than idle. */
 .labels {
   display: grid;
   justify-items: center;

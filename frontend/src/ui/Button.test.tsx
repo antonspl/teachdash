@@ -91,6 +91,8 @@ test('[web-client/R29-S1] idle, a button is found by its idle label, enabled and
   expect((button as HTMLButtonElement).disabled).toBe(false)
   expect(button.getAttribute('aria-busy')).toBeNull()
   expect(screen.queryByRole('button', { name: 'Saving…' })).toBeNull()
+  expect(button.textContent).toBe('Save')
+  expect(button.querySelector('span')).toBeNull()
 })
 
 test('[web-client/R29-S1] busy, it is found by its busy label, disabled and aria-busy, and the idle label is hidden from its name', () => {
@@ -125,15 +127,17 @@ test('[web-client/R29-S1] the same button element goes idle to busy and back, an
     </Button>,
   )
   expect(screen.getByRole('button', { name: 'Saving…' })).toBe(button)
+  expect(button.textContent).toBe('SaveSaving…')
   rerender(<Button busyLabel="Saving…">Save</Button>)
   expect(screen.getByRole('button', { name: 'Save' })).toBe(button)
+  expect(button.textContent).toBe('Save')
   expect(button.getAttribute('aria-busy')).toBeNull()
   cleanup()
   render(<Button>Plain</Button>)
   expect(screen.getByRole('button', { name: 'Plain' }).children).toHaveLength(0)
 })
 
-test('[web-client/R29-S2] the CSS puts both labels in one grid cell and hides the inactive one', () => {
+test('[web-client/R29-S2] the CSS puts both labels in one grid cell, rendered only while busy, and hides the idle one', () => {
   const css = readFileSync(`${import.meta.dirname}/Button.module.css`, 'utf8')
   expect(css).toMatch(/\.labels\s*\{[^}]*display:\s*grid/)
   expect(css).toMatch(/\.label,\s*\.inactive\s*\{[^}]*grid-area:\s*1\s*\/\s*1/)
