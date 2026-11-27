@@ -15,9 +15,9 @@
 
 ## 3. Implementation (backend)
 
-- [ ] 3.1 `SortPayload` and `SortColumn` with the Bean Validation of design D2 (`@NotEmpty @Size(min = 2, max = 10)` and `List<@Valid SortColumn>` on `columns`; `@NotEmpty @Size(max = 25)` on `words`). `SortItemType.extraChecks` stays the empty placeholder from 1.1 until 3.2; verify that the scenarios whose errors come only from Bean Validation or JSON reading pass and that the others still fail at their THEN step
-- [ ] 3.2 `SortItemType.extraChecks`: the null column, the title and word rules (blank, length, exact duplicates, a value with its own error not compared), the total of 50 (design D2); verify the remaining R2 scenarios and R1-S5 pass
-- [ ] 3.3 `SortItemType.studentView` as an allowlist with the sort, the seed and the shuffle of design D4, throwing on corrupt data; verify R1-S7, R1-S8, R1-S9 and R1-S10 pass
+- [x] 3.1 `SortPayload` and `SortColumn` with the Bean Validation of design D2 (`@NotEmpty @Size(min = 2, max = 10)` and `List<@Valid SortColumn>` on `columns`; `@NotEmpty @Size(max = 25)` on `words`). `SortItemType.extraChecks` stays the empty placeholder from 1.1 until 3.2; verify that the scenarios whose errors come only from Bean Validation or JSON reading pass and that the others still fail at their THEN step
+- [x] 3.2 `SortItemType.extraChecks`: the null column, the title and word rules (blank, length, exact duplicates, a value with its own error not compared), the total of 50 (design D2); verify the remaining R2 scenarios and R1-S5 pass
+- [x] 3.3 `SortItemType.studentView` as an allowlist with the sort, the seed and the shuffle of design D4, throwing on corrupt data; verify R1-S7, R1-S8, R1-S9 and R1-S10 pass
 - [ ] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S4 and R1-S6); check that the payload records have `@Size` on each list, no `Map` field, and that no title or word is logged (constitution section 5)
 - [ ] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
