@@ -26,3 +26,4 @@
 - Code review gate: the `code-gate-reviewer` runs, then the engineer approves the code in the PR.
 - Archive in the same PR, after confirming every scenario ID has a matching test. At archive, write the Purpose line of the new `item-gap-fill` main spec.
 - Mark the PR ready for the final review by a code owner other than the engineer.
+- [ ] 3.6 Code-gate review fixes: numeric index order in FieldErrorCodes error sorting, studentView explicit gap match and fixed key order, GapFillSegmentTest without the full Spring context

@@ -20,6 +20,9 @@ Issue #113. The engineer's decisions, as given:
 | 12 | Amends 7: new limits? | Text segment at most 500 characters; answer at most 100 characters (UTF-16 length); at most 25 gaps; at most 51 segments; at most 5 answers per gap. |
 | 13 | Student view envelope? | `studentView` returns `{ "segments": [...] }`, the same envelope as the stored payload; R1 states it and R1-S8 and R1-S9 assert the wrapper. |
 | 14 | Pointer in `items`? | A one-line pointer in items R2 (a delta) names the `item-gap-fill` capability for the gap-fill type's rules. |
+| 15 | Error sort order? | Validation `errors` are sorted by field with list indexes compared as numbers (`payload.segments[2]` before `payload.segments[10]`), not as plain strings. Stated in the items R2 delta. |
+| 16 | Blank answer? | `Character.isWhitespace` only, the same rule as the other fields (items R5). U+00A0 and U+200B are not blank, so an answer of only those is accepted. Known limit, kept so one rule applies to every field. |
+| 17 | `studentView` strictness? | It matches `text` and `gap` explicitly and throws on any other type or a null text (stored payloads are always validated, so this only catches corrupt data); the view has a fixed key order (`type` first). |
 
 ## Research angles
 

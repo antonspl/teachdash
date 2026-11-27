@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: R2 An item payload follows the generic rules and its type's rules
-`type` SHALL be a registered code and `payload` a JSON object, else 400 `VALIDATION_FAILED` with `REQUIRED`, `UNKNOWN_TYPE` or `INVALID_TYPE` (the first binding error wins). A NUL or lone surrogate in any payload string, a known field or not, gives `payload` `INVALID_FORMAT`, and an unknown property `payload` `UNKNOWN_FIELD`: no key is echoed. Other errors of the record or its constraints keep the path `payload.<path>`. The stored payload is the record serialised without null fields. The rules of the `gap-fill` type are in the `item-gap-fill` capability.
+`type` SHALL be a registered code and `payload` a JSON object, else 400 `VALIDATION_FAILED` with `REQUIRED`, `UNKNOWN_TYPE` or `INVALID_TYPE` (the first binding error wins). A NUL or lone surrogate in any payload string, a known field or not, gives `payload` `INVALID_FORMAT`, and an unknown property `payload` `UNKNOWN_FIELD`: no key is echoed. Other errors of the record or its constraints keep the path `payload.<path>`. The stored payload is the record serialised without null fields. The `errors` are sorted by field, list indexes compared as numbers (`payload.segments[2]` before `payload.segments[10]`). The rules of the `gap-fill` type are in the `item-gap-fill` capability.
 
 #### Scenario: items/R2-S1 A missing, null, blank, wrongly typed or unknown type is rejected
 - **GIVEN** a logged-in teacher A with a part, and the item type `test-note` (no type `poll` is registered)
