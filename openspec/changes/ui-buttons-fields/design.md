@@ -6,7 +6,7 @@ Step 2 (#196) moved `tokens.css` and every `src/ui` CSS file to the design-code 
 
 ## Goals / Non-Goals
 
-- Goals: every button role and state from tokens; one global focus ring; the field error with an icon and a 2px border that moves nothing; a busy label that keeps the button width; the icon-led language select; the icon inset on icon-led buttons.
+- Goals: every button role and state from tokens; one global focus ring; the field error with an icon and a 2px border that moves nothing; a busy label that never shrinks the button; the icon-led language select; the icon inset on icon-led buttons.
 - Non-goals: see the proposal's "Out of scope" (header, Toolbar, row actions, dialog foot, banners, Log out busy state).
 
 ## Decisions
@@ -19,7 +19,7 @@ State rules (Clarification 19) are written on `.button:hover:not(:disabled)` and
 
 ### D2 Busy state
 
-`Button` with `busy` renders `disabled`, `aria-busy="true"` and two spans in one grid cell (`display: grid`, both with `grid-area: 1 / 1`): the idle label and the busy label. The inactive one has `visibility: hidden` and `aria-hidden="true"`; so the accessible name is the visible one only, the width is the longer label's, and there is no measuring and no inline style (R8-S1 forbids it for the WebKit CSP note anyway). Idle, the busy span is hidden the same way; so both labels are always in the DOM, and the button is found by its idle name when idle and by its busy name when busy. A button without `busyLabel` renders as today. There is no minimum duration or delay (Clarification 21): the button is disabled at once, and a near-instant request may flash the busy label and the dim.
+`Button` with `busy` renders `disabled`, `aria-busy="true"` and two spans in one grid cell (`display: grid`, both with `grid-area: 1 / 1`): the idle label, now `visibility: hidden` and `aria-hidden="true"`, and the busy label, shown. The accessible name is the busy label only, the busy width is the longer of the two labels (never narrower than idle, equal when the busy label is not longer), and there is no measuring and no inline style (R8-S1 forbids it for the WebKit CSP note anyway). Idle, the button renders only the idle label at its natural width, with no grid cell and no busy label in the DOM (Clarification 28); so the button is found by its idle name when idle and by its busy name when busy. The width may grow when the busy state starts, which moves almost nothing. A button without `busyLabel` renders as today. There is no minimum duration or delay (Clarification 21): the button is disabled at once, and a near-instant request may flash the busy label and the dim.
 
 Focus risk (R14-S12, R17): the submit buttons are already natively `disabled` while a request runs, so the busy state changes no focus behaviour; it only adds `aria-busy` and the label. The focus after a failure is still moved by `useFieldErrors` (R17) once the request ends. R29-S7 pins this. No live region, `role="status"` or `role="alert"` is added at request start (Clarification 13); the result is announced by the existing `StatusMessage`.
 
@@ -87,7 +87,7 @@ Every Vitest or Playwright test title starts with `[web-client/R<n>-S<n>]` (or t
 - `design-code.md` "Controls and icons" table: add the row ``| `--button-icon-inset` | `0.1875rem` | the empty margin inside an icon box; subtracted from the start padding of an icon-led button |``; and in the layout table change `| `--lang-select-width` | `9rem` | language select |` to `| `--lang-select-width` | `10.5rem` | language select (with its icon) |`.
 - `design-code.md` "Redesign plan", small items: replace `- 3a and 3b: the space before a full stop after a control, the quiet button icon inset, the 2rem row focus ring meeting the border.` with nothing and replace `- 4a: a tooltip's text always matches its trigger's current label; a tooltip never covers the row below its trigger's row.` with `- 4a: the space before a full stop after a control and the 2rem row focus ring meeting the border (moved from 3a); a tooltip's text always matches its trigger's current label; a tooltip never covers the row below its trigger's row.`
 - `design-code.md` "States", Hover line, add at its end: `Hover is applied only under `@media (hover: hover)`, so a tap on a touch screen leaves no sticky hover.`
-- `design-code.md` "States", Loading line: replace `and its minimum width is kept so the layout does not jump` with `and it keeps the width of the longer of the two labels so the layout does not jump`.
+- `design-code.md` "States", Loading line: no edit; its wording "its minimum width is kept" stays (Clarification 28 supersedes the earlier plan to reword it).
 - `accessibility.md:140-146`, the example block, before `/* ✅ :focus-visible for keyboard focus, in token values (C3); --color-accent is about\n   6.7:1 on the surface. --focus-ring-width and --focus-ring-offset are examples of\n   new role-named tokens. */\n:focus-visible {\n  outline: var(--focus-ring-width) solid var(--color-accent);\n  outline-offset: var(--focus-ring-offset);\n}`, after `/* ✅ :focus-visible for keyboard focus, in token values (C3); --color-focus-ring is the\n   accent colour (about 6.7:1 on the surface). */\n:focus-visible {\n  outline: var(--border-width-strong) solid var(--color-focus-ring);\n  outline-offset: var(--focus-offset);\n}`.
 - `refactoring-ui-patterns.md:99`, before `A thicker outline or an offset is a new role-named token (C3).`, after `The focus ring has its own tokens: `--border-width-strong`, `--color-focus-ring` and `--focus-offset`.`
 - `checklist.md:28`, before `- Interactive elements need visible focus: an outline in token values (`--color-accent`; a new width is a new role-named token, C3), or the browser default`, after `- Interactive elements need visible focus: the global `:focus-visible` outline (`--border-width-strong`, `--color-focus-ring`, `--focus-offset`)`.
@@ -108,7 +108,7 @@ Every screen, through the shared `Button`, field, `Select` and the global focus 
 
 ### Layout (desktop and 360)
 
-- Buttons: one line, label centred, minimum width kept; a long Russian label wraps inside the button at 360 (design-code, Copy). Height `--control-height`. The icon-led button starts its padding `--button-icon-inset` earlier. Login and set-password submit: natural width and left-aligned on desktop, full width below `64rem`.
+- Buttons: one line, label centred, natural width; a long Russian label wraps inside the button at 360 (design-code, Copy). Height `--control-height`. The icon-led button starts its padding `--button-icon-inset` earlier. Login and set-password submit: natural width and left-aligned on desktop, full width below `64rem`.
 - Password row: input and the Show/Hide Button `--space-button-gap` apart; the toggle is `--control-height` high, so it lines up with the input.
 - Field error: label, control, message, `--space-adjacent` apart. A long message wraps at 360 under its own text.
 - Icon-led language select: globe, text, chevron, with the globe and the chevron each `--space-group` from the inner edge; the header wraps at 360 as today.
@@ -133,7 +133,7 @@ Icon-led language select (inner gaps are --space-group on both sides):
 
 ### States per screen
 
-- Buttons: default, hover, active, focus, disabled for every variant; busy for the submits, Confirm and the pressed row button (disabled, `aria-busy`, busy label, no spinner, width kept).
+- Buttons: default, hover, active, focus, disabled for every variant; busy for the submits, Confirm and the pressed row button (disabled, `aria-busy`, busy label, no spinner, the width never shrinks).
 - Fields: default, hover, focus, error (also the live password hints), disabled, read-only (the issued link). Selects: the same, with the arrow.
 - Loading ("Loading…" text), empty and success states of the pages are unchanged.
 
@@ -198,7 +198,7 @@ Left out of this plan: the quiet, muted and danger-text variants in use (no scre
 
 **Button loading (Login, Set password, Save, Change password, Create teacher; the clicked row button and Deactivate confirm too, Clarification 10)**
 - Hierarchy unchanged (the button keeps its role). Disabled (`--opacity-disabled`, `cursor: not-allowed`) + `aria-busy="true"` + the progressive label ("Signing in…", "Saving…", «Вход…», «Сохранение…»).
-- Width: idle and busy labels stacked in one grid cell (the inactive one `aria-hidden`, `visibility: hidden`), so the button keeps the width of the longer label in both languages; height `--control-height`; no layout shift; no spinner.
+- Width: idle and busy labels stacked in one grid cell (the inactive one `aria-hidden`, `visibility: hidden`), so while busy the button has the width of the longer label in both languages and never shrinks (idle, only the idle label is rendered; Clarification 28); height `--control-height`; the width may grow when busy starts; no spinner.
 - Sibling buttons in the row (Cancel) stay disabled and unchanged. Tokens: existing only.
 
 **Language select, icon-led (header after Log out; login/set-password row above the title in `<main>`; en/ru; desktop and 360)**

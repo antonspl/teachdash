@@ -4,19 +4,19 @@
 
 ### Requirement: R29 Busy button
 
-A button whose request is in flight SHALL be natively disabled, have `aria-busy="true"` and show its own busy label, with no spinner and no change of width. This covers the form submits, the deactivate "Confirm" and the pressed row button, and nothing else (not Log out, not "Try again"). A busy label ends with "…" and, in Russian, is a noun. Starting a request SHALL announce nothing.
+A button whose request is in flight SHALL be natively disabled, have `aria-busy="true"` and show its own busy label, with no spinner and a width that never shrinks while busy (it may grow). This covers the form submits, the deactivate "Confirm" and the pressed row button, and nothing else (not Log out, not "Try again"). A busy label ends with "…" and, in Russian, is a noun. Starting a request SHALL announce nothing.
 
 #### Scenario: web-client/R29-S1 A busy button is disabled, marked busy and named by its busy label
 - **GIVEN** a `Button` with an idle label and a busy label, rendered idle and then busy (a unit test)
 - **WHEN** it is read by role and name
-- **THEN** idle, it is found by the idle label, is enabled and has no `aria-busy="true"`
+- **THEN** idle, it is found by the idle label, is enabled and has no `aria-busy="true"`, and only the idle label is in the DOM (its `textContent` is the idle label)
 - **AND** busy, it is found by the busy label, is `disabled` and has `aria-busy="true"`, the idle label is not part of its accessible name (it is `aria-hidden`), no `svg` was added, and pressing it calls no handler
 
-#### Scenario: web-client/R29-S2 The busy button keeps its width
+#### Scenario: web-client/R29-S2 The busy button never gets narrower
 - **GIVEN** `Button.module.css`, read as text, and in `en` and in `ru` the login page on the desktop project and, on the 360-pixel phone project, a button that is not full width (profile Save, "Create teacher" or a row button), each with its request held
 - **WHEN** the button is pressed
-- **THEN** the button's width and height are the same before and while the request runs
-- **AND** the CSS puts the two labels in one grid cell, the inactive one with `visibility: hidden`, and the button has no `style` attribute
+- **THEN** the button's width while the request runs is at least its width before, equal where the busy label is not longer than the idle one, and its height is the same
+- **AND** the CSS puts the two labels in one grid cell only while busy, the idle one with `visibility: hidden`, and the button has no `style` attribute
 
 #### Scenario: web-client/R29-S3 Each form's submit button shows its own busy label
 - **GIVEN** the login page, the set-password page, the profile form, the profile password form and the "Add teacher" dialog, each with its request held

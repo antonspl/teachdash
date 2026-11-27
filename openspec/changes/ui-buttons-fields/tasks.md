@@ -28,7 +28,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 - [x] 4.1 `Button` `busy` and `busyLabel` (two labels in one grid cell, `disabled`, `aria-busy`); the nine keys of design D9 (labels mirror the idle names) in `en.json` and `ru.json`; `parity.test.ts` and `copyRules.test.ts` cover them (web-client/R29-S1, R29-S2 CSS half, R29-S5)
 - [x] 4.2 `LoginPage`, `SetPasswordPage`, `ProfileForm`, `PasswordForm` and the create dialog pass `busy` and `busyLabel` to their submit; update the tests that read the button by its idle name mid-request (design D10 list, held element reference where a test re-queries): `App.test.tsx` (web-auth/R1-S4), `ProfilePage.test.tsx` (web-profile/R2-S8, R3-S9) and `AdminTeachersPage.test.tsx` `submitButton()` (web-admin-teachers/R2-S5) (web-client/R29-S3, R29-S7)
 - [x] 4.3 `AdminTeachersPage`: `runRowAction` takes the pressed action, the per-row busy state records it, the pressed row button and the deactivate Confirm show their busy labels; update `deactivateButton(row)` use in R5-S4 and `confirm()` (web-admin-teachers/R4-S2, R5-S4; web-client/R29-S4)
-- [x] 4.4 Playwright: the button keeps its width while busy, in en and ru at desktop and, at 360, on a button that is not full width (profile Save, "Create teacher" or a row button; the login button only at desktop) (web-client/R29-S2); the Russian busy labels fit at 360 in `e2e/russianFit.spec.ts` (web-client/R29-S6)
+- [x] 4.4 Playwright: the busy width is at least the idle width (equal where the busy label is not longer), in en and ru at desktop and, at 360, on a button that is not full width (profile Save, "Create teacher" or a row button; the login button only at desktop) (web-client/R29-S2); the Russian busy labels fit at 360 in `e2e/russianFit.spec.ts` (web-client/R29-S6)
 
 ## 5. After screenshots
 
@@ -37,7 +37,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 6. Design docs (design D11)
 
-- [ ] 6.1 `.agents/design/design-code.md`: the busy-label noun rule in "Copy and languages", the `--button-icon-inset` row and the `--lang-select-width` value in the token tables, the small-items line moved to 4a, the hover line and the Loading width line in States; `refactoring-ui-patterns.md:91` and `accessibility-patterns.md:29`, and the stale focus statements of `accessibility.md`, `refactoring-ui-patterns.md:99` and `checklist.md:28`, each with the exact before and after lines of design D11
+- [ ] 6.1 `.agents/design/design-code.md`: the busy-label noun rule in "Copy and languages", the `--button-icon-inset` row and the `--lang-select-width` value in the token tables, the small-items line moved to 4a, the hover line in States (the Loading line stays as it is, Clarification 28); `refactoring-ui-patterns.md:91` and `accessibility-patterns.md:29`, and the stale focus statements of `accessibility.md`, `refactoring-ui-patterns.md:99` and `checklist.md:28`, each with the exact before and after lines of design D11
 
 ## Workflow follow-up
 
