@@ -2,8 +2,18 @@ package com.teachdash.items.domain.choice;
 
 import java.util.List;
 
-// STUB: pass 2 adds the Bean Validation annotations
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
 public record TestQuestion(
-		String text,
-		List<TestOption> options) {
+		@NotBlank @Size(max = MAX_TEXT_LENGTH) String text,
+		@NotEmpty @Size(min = MIN_OPTIONS, max = MAX_OPTIONS) List<@Valid TestOption> options) {
+
+	public static final int MAX_TEXT_LENGTH = 500;
+
+	public static final int MIN_OPTIONS = 2;
+
+	public static final int MAX_OPTIONS = 10;
 }

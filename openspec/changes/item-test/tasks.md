@@ -16,13 +16,13 @@
 
 ## 3. Implementation (backend)
 
-- [ ] 3.1 `TestPayload`, `TestQuestion` and `TestOption` with the Bean Validation of design D2 (lists `@NotEmpty` and `@Size`, texts `@NotBlank @Size`, `correct` `@NotNull`). `extraChecks` stays the empty placeholder until 3.2, so in this step the accept scenarios (R1-S1 to R1-S3, R2-S1, R3-S1), R1-S4, R2-S2, R2-S3 (the first three cases), R2-S4, R2-S5 (the first four cases), R2-S6, R2-S8, R2-S9, R2-S10, R2-S11 (a) and (d) pass because Bean Validation and the JSON reading already give the expected errors, and every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
-- [ ] 3.2 `extraChecks`, structure: a null question and a null option (`REQUIRED`); verify R2-S3 (fourth case), R2-S5 (fifth case) and R2-S11 (b) pass
-- [ ] 3.3 `extraChecks`, duplicates: a repeated option text in one question by exact match, the same text in two questions allowed; verify R2-S7 and R2-S11 (b) and (c) pass
-- [ ] 3.4 `TestItemType.studentView` as an allowlist (design D5): the `{"questions"}` envelope, `multiple` from the count of correct options, stored order, throws on corrupt data; verify R3-S2 to R3-S5 pass
-- [ ] 3.5 Add `common/StrictBooleanJsonConfig` (design D2a, mirroring `StrictStringJsonConfig`); grep that no existing request DTO or payload relies on Boolean coercion and report the result; verify R2-S12 and the `StrictBooleanJsonConfig` unit test pass and the existing tests stay green
-- [ ] 3.6 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5, R3-S1); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no question or option is logged (constitution section 5)
-- [ ] 3.7 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `TestPayload`, `TestQuestion` and `TestOption` with the Bean Validation of design D2 (lists `@NotEmpty` and `@Size`, texts `@NotBlank @Size`, `correct` `@NotNull`). `extraChecks` stays the empty placeholder until 3.2, so in this step the accept scenarios (R1-S1 to R1-S3, R2-S1, R3-S1), R1-S4, R2-S2, R2-S3 (the first three cases), R2-S4, R2-S5 (the first four cases), R2-S6, R2-S8, R2-S9, R2-S10, R2-S11 (a) and (d) pass because Bean Validation and the JSON reading already give the expected errors, and every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
+- [x] 3.2 `extraChecks`, structure: a null question and a null option (`REQUIRED`); verify R2-S3 (fourth case), R2-S5 (fifth case) and R2-S11 (b) pass
+- [x] 3.3 `extraChecks`, duplicates: a repeated option text in one question by exact match, the same text in two questions allowed; verify R2-S7 and R2-S11 (b) and (c) pass
+- [x] 3.4 `TestItemType.studentView` as an allowlist (design D5): the `{"questions"}` envelope, `multiple` from the count of correct options, stored order, throws on corrupt data; verify R3-S2 to R3-S5 pass
+- [x] 3.5 Add `common/StrictBooleanJsonConfig` (design D2a, mirroring `StrictStringJsonConfig`); grep that no existing request DTO or payload relies on Boolean coercion and report the result; verify R2-S12 and the `StrictBooleanJsonConfig` unit test pass and the existing tests stay green
+- [x] 3.6 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5, R3-S1); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no question or option is logged (constitution section 5)
+- [x] 3.7 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

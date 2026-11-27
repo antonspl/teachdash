@@ -1,7 +1,12 @@
 package com.teachdash.items.domain.choice;
 
-// STUB: pass 2 adds the Bean Validation annotations
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 public record TestOption(
-		String text,
-		Boolean correct) {
+		@NotBlank @Size(max = MAX_TEXT_LENGTH) String text,
+		@NotNull Boolean correct) {
+
+	public static final int MAX_TEXT_LENGTH = 100;
 }
