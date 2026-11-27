@@ -25,9 +25,9 @@
 ## 4. Code-owner review fixes
 
 - [x] 4.1 Test fixes: build the "null unit" corrupt case of R3-S5 with `Arrays.asList("a", null)` so it really has a null unit (`entry("a", null)` resolves to the `List` overload); delete the unused `nullHint` in `ReorderPayloadTest`; re-pin the R3-S1, R3-S2 and R3-S3 orders (state seeds, no rotate cases) and make the order-dependence case of R3-S3 assert that a different stored order of the same units gives the same view; verify the R3 tests fail at their THEN step on the current code
-- [ ] 4.2 Engineer approves the test fixes in the PR. HARD STOP: no production code before approval
-- [ ] 4.3 `ReorderItemType.studentView`: the seed from the sorted units and no rotate (design D4); verify R3-S1 to R3-S5 pass
-- [ ] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the coverage script passes
+- [x] 4.2 Engineer approves the test fixes in the PR. HARD STOP: no production code before approval
+- [x] 4.3 `ReorderItemType.studentView`: the seed from the sorted units and no rotate (design D4); verify R3-S1 to R3-S5 pass
+- [x] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the coverage script passes
 
 ## Workflow follow-up
 

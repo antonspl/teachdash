@@ -71,18 +71,15 @@ public class ReorderItemType implements ItemType<ReorderPayload> {
 	}
 
 	/**
-	 * The sort makes the shuffle input canonical; the seed depends on the stored order. A shuffle equal to the
-	 * stored order is rotated, so the correct order is never shown (the units are not all equal).
+	 * The seed comes from the sorted units, so the view is the same for every stored order and does not reveal the
+	 * correct order. A chance match of the correct order is accepted.
 	 */
 	private List<String> shuffled(List<String> units) {
-		List<String> shuffled = new ArrayList<>(units);
-		Collections.sort(shuffled);
-		long seed = String.join("\u0000", units).hashCode();
-		Collections.shuffle(shuffled, new Random(seed));
-		if (shuffled.equals(units)) {
-			Collections.rotate(shuffled, -1);
-		}
-		return shuffled;
+		List<String> sorted = new ArrayList<>(units);
+		Collections.sort(sorted);
+		long seed = String.join("\u0000", sorted).hashCode();
+		Collections.shuffle(sorted, new Random(seed));
+		return sorted;
 	}
 
 	@Override
