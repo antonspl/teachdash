@@ -56,11 +56,11 @@ public class SortItemType implements ItemType<SortPayload> {
 		return column.words().stream().anyMatch(Objects::isNull);
 	}
 
-	/** The sort makes the shuffle input canonical; the seed depends on the stored order of the words. */
+	/** Sorting makes the shuffle input and the seed independent of which column holds which word. */
 	private List<String> shuffledWords(List<String> storedWords) {
 		List<String> shuffled = new ArrayList<>(storedWords);
 		Collections.sort(shuffled);
-		long seed = String.join("\u0000", storedWords).hashCode();
+		long seed = String.join("\u0000", shuffled).hashCode();
 		Collections.shuffle(shuffled, new Random(seed));
 		return shuffled;
 	}
