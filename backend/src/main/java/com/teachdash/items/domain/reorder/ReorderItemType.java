@@ -39,8 +39,11 @@ public class ReorderItemType implements ItemType<ReorderPayload> {
 
 	@Override
 	public Object studentView(ReorderPayload payload) {
-		if (payload.mode() == null || !MAX_UNIT_LENGTH_BY_MODE.containsKey(payload.mode()) || payload.entries() == null) {
-			throw new IllegalStateException("Cannot build a student view for a reorder payload without a valid mode and entries");
+		if (!isKnownMode(payload.mode())) {
+			throw new IllegalStateException("Cannot build a student view for a reorder payload with an invalid mode");
+		}
+		if (payload.entries() == null) {
+			throw new IllegalStateException("Cannot build a student view for a reorder payload without entries");
 		}
 		List<StudentEntry> entries = new ArrayList<>();
 		for (ReorderEntry entry : payload.entries()) {
@@ -51,10 +54,20 @@ public class ReorderItemType implements ItemType<ReorderPayload> {
 	}
 
 	private void requireComplete(ReorderEntry entry) {
-		if (entry == null || entry.units() == null || entry.units().stream().anyMatch(Objects::isNull)
-				|| new HashSet<>(entry.units()).size() < ReorderEntry.MIN_UNITS) {
+		if (entry == null
+				|| entry.units() == null
+				|| entry.units().stream().anyMatch(Objects::isNull)
+				|| !hasTwoDistinctUnits(entry.units())) {
 			throw new IllegalStateException("Cannot build a student view for an incomplete reorder entry");
 		}
+	}
+
+	private boolean isKnownMode(String mode) {
+		return mode != null && MAX_UNIT_LENGTH_BY_MODE.containsKey(mode);
+	}
+
+	private boolean hasTwoDistinctUnits(List<String> units) {
+		return new HashSet<>(units).size() >= ReorderEntry.MIN_UNITS;
 	}
 
 	/**
@@ -100,11 +113,11 @@ public class ReorderItemType implements ItemType<ReorderPayload> {
 			errors.add(new FieldErrorDetail("mode", FieldErrorCodes.REQUIRED));
 			return null;
 		}
-		Integer maxUnitLength = MAX_UNIT_LENGTH_BY_MODE.get(mode);
-		if (maxUnitLength == null) {
+		if (!isKnownMode(mode)) {
 			errors.add(new FieldErrorDetail("mode", FieldErrorCodes.INVALID_FORMAT));
+			return null;
 		}
-		return maxUnitLength;
+		return MAX_UNIT_LENGTH_BY_MODE.get(mode);
 	}
 
 	/** The distinct-unit rule is skipped for an entry with a unit that has its own error. */
@@ -122,7 +135,7 @@ public class ReorderItemType implements ItemType<ReorderPayload> {
 				unitHasError = true;
 			}
 		}
-		if (!unitHasError && new HashSet<>(units).size() < ReorderEntry.MIN_UNITS) {
+		if (!unitHasError && !hasTwoDistinctUnits(units)) {
 			errors.add(new FieldErrorDetail(path, FieldErrorCodes.INVALID_FORMAT));
 		}
 	}
