@@ -100,6 +100,8 @@ class ReorderItemTypeTest {
 		var ab = new ReorderPayload("letters", List.of(entry("a", "b")));
 		var ba = new ReorderPayload("letters", List.of(entry("b", "a")));
 		var aba = new ReorderPayload("letters", List.of(entry("a", "b", "a")));
+		var wordsInOrder = new ReorderPayload("words", List.of(entry("I", "like", "green", "apples")));
+		var wordsShuffled = new ReorderPayload("words", List.of(entry("apples", "like", "I", "green")));
 
 		// when studentView is called three times with the first payload and once with each of the others
 		JsonNode first = mapper.valueToTree(type.studentView(ab));
@@ -107,6 +109,8 @@ class ReorderItemTypeTest {
 		JsonNode third = mapper.valueToTree(type.studentView(ab));
 		JsonNode reversed = mapper.valueToTree(type.studentView(ba));
 		JsonNode repeated = mapper.valueToTree(type.studentView(aba));
+		JsonNode wordsInOrderView = mapper.valueToTree(type.studentView(wordsInOrder));
+		JsonNode wordsShuffledView = mapper.valueToTree(type.studentView(wordsShuffled));
 
 		// then the three results are equal, with the units a, b
 		assertThat(second).isEqualTo(first);
@@ -117,6 +121,9 @@ class ReorderItemTypeTest {
 		assertThat(units(entryAt(reversed, 0))).containsExactly("a", "b");
 		// and a, b, a gives b, a, a with both a kept
 		assertThat(units(entryAt(repeated, 0))).containsExactly("b", "a", "a");
+		// and the four words in two stored orders give the same view, apples, green, I, like
+		assertThat(wordsShuffledView).isEqualTo(wordsInOrderView);
+		assertThat(units(entryAt(wordsShuffledView, 0))).containsExactly("apples", "green", "I", "like");
 	}
 
 	@Test

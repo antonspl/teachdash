@@ -28,6 +28,7 @@
 - [x] 4.2 Engineer approves the test fixes in the PR. HARD STOP: no production code before approval
 - [x] 4.3 `ReorderItemType.studentView`: the seed from the sorted units and no rotate (design D4); verify R3-S1 to R3-S5 pass
 - [x] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the coverage script passes
+- [x] 4.5 Re-review: R3-S3 four-unit case (the words `["apples", "like", "I", "green"]` give the same view as `["I", "like", "green", "apples"]`)
 
 ## Workflow follow-up
 
