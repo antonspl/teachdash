@@ -33,10 +33,19 @@ public class GapFillItemType implements ItemType<GapFillPayload> {
 		return GapFillPayload.class;
 	}
 
-	// STUB: placeholder until task 3.3
 	@Override
 	public Object studentView(GapFillPayload payload) {
-		return Map.of();
+		List<Map<String, String>> segments = payload.segments().stream()
+				.map(this::studentSegment)
+				.toList();
+		return Map.of("segments", segments);
+	}
+
+	private Map<String, String> studentSegment(GapFillSegment segment) {
+		if (TEXT.equals(segment.type())) {
+			return Map.of("type", TEXT, "text", segment.text());
+		}
+		return Map.of("type", GAP);
 	}
 
 	@Override
@@ -103,7 +112,7 @@ public class GapFillItemType implements ItemType<GapFillPayload> {
 		for (int j = 0; j < answers.size(); j++) {
 			String answer = answers.get(j);
 			String answerPath = path + ".answers[" + j + "]";
-			if (answer == null || isBlank(answer)) {
+			if (answer == null || answer.isBlank()) {
 				errors.add(new FieldErrorDetail(answerPath, FieldErrorCodes.REQUIRED));
 			}
 			else if (answer.length() > MAX_ANSWER_LENGTH) {
@@ -113,9 +122,5 @@ public class GapFillItemType implements ItemType<GapFillPayload> {
 				errors.add(new FieldErrorDetail(answerPath, FieldErrorCodes.INVALID_FORMAT));
 			}
 		}
-	}
-
-	private static boolean isBlank(String value) {
-		return value.codePoints().allMatch(Character::isWhitespace);
 	}
 }

@@ -17,9 +17,9 @@
 
 - [x] 3.1 `GapFillPayload` and `GapFillSegment` with the Bean Validation of design D3 (`@NotEmpty @Size(max = 51)` and `List<@Valid GapFillSegment>`, `@Size(max = 500)` on `text`, `@Size(max = 5)` on `answers`). `GapFillItemType.extraChecks` stays the empty placeholder from 1.1 (no errors) until 3.2, so in this step R2-S1 (limits, all four payloads are valid), R2-S2 (a), (b), (e), (f) and R2-S10 pass (R2-S1 is already green on the stubs and stays green) because Bean Validation and the JSON reading already give the expected errors, and every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
 - [x] 3.2 `GapFillItemType.extraChecks`: the per-segment rules, adjacent texts, answer rules, the 25-gap limit and the gap-less payload (design D3); the empty-text rule rejects only "" (not `@NotBlank`), whitespace-only text is accepted, and a gap with missing or empty `answers` counts as a gap while a null, typeless or unknown-type segment does not; verify R2-S2 (c), (d), R2-S3 to R2-S9, R2-S11, R2-S12, R2-S13, R2-S14 and R2-S15 pass
-- [ ] 3.3 `GapFillItemType.studentView` as an allowlist (design D5); returns the `{"segments": [...]}` envelope; verify R1-S8 and R1-S9 pass
-- [ ] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, and that no answer or text is logged (constitution section 5)
-- [ ] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.3 `GapFillItemType.studentView` as an allowlist (design D5); returns the `{"segments": [...]}` envelope; verify R1-S8 and R1-S9 pass
+- [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, and that no answer or text is logged (constitution section 5)
+- [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
