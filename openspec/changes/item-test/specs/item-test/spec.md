@@ -29,7 +29,7 @@ The type `test` SHALL have the payload `{questions: [{text, options: [{text, cor
 - **THEN** both responses are 404, and teacher A's part still has exactly the one item with its payload and `version` unchanged
 
 ### Requirement: R2 A test payload follows the limits and structure rules
-A `test` payload SHALL follow items R2. Questions: 1 to 25; text non-blank, at most 500 (UTF-16). Options: 2 to 10; text non-blank, at most 100; `correct` required. Missing, `null` or empty lists, blank texts, a `null` question or option, a missing `correct`: `REQUIRED`; 1 option `TOO_SHORT`; over a maximum `TOO_LONG`; wrong JSON type `INVALID_TYPE`; an exact repeat of an option text in a question `INVALID_FORMAT` at the later `.text`. Bean Validation first, then the structure checks.
+A `test` payload SHALL follow items R2. Questions: 1 to 25, text non-blank, at most 500 (UTF-16). Options: 2 to 10, text non-blank, at most 100, `correct` a JSON `true` or `false`. Missing, `null` or empty lists and blank texts: `REQUIRED`, as a `null` question or option or `correct`; 1 option `TOO_SHORT`; over a maximum `TOO_LONG`; wrong JSON type `INVALID_TYPE`; an exact repeat of an option text `INVALID_FORMAT` at the later `.text`.
 
 #### Scenario: item-test/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
@@ -85,6 +85,11 @@ A `test` payload SHALL follow items R2. Questions: 1 to 25; text non-blank, at m
 - **GIVEN** a logged-in teacher A with a part
 - **WHEN** teacher A adds items of the type `test` with: (a) a question with a text of 501 English letters ("a") and the options "A", "A"; (b) the questions `[{"text": "Q1", "options": [A, A, null]}, null]` (A is `{"text": "A", "correct": true}`); (c) a question "Q" with the options "A" and "A" (both correct); (d) a question "Q" with the options "A" (correct) and an option with a text of 101 English letters ("a") and `"correct": null`
 - **THEN** (a) is 400 with `errors` exactly `[{field: "payload.questions[0].text", code: "TOO_LONG"}]` (the duplicate is not reported yet), (b) has `errors` exactly `[{field: "payload.questions[0].options[1].text", code: "INVALID_FORMAT"}, {field: "payload.questions[0].options[2]", code: "REQUIRED"}, {field: "payload.questions[1]", code: "REQUIRED"}]` (sorted by field), (c) has `errors` exactly `[{field: "payload.questions[0].options[1].text", code: "INVALID_FORMAT"}]`, (d) has `errors` exactly `[{field: "payload.questions[0].options[1].correct", code: "REQUIRED"}, {field: "payload.questions[0].options[1].text", code: "TOO_LONG"}]` (both are Bean Validation errors, sorted by field), and the part has no item
+
+#### Scenario: item-test/R2-S12 `correct` accepts only a JSON boolean
+- **GIVEN** a logged-in teacher A with a part
+- **WHEN** teacher A adds items of the type `test` with one question "Q" whose options are "A" with `"correct": true` and "B" with `"correct"` set to `"true"`, `"TRUE"`, `"false"`, `1`, `0`, `2`, `1.0` and `""`, and one more with `"correct": null`
+- **THEN** the responses for `"true"`, `"TRUE"`, `"false"`, `1`, `0`, `2`, `1.0` and `""` are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].options[1].correct", code: "INVALID_TYPE"}]`, the response for `null` is 400 with `errors` exactly `[{field: "payload.questions[0].options[1].correct", code: "REQUIRED"}]`, and the part has no item
 
 ### Requirement: R3 The student view hides the correct options, and a question may have none
 `studentView` SHALL return `{"questions": [{"text", "multiple", "options": [{"text"}]}]}` as an allowlist in this key order, with options in stored order (not shuffled) and no `correct` key or index; `multiple` is true when more than one option is correct, else false. A question with no correct option, or with all options correct, SHALL be accepted; none is auto-checked (#126). No student endpoint yet (#125): unit scenarios only.
