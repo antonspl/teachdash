@@ -238,7 +238,7 @@ class GapFillPayloadTest extends ItemApiTest {
 		var textWithAnswers = addRaw(setup, raw("{\"type\": \"text\", \"text\": \"Hi\", \"answers\": [\"go\"]}", GAP_GO));
 		var textWithEmptyAnswers = addRaw(setup, raw("{\"type\": \"text\", \"text\": \"Hi\", \"answers\": []}", GAP_GO));
 		var unknownInSegment = addRaw(setup, raw("{\"type\": \"text\", \"text\": \"Hi\", \"hint\": \"x\"}", GAP_GO));
-		var unknownInPayload = addRaw(setup, "{\"segments\": [" + GAP_GO + "], \"title\": \"Intro\"}");
+		var unknownInPayload = addRaw(setup, "{\"segments\": [" + GAP_GO + "], \"caption\": \"Intro\"}");
 		var gapWithId = addRaw(setup, raw("{\"type\": \"gap\", \"answers\": [\"go\"], \"id\": \"seg-7731\"}"));
 
 		// then a gap with text is UNKNOWN_FIELD at payload.segments[1].text
@@ -251,6 +251,7 @@ class GapFillPayloadTest extends ItemApiTest {
 			expectValidation(response, error("payload", "UNKNOWN_FIELD"));
 		}
 		assertNoEcho(unknownInSegment, "hint");
+		assertNoEcho(unknownInPayload, "caption");
 		assertNoEcho(unknownInPayload, "Intro");
 		assertNoEcho(gapWithId, "seg-7731");
 		// and the part has no item

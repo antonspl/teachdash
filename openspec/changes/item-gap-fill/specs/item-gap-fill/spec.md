@@ -88,7 +88,7 @@ A `gap-fill` payload SHALL follow items R2. Limits (`TOO_LONG`): 51 segments, 25
 
 #### Scenario: item-gap-fill/R2-S8 A field of the other segment type, or an unknown property, is rejected
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `gap-fill` with: (a) a gap with a `text` ("go"); (b) a text segment with `answers: ["go"]`; (c) a text segment with `answers: []`; (d) a segment `{"type": "text", "text": "Hi", "hint": "x"}`; (e) the payload `{"segments": [...valid...], "title": "Intro"}`; (f) a gap with `"id": 1`
+- **WHEN** teacher A adds items of the type `gap-fill` with: (a) a gap with a `text` ("go"); (b) a text segment with `answers: ["go"]`; (c) a text segment with `answers: []`; (d) a segment `{"type": "text", "text": "Hi", "hint": "x"}`; (e) the payload `{"segments": [...valid...], "caption": "Intro"}`; (f) a gap with `"id": "seg-7731"`
 - **THEN** all responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.segments[1].text", code: "UNKNOWN_FIELD"}]` for (a), `[{field: "payload.segments[0].answers", code: "UNKNOWN_FIELD"}]` for (b) and (c) (a known property in the wrong segment type, reported at its path), and `[{field: "payload", code: "UNKNOWN_FIELD"}]` for (d), (e) and (f) (a truly unknown property; the name is not echoed), and the part has no item
 
 #### Scenario: item-gap-fill/R2-S9 A missing, blank or unknown segment type and a null segment are rejected
