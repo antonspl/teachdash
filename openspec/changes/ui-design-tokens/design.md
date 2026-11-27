@@ -64,7 +64,7 @@ Space, each use by role (file:line, old to new):
 | `List:36` badges gap | `--space-inline` |
 | `List:41` details margin-top | `--space-adjacent` |
 | `List:46` extra margin-top | `--space-group` |
-| `List .details` (a column of detail lines, each its own `Text`) | `display: flex; flex-direction: column; gap: var(--space-adjacent)`, and `.details > * { margin: 0; }` resets the children's margins (Clarification 18); the buttons keep their ButtonRow spacing |
+| `List .details` (a column of detail lines, each its own `Text`) | `display: flex; flex-direction: column; gap: var(--space-adjacent)`, and `.item .details > * { margin: 0; }` resets the children's margins (Clarification 18; scoped by `.item` so it outranks `Text.module.css`, which loads later at equal specificity); the buttons keep their ButtonRow spacing |
 | `Page .page > [role='status']` (new rule, kept from 7bec8f3) | `margin-bottom: var(--space-block)`: space below a banner directly in the page (login session-ended, admin action-error, cabinet logout-error); follows `.form > [role='status']` (Clarification 17) |
 | `ErrorWithRetry:5` gap | `--space-group` |
 | `Text:2` margin-bottom | `--space-block` |
