@@ -39,19 +39,24 @@ The type `gap-fill-word-box` SHALL have the payload `{segments, extraWords}` of 
 - **THEN** both responses are 404, and teacher A's part still has exactly the one item with its payload and `version` unchanged
 
 #### Scenario: item-gap-fill-word-box/R1-S8 The student view keeps the text, shows gaps without an answer and lists answers and extra words as one box
-- **GIVEN** the `gap-fill-word-box` type and a payload with the segments `[text "I ", gap "go", text " to school and ", gap "ran", text " home, ", gap "go", text " again."]` and `extraWords` `["went", "run"]` (unit level: there is no student endpoint yet)
-- **WHEN** `studentView` is called with the payload
-- **THEN** the result has exactly the properties `segments` and `wordBox`; `segments` has seven entries in the same order: `{type: "text", text: "I "}`, `{type: "gap"}` (no other property), `{type: "text", text: " to school and "}`, `{type: "gap"}`, `{type: "text", text: " home, "}`, `{type: "gap"}` and `{type: "text", text: " again."}`; `wordBox` is a list of strings that holds exactly "go" twice, "ran", "went" and "run" (five entries, the same answer twice, no marker for the extra words), and two payloads that differ only in which words are extra give views with no property that tells them apart
+- **GIVEN** the `gap-fill-word-box` type and two payloads with the same segments `[text "I ", gap "go", text " to school and ", gap "ran", text " home, ", gap "go", text " again."]`, the first with `extraWords` `["went", "run"]` and the second with `extraWords` `["swam", "jump"]` (unit level: there is no student endpoint yet)
+- **WHEN** `studentView` is called with each payload
+- **THEN** each result has exactly the properties `segments` and `wordBox`; `segments` has seven entries in the same order: `{type: "text", text: "I "}`, `{type: "gap"}` (no other property), `{type: "text", text: " to school and "}`, `{type: "gap"}`, `{type: "text", text: " home, "}`, `{type: "gap"}` and `{type: "text", text: " again."}`; the `segments` of the two views are equal; `wordBox` is a list of strings that holds exactly "go" twice, "ran" and the two extra words of that payload (five entries); the two `wordBox` lists have the same size, and no property of either view marks a word as extra
 
 #### Scenario: item-gap-fill-word-box/R1-S9 The serialised student view has no `answer` and no `extraWords` key, in English and Russian
 - **GIVEN** the `gap-fill-word-box` type and two payloads: an English one with the segments `[text "He ", gap "walks", text " and she ", gap "runs", text "."]` and `extraWords` `["swims"]`, and a Russian one with the segments `[text "Мой ", gap "Ёжик", text " любит ", gap "ежевику", text "."]` and `extraWords` `["ёжик", "ежик"]`, with no text containing the words "answer" or "extraWords"
 - **WHEN** each payload's student view is serialised to JSON with the application's JSON mapper
 - **THEN** the JSON of each view is an object whose keys are exactly `segments` and `wordBox`, in this order, each gap is exactly `{"type":"gap"}`, it contains no `answer` and no `extraWords` property name, every text segment appears exactly with `type` before `text`, and `wordBox` holds exactly the answers and extra words of the payload (three entries for the English one, four for the Russian one, "Ёжик" and "ёжик" as different entries)
 
-#### Scenario: item-gap-fill-word-box/R1-S10 The box order is deterministic and does not depend on the gap order
+#### Scenario: item-gap-fill-word-box/R1-S10 The box order is the seeded shuffle of the sorted words and does not depend on the gap order
 - **GIVEN** the `gap-fill-word-box` type, the payload `[text "A ", gap "c", text " B ", gap "a", text " C ", gap "b"]` with `extraWords` `["d", "e"]`, and a second payload with the same texts but the gaps reordered to the answers "b", "c", "a" and `extraWords` `["e", "d"]`
 - **WHEN** `studentView` is called twice with the first payload and once with the second
-- **THEN** the two `wordBox` lists of the first payload are equal (the same order), the `wordBox` of the second payload equals them too, and each is a permutation of "a", "b", "c", "d", "e" (five entries)
+- **THEN** the `wordBox` of all three views is exactly `["c", "e", "b", "d", "a"]` (the words sorted by `String.compareTo` give `["a", "b", "c", "d", "e"]`; `Collections.shuffle(list, new Random(seed))` with the seed `String.join("\u0000", sortedWords).hashCode()` gives this order, which differs from the sorted one)
+
+#### Scenario: item-gap-fill-word-box/R1-S11 The student view of corrupt data throws
+- **GIVEN** the `gap-fill-word-box` type and payload records built directly (not validated): (a) a segment of an unknown type `image`; (b) a text segment with a `null` `text`; (c) a `null` segment; (d) a gap segment with a `null` `answer`
+- **WHEN** `studentView` is called with each payload
+- **THEN** each call throws `IllegalStateException` and returns no view
 
 ### Requirement: R2 A word-box payload follows the limits and structure rules
 A `gap-fill-word-box` payload SHALL follow items R2. Limits (UTF-16): 51 segments, 25 gaps (`TOO_LONG` at `segments`), 500 per text, 100 per `answer` (`TOO_LONG`), 10 `extraWords` (`TOO_LONG`), 100 per extra word. A gap SHALL have a non-blank `answer`, extra words non-blank (`REQUIRED`). A repeated extra word, or one equal to an answer, is `INVALID_FORMAT` (exact match). Text is `REQUIRED` only if missing, `null` or "". Bean Validation runs first, then `extraChecks`.

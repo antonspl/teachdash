@@ -14,6 +14,7 @@ Issue #225. The engineer's decisions, as given:
 | 6 | Storage? | Stored raw, as sent; the stored JSON drops a `null` `extraWords`. |
 | 7 | Student view? | `studentView` is an allowlist `{"segments": [text {type, text} \| {type: "gap"}], "wordBox": [string]}`. Gaps carry nothing. `wordBox` holds every gap's answer (one per gap) plus the extra words, as one list, never marked which is extra. Order: sort by `String.compareTo`, then shuffle with `new java.util.Random(seed)`, where seed = `String.join("\u0000", sortedWords).hashCode()`: deterministic for the same words and independent of the gap order. The student endpoint (#125) may re-shuffle per request. Fixed key order (`type` first). Unit tests: the JSON has no `answer` and no `extraWords` key; the box is the multiset of answers and extras; the same payload gives the same order twice; a payload with the gaps reordered gives the same box. |
 | 8 | Out of scope? | Answer checking (#126, #127), the student endpoint (#125), the editor, a reusable-word box mode and per-gap points. |
+| 9 | Invisible differences in exact matching? | Keep exact match, consistent with gap-fill's raw rule. The trap (a trailing space, or the composed and decomposed form of a letter, makes two words that look equal differ) is recorded in design Risks. |
 
 ## Research angles
 
@@ -45,7 +46,7 @@ None.
 ## Impact
 
 - Backend: new `items/domain/wordbox/WordBoxItemType`, `WordBoxPayload` and `WordBoxSegment`. No controller, service, repository, registry or shared-class change.
-- Tests: `items/api/WordBoxItemTest` (REST scenarios R1-S1 to R1-S7), `items/api/WordBoxPayloadTest` (REST scenarios R2-S1 to R2-S13), `items/domain/wordbox/WordBoxItemTypeTest` (unit scenarios R1-S8 to R1-S10) and the helper `items/support/WordBoxPayloads`.
+- Tests: `items/api/WordBoxItemTest` (REST scenarios R1-S1 to R1-S7), `items/api/WordBoxPayloadTest` (REST scenarios R2-S1 to R2-S13), `items/domain/wordbox/WordBoxItemTypeTest` (unit scenarios R1-S8 to R1-S11) and the helper `items/support/WordBoxPayloads`.
 - No new dependency, no migration, no new error code, no change to security configuration or Caddy.
 
 ## Out of scope
