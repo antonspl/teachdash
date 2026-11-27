@@ -21,9 +21,9 @@
 - [x] 3.3 `extraChecks`, options: missing `options` (`REQUIRED`), blank or null option, option length, exact duplicates; verify R2-S2 (c), (d), R2-S4, R2-S5 and the option cases of R2-S11 pass
 - [x] 3.4 `extraChecks`, `correct`: missing (`REQUIRED`), range (`INVALID_FORMAT`), skipped when the gap's `options` has an error; verify R2-S10 and R1-S6 pass
 - [x] 3.5 `extraChecks`, gap count: more than 25 gaps (`TOO_LONG`) and the gap-less payload (`REQUIRED`); a gap with missing fields counts as a gap, a null, typeless or unknown-type segment does not; verify R2-S2 (g), R2-S3 (d), R2-S12, R2-S13 and R2-S14 pass
-- [ ] 3.6 `DropdownItemType.studentView` as an allowlist (design D5); returns the `{"segments": [...]}` envelope, throws on corrupt data; verify R1-S8 and R1-S9 pass
-- [ ] 3.7 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no option or text is logged (constitution section 5)
-- [ ] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.6 `DropdownItemType.studentView` as an allowlist (design D5); returns the `{"segments": [...]}` envelope, throws on corrupt data; verify R1-S8 and R1-S9 pass
+- [x] 3.7 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no option or text is logged (constitution section 5)
+- [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

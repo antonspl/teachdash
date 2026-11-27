@@ -3,16 +3,15 @@ package com.teachdash.items.domain.dropdown;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.teachdash.common.FieldErrorCodes;
 import com.teachdash.common.FieldErrorDetail;
 import com.teachdash.items.domain.ItemType;
 
-// STUB: studentView is a placeholder, rewritten in task 3.6
 @Component
 public class DropdownItemType implements ItemType<DropdownPayload> {
 
@@ -36,7 +35,46 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 
 	@Override
 	public Object studentView(DropdownPayload payload) {
-		return Map.of();
+		List<StudentSegment> segments = payload.segments().stream()
+				.map(this::studentSegment)
+				.toList();
+		return new StudentView(segments);
+	}
+
+	private StudentSegment studentSegment(DropdownSegment segment) {
+		String type = segment.type();
+		if (TEXT.equals(type) && segment.text() != null) {
+			return new TextView(segment.text());
+		}
+		if (GAP.equals(type) && segment.options() != null) {
+			return new GapView(List.copyOf(segment.options()));
+		}
+		throw new IllegalStateException("Cannot build a student view for a dropdown segment of type " + type);
+	}
+
+	record StudentView(
+			List<StudentSegment> segments) {
+	}
+
+	sealed interface StudentSegment permits TextView, GapView {
+	}
+
+	record TextView(
+			String text) implements StudentSegment {
+
+		@JsonProperty(value = "type", index = 0)
+		public String type() {
+			return TEXT;
+		}
+	}
+
+	record GapView(
+			List<String> options) implements StudentSegment {
+
+		@JsonProperty(value = "type", index = 0)
+		public String type() {
+			return GAP;
+		}
 	}
 
 	@Override
