@@ -163,6 +163,13 @@ function submitButton() {
   })
 }
 
+// While the create request runs, the submit button is named by its busy label.
+function busySubmitButton() {
+  return screen.getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.create.submitting,
+  })
+}
+
 test('[web-admin-teachers/R1-S1] Each teacher is shown with their status', async () => {
   // given
   backend({
@@ -338,12 +345,18 @@ test('[web-admin-teachers/R2-S5] The form is not sent twice', async () => {
   // when
   const form = submitButton().closest('form')!
   fireEvent.submit(form)
+  await waitFor(() => expect(busySubmitButton().disabled).toBe(true))
   fireEvent.submit(form)
-  fireEvent.click(submitButton())
+  fireEvent.click(busySubmitButton())
 
   // then
-  await waitFor(() => expect(submitButton().disabled).toBe(true))
   expect(calls('POST')).toHaveLength(1)
+  expect(busySubmitButton().getAttribute('aria-busy')).toBe('true')
+  expect(
+    screen.getByRole<HTMLButtonElement>('button', {
+      name: en.adminTeachers.create.cancel,
+    }).disabled,
+  ).toBe(true)
 })
 
 test('[web-admin-teachers/R2-S6] Network failure on create', async () => {
@@ -452,7 +465,7 @@ test('[web-admin-teachers/R2-S7] Cancel and Escape are ignored while creating', 
   open()
   await fillForm('Anna Smith', 'anna@example.com')
   fireEvent.click(submitButton())
-  await waitFor(() => expect(submitButton().disabled).toBe(true))
+  await waitFor(() => expect(busySubmitButton().disabled).toBe(true))
 
   // when
   fireEvent(
@@ -576,26 +589,43 @@ test('[web-admin-teachers/R4-S1] Deactivate asks first', async () => {
 
 test('[web-admin-teachers/R4-S2] Confirming deactivates the teacher once', async () => {
   // given
+  let release: () => void = () => {}
   const state = world([teacher()], {
-    [DEACTIVATE]: () => {
-      state.teachers = [teacher({ active: false })]
-      return new Response(null, { status: 204 })
-    },
+    [DEACTIVATE]: () =>
+      new Promise<Response>((resolve) => {
+        release = () => {
+          state.teachers = [teacher({ active: false })]
+          resolve(new Response(null, { status: 204 }))
+        }
+      }),
   })
   open()
   fireEvent.click(deactivateButton(await rowOf('Anna Smith')))
-  const confirm = within(await screen.findByRole('dialog')).getByRole(
-    'button',
-    {
-      name: en.adminTeachers.deactivate.confirm,
-    },
-  )
+  const dialog = await screen.findByRole('dialog')
+  const confirm = within(dialog).getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.deactivate.confirm,
+  })
 
   // when
   fireEvent.click(confirm)
   fireEvent.click(confirm)
 
-  // then
+  // then while it runs the same button shows its busy label and Cancel waits
+  await waitFor(() =>
+    expect(
+      within(dialog).getByRole('button', {
+        name: en.adminTeachers.deactivate.confirming,
+      }),
+    ).toBe(confirm),
+  )
+  expect(confirm.disabled).toBe(true)
+  expect(confirm.getAttribute('aria-busy')).toBe('true')
+  expect(
+    within(dialog).getByRole<HTMLButtonElement>('button', {
+      name: en.adminTeachers.deactivate.cancel,
+    }).disabled,
+  ).toBe(true)
+  release()
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   expect(actionCalls(DEACTIVATE)).toHaveLength(1)
   expect(await screen.findByText('Deactivated')).toBeTruthy()
@@ -942,17 +972,25 @@ test("[web-admin-teachers/R5-S4] A row's buttons wait for its request", async ()
   const link = row.getByRole<HTMLButtonElement>('button', {
     name: en.adminTeachers.actions.resetLink,
   })
+  const deactivate = deactivateButton(row)
   fireEvent.click(link)
   await waitFor(() => expect(link.disabled).toBe(true))
 
-  // when
-  fireEvent.click(link)
-  fireEvent.click(deactivateButton(row))
+  // when the same button, now named by its busy label, is pressed again, and Deactivate
+  const busy = row.getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.busy.resetLink,
+  })
+  expect(busy).toBe(link)
+  fireEvent.click(busy)
+  fireEvent.click(deactivate)
 
   // then
   expect(actionCalls(RESET)).toHaveLength(1)
   expect(screen.queryByRole('dialog')).toBeNull()
-  expect(deactivateButton(row).disabled).toBe(true)
+  expect(busy.disabled).toBe(true)
+  expect(busy.getAttribute('aria-busy')).toBe('true')
+  expect(deactivate.disabled).toBe(true)
+  expect(deactivate.getAttribute('aria-busy')).toBeNull()
 })
 
 test('[web-admin-teachers/R5-S5] A failed link request is reported', async () => {
@@ -995,7 +1033,7 @@ test('A native close while creating keeps the dialog open and a failure shows in
   open()
   await fillForm('Anna Smith', 'anna@example.com')
   fireEvent.click(submitButton())
-  await waitFor(() => expect(submitButton().disabled).toBe(true))
+  await waitFor(() => expect(busySubmitButton().disabled).toBe(true))
 
   // when the browser closes the dialog itself
   const dialog = screen.getByRole('dialog')
@@ -1003,7 +1041,7 @@ test('A native close while creating keeps the dialog open and a failure shows in
 
   // then it is open again, still busy, and the failure shows in it with the values kept
   expect(dialog.hasAttribute('open')).toBe(true)
-  expect(submitButton().disabled).toBe(true)
+  expect(busySubmitButton().disabled).toBe(true)
   fail()
   expect(
     await screen.findByText(en.adminTeachers.create.validationFailed),
@@ -1040,19 +1078,23 @@ test('A native close while deactivating keeps the confirm dialog open', async ()
   open()
   fireEvent.click(deactivateButton(await rowOf('Anna Smith')))
   const dialog = await screen.findByRole('dialog')
-  const confirm = () =>
-    within(dialog).getByRole<HTMLButtonElement>('button', {
-      name: en.adminTeachers.deactivate.confirm,
-    })
-  fireEvent.click(confirm())
-  await waitFor(() => expect(confirm().disabled).toBe(true))
+  const confirm = within(dialog).getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.deactivate.confirm,
+  })
+  fireEvent.click(confirm)
+  await waitFor(() => expect(confirm.disabled).toBe(true))
 
   // when the browser closes the dialog itself
   closeNatively(dialog)
 
-  // then it is open again and still busy
+  // then it is open again and still busy, the same button named by its busy label
   expect(dialog.hasAttribute('open')).toBe(true)
-  expect(confirm().disabled).toBe(true)
+  expect(confirm.disabled).toBe(true)
+  expect(
+    within(dialog).getByRole('button', {
+      name: en.adminTeachers.deactivate.confirming,
+    }),
+  ).toBe(confirm)
 })
 
 test('A native close while not deactivating closes the confirm dialog', async () => {
@@ -1625,4 +1667,135 @@ test('[web-client/R28-S3] The time zone select of the Add teacher dialog has the
   expect(arrow.querySelector('svg')?.getAttribute('class')).toBe(
     iconStyles.default,
   )
+})
+
+test('[web-client/R29-S3] Create teacher shows its busy label while the request runs and its idle label after a failure', async () => {
+  // given a create request that is held
+  let finish: (response: Response) => void = () => {}
+  backend({
+    list: () => json([]),
+    create: () =>
+      new Promise<Response>((resolve) => {
+        finish = resolve
+      }) as unknown as Response,
+  })
+  open()
+  await fillForm('Anna Smith', 'anna@example.com')
+  const idle = submitButton()
+  expect(idle.getAttribute('aria-busy')).toBeNull()
+
+  // when the form is submitted
+  fireEvent.click(idle)
+
+  // then the same button is found by its busy label, disabled and marked busy
+  await waitFor(() => expect(busySubmitButton().disabled).toBe(true))
+  const busy = busySubmitButton()
+  expect(busy).toBe(idle)
+  expect(busy.getAttribute('aria-busy')).toBe('true')
+  expect(
+    screen.queryByRole('button', { name: en.adminTeachers.create.submit }),
+  ).toBeNull()
+
+  // and when the request fails it is found by its idle label again
+  finish(problem(500, 'INTERNAL_ERROR'))
+  expect(await screen.findByText(en.errors.INTERNAL_ERROR)).toBeTruthy()
+  expect(submitButton().disabled).toBe(false)
+  expect(submitButton().getAttribute('aria-busy')).toBeNull()
+})
+
+test.each([
+  ['an invite link', false, 'inviteLink'],
+  ['a reset link', true, 'resetLink'],
+] as const)(
+  '[web-client/R29-S4] The pressed row button shows the busy label of %s and the row waits',
+  async (_name, hasPassword, key) => {
+    // given a request for a link that is held
+    world([teacher({ hasPassword })], {
+      [RESET]: () => new Promise<Response>(() => {}),
+    })
+    open()
+    const row = await rowOf('Anna Smith')
+    const pressed = row.getByRole<HTMLButtonElement>('button', {
+      name: en.adminTeachers.actions[key],
+    })
+
+    // when it is pressed
+    fireEvent.click(pressed)
+
+    // then it shows its own busy label with aria-busy
+    await waitFor(() =>
+      expect(
+        row.getByRole('button', { name: en.adminTeachers.busy[key] }),
+      ).toBe(pressed),
+    )
+    expect(pressed.disabled).toBe(true)
+    expect(pressed.getAttribute('aria-busy')).toBe('true')
+
+    // and the other button of the row keeps its label, is disabled and is not busy
+    const other = deactivateButton(row)
+    expect(other.disabled).toBe(true)
+    expect(other.getAttribute('aria-busy')).toBeNull()
+  },
+)
+
+test('[web-client/R29-S4] Reactivate shows its busy label and the other row buttons are not busy', async () => {
+  // given a deactivated teacher and a reactivate request that is held
+  world([teacher({ active: false })], {
+    [REACTIVATE]: () => new Promise<Response>(() => {}),
+  })
+  open()
+  const row = await rowOf('Anna Smith')
+  const pressed = row.getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.actions.reactivate,
+  })
+
+  // when it is pressed
+  fireEvent.click(pressed)
+
+  // then it shows its own busy label with aria-busy
+  await waitFor(() =>
+    expect(
+      row.getByRole('button', { name: en.adminTeachers.busy.reactivate }),
+    ).toBe(pressed),
+  )
+  expect(pressed.disabled).toBe(true)
+  expect(pressed.getAttribute('aria-busy')).toBe('true')
+  expect(
+    row
+      .getAllByRole('button')
+      .filter((button) => button.getAttribute('aria-busy') === 'true'),
+  ).toHaveLength(1)
+})
+
+test('[web-client/R29-S4] Confirm shows its busy label, Cancel keeps its label and is disabled, and the row Deactivate is not busy', async () => {
+  // given the deactivate dialog and a request that is held
+  world([teacher()], { [DEACTIVATE]: () => new Promise<Response>(() => {}) })
+  open()
+  const row = await rowOf('Anna Smith')
+  fireEvent.click(deactivateButton(row))
+  const dialog = await screen.findByRole('dialog')
+  const confirm = within(dialog).getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.deactivate.confirm,
+  })
+
+  // when Confirm is pressed
+  fireEvent.click(confirm)
+
+  // then it shows its busy label with aria-busy
+  await waitFor(() =>
+    expect(
+      within(dialog).getByRole('button', {
+        name: en.adminTeachers.deactivate.confirming,
+      }),
+    ).toBe(confirm),
+  )
+  expect(confirm.disabled).toBe(true)
+  expect(confirm.getAttribute('aria-busy')).toBe('true')
+
+  // and Cancel keeps its label, is disabled and is not busy
+  const cancel = within(dialog).getByRole<HTMLButtonElement>('button', {
+    name: en.adminTeachers.deactivate.cancel,
+  })
+  expect(cancel.disabled).toBe(true)
+  expect(cancel.getAttribute('aria-busy')).toBeNull()
 })

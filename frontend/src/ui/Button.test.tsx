@@ -1,5 +1,6 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, expect, test } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, expect, test, vi } from 'vitest'
 import { Button } from './Button'
 import { icons, type IconName } from './icons'
 
@@ -82,4 +83,59 @@ test('[web-client/R27-S5] ariaLabel and ariaPressed pass through to the button',
   )
   const button = screen.getByRole('button', { name: 'Show password' })
   expect(button.getAttribute('aria-pressed')).toBe('false')
+})
+
+test('[web-client/R29-S1] idle, a button is found by its idle label, enabled and not busy', () => {
+  render(<Button busyLabel="Saving…">Save</Button>)
+  const button = screen.getByRole('button', { name: 'Save' })
+  expect((button as HTMLButtonElement).disabled).toBe(false)
+  expect(button.getAttribute('aria-busy')).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Saving…' })).toBeNull()
+})
+
+test('[web-client/R29-S1] busy, it is found by its busy label, disabled and aria-busy, and the idle label is hidden from its name', () => {
+  const onClick = vi.fn()
+  render(
+    <Button busy busyLabel="Saving…" onClick={onClick}>
+      Save
+    </Button>,
+  )
+  const button = screen.getByRole<HTMLButtonElement>('button', {
+    name: 'Saving…',
+  })
+  expect(button.disabled).toBe(true)
+  expect(button.getAttribute('aria-busy')).toBe('true')
+  expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
+  const idle = [...button.querySelectorAll('span')].find(
+    (span) => span.textContent === 'Save',
+  )
+  expect(idle?.getAttribute('aria-hidden')).toBe('true')
+  expect(button.querySelector('svg')).toBeNull()
+  expect(button.hasAttribute('style')).toBe(false)
+  fireEvent.click(button)
+  expect(onClick).not.toHaveBeenCalled()
+})
+
+test('[web-client/R29-S1] the same button element goes idle to busy and back, and a button without a busy label renders as before', () => {
+  const { rerender } = render(<Button busyLabel="Saving…">Save</Button>)
+  const button = screen.getByRole('button', { name: 'Save' })
+  rerender(
+    <Button busy busyLabel="Saving…">
+      Save
+    </Button>,
+  )
+  expect(screen.getByRole('button', { name: 'Saving…' })).toBe(button)
+  rerender(<Button busyLabel="Saving…">Save</Button>)
+  expect(screen.getByRole('button', { name: 'Save' })).toBe(button)
+  expect(button.getAttribute('aria-busy')).toBeNull()
+  cleanup()
+  render(<Button>Plain</Button>)
+  expect(screen.getByRole('button', { name: 'Plain' }).children).toHaveLength(0)
+})
+
+test('[web-client/R29-S2] the CSS puts both labels in one grid cell and hides the inactive one', () => {
+  const css = readFileSync(`${import.meta.dirname}/Button.module.css`, 'utf8')
+  expect(css).toMatch(/\.labels\s*\{[^}]*display:\s*grid/)
+  expect(css).toMatch(/\.label,\s*\.inactive\s*\{[^}]*grid-area:\s*1\s*\/\s*1/)
+  expect(css).toMatch(/\.inactive\s*\{[^}]*visibility:\s*hidden/)
 })

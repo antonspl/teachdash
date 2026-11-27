@@ -18,6 +18,22 @@
     opacity var(--duration-fast);
 }
 
+/* The idle and the busy label share one grid cell; the inactive one is hidden, so the
+   button keeps the width of the longer label and the layout does not jump. */
+.labels {
+  display: grid;
+  justify-items: center;
+}
+
+.label,
+.inactive {
+  grid-area: 1 / 1;
+}
+
+.inactive {
+  visibility: hidden;
+}
+
 .withIcon {
   padding-inline-start: calc(var(--space-group) - var(--button-icon-inset));
 }

@@ -121,7 +121,12 @@ export function SetPasswordPage() {
             }}
           />
           {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}
-          <Button type="submit" disabled={submitting} fullWidth>
+          <Button
+            type="submit"
+            busy={submitting}
+            busyLabel={t('setPassword.submitting')}
+            fullWidth
+          >
             {t('setPassword.submit')}
           </Button>
         </Form>

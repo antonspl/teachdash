@@ -25,10 +25,10 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 4. Busy labels (design D2, D9)
 
-- [ ] 4.1 `Button` `busy` and `busyLabel` (two labels in one grid cell, `disabled`, `aria-busy`); the nine keys of design D9 (labels mirror the idle names) in `en.json` and `ru.json`; `parity.test.ts` and `copyRules.test.ts` cover them (web-client/R29-S1, R29-S2 CSS half, R29-S5)
-- [ ] 4.2 `LoginPage`, `SetPasswordPage`, `ProfileForm`, `PasswordForm` and the create dialog pass `busy` and `busyLabel` to their submit; update the tests that read the button by its idle name mid-request (design D10 list, held element reference where a test re-queries): `App.test.tsx` (web-auth/R1-S4), `ProfilePage.test.tsx` (web-profile/R2-S8, R3-S9) and `AdminTeachersPage.test.tsx` `submitButton()` (web-admin-teachers/R2-S5) (web-client/R29-S3, R29-S7)
-- [ ] 4.3 `AdminTeachersPage`: `runRowAction` takes the pressed action, the per-row busy state records it, the pressed row button and the deactivate Confirm show their busy labels; update `deactivateButton(row)` use in R5-S4 and `confirm()` (web-admin-teachers/R4-S2, R5-S4; web-client/R29-S4)
-- [ ] 4.4 Playwright: the button keeps its width while busy, in en and ru at desktop and, at 360, on a button that is not full width (profile Save, "Create teacher" or a row button; the login button only at desktop) (web-client/R29-S2); the Russian busy labels fit at 360 in `e2e/russianFit.spec.ts` (web-client/R29-S6)
+- [x] 4.1 `Button` `busy` and `busyLabel` (two labels in one grid cell, `disabled`, `aria-busy`); the nine keys of design D9 (labels mirror the idle names) in `en.json` and `ru.json`; `parity.test.ts` and `copyRules.test.ts` cover them (web-client/R29-S1, R29-S2 CSS half, R29-S5)
+- [x] 4.2 `LoginPage`, `SetPasswordPage`, `ProfileForm`, `PasswordForm` and the create dialog pass `busy` and `busyLabel` to their submit; update the tests that read the button by its idle name mid-request (design D10 list, held element reference where a test re-queries): `App.test.tsx` (web-auth/R1-S4), `ProfilePage.test.tsx` (web-profile/R2-S8, R3-S9) and `AdminTeachersPage.test.tsx` `submitButton()` (web-admin-teachers/R2-S5) (web-client/R29-S3, R29-S7)
+- [x] 4.3 `AdminTeachersPage`: `runRowAction` takes the pressed action, the per-row busy state records it, the pressed row button and the deactivate Confirm show their busy labels; update `deactivateButton(row)` use in R5-S4 and `confirm()` (web-admin-teachers/R4-S2, R5-S4; web-client/R29-S4)
+- [x] 4.4 Playwright: the button keeps its width while busy, in en and ru at desktop and, at 360, on a button that is not full width (profile Save, "Create teacher" or a row button; the login button only at desktop) (web-client/R29-S2); the Russian busy labels fit at 360 in `e2e/russianFit.spec.ts` (web-client/R29-S6)
 
 ## 5. After screenshots
 

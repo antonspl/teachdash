@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import ru from '../src/i18n/ru.json' with { type: 'json' }
 import { createTeacherAndLoginInUi, loginAsAdminInUi } from './accounts'
+import { holdRequest } from './hold'
 
 const STORAGE_KEY = 'teachdash.lang'
 
@@ -277,4 +278,218 @@ test('[web-client/R15-S6] Russian pages fit a phone screen: the admin page, its 
   await page.reload()
   await expect(page.getByText(ru.login.sessionEnded)).toBeVisible()
   await expectFits(page, 'login, session ended banner')
+})
+
+test('[web-client/R29-S6] Russian busy labels fit a phone screen: login, set-password and the profile forms', async ({
+  page,
+  playwright,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 })
+
+  await page.goto('/login')
+  await useRussian(page)
+  await page.getByLabel(ru.login.email).fill('nobody@example.com')
+  await page.getByLabel(ru.login.password, { exact: true }).fill('wrong-pass-1')
+  const login = await holdRequest(page, '**/api/auth/login', 'POST')
+  await page.getByRole('button', { name: ru.login.submit }).click()
+  await expect(
+    page.getByRole('button', { name: ru.login.submitting }),
+  ).toBeDisabled()
+  await expectFits(page, 'login, busy')
+  login.release()
+  await login.stop()
+
+  await page.goto('/set-password#token=abc')
+  await page
+    .getByLabel(ru.setPassword.password, { exact: true })
+    .fill('long-enough-1')
+  await page
+    .getByLabel(ru.setPassword.confirm, { exact: true })
+    .fill('long-enough-1')
+  const setPassword = await holdRequest(page, '**/api/password-links', 'POST')
+  await page.getByRole('button', { name: ru.setPassword.submit }).click()
+  await expect(
+    page.getByRole('button', { name: ru.setPassword.submitting }),
+  ).toBeDisabled()
+  await expectFits(page, 'set-password, busy')
+  setPassword.release()
+  await setPassword.stop()
+
+  // the helper logs in with the English labels
+  await page.evaluate(([key]) => localStorage.removeItem(key), [STORAGE_KEY])
+  await createTeacherAndLoginInUi(
+    page,
+    playwright,
+    baseURL,
+    'Анна Владимировна Петрова-Сидорова',
+  )
+  await page.goto('/profile')
+  await useRussian(page)
+  const save = await holdRequest(page, '**/api/me', 'PATCH')
+  await page.getByRole('button', { name: ru.profile.save }).click()
+  await expect(
+    page.getByRole('button', { name: ru.profile.saving }),
+  ).toBeDisabled()
+  await expectFits(page, 'profile Save, busy')
+  save.release()
+  await save.stop()
+  await expect(
+    page.getByRole('button', { name: ru.profile.save }),
+  ).toBeEnabled()
+
+  await page
+    .getByLabel(ru.profile.currentPassword, { exact: true })
+    .fill('teacher-pass-1')
+  await page
+    .getByLabel(ru.profile.newPassword, { exact: true })
+    .fill('new-password-1')
+  await page
+    .getByLabel(ru.profile.repeatPassword, { exact: true })
+    .fill('new-password-1')
+  const change = await holdRequest(page, '**/api/me/password', 'POST')
+  await page.getByRole('button', { name: ru.profile.changePassword }).click()
+  await expect(
+    page.getByRole('button', { name: ru.profile.changingPassword }),
+  ).toBeDisabled()
+  await expectFits(page, 'profile Change password, busy')
+  change.release()
+  await change.stop()
+})
+
+test('[web-client/R29-S6] Russian busy labels fit a phone screen: the admin dialogs and every row button', async ({
+  page,
+  playwright,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 })
+  const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const withPassword = `Дарья Сергеевна Ковалёва-Смирнова ${unique}`
+  await createTeacherAndLoginInUi(page, playwright, baseURL, withPassword)
+  await page.context().clearCookies()
+  await loginAsAdminInUi(page)
+  await useRussian(page)
+  const passwordRow = page
+    .getByRole('listitem')
+    .filter({ hasText: withPassword })
+  await expect(
+    passwordRow.getByRole('button', {
+      name: ru.adminTeachers.actions.resetLink,
+    }),
+  ).toBeVisible()
+
+  // the reset link: the longest Russian busy label
+  const reset = await holdRequest(
+    page,
+    '**/api/admin/users/*/reset-link',
+    'POST',
+  )
+  await passwordRow
+    .getByRole('button', { name: ru.adminTeachers.actions.resetLink })
+    .click()
+  await expect(
+    passwordRow.getByRole('button', { name: ru.adminTeachers.busy.resetLink }),
+  ).toBeDisabled()
+  await expectFits(page, 'row, reset link busy')
+  reset.release()
+  await reset.stop()
+  await expect(
+    passwordRow.getByRole('button', {
+      name: ru.adminTeachers.actions.resetLink,
+    }),
+  ).toBeEnabled()
+
+  // the create dialog
+  await page.getByRole('button', { name: ru.adminTeachers.add }).click()
+  const dialog = page.getByRole('dialog')
+  const invited = `Борис Александрович Иванов-Петров ${unique}`
+  await dialog.getByLabel(ru.adminTeachers.create.name).fill(invited)
+  await dialog
+    .getByLabel(ru.adminTeachers.create.email)
+    .fill(`ru-busy-${unique}@example.com`)
+  await dialog
+    .getByLabel(ru.adminTeachers.create.nativeLanguage)
+    .selectOption('de')
+  const create = await holdRequest(page, '**/api/admin/teachers', 'POST')
+  await dialog
+    .getByRole('button', { name: ru.adminTeachers.create.submit })
+    .click()
+  await expect(
+    dialog.getByRole('button', { name: ru.adminTeachers.create.submitting }),
+  ).toBeDisabled()
+  await expectFits(page, 'create dialog, busy')
+  create.release()
+  await create.stop()
+  await expect(
+    dialog.getByRole('button', { name: ru.adminTeachers.create.submit }),
+  ).toBeEnabled()
+
+  // created for real: the new teacher has no password, so the row has the invite link
+  await dialog
+    .getByRole('button', { name: ru.adminTeachers.create.submit })
+    .click()
+  const newRow = page.getByRole('listitem').filter({ hasText: invited })
+  await expect(
+    newRow.getByRole('button', { name: ru.adminTeachers.actions.inviteLink }),
+  ).toBeVisible()
+  const invite = await holdRequest(
+    page,
+    '**/api/admin/users/*/reset-link',
+    'POST',
+  )
+  await newRow
+    .getByRole('button', { name: ru.adminTeachers.actions.inviteLink })
+    .click()
+  await expect(
+    newRow.getByRole('button', { name: ru.adminTeachers.busy.inviteLink }),
+  ).toBeDisabled()
+  await expectFits(page, 'row, invite link busy')
+  invite.release()
+  await invite.stop()
+
+  // the deactivate dialog, then the reactivate button of the deactivated row
+  const deactivate = await holdRequest(
+    page,
+    '**/api/admin/teachers/*/deactivate',
+    'POST',
+  )
+  await passwordRow
+    .getByRole('button', { name: ru.adminTeachers.actions.deactivate })
+    .click()
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: ru.adminTeachers.deactivate.confirm })
+    .click()
+  await expect(
+    page.getByRole('button', { name: ru.adminTeachers.deactivate.confirming }),
+  ).toBeDisabled()
+  await expectFits(page, 'deactivate dialog, busy')
+  deactivate.release()
+  await deactivate.stop()
+  await expect(page.getByRole('dialog')).toBeHidden()
+
+  await passwordRow
+    .getByRole('button', { name: ru.adminTeachers.actions.deactivate })
+    .click()
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: ru.adminTeachers.deactivate.confirm })
+    .click()
+  await expect(
+    passwordRow.getByText(ru.adminTeachers.status.DEACTIVATED),
+  ).toBeVisible()
+  const reactivate = await holdRequest(
+    page,
+    '**/api/admin/teachers/*/reactivate',
+    'POST',
+  )
+  await passwordRow
+    .getByRole('button', { name: ru.adminTeachers.actions.reactivate })
+    .click()
+  await expect(
+    passwordRow.getByRole('button', { name: ru.adminTeachers.busy.reactivate }),
+  ).toBeDisabled()
+  await expectFits(page, 'row, reactivate busy')
+  reactivate.release()
+  await reactivate.stop()
 })

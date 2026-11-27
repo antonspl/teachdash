@@ -398,13 +398,18 @@ test('[web-profile/R2-S8] A second press while saving sends nothing', async () =
     (screen.getByLabelText(en.profile.timeZone) as HTMLSelectElement).disabled,
   ).toBe(true)
 
-  // when
-  pressSave()
-  fireEvent.submit(screen.getByRole('button', { name: en.profile.save }))
+  // when the same button, now named by its busy label, is pressed again
+  const busy = screen.getByRole<HTMLButtonElement>('button', {
+    name: en.profile.saving,
+  })
+  fireEvent.click(busy)
+  fireEvent.submit(busy)
 
   // then
   await new Promise((resolve) => setTimeout(resolve, 20))
   expect(saves()).toHaveLength(1)
+  expect(busy.disabled).toBe(true)
+  expect(busy.getAttribute('aria-busy')).toBe('true')
 })
 
 function languageSelect() {
@@ -1012,15 +1017,18 @@ test('[web-profile/R3-S9] A second press while changing sends nothing', async ()
     expect(field(label).disabled, label).toBe(true)
   }
 
-  // when
-  pressChange()
-  fireEvent.submit(
-    screen.getByRole('button', { name: en.profile.changePassword }),
-  )
+  // when the same button, now named by its busy label, is pressed again
+  const busy = screen.getByRole<HTMLButtonElement>('button', {
+    name: en.profile.changingPassword,
+  })
+  fireEvent.click(busy)
+  fireEvent.submit(busy)
 
   // then
   await new Promise((resolve) => setTimeout(resolve, 20))
   expect(changes()).toHaveLength(1)
+  expect(busy.disabled).toBe(true)
+  expect(busy.getAttribute('aria-busy')).toBe('true')
 })
 
 test('[web-profile/R3-S10] The two forms do not affect each other', async () => {
@@ -1088,6 +1096,7 @@ test('[web-profile/R3-S11] One form waits while the other is sending', async () 
 
   // then
   expect(button(en.profile.save).disabled).toBe(true)
+  expect(button(en.profile.save).getAttribute('aria-busy')).toBeNull()
   finishChange(new Response(null, { status: 204 }))
   await screen.findByText(en.profile.passwordChanged)
   expect(button(en.profile.save).disabled).toBe(false)
@@ -1112,6 +1121,7 @@ test('[web-profile/R3-S11] One form waits while the other is sending', async () 
 
   // then
   expect(button(en.profile.changePassword).disabled).toBe(true)
+  expect(button(en.profile.changePassword).getAttribute('aria-busy')).toBeNull()
   finishSave(userResponse('TEACHER'))
   await screen.findByText(en.profile.saved)
   expect(button(en.profile.changePassword).disabled).toBe(false)
@@ -1339,4 +1349,89 @@ test('A blank name and a missing language are shown together', async () => {
   expect(await screen.findByText(en.languages.required)).toBeTruthy()
   expect(screen.getByText(en.fieldErrors.REQUIRED)).toBeTruthy()
   expect(saves()).toHaveLength(0)
+})
+
+test('[web-client/R29-S3] Save shows its busy label while the request runs, then its idle label after a failure and after a success', async () => {
+  // given a save that is held
+  let finish: (response: Response) => void = () => undefined
+  teacherWithSave(
+    () =>
+      new Promise<Response>((resolve) => {
+        finish = resolve
+      }),
+  )
+  await openForm()
+  const idle = button(en.profile.save)
+  expect(idle.getAttribute('aria-busy')).toBeNull()
+
+  // when it is pressed
+  pressSave()
+  await waitFor(() => expect(saves()).toHaveLength(1))
+
+  // then the same button is found by its busy label, disabled and marked busy
+  const busy = button(en.profile.saving)
+  expect(busy).toBe(idle)
+  expect(busy.disabled).toBe(true)
+  expect(busy.getAttribute('aria-busy')).toBe('true')
+  expect(screen.queryByRole('button', { name: en.profile.save })).toBeNull()
+
+  // and after a failure it is found by its idle label again
+  finish(problem(500, 'INTERNAL_ERROR'))
+  await waitFor(() => expect(button(en.profile.save).disabled).toBe(false))
+  expect(button(en.profile.save).getAttribute('aria-busy')).toBeNull()
+
+  // and after a success too
+  pressSave()
+  await waitFor(() => expect(saves()).toHaveLength(2))
+  expect(button(en.profile.saving).getAttribute('aria-busy')).toBe('true')
+  finish(userResponse('TEACHER'))
+  await screen.findByText(en.profile.saved)
+  expect(button(en.profile.save).disabled).toBe(false)
+  expect(button(en.profile.save).getAttribute('aria-busy')).toBeNull()
+})
+
+test('[web-client/R29-S3] Change password shows its busy label while the request runs, then its idle label after a failure and after a success', async () => {
+  // given a password change that is held
+  let finish: (response: Response) => void = () => undefined
+  teacherWithPassword(
+    () =>
+      new Promise<Response>((resolve) => {
+        finish = resolve
+      }),
+  )
+  await openForm()
+  typePasswords('old-password', 'new-password-1')
+  const idle = button(en.profile.changePassword)
+  expect(idle.getAttribute('aria-busy')).toBeNull()
+
+  // when it is pressed
+  pressChange()
+  await waitFor(() => expect(changes()).toHaveLength(1))
+
+  // then the same button is found by its busy label, disabled and marked busy
+  const busy = button(en.profile.changingPassword)
+  expect(busy).toBe(idle)
+  expect(busy.disabled).toBe(true)
+  expect(busy.getAttribute('aria-busy')).toBe('true')
+  expect(
+    screen.queryByRole('button', { name: en.profile.changePassword }),
+  ).toBeNull()
+
+  // and after a failure it is found by its idle label again
+  finish(problem(500, 'INTERNAL_ERROR'))
+  await waitFor(() =>
+    expect(button(en.profile.changePassword).disabled).toBe(false),
+  )
+  expect(button(en.profile.changePassword).getAttribute('aria-busy')).toBeNull()
+
+  // and after a success too
+  pressChange()
+  await waitFor(() => expect(changes()).toHaveLength(2))
+  expect(button(en.profile.changingPassword).getAttribute('aria-busy')).toBe(
+    'true',
+  )
+  finish(new Response(null, { status: 204 }))
+  await screen.findByText(en.profile.passwordChanged)
+  expect(button(en.profile.changePassword).disabled).toBe(false)
+  expect(button(en.profile.changePassword).getAttribute('aria-busy')).toBeNull()
 })

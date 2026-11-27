@@ -8,6 +8,8 @@ export function Button({
   type = 'button',
   variant = 'primary',
   disabled,
+  busy,
+  busyLabel,
   icon,
   fullWidth,
   ariaLabel,
@@ -20,6 +22,10 @@ export function Button({
   variant?:
     'primary' | 'secondary' | 'quiet' | 'dangerText' | 'muted' | 'danger'
   disabled?: boolean
+  // A request is in flight: native disabled, aria-busy and the busy label in place
+  // of the idle one. Both labels stay in one grid cell, so the width never changes.
+  busy?: boolean
+  busyLabel?: string
   icon?: IconName
   fullWidth?: boolean
   ariaLabel?: string
@@ -35,13 +41,31 @@ export function Button({
       ref={ref}
       type={type}
       className={classes.join(' ')}
-      disabled={disabled}
+      disabled={disabled || busy}
+      aria-busy={busy ? true : undefined}
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}
       onClick={onClick}
     >
       {Icon && <Icon />}
-      {children}
+      {busyLabel === undefined ? (
+        children
+      ) : (
+        <span className={styles.labels}>
+          <span
+            className={busy ? styles.inactive : styles.label}
+            aria-hidden={busy ? true : undefined}
+          >
+            {children}
+          </span>
+          <span
+            className={busy ? styles.label : styles.inactive}
+            aria-hidden={busy ? undefined : true}
+          >
+            {busyLabel}
+          </span>
+        </span>
+      )}
     </button>
   )
 }
