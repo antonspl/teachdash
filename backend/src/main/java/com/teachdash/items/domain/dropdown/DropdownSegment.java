@@ -2,10 +2,11 @@ package com.teachdash.items.domain.dropdown;
 
 import java.util.List;
 
-// STUB: bare record without validation, rewritten in task 3.1
+import jakarta.validation.constraints.Size;
+
 public record DropdownSegment(
 		String type,
-		String text,
-		List<String> options,
+		@Size(max = 500) String text,
+		@Size(min = 2, max = 5) List<String> options,
 		Integer correct) {
 }

@@ -2,7 +2,10 @@ package com.teachdash.items.domain.dropdown;
 
 import java.util.List;
 
-// STUB: bare record without validation, rewritten in task 3.1
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
 public record DropdownPayload(
-		List<DropdownSegment> segments) {
+		@NotEmpty @Size(max = 51) List<@Valid DropdownSegment> segments) {
 }
