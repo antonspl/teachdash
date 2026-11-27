@@ -72,7 +72,7 @@ class ReorderPayloadTest extends ItemApiTest {
 		var shortGroups = payload(
 				"letters",
 				entry("ch", "a", EMOJI.repeat(2)),
-				entry("é", "a"));
+				entry("e\u0301", "a"));
 		var twoHundredUnits = payload("letters", fullEntries(8));
 		var nullHint = payload("words", entryWithHint(null, "a", "b"));
 		var responses = List.of(
@@ -265,7 +265,7 @@ class ReorderPayloadTest extends ItemApiTest {
 
 		// when teacher A adds a letters item with "a", "b", "a" and a words item differing only in case, spaces and normalisation
 		var repeatedLetter = payload("letters", entry("a", "b", "a"));
-		var differentForms = payload("words", entry("Go", "go", " go", "go ", "é", "é"));
+		var differentForms = payload("words", entry("Go", "go", " go", "go ", "e\u0301", "\u00e9"));
 		var accepted = add(setup, repeatedLetter);
 		var acceptedForms = add(setup, differentForms);
 

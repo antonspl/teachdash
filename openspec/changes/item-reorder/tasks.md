@@ -20,6 +20,7 @@
 - [x] 3.3 `ReorderItemType.studentView` as an allowlist with the sort, the seed, the shuffle and the rotate of design D4, throwing on corrupt data; verify R3-S1, R3-S2, R3-S3, R3-S4 and R3-S5 pass
 - [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S4 and R1-S6); check that the payload records have `@Size` on the lists, no `Map` field, and that no unit or hint text is logged (constitution section 5)
 - [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.6 Code-gate fixes: `isKnownMode` and `hasTwoDistinctUnits` helpers, one guard per line in `requireComplete`, and the composed and decomposed "é" written as Java escapes in the tests
 
 ## Workflow follow-up
 
