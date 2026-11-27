@@ -14,8 +14,8 @@ Issue #224. The engineer's decisions, as given:
 | 6 | A word in one column only? | An exact-match duplicate word, within one column or across columns, gives `INVALID_FORMAT` at the later occurrence (`columns[j].words[k]`), in reading order: column by column, word by word. A value with its own error is not compared. The match is exact ("Go" and "go", "ё" and "е" differ); values are stored raw. Accepted risk (Risks): invisible differences pass. |
 | 7 | Student view? | `studentView` returns the allowlist `{"titles": [stored order], "words": [all words, sorted by String.compareTo then Collections.shuffle(list, new Random(seed)), seed = String.join("\u0000", all words in stored reading order).hashCode()]}`. No column per word. The concrete orders are pinned in scenarios (computed with a Java run). It throws `IllegalStateException` on corrupt data, with no stored value in the message. |
 | 8 | Pointer in `items`, migration, error codes? | No cross-reference in `items`: items R2's pointer names only gap-fill and stays as is; each type has its own capability (this avoids conflicts between parallel item branches). No migration, no new error code. |
-| 10 | Is the shuffled view a secret? | No. The seed comes from the content, so anyone with the view can brute-force the shuffle and recover the column of each word; the view is not a secret boundary. #125 must re-shuffle with server-side randomness. |
 | 9 | Out of scope? | Answer checking (#126), the student endpoint (#125), the editor, a word in several columns, images, partial credit. |
+| 10 | Is the shuffled view a secret? | No. The seed comes from the content, so anyone with the view can brute-force the shuffle and recover the column of each word; the view is not a secret boundary. #125 must re-shuffle with server-side randomness. |
 
 ## Research angles
 
