@@ -7,14 +7,14 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import com.teachdash.support.ApiTest;
+import org.springframework.boot.test.autoconfigure.json.JsonTest;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /** item-gap-fill R1, student view. */
-class GapFillItemTypeTest extends ApiTest {
+@JsonTest
+class GapFillItemTypeTest {
 
 	@Autowired
 	private JsonMapper mapper;
