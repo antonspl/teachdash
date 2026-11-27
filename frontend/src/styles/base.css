@@ -13,3 +13,8 @@ body {
   line-height: var(--line-height);
   overflow-wrap: anywhere;
 }
+
+:focus-visible {
+  outline: var(--border-width-strong) solid var(--color-focus-ring);
+  outline-offset: var(--focus-offset);
+}

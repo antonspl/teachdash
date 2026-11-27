@@ -115,7 +115,7 @@ export function LoginPage() {
           }}
         />
         {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" disabled={submitting} fullWidth>
           {t('login.submit')}
         </Button>
       </Form>

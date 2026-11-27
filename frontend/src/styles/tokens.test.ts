@@ -64,6 +64,7 @@ const tokens: Record<string, string> = {
   '--tooltip-delay': '400ms',
   '--control-height': '2.75rem',
   '--row-action-size': 'var(--control-height)',
+  '--button-icon-inset': '0.1875rem',
   '--icon-size': '1.25rem',
   '--icon-size-small': '1rem',
   '--icon-size-rail': '1.5rem',
@@ -81,7 +82,7 @@ const tokens: Record<string, string> = {
   '--picker-width': '20rem',
   '--menu-width': '15rem',
   '--tooltip-max-width': '16rem',
-  '--lang-select-width': '9rem',
+  '--lang-select-width': '10.5rem',
   '--answer-width': '10ch',
   '--type-label-width': '3rem',
   '--topbar-height': '3.5rem',
@@ -135,8 +136,8 @@ const fine = definitions(fineMatch?.[1] ?? '')
 const russianNames = definitions(russianMatch?.[1] ?? '')
 
 test('[web-client/R24-S1] tokens.css declares exactly the token names', () => {
-  // given the literal list of 89 names, and tokens.css read as text
-  expect(Object.keys(tokens)).toHaveLength(89)
+  // given the literal list of 90 names, and tokens.css read as text
+  expect(Object.keys(tokens)).toHaveLength(90)
 
   // when its custom property definitions are listed
   const defined = Object.keys({ ...baseNames, ...fine, ...russianNames })
@@ -166,6 +167,8 @@ test('[web-client/R24-S2] tokens.css has the design-code values', () => {
   expect(baseNames['--line-height-tight']).toBe('1.2')
   expect(baseNames['--control-height']).toBe('2.75rem')
   expect(fine['--control-height']).toBe('2.5rem')
+  expect(baseNames['--button-icon-inset']).toBe('0.1875rem')
+  expect(baseNames['--lang-select-width']).toBe('10.5rem')
 })
 
 // WCAG 2.x relative luminance and contrast ratio, from a hex colour of the tokens.

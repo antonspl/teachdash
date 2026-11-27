@@ -184,8 +184,10 @@ test('[web-client/R27-S2] There is no success variant', () => {
   const css = ui('Button')
 
   // when the variants are read
-  // then the variant type is primary, secondary and danger only
-  expect(tsx).toMatch(/variant\?: 'primary' \| 'secondary' \| 'danger'\n/)
+  // then the variant type is the six variants
+  expect(tsx).toMatch(
+    /variant\?:\s*\|?\s*'primary'\s*\|\s*'secondary'\s*\|\s*'quiet'\s*\|\s*'dangerText'\s*\|\s*'muted'\s*\|\s*'danger'\n/,
+  )
 
   // and the CSS has no success rule and no success token
   expect(css).not.toMatch(/\.success/)
@@ -253,4 +255,166 @@ test('[web-client/R28-S2] The select chevron rules', () => {
 
   // and there is no .arrowIcon rule
   expect(css).not.toContain('.arrowIcon')
+})
+
+test('[web-client/R27-S5] The new variants have their own look', () => {
+  // given Button.module.css
+  const css = ui('Button')
+
+  // when the rules of quiet, dangerText and muted are read
+  const quiet = rule(css, '.quiet')
+  const dangerText = rule(css, '.dangerText')
+  const muted = rule(css, '.muted')
+
+  // then quiet is transparent with text colour and a sunken hover fill
+  expect(quiet).toContain('color: var(--color-text);')
+  expect(quiet).toContain('background: transparent;')
+  expect(squash(css)).toMatch(
+    /\.quiet:hover:not\(:disabled\) \{ background: var\(--color-surface-sunken\); \}/,
+  )
+
+  // and dangerText is danger text with a danger background hover
+  expect(dangerText).toContain('color: var(--color-danger-text);')
+  expect(squash(css)).toMatch(
+    /\.dangerText:hover:not\(:disabled\) \{ background: var\(--color-danger-background\); \}/,
+  )
+
+  // and muted is muted text that goes to the text colour on hover
+  expect(muted).toContain('color: var(--color-text-muted);')
+  expect(squash(css)).toMatch(
+    /\.muted:hover:not\(:disabled\) \{ color: var\(--color-text\); \}/,
+  )
+
+  // and the three have the neutral background as their active fill
+  for (const name of ['quiet', 'dangerText', 'muted']) {
+    expect(squash(css)).toMatch(
+      new RegExp(
+        `\\.${name}:active:not\\(:disabled\\)[^{]*\\{ background: var\\(--color-neutral-background\\); \\}`,
+      ),
+    )
+  }
+})
+
+test('[web-client/R27-S6] The secondary button has text colour', () => {
+  // given Button.module.css
+  const css = ui('Button')
+
+  // when the .secondary rule is read
+  const secondary = rule(css, '.secondary')
+
+  // then its text, fill and border are the specified tokens
+  expect(secondary).toContain('color: var(--color-text);')
+  expect(secondary).toContain('background: var(--color-surface);')
+  expect(secondary).toContain(
+    'border: var(--border-width) solid var(--color-control-border);',
+  )
+
+  // and no variant other than primary uses the accent as a text colour
+  for (const name of ['secondary', 'quiet', 'dangerText', 'muted', 'danger']) {
+    expect(rule(css, `.${name}`)).not.toMatch(
+      /(^|[ ;])color: var\(--color-accent\)/,
+    )
+  }
+})
+
+test('[web-client/R27-S7] Every button state is a token', () => {
+  // given Button.module.css
+  const css = squash(ui('Button'))
+  const base = rule(ui('Button'), '.button')
+
+  // when the base rule is read, then it is made of the specified tokens
+  expect(base).toContain('min-height: var(--control-height);')
+  expect(base).toContain('padding: 0 var(--space-group);')
+  expect(base).toContain('font-weight: var(--weight-strong);')
+  expect(base).toContain('line-height: var(--line-height-tight);')
+
+  // and the transitions list the four properties with the fast duration only
+  expect(base).toContain(
+    'transition: background-color var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast), opacity var(--duration-fast);',
+  )
+
+  // and hover is inside the hover media query, on enabled buttons only
+  const media = /@media \(hover: hover\) \{(.*?)\} \.primary:active/.exec(css)
+  expect(media).not.toBeNull()
+  const hover = media![1]
+  expect(hover).toMatch(
+    /\.primary:hover:not\(:disabled\) \{ background: var\(--color-accent-hover\); border-color: var\(--color-accent-hover\); \}/,
+  )
+  expect(hover).toMatch(
+    /\.secondary:hover:not\(:disabled\), \.quiet:hover:not\(:disabled\) \{ background: var\(--color-surface-sunken\); \}/,
+  )
+  expect(hover).toMatch(
+    /\.danger:hover:not\(:disabled\) \{ background: var\(--color-danger-action-hover\); border-color: var\(--color-danger-action-hover\); \}/,
+  )
+  expect(
+    css.replace(/@media \(hover: hover\) \{.*?\} \.primary:active/, ''),
+  ).not.toContain(':hover')
+
+  // and active is a token step, with none for the danger fill
+  expect(css).toMatch(
+    /\.primary:active:not\(:disabled\) \{ background: var\(--color-accent-active\); border-color: var\(--color-accent-active\); \}/,
+  )
+  expect(css).toMatch(
+    /\.secondary:active:not\(:disabled\), \.quiet:active:not\(:disabled\), \.dangerText:active:not\(:disabled\), \.muted:active:not\(:disabled\) \{ background: var\(--color-neutral-background\); \}/,
+  )
+  expect(css).not.toContain('.danger:active')
+
+  // and disabled dims and shows not-allowed
+  expect(rule(ui('Button'), '.button:disabled')).toContain(
+    'opacity: var(--opacity-disabled); cursor: not-allowed;',
+  )
+})
+
+test('[web-client/R27-S8] The icon-led rule insets the start padding', () => {
+  // given Button.module.css
+  const css = ui('Button')
+
+  // when the icon-led rule is read
+  const withIcon = rule(css, '.withIcon')
+
+  // then it uses a logical property and the inset token, and no :has
+  expect(withIcon).toBe(
+    'padding-inline-start: calc(var(--space-group) - var(--button-icon-inset));',
+  )
+  expect(css).not.toContain(':has')
+
+  // and the gap stays the inline space
+  expect(rule(css, '.button')).toContain('gap: var(--space-inline);')
+})
+
+test('[web-client/R27-S9] The full-width variant is for the lone submit on phones', () => {
+  // given Button.module.css and the TSX files
+  const css = squash(ui('Button'))
+
+  // when the full-width rule is read, then it is inside the phone media query
+  expect(css).toMatch(
+    /@media \(max-width: 63\.999rem\) \{ \.fullWidth \{ width: 100%; \} \}/,
+  )
+
+  // and only the two submit buttons use it
+  const users = nonTestSources
+    .filter((file) => file.endsWith('.tsx'))
+    .filter((file) => /<Button[^>]*\bfullWidth\b/s.test(read(file)))
+    .map((file) => file.slice(srcDir.length + 1))
+    .sort()
+  expect(users).toEqual(['pages/LoginPage.tsx', 'pages/SetPasswordPage.tsx'])
+
+  // and the ButtonRow rules are unchanged
+  expect(ui('ButtonRow')).not.toContain('width')
+})
+
+test('[web-client/R30-S1] One global focus rule, never removed', () => {
+  // given base.css and every css file under src
+  const base = squash(read(join(srcDir, 'styles', 'base.css')))
+
+  // when the focus rules are read, then base.css has one :focus-visible rule
+  expect(base.match(/:focus-visible/g)).toHaveLength(1)
+  expect(base).toContain(
+    ':focus-visible { outline: var(--border-width-strong) solid var(--color-focus-ring); outline-offset: var(--focus-offset); }',
+  )
+
+  // and no css file removes an outline
+  for (const file of cssFiles) {
+    expect(read(file), file).not.toMatch(/outline:\s*(none|0)\b/)
+  }
 })
