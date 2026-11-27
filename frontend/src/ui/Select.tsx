@@ -1,6 +1,7 @@
 import { useId, type Ref } from 'react'
 import styles from './Field.module.css'
-import { ChevDownIcon } from './icons'
+import { FieldError } from './FieldError'
+import { ChevDownIcon, icons, type IconName } from './icons'
 
 export function Select({
   label,
@@ -17,6 +18,7 @@ export function Select({
   hideLabel,
   optionLang,
   flush,
+  icon,
 }: {
   label: string
   value: string
@@ -39,8 +41,11 @@ export function Select({
   optionLang?: Record<string, string>
   // Drops the bottom margin, for a select that sits among buttons.
   flush?: boolean
+  // A decorative icon at the start of the select (the language select's globe).
+  icon?: IconName
 }) {
   const id = useId()
+  const Icon = icon ? icons[icon] : null
   const errorId = `${id}-error`
   return (
     <div className={flush ? `${styles.field} ${styles.flush}` : styles.field}>
@@ -54,7 +59,7 @@ export function Select({
         <select
           ref={inputRef}
           id={id}
-          className={`${styles.input} ${styles.select} ${error ? styles.invalid : ''}`}
+          className={`${styles.input} ${styles.select} ${Icon ? styles.selectWithIcon : ''} ${error ? styles.invalid : ''}`}
           value={value}
           required={required}
           aria-required={ariaRequired ? true : undefined}
@@ -77,12 +82,17 @@ export function Select({
         <span className={styles.arrow} aria-hidden="true" data-select-arrow>
           <ChevDownIcon />
         </span>
+        {Icon ? (
+          <span
+            className={styles.selectIcon}
+            aria-hidden="true"
+            data-select-icon
+          >
+            <Icon />
+          </span>
+        ) : null}
       </div>
-      {error ? (
-        <p id={errorId} className={styles.error}>
-          {error}
-        </p>
-      ) : null}
+      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
     </div>
   )
 }

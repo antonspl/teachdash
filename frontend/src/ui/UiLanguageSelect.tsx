@@ -25,6 +25,7 @@ export function UiLanguageSelect() {
     <div className={styles.wrap}>
       <Select
         flush
+        icon="globe"
         label={t('uiLanguage.label')}
         hideLabel
         value={current}

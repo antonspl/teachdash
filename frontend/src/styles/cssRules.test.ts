@@ -160,7 +160,6 @@ test('[web-client/R26-S2] Control edges and decorative edges use their own token
   // when their border rules are read
   // then the operated edges use the control border
   expect(rule(ui('Field'), '.input')).toContain(control)
-  expect(rule(ui('Field'), '.toggle')).toContain(control)
   expect(rule(ui('Button'), '.secondary')).toContain(control)
   expect(rule(ui('IssuedLink'), '.input')).toContain(control)
 
@@ -172,10 +171,10 @@ test('[web-client/R26-S2] Control edges and decorative edges use their own token
     'border-bottom: var(--border-width) solid var(--color-divider);',
   )
 
-  // and the field error border is still the danger text colour
-  expect(rule(ui('Field'), '.invalid')).toContain(
-    'border-color: var(--color-danger-text);',
-  )
+  // and the field error border is 2px in the danger text colour
+  const invalid = rule(ui('Field'), '.invalid')
+  expect(invalid).toContain('border-width: var(--border-width-strong);')
+  expect(invalid).toContain('border-color: var(--color-danger-text);')
 })
 
 test('[web-client/R27-S2] There is no success variant', () => {
@@ -417,4 +416,99 @@ test('[web-client/R30-S1] One global focus rule, never removed', () => {
   for (const file of cssFiles) {
     expect(read(file), file).not.toMatch(/outline:\s*(none|0)\b/)
   }
+})
+
+test('[web-client/R30-S4] The error rules keep the field still', () => {
+  // given Field.module.css
+  const css = ui('Field')
+
+  // when the invalid and message rules are read
+  const invalid = rule(css, '.invalid')
+  const error = rule(css, '.error')
+
+  // then the invalid rule pads the start by one border width less, and removes no outline
+  expect(invalid).toContain(
+    'padding-inline-start: calc(var(--space-group) - var(--border-width));',
+  )
+  expect(css).not.toMatch(/outline:\s*(none|0)\b/)
+
+  // and the message is a flex row with the small text and the danger colour
+  expect(error).toContain('display: flex;')
+  expect(error).toContain('gap: var(--space-inline);')
+  expect(error).toContain('font-size: var(--text-small);')
+  expect(error).toContain('line-height: var(--line-height-small);')
+  expect(error).toContain('color: var(--color-danger-text);')
+  for (const banned of ['text-overflow', 'white-space: nowrap', 'overflow']) {
+    expect(error).not.toContain(banned)
+  }
+
+  // and the icon is centred on the first line with tokens only
+  expect(rule(css, '.error > svg')).toBe(
+    'margin-top: calc((var(--text-small) * var(--line-height-small) - var(--icon-size-small)) / 2);',
+  )
+})
+
+test('[web-client/R30-S7] Fields hover, disabled and read-only', () => {
+  // given Field.module.css
+  const css = squash(ui('Field'))
+
+  // when the hover and state rules are read
+  // then the hover border is inside a hover media query and skips the other states
+  expect(css).toContain(
+    '@media (hover: hover) { .input:hover:not(:disabled):not([readonly]):not(.invalid) { border-color: var(--color-text-muted); } }',
+  )
+  expect(css).not.toContain(':read-only')
+
+  // and the field keeps its height
+  expect(rule(ui('Field'), '.input')).toContain(
+    'min-height: var(--control-height);',
+  )
+
+  // and a disabled field and its arrow dim and show not-allowed
+  expect(rule(ui('Field'), '.input:disabled')).toBe(
+    'opacity: var(--opacity-disabled); cursor: not-allowed;',
+  )
+  expect(css).toContain(
+    '.select:disabled + .arrow, .select:disabled ~ .selectIcon { opacity: var(--opacity-disabled); cursor: not-allowed; }',
+  )
+
+  // and the read-only issued link keeps its sunken fill
+  expect(rule(ui('IssuedLink'), '.input')).toContain(
+    'background: var(--color-surface-sunken);',
+  )
+})
+
+test('[web-client/R30-S8] The toggle has no hand-made rule', () => {
+  // given Field.module.css
+  // when it is read, then there is no .toggle rule
+  expect(ui('Field')).not.toContain('.toggle')
+})
+
+test('[web-client/R13-S6] The icon-led select rules', () => {
+  // given Field.module.css
+  const css = ui('Field')
+
+  // when the icon rules are read
+  const icon = rule(css, '.selectIcon')
+  const led = rule(css, '.selectWithIcon')
+
+  // then the icon sits at the border plus the group space, muted and inert
+  expect(icon).toContain(
+    'left: calc(var(--border-width) + var(--space-group));',
+  )
+  expect(icon).toContain('color: var(--color-text-muted);')
+  expect(icon).toContain('pointer-events: none;')
+
+  // and the select pads its start by the group space, the icon and the inline space
+  expect(led).toBe(
+    'padding-inline-start: calc(var(--space-group) + var(--icon-size) + var(--space-inline));',
+  )
+
+  // and an invalid one keeps that minus one border width
+  expect(rule(css, '.selectWithIcon.invalid')).toBe(
+    'padding-inline-start: calc(var(--space-group) + var(--icon-size) + var(--space-inline) - var(--border-width));',
+  )
+
+  // and the arrow stays right after the select, so the disabled rule still matches it
+  expect(squash(css)).toContain('.select:disabled + .arrow')
 })

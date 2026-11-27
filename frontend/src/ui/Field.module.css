@@ -29,6 +29,18 @@
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-control-border);
   border-radius: var(--radius);
+  transition: border-color var(--duration-fast);
+}
+
+@media (hover: hover) {
+  .input:hover:not(:disabled):not([readonly]):not(.invalid) {
+    border-color: var(--color-text-muted);
+  }
+}
+
+.input:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
 }
 
 .selectWrap {
@@ -57,30 +69,57 @@
   pointer-events: none;
 }
 
-.select:disabled,
-.select:disabled + .arrow {
+.select:disabled + .arrow,
+.select:disabled ~ .selectIcon {
   opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.selectWithIcon {
+  padding-inline-start: calc(
+    var(--space-group) + var(--icon-size) + var(--space-inline)
+  );
+}
+
+.selectIcon {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--border-width) + var(--space-group));
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  pointer-events: none;
 }
 
 .invalid {
+  border-width: var(--border-width-strong);
   border-color: var(--color-danger-text);
+  padding-inline-start: calc(var(--space-group) - var(--border-width));
+}
+
+.selectWithIcon.invalid {
+  padding-inline-start: calc(
+    var(--space-group) + var(--icon-size) + var(--space-inline) -
+      var(--border-width)
+  );
 }
 
 .error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-inline);
   margin: 0;
+  font-size: var(--text-small);
+  line-height: var(--line-height-small);
   color: var(--color-danger-text);
+  text-wrap: pretty;
 }
 
-.toggle {
-  min-height: var(--control-height);
-  padding: 0 var(--space-group);
-  font-family: var(--font-body);
-  font-size: var(--text-base);
-  color: var(--color-accent);
-  background: var(--color-surface);
-  border: var(--border-width) solid var(--color-control-border);
-  border-radius: var(--radius);
-  cursor: pointer;
+.error > svg {
+  margin-top: calc(
+    (var(--text-small) * var(--line-height-small) - var(--icon-size-small)) / 2
+  );
 }
 
 .visuallyHidden {

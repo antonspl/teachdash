@@ -1,5 +1,6 @@
 import { useId, type ReactNode, type Ref } from 'react'
 import styles from './Field.module.css'
+import { FieldError } from './FieldError'
 
 export type TextInputProps = {
   label: string
@@ -51,11 +52,7 @@ export function TextInput({
         />
         {adornment}
       </div>
-      {error ? (
-        <p id={errorId} className={styles.error}>
-          {error}
-        </p>
-      ) : null}
+      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
     </div>
   )
 }
