@@ -14,7 +14,7 @@ export function Button({
   children: ReactNode
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void
   type?: 'button' | 'submit'
-  variant?: 'primary' | 'secondary' | 'danger' | 'success'
+  variant?: 'primary' | 'secondary' | 'danger'
   disabled?: boolean
   icon?: 'plus'
   ref?: Ref<HTMLButtonElement>

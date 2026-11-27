@@ -1,11 +1,6 @@
 .title {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-large);
+  margin: 0 0 var(--space-block);
+  font-size: var(--text-title);
+  font-weight: var(--weight-strong);
   line-height: var(--line-height-tight);
-}
-
-@media (min-width: 40rem) {
-  .title {
-    font-size: var(--text-title);
-  }
 }

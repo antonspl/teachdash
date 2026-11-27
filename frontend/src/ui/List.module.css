@@ -1,18 +1,17 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-3);
+  gap: var(--space-group);
+  margin: 0 0 var(--space-block);
   padding: 0;
   list-style: none;
 }
 
 .item {
-  padding: var(--space-2);
+  padding: var(--space-group);
   background: var(--color-surface);
-  border: var(--border-width) solid var(--color-border);
+  border: var(--border-width) solid var(--color-divider);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
   overflow-wrap: anywhere;
 }
 
@@ -20,7 +19,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-inline);
   justify-content: space-between;
 }
 
@@ -33,15 +32,15 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--space-1);
+  gap: var(--space-inline);
   margin-left: auto;
 }
 
 .details {
-  margin-top: var(--space-1);
+  margin-top: var(--space-adjacent);
   color: var(--color-text-muted);
 }
 
 .extra {
-  margin-top: var(--space-2);
+  margin-top: var(--space-group);
 }

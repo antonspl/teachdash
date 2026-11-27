@@ -296,7 +296,7 @@ function CreateDialog({
           <Button variant="secondary" disabled={submitting} onClick={onCancel}>
             {t('adminTeachers.create.cancel')}
           </Button>
-          <Button type="submit" variant="success" disabled={submitting}>
+          <Button type="submit" disabled={submitting}>
             {t('adminTeachers.create.submit')}
           </Button>
         </ButtonRow>
@@ -457,7 +457,6 @@ export function AdminTeachersPage() {
       toolbar={
         <Toolbar>
           <Button
-            variant="success"
             icon="plus"
             onClick={(event) => setCreating({ opener: event.currentTarget })}
           >

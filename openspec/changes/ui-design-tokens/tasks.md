@@ -11,10 +11,10 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 2. Tokens and rename (one slice, design D1)
 
-- [ ] 2.1 Rewrite `frontend/src/styles/tokens.css` to exactly the design-code tables (design D2); remove `--space-1` to `--space-4`, `--color-border`, `--color-action-success-*`, `--shadow-card` and `--arrow-width`; check `base.css`
-- [ ] 2.2 Apply the colour, type, shadow and space maps of design D3 to every `src/ui` CSS file; `AppHeader` bottom border; IssuedLink input fill; remove the `success` variant from `Button.tsx` and `Button.module.css`; `AdminTeachersPage.tsx:299,460` use the default variant
-- [ ] 2.3 Select chevron (design D5): `Select.tsx` uses `ChevDownIcon`; `Field.module.css` drops `.arrowIcon` and `--arrow-width` and takes the Clarification 5 insets
-- [ ] 2.4 Extend `frontend/scripts/check-design-tokens.mjs` to fail on an undefined `var(--name)` and to accept an optional folder argument (design D4); verify `npm run lint` and `npm run build`
+- [x] 2.1 Rewrite `frontend/src/styles/tokens.css` to exactly the design-code tables (design D2); remove `--space-1` to `--space-4`, `--color-border`, `--color-action-success-*`, `--shadow-card` and `--arrow-width`; check `base.css`
+- [x] 2.2 Apply the colour, type, shadow and space maps of design D3 to every `src/ui` CSS file; `AppHeader` bottom border; IssuedLink input fill; remove the `success` variant from `Button.tsx` and `Button.module.css`; `AdminTeachersPage.tsx:299,460` use the default variant
+- [x] 2.3 Select chevron (design D5): `Select.tsx` uses `ChevDownIcon`; `Field.module.css` drops `.arrowIcon` and `--arrow-width` and takes the Clarification 5 insets
+- [x] 2.4 Extend `frontend/scripts/check-design-tokens.mjs` to fail on an undefined `var(--name)` and to accept an optional folder argument (design D4); verify `npm run lint` and `npm run build`
 
 ## 3. Tests
 

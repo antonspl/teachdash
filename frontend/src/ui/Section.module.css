@@ -1,9 +1,10 @@
 .section {
-  margin-top: var(--space-3);
+  margin-top: var(--space-section);
 }
 
 .heading {
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-group);
   font-size: var(--text-large);
-  line-height: var(--line-height-tight);
+  font-weight: var(--weight-strong);
+  line-height: var(--line-height-large);
 }

@@ -1,47 +1,114 @@
 :root {
-  --color-background: #f7f8fa;
-  --color-text: #1f2933;
-  --color-text-muted: #52606d;
-  --color-accent: #1d4ed8;
-  --color-neutral-background: #e4e7eb;
-  --color-neutral-text: #1f2933;
-  --color-success-background: #dcfce7;
-  --color-success-text: #14532d;
-  --color-action-success-background: var(--color-success-background);
-  --color-action-success-hover: #bbf7d0;
-  --color-action-success-text: var(--color-success-text);
-  --color-action-success-border: #86efac;
-  --color-danger-background: #fee2e2;
-  --color-danger-text: #7f1d1d;
+  --color-background: #f3f8fa;
   --color-surface: #ffffff;
-  --color-border: #9aa5b1;
+  --color-surface-sunken: #e9f0f4;
+  --color-rail: #e1eaef;
+  --color-text: #152127;
+  --color-text-muted: #4b5c65;
+  --color-accent: #155770;
+  --color-accent-hover: #04465d;
+  --color-accent-active: #00394d;
   --color-on-accent: #ffffff;
+  --color-accent-subtle: #d9ebf4;
+  --color-control-border: #6b808b;
+  --color-divider: #d3dce1;
+  --color-tree-guide: #9db0ba;
+  --color-focus-ring: var(--color-accent);
+  --color-neutral-background: #e3e9ec;
+  --color-neutral-text: #283840;
+  --color-success-background: #dcf1e3;
+  --color-success-text: #135a31;
+  --color-danger-background: #fbe4e1;
+  --color-danger-text: #981d15;
+  --color-danger-action: #a8261b;
+  --color-danger-action-hover: #8c1c13;
+  --color-backdrop: rgb(21 33 39 / 50%);
 
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-
+  --text-small: 0.8125rem;
   --text-base: 1rem;
-  --text-large: 1.5rem;
-  --text-title: 2rem;
-  --line-height: 1.5;
-  --line-height-tight: 1.25;
-  --content-width: 40rem;
+  --text-reading: 1.0625rem;
+  --text-large: 1.25rem;
+  --text-title: 1.5rem;
+  --weight-regular: 400;
+  --weight-strong: 600;
+  --line-height: 1.45;
+  --line-height-small: 1.4;
+  --line-height-tight: 1.2;
+  --line-height-large: 1.3;
+  --line-height-reading: 1.6;
 
-  --space-1: 0.5rem;
-  --space-2: 1rem;
-  --space-3: 1.5rem;
-  --space-4: 2.5rem;
-  --space-button-gap: 0.75rem;
+  --space-adjacent: 0.25rem;
+  --space-inline: 0.5rem;
+  --space-group: 0.75rem;
   --space-block: 1.25rem;
+  --space-section: 2rem;
+  --space-page: 2rem;
+  --space-button-gap: 0.75rem;
 
+  --radius: 0.25rem;
   --border-width: 1px;
+  --border-width-strong: 2px;
+  --selection-bar-width: 3px;
+  --focus-offset: 2px;
+  --opacity-disabled: 0.6;
+  --shadow-overlay: 0 6px 20px rgb(21 33 39 / 20%);
+  --duration-fast: 120ms;
+  --tooltip-delay: 400ms;
+
   --control-height: 2.75rem;
+  --row-action-size: var(--control-height);
   --icon-size: 1.25rem;
   --icon-size-small: 1rem;
   --icon-size-rail: 1.5rem;
-  --arrow-width: 0.75rem;
+  --icon-size-placeholder: 3rem;
+
+  --rail-width: 5rem;
+  --rail-item-height: 4.5rem;
+  --tree-width: 14rem;
+  --outline-width: 24rem;
+  --content-width: 40rem;
+  --reading-width: 40rem;
+  --list-width: 72rem;
+  --home-width: 44rem;
+  --form-width: 22rem;
+  --dialog-width: 28rem;
+  --picker-width: 20rem;
+  --menu-width: 15rem;
+  --tooltip-max-width: 16rem;
   --lang-select-width: 9rem;
+  --answer-width: 10ch;
+  --type-label-width: 3rem;
+  --topbar-height: 3.5rem;
+  --tabbar-height: 4rem;
+  --action-bar-height: calc(var(--control-height) + 2 * var(--space-group));
+  --side-panel-min: 15rem;
+  --side-panel-max: 24rem;
+  --side-panel-now: clamp(
+    var(--side-panel-min),
+    calc(100cqi - var(--reading-width) - 2 * var(--space-page)),
+    var(--side-panel-max)
+  );
+  --list-gutter: max(
+    var(--space-page),
+    calc(100cqi - var(--space-page) - var(--list-width))
+  );
+  --editor-column-min: 24rem;
+  --progress-height: 0.375rem;
+  --tree-indent: calc(var(--space-adjacent) + var(--row-action-size) / 2);
+  --login-top-offset: 12vh;
+  --name-min-width: 8rem;
+  --underline-offset: 0.15em;
   --size-visually-hidden: 1px;
-  --radius: 0.5rem;
-  --opacity-disabled: 0.6;
-  --shadow-card: 0 1px 3px rgb(0 0 0 / 12%);
+}
+
+@media (pointer: fine) {
+  :root {
+    --control-height: 2.5rem;
+    --row-action-size: 2rem;
+  }
+}
+
+:root:lang(ru) {
+  --type-label-width: 5.5rem;
 }
