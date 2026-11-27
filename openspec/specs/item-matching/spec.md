@@ -6,7 +6,7 @@ A teacher adds and edits items of the type `matching` ("match the pairs"): pairs
 ## Requirements
 
 ### Requirement: R1 A teacher adds and edits a matching item, and the student view hides the pairing
-The type `matching` SHALL have the payload `{pairs: [{left, right}]}`, added with items R1 and edited with items R4, values stored as sent. `studentView` SHALL return `{"left": [...], "right": [...]}`: `left` in stored order, `right` sorted by `String.compareTo` then `Collections.shuffle(list, new Random(seed))`, seed = `String.join("\u0000", lefts then rights).hashCode()`; no pair index. No student endpoint yet (#125): unit scenarios only.
+The type `matching` SHALL have the payload `{pairs: [{left, right}]}`, as items R1 and R4, stored as sent. `studentView` SHALL return `{"left": [...], "right": [...]}`: `left` in stored order, `right` the sorted rights shuffled with `new Random(seed)`, seed = `String.join("\u0000", sortedLefts + sortedRights).hashCode()` (so it does not depend on the pairing), then rotated left by one if it equals the stored rights order (2 or more pairs); no pair index. No endpoint yet (#125).
 
 #### Scenario: item-matching/R1-S1 Add an English matching item, it is stored and listed exactly
 - **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with a part
@@ -44,14 +44,14 @@ The type `matching` SHALL have the payload `{pairs: [{left, right}]}`, added wit
 - **THEN** both responses are 404, and teacher A's part still has exactly the one item with its payload and `version` unchanged
 
 #### Scenario: item-matching/R1-S8 The student view lists the lefts in order and the rights in the seeded shuffled order
-- **GIVEN** the `matching` type and a payload with the pairs `[{"left": "apple", "right": "яблоко"}, {"left": "dog", "right": "собака"}, {"left": "house", "right": "дом"}, {"left": "book", "right": "книга"}]` (unit level: there is no student endpoint yet)
+- **GIVEN** the `matching` type and a payload with the pairs `[{"left": "apple", "right": "яблоко"}, {"left": "dog", "right": "собака"}, {"left": "house", "right": "дом"}, {"left": "tree", "right": "дерево"}]` (unit level: there is no student endpoint yet)
 - **WHEN** `studentView` is called with the payload
-- **THEN** the result has exactly the properties `left` and `right`, in this order, with `left` equal to `["apple", "dog", "house", "book"]` and `right` equal to `["книга", "яблоко", "собака", "дом"]` (the rights sorted by `String.compareTo` are `["дом", "книга", "собака", "яблоко"]`; then shuffled with the seed `-1369915776`; a sort-only implementation fails), there is no pair index and no other property
+- **THEN** the result has exactly the properties `left` and `right`, in this order, with `left` equal to `["apple", "dog", "house", "tree"]` and `right` equal to `["собака", "яблоко", "дом", "дерево"]` (the rights sorted by `String.compareTo` are `["дерево", "дом", "собака", "яблоко"]`; then shuffled with the seed `783176451`, computed from the sorted lefts `apple`, `dog`, `house`, `tree` and the sorted rights; a sort-only implementation fails), there is no pair index and no other property
 
-#### Scenario: item-matching/R1-S9 The shuffled order is the same on every call, in Russian too
+#### Scenario: item-matching/R1-S9 The shuffled order is the same on every call and does not depend on the pairing, in Russian too
 - **GIVEN** the `matching` type and a payload with the pairs `[{"left": "Москва", "right": "Russia"}, {"left": "Париж", "right": "France"}, {"left": "Лондон", "right": "England"}, {"left": "Берлин", "right": "Germany"}]` (unit level)
-- **WHEN** `studentView` is called three times with the same payload, and once with a payload where only the order of the pairs differs
-- **THEN** the three results are equal, each with `left` equal to `["Москва", "Париж", "Лондон", "Берлин"]` and `right` equal to `["France", "England", "Germany", "Russia"]` (the sorted rights `["England", "France", "Germany", "Russia"]` shuffled with the seed `552194029`), and the payload with the same pairs in the reverse order (`Берлин`, `Лондон`, `Париж`, `Москва` with `Germany`, `England`, `France`, `Russia`) gives `left` equal to `["Берлин", "Лондон", "Париж", "Москва"]` and `right` equal to `["France", "Germany", "England", "Russia"]` (seed `1068013747`), a different order from the first
+- **WHEN** `studentView` is called three times with the same payload, and once with a payload with the same pairs in the reverse order (`Берлин`, `Лондон`, `Париж`, `Москва` with `Germany`, `England`, `France`, `Russia`)
+- **THEN** the three results are equal, each with `left` equal to `["Москва", "Париж", "Лондон", "Берлин"]` and `right` equal to `["Germany", "France", "Russia", "England"]` (the sorted rights `["England", "France", "Germany", "Russia"]` shuffled with the seed `525389863`, computed from the sorted lefts `Берлин`, `Лондон`, `Москва`, `Париж` and the sorted rights), and the payload with the same pairs in the reverse order gives `left` equal to `["Берлин", "Лондон", "Париж", "Москва"]` and `right` equal to `["Germany", "France", "Russia", "England"]`, exactly the same right order as the original (the view does not depend on the pairing)
 
 #### Scenario: item-matching/R1-S10 The serialised student view has no pairing, in English and Russian
 - **GIVEN** the `matching` type and two payloads: an English one with the pairs `{"cat", "кошка"}`, `{"dog", "собака"}` and a Russian one with the pairs `{"Ёжик", "hedgehog"}`, `{"мышь", "mouse"}` (unit level)
@@ -62,6 +62,11 @@ The type `matching` SHALL have the payload `{pairs: [{left, right}]}`, added wit
 - **GIVEN** the `matching` type and corrupt payloads built in the test: `pairs` `null`, a `null` pair, a pair with a `null` left and a pair with a `null` right, each (except the first) next to a valid pair with the text "secret-pair" (unit level)
 - **WHEN** `studentView` is called with each payload
 - **THEN** each of the four calls throws `IllegalStateException`, and no message contains "secret-pair" or any stored value
+
+#### Scenario: item-matching/R1-S12 Rights that the shuffle leaves next to their own lefts are rotated
+- **GIVEN** the `matching` type and a payload with the pairs `[{"left": "cat", "right": "кошка"}, {"left": "dog", "right": "собака"}]` (unit level; the sorted rights `["кошка", "собака"]` shuffled with the seed `-1338043034` stay `["кошка", "собака"]`, the stored pairing)
+- **WHEN** `studentView` is called with the payload
+- **THEN** `left` equals `["cat", "dog"]` and `right` equals `["собака", "кошка"]` (the shuffled rights rotated left by one), so the view does not show the stored pairing; an implementation without the rotation returns `["кошка", "собака"]` and fails
 
 ### Requirement: R2 A matching payload follows the limits and structure rules
 A `matching` payload SHALL follow items R2. `pairs`: missing, `null` or empty is `REQUIRED`, 1 is `TOO_SHORT`, over 25 is `TOO_LONG` (checked first); a `null` pair is `REQUIRED`. `left` and `right`: missing, `null` or blank is `REQUIRED`, over 100 UTF-16 code units `TOO_LONG`, an exact repeat on the same side `INVALID_FORMAT` at the later one; a value with its own error is not compared; a left may equal a right.
