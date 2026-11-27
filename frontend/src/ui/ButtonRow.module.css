@@ -2,5 +2,5 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-button-gap);
-  margin-top: var(--space-2);
+  margin-top: var(--space-block);
 }

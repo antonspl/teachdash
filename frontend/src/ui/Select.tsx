@@ -1,5 +1,6 @@
 import { useId, type Ref } from 'react'
 import styles from './Field.module.css'
+import { ChevDownIcon } from './icons'
 
 export function Select({
   label,
@@ -74,17 +75,7 @@ export function Select({
           ))}
         </select>
         <span className={styles.arrow} aria-hidden="true" data-select-arrow>
-          <svg
-            className={styles.arrowIcon}
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M1 3.5 6 8.5 11 3.5" />
-          </svg>
+          <ChevDownIcon />
         </span>
       </div>
       {error ? (

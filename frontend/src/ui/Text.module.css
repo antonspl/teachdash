@@ -1,5 +1,5 @@
 .text {
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-block);
   color: var(--color-text-muted);
 }
 

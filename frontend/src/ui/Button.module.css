@@ -2,12 +2,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: var(--space-inline);
   min-height: var(--control-height);
-  padding: 0 var(--space-3);
+  padding: 0 var(--space-group);
   font-family: var(--font-body);
   font-size: var(--text-base);
-  font-weight: 600;
+  font-weight: var(--weight-strong);
   border-radius: var(--radius);
   cursor: pointer;
 }
@@ -21,23 +21,13 @@
 .secondary {
   color: var(--color-accent);
   background: var(--color-surface);
-  border: var(--border-width) solid var(--color-border);
+  border: var(--border-width) solid var(--color-control-border);
 }
 
 .danger {
   color: var(--color-on-accent);
-  background: var(--color-danger-text);
-  border: var(--border-width) solid var(--color-danger-text);
-}
-
-.success {
-  color: var(--color-action-success-text);
-  background: var(--color-action-success-background);
-  border: var(--border-width) solid var(--color-action-success-border);
-}
-
-.success:hover:not(:disabled) {
-  background: var(--color-action-success-hover);
+  background: var(--color-danger-action);
+  border: var(--border-width) solid var(--color-danger-action);
 }
 
 .button:disabled {
