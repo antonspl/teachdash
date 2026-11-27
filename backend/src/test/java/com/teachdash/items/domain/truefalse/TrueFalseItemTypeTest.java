@@ -105,7 +105,7 @@ class TrueFalseItemTypeTest {
 		// then the JSON of each view is an object with exactly the properties allowNotStated and statements
 		for (String json : List.of(englishJson, russianJson)) {
 			JsonNode tree = mapper.readTree(json);
-			assertThat(propertyNamesOf(tree)).containsExactlyInAnyOrder("allowNotStated", "statements");
+			assertThat(propertyNamesOf(tree)).containsExactly("allowNotStated", "statements");
 			// and allowNotStated is a JSON boolean
 			assertThat(tree.get("allowNotStated").isBoolean()).isTrue();
 			// and every statement is an object with exactly the property text
