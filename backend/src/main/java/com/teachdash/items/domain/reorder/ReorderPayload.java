@@ -2,8 +2,13 @@ package com.teachdash.items.domain.reorder;
 
 import java.util.List;
 
-// STUB: no validation yet (pass 2, task 3.1)
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
 public record ReorderPayload(
 		String mode,
-		List<ReorderEntry> entries) {
+		@NotEmpty @Size(max = MAX_ENTRIES) List<@Valid ReorderEntry> entries) {
+
+	public static final int MAX_ENTRIES = 25;
 }

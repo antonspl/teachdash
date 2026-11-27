@@ -15,11 +15,11 @@
 
 ## 3. Implementation (backend)
 
-- [ ] 3.1 `ReorderPayload` and `ReorderEntry` with the Bean Validation of design D2 (`entries` `@NotEmpty @Size(max = 25)`, `units` `@NotEmpty @Size(min = 2, max = 25)`). `ReorderItemType.extraChecks` stays the empty placeholder from 1.1 until 3.2, so in this step R2-S1 (including (g) and (h)), R2-S2 (a) and (b), R2-S3, R2-S8, R2-S9 (a) and (b) and R2-S11 pass; every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
-- [ ] 3.2 `ReorderItemType.extraChecks`: the mode, the null entry, the unit rules (blank, length by mode only for a valid mode), the distinct-unit rule, the total-units rule and the hint rules (design D2); verify R1-S5, R2-S2 (c) to (h), R2-S4, R2-S5, R2-S6, R2-S7, R2-S9 (c) and R2-S10 pass
-- [ ] 3.3 `ReorderItemType.studentView` as an allowlist with the sort, the seed, the shuffle and the rotate of design D4, throwing on corrupt data; verify R3-S1, R3-S2, R3-S3, R3-S4 and R3-S5 pass
-- [ ] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S4 and R1-S6); check that the payload records have `@Size` on the lists, no `Map` field, and that no unit or hint text is logged (constitution section 5)
-- [ ] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `ReorderPayload` and `ReorderEntry` with the Bean Validation of design D2 (`entries` `@NotEmpty @Size(max = 25)`, `units` `@NotEmpty @Size(min = 2, max = 25)`). `ReorderItemType.extraChecks` stays the empty placeholder from 1.1 until 3.2, so in this step R2-S1 (including (g) and (h)), R2-S2 (a) and (b), R2-S3, R2-S8, R2-S9 (a) and (b) and R2-S11 pass; every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
+- [x] 3.2 `ReorderItemType.extraChecks`: the mode, the null entry, the unit rules (blank, length by mode only for a valid mode), the distinct-unit rule, the total-units rule and the hint rules (design D2); verify R1-S5, R2-S2 (c) to (h), R2-S4, R2-S5, R2-S6, R2-S7, R2-S9 (c) and R2-S10 pass
+- [x] 3.3 `ReorderItemType.studentView` as an allowlist with the sort, the seed, the shuffle and the rotate of design D4, throwing on corrupt data; verify R3-S1, R3-S2, R3-S3, R3-S4 and R3-S5 pass
+- [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S4 and R1-S6); check that the payload records have `@Size` on the lists, no `Map` field, and that no unit or hint text is logged (constitution section 5)
+- [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
