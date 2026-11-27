@@ -10,12 +10,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
+import org.springframework.context.annotation.Import;
+
+import com.teachdash.common.StrictJsonTestConfig;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /** item-test R3, student view. */
 @JsonTest
+@Import(StrictJsonTestConfig.class)
 class ChoiceItemTypeTest {
 
 	@Autowired
@@ -67,7 +71,9 @@ class ChoiceItemTypeTest {
 			}
 		}
 		assertThat(texts(questions.get(0))).containsExactly("A", "B", "C");
+		assertThat(texts(questions.get(1))).containsExactly("A", "B", "C");
 		assertThat(texts(questions.get(2))).containsExactly("A", "B");
+		assertThat(texts(questions.get(3))).containsExactly("A", "B");
 	}
 
 	private static List<String> texts(JsonNode question) {

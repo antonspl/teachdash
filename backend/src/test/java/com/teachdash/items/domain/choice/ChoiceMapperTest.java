@@ -15,10 +15,11 @@ import org.springframework.context.annotation.Import;
 
 import com.teachdash.common.ApiException;
 import com.teachdash.common.FieldErrorDetail;
+import com.teachdash.common.StrictJsonTestConfig;
 import com.teachdash.items.domain.ItemPayloadValidator;
 
 @JsonTest
-@Import({ItemPayloadValidator.class, ValidationAutoConfiguration.class})
+@Import({ItemPayloadValidator.class, ValidationAutoConfiguration.class, StrictJsonTestConfig.class})
 class ChoiceMapperTest {
 
 	@Autowired
@@ -82,5 +83,24 @@ class ChoiceMapperTest {
 
 		// then the error is UNKNOWN_FIELD at payload
 		assertThat(error.errors()).containsExactly(new FieldErrorDetail("payload", "UNKNOWN_FIELD"));
+	}
+
+	@Test
+	@DisplayName("The strict mapper gives INVALID_TYPE for a string where a boolean is expected")
+	void aStringCorrectMarkIsInvalidType() {
+		// given an option whose correct is the string "true"
+		var payload = Map.<String, Object>of(
+				"questions", List.of(Map.of(
+						"text", "Q",
+						"options", List.of(
+								Map.of("text", "A", "correct", "true"),
+								option("B", false)))));
+
+		// when the payload is validated for the test type
+		ApiException error = validate(payload);
+
+		// then the error is INVALID_TYPE, so the strict configs are in effect
+		assertThat(error.errors()).hasSize(1);
+		assertThat(error.errors().get(0).code()).isEqualTo("INVALID_TYPE");
 	}
 }

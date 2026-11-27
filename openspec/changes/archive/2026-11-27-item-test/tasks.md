@@ -24,6 +24,7 @@
 - [x] 3.6 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5, R3-S1); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no question or option is logged (constitution section 5)
 - [x] 3.7 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 - [x] 3.8 Code-gate fixes: `studentView` throws `IllegalStateException` for a null `questions` list, and each option is checked once (`requireComplete`) while its view is built and the correct ones are counted in the same pass
+- [x] 3.9 Code-owner review: R3-S2 checks every question, @JsonTest slices import the strict configs
 
 ## Workflow follow-up
 
