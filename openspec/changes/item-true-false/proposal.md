@@ -13,10 +13,13 @@ Issue #222. The engineer's decisions, as given:
 | 5 | `answer`? | A string; missing, null or blank is `REQUIRED`; any value other than the three (case-sensitive: "True" is wrong) is `INVALID_FORMAT`; "not-stated" when `allowNotStated` is not true is `INVALID_FORMAT` at `.answer`. A wrong JSON type (for example the boolean `true`) is `INVALID_TYPE`. |
 | 6 | Student projection? | `studentView` is an allowlist `{"allowNotStated": boolean (false when missing), "statements": [{"text"}]}`, in stored order, with no `answer` key. |
 | 7 | Out of scope? | Answer checking (#126), the student endpoint (#125), the editor, explanations per statement, shuffling. |
+| 8 | Boolean strictness of `allowNotStated`? | Strict booleans come from PR #242 (item-test), which adds a generic `StrictBooleanJsonConfig` so only JSON booleans are accepted. Today a `Boolean` also accepts `"true"`/`"false"`, `1` and `0`. This change does not pin those coerced cases, because the result differs before and after #242 merges. R2-S8 keeps `"yes"` and `[true]` (`INVALID_TYPE` both before and after). |
+| 9 | Pointer in `items`? | None: items R2's pointer names only gap-fill. Each type's rules live in its own capability; this avoids conflicts across the parallel item branches. |
+| 10 | Duplicate texts? | Kept: an exact duplicate text is rejected (Clarification 4). |
 
 ## Research angles
 
-No research angle was given in the brief. The facts below come from reading the code and the `item-gap-fill` change on `main`:
+One researcher ran (a combined angle with the matching and test layout). Its conclusions are the payload shape and rules now in the Clarifications, and the plug-in point and test layout as in gap-fill:
 
 - **Plug-in point.** A new `@Component` `items/domain/truefalse/TrueFalseItemType` implements `ItemType<TrueFalsePayload>` (code `true-false`), mirroring `GapFillItemType` and `TheoryItemType`. `ItemTypeRegistry` collects it by injection; no controller, service or registry change. The `items.type` column has no per-type check.
 - **Validation pipeline.** `ItemPayloadValidator` reads the payload with a strict Jackson mapper (an unknown property is `UNKNOWN_FIELD` reported as `payload`; a wrong JSON type is `INVALID_TYPE` with the path), then runs Bean Validation, then `ItemType.extraChecks` only if Bean Validation passed. `FieldErrorCodes`: `@NotBlank`, `@NotNull`, `@NotEmpty` give `REQUIRED`; `@Size` gives `TOO_SHORT` or `TOO_LONG`; any other constraint gives `INVALID_FORMAT`. Errors are sorted by field, list indexes numerically.

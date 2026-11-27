@@ -33,15 +33,15 @@ The type `true-false` SHALL have the payload `{allowNotStated?, statements}` of 
 - **WHEN** teacher B adds a `true-false` item to teacher A's part and edits teacher A's item with a valid payload
 - **THEN** both responses are 404, and teacher A's part still has exactly the one item with its payload and `version` unchanged
 
-#### Scenario: item-true-false/R1-S7 The student view keeps the texts in order and has no answer, allowNotStated is false when missing
-- **GIVEN** the `true-false` type and two payloads: `{"allowNotStated": true, "statements": [{"text": "Rome is in Italy.", "answer": "true"}, {"text": "Rome has a river called Seine.", "answer": "false"}, {"text": "The guide speaks Italian.", "answer": "not-stated"}]}` and `{"allowNotStated": null, "statements": [{"text": "Rome is in Italy.", "answer": "false"}]}` (unit level: there is no student endpoint yet)
-- **WHEN** `studentView` is called with each payload
-- **THEN** the first result has exactly the properties `allowNotStated` (true) and `statements`, with three statements in the stored order, each with exactly the property `text` (no `answer`, no index); the second has `allowNotStated` false (the property exists) and one statement with only `text`; and two payloads that differ only in their answers give identical views
+#### Scenario: item-true-false/R1-S7 The student view keeps the texts in order and has no answer, allowNotStated is false when missing, and a bad answer does not matter
+- **GIVEN** the `true-false` type and two payloads: `{"allowNotStated": true, "statements": [{"text": "Rome is in Italy.", "answer": "true"}, {"text": "Rome has a river called Seine.", "answer": "false"}, {"text": "The guide speaks Italian.", "answer": "not-stated"}]}` and `{"allowNotStated": null, "statements": [{"text": "Rome is in Italy.", "answer": "false"}]}` and a third `{"statements": [{"text": "Rome is in Italy.", "answer": null}, {"text": "Rome is big.", "answer": "garbage"}]}` (unit level: there is no student endpoint yet)
+- **WHEN** `studentView` is called with each payload, and with the second payload again with `"answer": "true"` and with `"answer": "false"`
+- **THEN** the first result has exactly the properties `allowNotStated` (true) and `statements`, with three statements in the stored order, each with exactly the property `text` (no `answer`, no index); the second has `allowNotStated` false (the property exists) and one statement with only `text`; the third still returns a view with the two texts only (`studentView` does not read `answer`); and the second payload with `"answer": "true"` and the same with `"answer": "false"` serialise to equal JSON
 
 #### Scenario: item-true-false/R1-S8 The serialised student view contains no answer, in English and Russian
 - **GIVEN** the `true-false` type and two payloads whose texts contain none of the strings "true", "false", "not-stated" and "answer": an English one with `allowNotStated` true and the statements "Paris is in France." (`true`), "Paris is in Spain." (`false`), "The guide is tall." (`not-stated`), and a Russian one without `allowNotStated` with the statements "Москва стоит на Волге." (`false`), "Волга впадает в Каспийское море." (`true`)
 - **WHEN** each payload's student view is serialised to JSON with the application's JSON mapper
-- **THEN** the JSON of each view is an object with exactly the properties `allowNotStated` and `statements`, every statement is an object with exactly the property `text`, no JSON string value equals "true", "false" or "not-stated", the JSON contains no property named `answer`, and every text appears exactly
+- **THEN** the JSON of each view is an object with exactly the properties `allowNotStated` and `statements`, `allowNotStated` is a JSON boolean, every statement is an object with exactly the property `text`, no JSON string value equals "true", "false" or "not-stated", the JSON contains no property named `answer`, and every text appears exactly
 
 #### Scenario: item-true-false/R1-S9 The student view of corrupt data fails without echoing stored values
 - **GIVEN** the `true-false` type and three payloads built in memory, not validated: `statements` null; `statements` with the statements "Berlin is in Germany." and a `null` element; and `statements` with "Berlin is in Germany." and a statement whose `text` is null
@@ -49,7 +49,7 @@ The type `true-false` SHALL have the payload `{allowNotStated?, statements}` of 
 - **THEN** each call throws `IllegalStateException`, and no message contains "Berlin is in Germany."
 
 ### Requirement: R2 A true / false payload follows the limits and validation rules
-A `true-false` payload SHALL follow items R2: 1 to 25 statements (`REQUIRED` if missing, null or empty, a null statement too; `TOO_LONG` over 25); `text` non-blank (`REQUIRED`), at most 500 UTF-16 characters (`TOO_LONG`), no exact duplicate (`INVALID_FORMAT` at the later one); `answer` non-blank (`REQUIRED`), only `true`, `false` or `not-stated`, case-sensitive (`INVALID_FORMAT`), `not-stated` only if `allowNotStated` is true (`INVALID_FORMAT`). A wrong JSON type is `INVALID_TYPE`.
+A `true-false` payload SHALL follow items R2: 1 to 25 statements (`REQUIRED` if missing, null, empty or a null one; `TOO_LONG` over 25); `text` non-blank (`REQUIRED`), at most 500 UTF-16 characters (`TOO_LONG`), no exact duplicate (`INVALID_FORMAT` at the later one); `answer` non-blank (`REQUIRED`), only `true`, `false` or `not-stated`, case-sensitive (`INVALID_FORMAT`), `not-stated` only if `allowNotStated` is true (`INVALID_FORMAT`). A wrong JSON type is `INVALID_TYPE` (booleans per #242).
 
 #### Scenario: item-true-false/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
