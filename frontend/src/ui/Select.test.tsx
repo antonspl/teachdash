@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, expect, test } from 'vitest'
+import styles from './Field.module.css'
 import { Select } from './Select'
 
 afterEach(cleanup)
@@ -76,4 +77,19 @@ test('placeholder is not a selectable option and nothing is preselected', () => 
   expect((screen.getByLabelText('Language') as HTMLSelectElement).value).toBe(
     '',
   )
+})
+
+test('flush adds its own class to the root, without it the default stays', () => {
+  const { rerender } = render(
+    <Select label="Zone" value="a" onChange={() => {}} options={['a']} />,
+  )
+  const rootOf = () =>
+    screen.getByLabelText('Zone').parentElement?.parentElement as HTMLElement
+  expect(rootOf().className).toContain(styles.field)
+  expect(rootOf().className).not.toContain(styles.flush)
+  rerender(
+    <Select label="Zone" value="a" onChange={() => {}} options={['a']} flush />,
+  )
+  expect(rootOf().className).toContain(styles.field)
+  expect(rootOf().className).toContain(styles.flush)
 })

@@ -37,7 +37,7 @@
     "showPassword": "Show {{label}}",
     "hidePassword": "Hide {{label}}",
     "tryAgain": "Try again",
-    "loading": "Loading..."
+    "loading": "Loading…"
   },
   "languages": {
     "choose": "Choose a language",
@@ -103,7 +103,6 @@
     "copyByHand": "The link could not be copied. It is selected, so you can copy it by hand."
   },
   "adminTeachers": {
-    "loadError": "Could not load the teachers.",
     "empty": "No teachers yet. Use the button above to add the first one.",
     "status": {
       "ACTIVE": "Active",

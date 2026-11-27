@@ -369,6 +369,18 @@ A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordma
 - Item type names (builder rows use the short name, the editor and picker the full one): Theory / Theory; Image / Image; Audio / Audio; Pick / Pick from a list; Type / Type the answer. Russian: Теория, Изображение, Аудио, Выбор / Выбор из списка, Ввод / Ответ своими словами. The final names are decided in #118 and #120.
 - Russian rail labels are short words chosen for the rail: Курсы, Ученики, Главная, Учителя, Профиль; `hyphens: auto` is only the fallback. Russian uses "Учителя" everywhere (rail, page title, headings). The profile menu role is lowercase ("учитель").
 - Quotes follow each language (ru «»); a language switch item shows its own language name in its own `lang`.
+- Russian copy (#103, #102), one rule each:
+  - Register: formal «вы» in lower case, neutral tone, sentence case; «Учителя» / «учитель», never «преподаватель»; «» quotes; `…` for the ellipsis («Загрузка…»); a non-breaking space (U+00A0) between a number and its unit («8 символов», «72 байт», «7 дней»); text wraps and is never truncated (see Layout and screens).
+  - Verb forms: action buttons are verbs in the infinitive («Сохранить», «Войти»); messages are in the imperative («Обновите список»). The exception: «Отмена», «Новое приглашение» and «Ссылка для сброса пароля» are named by a noun.
+  - No «пожалуйста», even where the English copy keeps "Please".
+  - Glossary: учитель, ученик, администратор, учётная запись, деактивировать, ссылка для сброса пароля, часовой пояс, родной язык, кабинет, профиль; Вход (page title) / Войти (button) / Выйти; email = «Электронная почта»; session = «сеанс»; Reactivate = «Активировать снова».
+  - The admin row buttons are «Новое приглашение» (active teacher without a password) and «Ссылка для сброса пароля» (teacher with a password).
+  - Status badges agree with «учётная запись» (feminine): «Активна», «Ожидает пароля», «Деактивирована», «Только что добавлена».
+  - A name stays in the base case through a colon form: «Деактивировать: {{name}}?», «Ссылка для входа: {{name}}». Avoid demonstratives and possessives next to a name: «ученики будут откреплены от учителя», «На других устройствах сеансы завершены».
+  - The password toggle's accessible name is «Показать: {{label}}» / «Скрыть: {{label}}», with the label in its visible case («Показать: Новый пароль»); it starts with the visible word (WCAG 2.5.3).
+  - A role shown inside a name phrase is lower case: «Анна (учитель)».
+  - Always write ё («учётная», «ещё», «введённые»).
+  - Labels are not shortened to fit: a long Russian label wraps (a button pair may sit on two lines at 360 px). Admin row action labels stay at most 24 characters; a bundle test checks `adminTeachers.actions.*`.
 
 ## Accessibility
 
