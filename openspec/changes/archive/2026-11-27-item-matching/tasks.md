@@ -28,7 +28,7 @@
 - [x] 4.2 Test review stop: the engineer approves the changed tests in the PR. HARD STOP: no production code before approval
 - [x] 4.3 `MatchingItemType.studentView`: seed from the sorted lefts and the sorted rights, of design D4, with no rotate rule; verify R1-S8, R1-S9 and the other R1 unit scenarios pass
 - [x] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and every scenario ID has a test
-- [ ] 4.5 Drop the rotate rule after re-review (it leaks the pairing, Clarification 6b): R1-S12 and the rotation are removed from the spec and the design
+- [x] 4.5 Drop the rotate rule after re-review (it leaks the pairing, Clarification 6b): R1-S12 and the rotation are removed from the spec and the design
 
 ## Workflow follow-up
 

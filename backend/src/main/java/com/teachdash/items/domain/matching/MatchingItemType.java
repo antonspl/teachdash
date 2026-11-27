@@ -51,14 +51,11 @@ public class MatchingItemType implements ItemType<MatchingPayload> {
 
 	/**
 	 * The seed depends only on the sorted values, not on which right belongs to which left, so every pairing of the
-	 * same values gives the same view. If the shuffle leaves the stored pairing, the list is rotated.
+	 * same values gives the same view.
 	 */
 	private List<String> shuffledRights(List<String> lefts, List<String> rights) {
 		List<String> shuffled = sorted(rights);
 		Collections.shuffle(shuffled, new Random(seed(lefts, rights)));
-		if (shuffled.size() > 1 && shuffled.equals(rights)) {
-			Collections.rotate(shuffled, -1);
-		}
 		return shuffled;
 	}
 
