@@ -18,6 +18,10 @@ Issue #218. The engineer's decisions, as given:
 | 10 | Out of scope? | Answer checking (#126), the student endpoint (#125), the editor (a frontend issue like #120), shuffling of options, per-gap points and hints. |
 | 11 | Amends 4: the `@Size(min)` fallback? | Dropped: `FieldErrorCodes` maps `@Size(min)` to `TOO_SHORT`, so the minimum is `@Size(min = 2)` in Bean Validation with no fallback. A unit test keeps the mapping checked. |
 | 12 | A JSON integer out of the `Integer` range? | It gives 500 on `main` today: Jackson's `InputCoercionException` is not a `DatabindException`, so `JacksonErrors.codeOf` and `ApiException.fromJackson` rethrow it (verified by a probe). It is fixed in this PR as a generic rule: such a value (for example `correct` or test-note `rating` 2147483648, -2147483649 or 99999999999999999999) gives 400 `VALIDATION_FAILED` with `INVALID_TYPE` at the field path, the same as a float in an integer field, never 500. |
+| 13 | Code-owner review: limits first? | Stays true. In `extraChecks` the limit checks (an option over 100 characters, more than 25 gaps) run first; if any limit error exists, only limit errors are returned (together with those of Bean Validation, which already stopped earlier) and the structure rules do not run. R2-S11 gets the case `[text "A", text "B", gap [<101 "a">, "b"] -> 0]`: only `payload.segments[2].options[0]` `TOO_LONG`. |
+| 14 | Corrupt gap with a null option? | `studentView` throws `IllegalStateException` also for a gap whose `options` contain a null, not a `NullPointerException` (design D5). |
+| 15 | Explicit `null` of a field of the other segment type? | `"options": null` or `"correct": null` on a text and `"text": null` on a gap are treated as absent: accepted, and the stored payload omits the key (R2-S7 (h)). A non-null value stays `UNKNOWN_FIELD`. |
+| 16 | Integer out of range in a top-level request field? | Consistent with Clarification 12: 400 `VALIDATION_FAILED` with `INVALID_TYPE` at the field, also outside the payload. Items R2-S14 gets an edit with `version` 99999999999999999999 giving `[{field: "version", code: "INVALID_TYPE"}]`. Note: `version` is a `BigInteger` checked by the controller (`bitLength() > 63`), so this case already passes today; the handler fix (`ApiExceptionHandler` also accepts `InputCoercionException` with a path) covers request fields typed `Integer` or `Long`, none exists yet, so its failing test uses a test-only request body (as `QueryParamTestController` does for query parameters). |
 
 ## Research angles
 
@@ -44,7 +48,7 @@ Gap-fill asks the student to type a word. A dropdown item ("choose the option") 
 - `item-dropdown`: R1 (a teacher adds and edits a dropdown item; the student view hides the correct mark) and R2 (limits and validation of the payload).
 
 ### Modified Capabilities
-- `items`: R2 gets one sentence and a scenario (R2-S14): a JSON integer outside the `Integer` range gives `INVALID_TYPE`, not 500 (Clarification 12). Other item types with `Integer` fields rely on it. This is the only `items` change.
+- `items`: R2 gets one sentence and a scenario (R2-S14, extended by Clarification 16): a JSON integer outside the `Integer` range gives `INVALID_TYPE`, not 500 (Clarification 12). Other item types with `Integer` fields rely on it. This is the only `items` change.
 
 ## Impact
 
