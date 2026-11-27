@@ -32,8 +32,8 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 5. After screenshots
 
-- [ ] 5.1 Take the final set in `frontend/screenshots/ui-buttons-fields/`: same states and widths as the before set, plus the busy label of each button (en and ru at 360), a focused invalid field and the icon-led language select (header and login, en and ru); check by eye the error icon on the first text line (rendered, not just the CSS), the icon inset of "Add teacher", the field error, the focus ring, the icon-led select margins, 360 and Russian wrapping; list unreachable states (design D12)
-- [ ] 5.2 Verify `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (re-run at 360 in en and ru: R7-S1, R13-S2, `skeleton.spec.ts`, `russianFit.spec.ts`)
+- [x] 5.1 Take the final set in `frontend/screenshots/ui-buttons-fields/`: same states and widths as the before set, plus the busy label of each button (en and ru at 360), a focused invalid field and the icon-led language select (header and login, en and ru); check by eye the error icon on the first text line (rendered, not just the CSS), the icon inset of "Add teacher", the field error, the focus ring, the icon-led select margins, 360 and Russian wrapping; list unreachable states (design D12)
+- [x] 5.2 Verify `npm run lint`, `npm run format:check`, `npm test`, `npm run build`, `scripts/check-scenario-coverage.sh` and `npm run test:e2e` (re-run at 360 in en and ru: R7-S1, R13-S2, `skeleton.spec.ts`, `russianFit.spec.ts`)
 
 ## 6. Design docs (design D11)
 

@@ -4,6 +4,7 @@ import en from '../src/i18n/en.json' with { type: 'json' }
 test('[web-client/R30-S1] Every focused element of the login page has the 2px solid ring at a 2px offset', async ({
   page,
   isMobile,
+  browserName,
 }) => {
   // given the login page, with the keyboard moved by Tab
   if (isMobile) {
@@ -18,9 +19,11 @@ test('[web-client/R30-S1] Every focused element of the login page has the 2px so
   const submit = page.getByRole('button', { name: en.login.submit })
   const toggle = page.getByRole('button', { name: /Show/ })
 
-  // when each of the focusable elements is focused by the keyboard
+  // when each of the focusable elements is focused by the keyboard (WebKit on macOS skips
+  // buttons with a plain Tab, as Safari does; Alt+Tab visits every control there)
+  const tab = browserName === 'webkit' ? 'Alt+Tab' : 'Tab'
   const rings = []
-  await page.keyboard.press('Tab')
+  await page.keyboard.press(tab)
   for (let step = 0; step < 12; step++) {
     const focused = page.locator(':focus')
     if (!(await focused.count())) break
@@ -41,7 +44,7 @@ test('[web-client/R30-S1] Every focused element of the login page has the 2px so
         }),
       )
     }
-    await page.keyboard.press('Tab')
+    await page.keyboard.press(tab)
   }
 
   // then each has a 2 pixel solid outline at an offset of 2 pixels
