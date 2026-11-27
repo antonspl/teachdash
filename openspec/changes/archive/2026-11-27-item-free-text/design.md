@@ -18,7 +18,7 @@ See proposal.md. Items hold a registered type (`ItemType<P>`, collected by `Item
 **D1. Plug-in.** `items/domain/freetext/FreeTextItemType` (`@Component`, code `free-text`, `payloadClass` `FreeTextPayload`) and the record `FreeTextPayload(String prompt, Integer minLength, Integer maxLength)`. The package is self-contained: no shared class changes, so the parallel item-type branches stay independent. No controller, service, repository or registry change; the `items.type` column has no per-type check. No Flyway migration, no new error code, no delta of the `items` spec (Clarification 1).
 
 **D2. Where each rule lives.**
-- Bean Validation on the record: `prompt` is `@NotBlank @Size(max = 20000)` (`REQUIRED`, `TOO_LONG`; blank means `Character.isWhitespace` only, as items R5, so U+00A0 is accepted), `minLength` and `maxLength` are `@Min(1) @Max(10000)` on `Integer` (a null passes both). `FieldErrorCodes` maps `@Min` and `@Max` to `INVALID_FORMAT` (the default branch); the implementer confirms this in a test. A wrong JSON type (string, float, boolean in a limit; a number or list as `prompt`) is `INVALID_TYPE` from the strict mapper and `StrictIntegerJsonConfig`; an unknown property is `UNKNOWN_FIELD` at `payload`.
+- Bean Validation on the record: `prompt` is `@NotBlank @Size(max = 20000)` (`REQUIRED`, `TOO_LONG`; blank is Hibernate Validator 9.1.5's `NotBlankValidator`, which uses `String.isBlank` (`Character.isWhitespace`), as items R5, so U+00A0 is accepted), `minLength` and `maxLength` are `@Min(1) @Max(10000)` on `Integer` (a null passes both). `FieldErrorCodes` maps `@Min` and `@Max` to `INVALID_FORMAT` (the default branch); the implementer confirms this in a test. A wrong JSON type (string, float, boolean in a limit; a number or list as `prompt`) is `INVALID_TYPE` from the strict mapper and `StrictIntegerJsonConfig`; an unknown property is `UNKNOWN_FIELD` at `payload`.
 - `extraChecks` (runs only when Bean Validation passed): `minLength` and `maxLength` both present and `minLength > maxLength` gives `maxLength` `INVALID_FORMAT`; the prefix `payload.` is added by `ItemPayloadValidator`. Equal limits are allowed. Consequence, stated in R2: when any Bean Validation error exists (for example `prompt` blank), the order error is not reported until the others are fixed (R2-S7).
 - The prompt limit is the theory text limit (items R5): one rule per field kind. Lengths are UTF-16 code units (`String.length`) for the prompt; for the limits the unit is the same, applied to the answer later (#126, #129).
 
@@ -33,8 +33,7 @@ See proposal.md. Items hold a registered type (`ItemType<P>`, collected by `Item
 ## Risks / Trade-offs
 
 - [The limits are only stored here, so nothing enforces them until the answers work] -> Accepted (Clarification 2, 6); #126 and #129 apply them.
-- [Limits count UTF-16 code units, so an emoji counts as 2] -> Accepted, the same unit as every other length in the product (items R5).
-- [Limits count UTF-16 code units] -> #126 must count the answer in the same unit.
+- [Limits count UTF-16 code units, so an emoji counts as 2] -> Accepted, the same unit as every other length in the product (items R5); #126 must count the answer in the same unit.
 - [A rollback after use leaves `free-text` rows with an unknown type, and there is no tooling yet to find or clean them] -> Accepted; the rows stay inert, and cleaning them is a manual database task.
 - [A future field on `FreeTextPayload` leaks to students] -> The projection is an allowlist (D4), with a serialisation test on the exact keys.
 

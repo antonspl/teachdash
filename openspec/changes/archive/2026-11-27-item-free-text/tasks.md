@@ -19,7 +19,7 @@
 - [x] 3.3 `FreeTextItemType.studentView` as an allowlist `FreeTextStudentView` with `@JsonInclude(NON_NULL)` (design D4); verify R1-S7 and R1-S8 pass
 - [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S6); check that no prompt is logged (constitution section 5)
 - [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
-- [x] 3.6 Code-gate fixes: `FreeTextItemTypeTest` checks the student view with `isInstanceOf`, a cast and accessors instead of reflection; `FreeTextPayloads.raw()` escapes the prompt as a JSON string (engineer allowed the test change)
+- [x] 3.6 Code-gate fixes: `FreeTextItemTypeTest` reads the student view's values with `isInstanceOf`, a cast and accessors (the record-components check stays on purpose: R1-S7 asserts exactly those fields); `FreeTextPayloads.raw()` escapes the prompt as a JSON string (engineer allowed the test change)
 
 ## Workflow follow-up
 
