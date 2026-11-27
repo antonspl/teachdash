@@ -31,7 +31,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 5. Decorative borders note
 
-- [ ] 5.1 Put the decorative-border list of design D7 and the interim deviations of design D9 in the PR description (#168)
+- [x] 5.1 Put the decorative-border list of design D7 and the interim deviations of design D9 in the PR description (#168)
 
 ## 6. Vendored design docs
 
