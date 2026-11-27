@@ -34,6 +34,7 @@ See proposal.md. Items hold a registered type (`ItemType<P>`, collected by `Item
 
 - [The limits are only stored here, so nothing enforces them until the answers work] -> Accepted (Clarification 2, 6); #126 and #129 apply them.
 - [Limits count UTF-16 code units, so an emoji counts as 2] -> Accepted, the same unit as every other length in the product (items R5).
+- [Limits count UTF-16 code units] -> #126 must count the answer in the same unit.
 - [A rollback after use leaves `free-text` rows with an unknown type, and there is no tooling yet to find or clean them] -> Accepted; the rows stay inert, and cleaning them is a manual database task.
 - [A future field on `FreeTextPayload` leaks to students] -> The projection is an allowlist (D4), with a serialisation test on the exact keys.
 

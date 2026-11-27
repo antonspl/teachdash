@@ -12,6 +12,7 @@ Issue #219. The engineer's decisions, as given:
 | 4 | `minLength` and `maxLength`? | Optional integers (null or absent means no limit), each 1..10000 (`@Min(1) @Max(10000)`, reported as `INVALID_FORMAT`; checked against `FieldErrorCodes`), counted in UTF-16 characters of the answer. A non-integer JSON value (string, float, boolean) gives `INVALID_TYPE` (strict integer config). `minLength > maxLength` gives `INVALID_FORMAT` at `payload.maxLength`, checked in `extraChecks` only when both are present and valid; equal is allowed (an exact length). |
 | 5 | Student projection? | `studentView` is an allowlist record `{prompt, minLength, maxLength}`; a null limit is absent from the JSON. The application's JSON mapper does not drop nulls (only the stored-payload mapper does), so the view record carries `@JsonInclude(NON_NULL)`. A unit test checks the serialised JSON keys. |
 | 6 | Out of scope? | Answer submission, the teacher verdict and the result states (#126, #129), the student endpoint (#125), the editor, word-count limits and a rubric. |
+| 7 | Integer overflow? | An out-of-range integer limit (for example `minLength` 2147483648) is covered by the generic fix in #238 (items R2); no scenario here. |
 
 ## Research angles
 

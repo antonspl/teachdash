@@ -36,7 +36,7 @@ The type `free-text` SHALL have the payload `{prompt, minLength, maxLength}` (th
 #### Scenario: item-free-text/R1-S7 The student view keeps the prompt and the limits and shows no limit that is absent
 - **GIVEN** the `free-text` type and three payloads (unit level: there is no student endpoint yet): `{prompt: "Describe your day.", minLength: 50, maxLength: 500}`, `{prompt: "Опишите ёлку.", minLength: null, maxLength: 300}` and `{prompt: "Write.", minLength: null, maxLength: null}`
 - **WHEN** `studentView` is called with each payload
-- **THEN** the views have the prompt exactly as stored, and the limits 50 and 500, no `minLength` and 300, and no limit, in this order
+- **THEN** each view is an instance of the allowlist record `FreeTextStudentView` with exactly the fields `prompt`, `minLength` and `maxLength` (a field added to the payload and not to the view is not in it), holding the prompt exactly as stored and the limits 50 and 500, no `minLength` and 300, and no limit, in this order
 
 #### Scenario: item-free-text/R1-S8 The serialised student view has exactly the allowed keys, in English and Russian
 - **GIVEN** the `free-text` type and two payloads: an English one `{prompt: "Describe your day.", minLength: 50, maxLength: 500}` and a Russian one `{prompt: "Опишите «ёлку».", minLength: null, maxLength: 300}`
@@ -44,7 +44,7 @@ The type `free-text` SHALL have the payload `{prompt, minLength, maxLength}` (th
 - **THEN** the English JSON is an object whose keys are exactly `prompt`, `minLength` and `maxLength`, in this order, with the sent values; the Russian JSON is an object whose keys are exactly `prompt` and `maxLength`, with no `minLength` key and no `null` value anywhere
 
 ### Requirement: R2 A free-text payload follows the limits and validation rules
-A `free-text` payload SHALL follow items R2. `prompt` is required and not blank (`REQUIRED`; blank means `Character.isWhitespace` only) with at most 20000 characters (`TOO_LONG`; UTF-16 code units). `minLength` and `maxLength` are optional integers from 1 to 10000, else `INVALID_FORMAT`; a string, float or boolean gives `INVALID_TYPE`. `minLength` above `maxLength` gives `INVALID_FORMAT` at `maxLength`, checked only when Bean Validation passed; equal is allowed.
+A `free-text` payload SHALL follow items R2 (also for NUL or a lone surrogate in `prompt`). `prompt` is required, not blank (`REQUIRED`), at most 20000 characters (`TOO_LONG`, UTF-16). `minLength` and `maxLength` are optional integers 1 to 10000 (else `INVALID_FORMAT`; a non-integer is `INVALID_TYPE`). `minLength` above `maxLength` is `INVALID_FORMAT` at `maxLength`, checked after Bean Validation; equal is allowed.
 
 #### Scenario: item-free-text/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
@@ -78,5 +78,5 @@ A `free-text` payload SHALL follow items R2. `prompt` is required and not blank 
 
 #### Scenario: item-free-text/R2-S7 The order of the limits is checked only after the other errors are fixed
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `free-text` with: (a) a blank `prompt` "  ", `minLength` 10 and `maxLength` 5; (b) the prompt "Write.", `minLength` 20 and `maxLength` 0; (c) the prompt "Write.", `minLength` 20 and `maxLength` 5
-- **THEN** (a) is 400 with `errors` exactly `[{field: "payload.prompt", code: "REQUIRED"}]`, (b) is 400 with `errors` exactly `[{field: "payload.maxLength", code: "INVALID_FORMAT"}]` (the same error as for a limit out of range, not an order error), (c) is 400 with `errors` exactly `[{field: "payload.maxLength", code: "INVALID_FORMAT"}]`, and the part has no item
+- **WHEN** teacher A adds items of the type `free-text` with: (a) a blank `prompt` "  ", `minLength` 10 and `maxLength` 5; (b) the prompt "Write.", `minLength` 20 and `maxLength` 0
+- **THEN** (a) is 400 with `errors` exactly `[{field: "payload.prompt", code: "REQUIRED"}]`, (b) is 400 with `errors` exactly `[{field: "payload.maxLength", code: "INVALID_FORMAT"}]` (the same error as for a limit out of range, not an order error), and the part has no item
