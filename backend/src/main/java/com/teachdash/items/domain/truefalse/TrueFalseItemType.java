@@ -52,6 +52,9 @@ public class TrueFalseItemType implements ItemType<TrueFalsePayload> {
 	@Override
 	public List<FieldErrorDetail> extraChecks(TrueFalsePayload payload) {
 		List<FieldErrorDetail> errors = new ArrayList<>();
+		if (payload.statements() == null) {
+			return errors;
+		}
 		boolean allowNotStated = Boolean.TRUE.equals(payload.allowNotStated());
 		Set<String> seenTexts = new HashSet<>();
 		for (int i = 0; i < payload.statements().size(); i++) {
@@ -64,7 +67,7 @@ public class TrueFalseItemType implements ItemType<TrueFalsePayload> {
 			if (!isAllowedAnswer(statement.answer(), allowNotStated)) {
 				errors.add(new FieldErrorDetail(path + ".answer", FieldErrorCodes.INVALID_FORMAT));
 			}
-			if (!seenTexts.add(statement.text())) {
+			if (statement.text() != null && !seenTexts.add(statement.text())) {
 				errors.add(new FieldErrorDetail(path + ".text", FieldErrorCodes.INVALID_FORMAT));
 			}
 		}

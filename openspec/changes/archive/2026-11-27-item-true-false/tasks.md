@@ -20,6 +20,7 @@
 - [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S6); check that the payload records have `@Size` on the list and the text, no `Map` field, and that no statement text is logged (constitution section 5)
 - [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 - [x] 3.6 Code-gate fixes: payload annotations on their own lines, student view records at the end of `TrueFalseItemType`; full suite green
+- [x] 3.7 Code-owner review: key order in R1-S8, null-safe extraChecks
 
 ## Workflow follow-up
 
