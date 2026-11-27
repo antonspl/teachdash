@@ -3,7 +3,7 @@ package com.teachdash.common;
 import java.util.Map;
 
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.DatabindException;
+import tools.jackson.core.exc.InputCoercionException;
 import tools.jackson.databind.exc.MismatchedInputException;
 import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
@@ -13,7 +13,7 @@ final class JacksonErrors {
 	}
 
 	/** The path under the prefix, cut at the first Map key: a key is user text and is never echoed. */
-	static String fieldOf(DatabindException exception, String prefix) {
+	static String fieldOf(JacksonException exception, String prefix) {
 		StringBuilder field = new StringBuilder(prefix);
 		for (JacksonException.Reference reference : exception.getPath()) {
 			if (reference.getPropertyName() != null) {
@@ -32,19 +32,19 @@ final class JacksonErrors {
 		return field.toString();
 	}
 
-	static String codeOf(DatabindException exception) {
+	static String codeOf(JacksonException exception) {
 		return codeOf(exception, exception);
 	}
 
 	/** Null when the error has no field code. */
-	static String codeOf(Throwable error, DatabindException databind) {
+	static String codeOf(Throwable error, JacksonException databind) {
 		if (containsNul(error)) {
 			return FieldErrorCodes.INVALID_FORMAT;
 		}
 		if (databind instanceof UnrecognizedPropertyException) {
 			return FieldErrorCodes.UNKNOWN_FIELD;
 		}
-		if (databind instanceof MismatchedInputException) {
+		if (databind instanceof MismatchedInputException || databind instanceof InputCoercionException) {
 			return FieldErrorCodes.INVALID_TYPE;
 		}
 		return null;

@@ -13,6 +13,7 @@ import com.teachdash.common.FieldErrorDetail;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import tools.jackson.core.exc.InputCoercionException;
 import tools.jackson.databind.DatabindException;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
@@ -43,7 +44,7 @@ public class ItemPayloadValidator {
 		try {
 			record = strictMapper.convertValue(payload, type.payloadClass());
 		}
-		catch (DatabindException e) {
+		catch (DatabindException | InputCoercionException e) {
 			throw ApiException.fromJackson(e, PAYLOAD);
 		}
 		Set<ConstraintViolation<P>> violations = validator.validate(record);
