@@ -20,6 +20,7 @@
 - [x] 3.3 `MatchingItemType.studentView` as an allowlist with the sort, the seed and the shuffle of design D4, throwing on corrupt data; verify R1-S8, R1-S9, R1-S10 and R1-S11 pass
 - [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5 and R1-S7); check that the payload records have `@Size` on the list, no `Map` field, and that no pair text is logged (constitution section 5)
 - [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.6 Code-gate fixes: R2-S9 (b) asserts the unknown name `id` is not echoed, R2-S11 asserts the upper-case, case-insensitive and U+FFFD forms of the surrogate are absent, `studentView` uses `requireComplete(pair)`
 
 ## Workflow follow-up
 

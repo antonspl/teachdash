@@ -283,6 +283,9 @@ class MatchingPayloadTest extends ItemApiTest {
 		assertNoEcho(rightArray, "Привет");
 		assertNoEcho(unknownInPayload, "caption", "Intro");
 		assertNoEcho(unknownInPair, "p-7731");
+		unknownInPair.then()
+				.body(not(containsString("Unrecognized")))
+				.body(not(containsString("\"id\"")));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}
@@ -332,7 +335,8 @@ class MatchingPayloadTest extends ItemApiTest {
 		expectValidation(surrogate, error("payload", "INVALID_FORMAT"));
 		// and no body contains the rejected value
 		assertNoEcho(nul, "a\\u0000b", "a\u0000b");
-		assertNoEcho(surrogate, "y\\ud800z");
+		assertNoEcho(surrogate, "y\\ud800z", "\\uD800", "\\ud800", "\\UD800", "\uFFFD");
+		assertEquals(false, surrogate.asString().toLowerCase().contains("ud800"));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}

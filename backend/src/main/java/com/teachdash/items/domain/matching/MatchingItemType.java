@@ -36,13 +36,17 @@ public class MatchingItemType implements ItemType<MatchingPayload> {
 		List<String> lefts = new ArrayList<>();
 		List<String> rights = new ArrayList<>();
 		for (MatchingPair pair : payload.pairs()) {
-			if (pair == null || pair.left() == null || pair.right() == null) {
-				throw new IllegalStateException("Cannot build a student view for an incomplete matching pair");
-			}
+			requireComplete(pair);
 			lefts.add(pair.left());
 			rights.add(pair.right());
 		}
 		return new StudentView(lefts, shuffledRights(lefts, rights));
+	}
+
+	private void requireComplete(MatchingPair pair) {
+		if (pair == null || pair.left() == null || pair.right() == null) {
+			throw new IllegalStateException("Cannot build a student view for an incomplete matching pair");
+		}
 	}
 
 	/** The sort makes the shuffle input canonical; the seed depends on the stored order of the values. */
