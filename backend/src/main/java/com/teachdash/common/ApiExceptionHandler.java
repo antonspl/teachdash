@@ -29,7 +29,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import jakarta.validation.ConstraintViolation;
-import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindException;
 import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 @RestControllerAdvice
@@ -83,7 +83,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
-		JacksonException databind = firstWithPath(ex);
+		DatabindException databind = firstWithPath(ex);
 		String field = databind == null ? "" : JacksonErrors.fieldOf(databind, "");
 		boolean unknownProperty = databind instanceof UnrecognizedPropertyException;
 		String fieldCode = field.isEmpty() || unknownProperty ? null : JacksonErrors.codeOf(ex, databind);
@@ -95,9 +95,9 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return ResponseEntity.status(status).body(problem);
 	}
 
-	private static JacksonException firstWithPath(Throwable error) {
+	private static DatabindException firstWithPath(Throwable error) {
 		for (Throwable cause = error; cause != null; cause = cause.getCause()) {
-			if (cause instanceof JacksonException databind && !databind.getPath().isEmpty()) {
+			if (cause instanceof DatabindException databind && !databind.getPath().isEmpty()) {
 				return databind;
 			}
 		}

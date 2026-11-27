@@ -77,12 +77,15 @@ class FieldErrorCodesTest {
 	}
 
 	@Test
-	@DisplayName("A list shorter than the Size minimum is TOO_SHORT and a longer than the maximum is TOO_LONG")
+	@DisplayName("A list shorter than the Size minimum is TOO_SHORT and a list longer than the maximum is TOO_LONG")
 	void aListBelowTheSizeMinimumIsTooShort() {
 		var validator = Validation.buildDefaultValidatorFactory().getValidator();
 
-		var tooShort = FieldErrorCodes.fromViolations(validator.validate(new Options(List.of("a"))));
-		var tooLong = FieldErrorCodes.fromViolations(validator.validate(new Options(List.of("a", "b", "c", "d", "e", "f"))));
+		var shortList = new Options(List.of("a"));
+		var longList = new Options(List.of("a", "b", "c", "d", "e", "f"));
+
+		var tooShort = FieldErrorCodes.fromViolations(validator.validate(shortList));
+		var tooLong = FieldErrorCodes.fromViolations(validator.validate(longList));
 
 		assertThat(tooShort).containsExactly(new FieldErrorDetail("options", "TOO_SHORT"));
 		assertThat(tooLong).containsExactly(new FieldErrorDetail("options", "TOO_LONG"));

@@ -57,7 +57,7 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 		if (GAP.equals(type) && segment.options() != null) {
 			return new GapView(List.copyOf(segment.options()));
 		}
-		throw new IllegalStateException("Cannot build a student view for a dropdown segment of type " + type);
+		throw new IllegalStateException("Cannot build a student view for a corrupt dropdown segment");
 	}
 
 	record StudentView(

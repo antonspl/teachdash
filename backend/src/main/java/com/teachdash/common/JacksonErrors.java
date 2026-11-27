@@ -37,14 +37,14 @@ final class JacksonErrors {
 	}
 
 	/** Null when the error has no field code. */
-	static String codeOf(Throwable error, JacksonException databind) {
+	static String codeOf(Throwable error, JacksonException jackson) {
 		if (containsNul(error)) {
 			return FieldErrorCodes.INVALID_FORMAT;
 		}
-		if (databind instanceof UnrecognizedPropertyException) {
+		if (jackson instanceof UnrecognizedPropertyException) {
 			return FieldErrorCodes.UNKNOWN_FIELD;
 		}
-		if (databind instanceof MismatchedInputException || databind instanceof InputCoercionException) {
+		if (jackson instanceof MismatchedInputException || jackson instanceof InputCoercionException) {
 			return FieldErrorCodes.INVALID_TYPE;
 		}
 		return null;

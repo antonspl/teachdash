@@ -29,9 +29,10 @@
 ## 4. Integer overflow (amendment)
 
 - [x] 4.1 Failing tests: items R2-S14 (test-note `rating` 2147483648, -2147483649, 99999999999999999999 and the accepted 2147483647) in the items payload tests, and the `correct` 2147483648 case of item-dropdown R2-S9; verify each overflow case fails at its THEN step with 500 (not in setup)
-- [ ] 4.2 Engineer approves the tests of 4.1 in the PR. HARD STOP: no production code before approval
+- [x] 4.2 Engineer approves the tests of 4.1 in the PR. HARD STOP: no production code before approval
 - [x] 4.3 Map `InputCoercionException` to `INVALID_TYPE` at the field path in `JacksonErrors` and `ApiException.fromJackson` (design D8); verify items R2-S14 and R2-S9 pass
 - [x] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 4.5 Code-gate fixes: `ApiExceptionHandler` back to `DatabindException` (D8 scope); `jackson` for the renamed variables in `JacksonErrors`; `FieldErrorCodesTest` split lines and DisplayName (the engineer allowed this one change to an approved test); no stored type value in the `studentView` exception message
 
 ## Workflow follow-up
 
