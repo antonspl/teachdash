@@ -6,7 +6,7 @@ A teacher adds and edits items of the type `gap-fill-word-box` ("fill in the bla
 ## Requirements
 
 ### Requirement: R1 A teacher adds and edits a word-box item, and the student view hides which word goes where
-The type `gap-fill-word-box` SHALL have the payload `{segments, extraWords}` of `{type: "text", text}` and `{type: "gap", answer}` plus optional extra words, added with items R1, edited with items R4, stored as sent. `studentView` SHALL return `{"segments": [...], "wordBox": [...]}` as an allowlist: gaps as `{type: "gap"}`, `wordBox` the shuffled answers and extras, never `answer` or `extraWords`; it throws on corrupt data (no scenario). Unit only (#125). `gap "go"` has `answer` "go".
+The type `gap-fill-word-box` SHALL have the payload `{segments, extraWords}` of `{type: "text", text}` and `{type: "gap", answer}` plus optional extra words, added with items R1, edited with items R4, stored as sent. `studentView` SHALL return `{"segments": [...], "wordBox": [...]}` as an allowlist: gaps as `{type: "gap"}`, `wordBox` the shuffled answers and extras, never `answer` or `extraWords`; it throws on corrupt data (R1-S11). Unit only (#125). `gap "go"` has `answer` "go".
 
 #### Scenario: item-gap-fill-word-box/R1-S1 Add an English word-box item, it is stored and listed exactly
 - **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with a part
@@ -59,7 +59,7 @@ The type `gap-fill-word-box` SHALL have the payload `{segments, extraWords}` of 
 - **THEN** the `wordBox` of all three views is exactly `["c", "e", "b", "d", "a"]` (the words sorted by `String.compareTo` give `["a", "b", "c", "d", "e"]`; `Collections.shuffle(list, new Random(seed))` with the seed `String.join("\u0000", sortedWords).hashCode()` gives this order, which differs from the sorted one)
 
 #### Scenario: item-gap-fill-word-box/R1-S11 The student view of corrupt data throws
-- **GIVEN** the `gap-fill-word-box` type and payload records built directly (not validated): (a) a segment of an unknown type `image`; (b) a text segment with a `null` `text`; (c) a `null` segment; (d) a gap segment with a `null` `answer`
+- **GIVEN** the `gap-fill-word-box` type and payload records built directly (not validated): (a) a segment of an unknown type `image`; (b) a text segment with a `null` `text`; (c) a `null` segment; (d) a gap segment with a `null` `answer`; (e) a valid gap with `extraWords` `["x", null]`
 - **WHEN** `studentView` is called with each payload
 - **THEN** each call throws `IllegalStateException` and returns no view
 
