@@ -49,15 +49,6 @@ public class TrueFalseItemType implements ItemType<TrueFalsePayload> {
 		return new StatementView(statement.text());
 	}
 
-	record StudentView(
-			boolean allowNotStated,
-			List<StatementView> statements) {
-	}
-
-	record StatementView(
-			String text) {
-	}
-
 	@Override
 	public List<FieldErrorDetail> extraChecks(TrueFalsePayload payload) {
 		List<FieldErrorDetail> errors = new ArrayList<>();
@@ -82,5 +73,14 @@ public class TrueFalseItemType implements ItemType<TrueFalsePayload> {
 
 	private boolean isAllowedAnswer(String answer, boolean allowNotStated) {
 		return TRUE.equals(answer) || FALSE.equals(answer) || (allowNotStated && NOT_STATED.equals(answer));
+	}
+
+	record StudentView(
+			boolean allowNotStated,
+			List<StatementView> statements) {
+	}
+
+	record StatementView(
+			String text) {
 	}
 }
