@@ -11,7 +11,7 @@ import tools.jackson.databind.json.JsonMapper;
 /** Builders of sort payloads for the tests. */
 public final class SortPayloads {
 
-	public static final String EMOJI = "😀";
+	public static final String EMOJI = "\uD83D\uDE00";
 
 	private static final JsonMapper JSON = JsonMapper.builder().build();
 

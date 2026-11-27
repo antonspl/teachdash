@@ -102,12 +102,12 @@ class SortPayloadTest extends ItemApiTest {
 		expectValidation(longEmojiWord, error("payload.columns[0].words[0]", "TOO_LONG"));
 		expectValidation(words26, error("payload.columns[0].words", "TOO_LONG"));
 		// and no body contains a rejectedValue or the sent text
-		assertNoEcho(columns11);
+		assertNoEcho(columns11, "T11", "w11");
 		assertNoEcho(longTitle, "aaaaaaaaaa");
 		assertNoEcho(longCyrillicWord, "ЯЯЯЯЯЯЯЯЯЯ");
 		assertNoEcho(longEmojiTitle, EMOJI.repeat(5));
 		assertNoEcho(longEmojiWord, EMOJI.repeat(5));
-		assertNoEcho(words26);
+		assertNoEcho(words26, "w26");
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}
@@ -423,7 +423,7 @@ class SortPayloadTest extends ItemApiTest {
 		expectValidation(surrogate, error("payload", "INVALID_FORMAT"));
 		// and no body contains the rejected value
 		assertNoEcho(nul, "a\\u0000b", "a\u0000b");
-		assertNoEcho(surrogate, "A\\ud800z", "\\uD800", "\\ud800", "\\UD800", "�");
+		assertNoEcho(surrogate, "A\\ud800z", "\\uD800", "\\ud800", "\\UD800", "\uFFFD");
 		assertFalse(surrogate.asString().toLowerCase().contains("ud800"));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
