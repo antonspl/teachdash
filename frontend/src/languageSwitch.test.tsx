@@ -14,6 +14,14 @@ import en from './i18n/en.json'
 import ru from './i18n/ru.json'
 
 const fetchMock = vi.fn()
+const realRu = structuredClone(ru)
+
+// UiLanguageSelect drives the global instance, so a test bundle replaces the
+// real `ru` there and afterEach puts the real one back.
+function useTestRu(bundle: Record<string, unknown>) {
+  i18next.removeResourceBundle('ru', 'translation')
+  i18next.addResourceBundle('ru', 'translation', bundle)
+}
 
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock)
@@ -24,6 +32,8 @@ afterEach(async () => {
   fetchMock.mockReset()
   vi.unstubAllGlobals()
   await i18next.changeLanguage('en')
+  i18next.removeResourceBundle('ru', 'translation')
+  i18next.addResourceBundle('ru', 'translation', realRu)
   localStorage.clear()
   document.documentElement.lang = 'en'
 })
@@ -171,6 +181,7 @@ test('[web-client/R20-S3] The switch sits at its place on the page', async () =>
 })
 
 test('[web-client/R20-S5] Choosing Russian changes the page at once', async () => {
+  useTestRu({ uiLanguage: ru.uiLanguage })
   backend()
   open('/login')
   const select = await screen.findByRole('combobox', { name: 'Language' })
@@ -190,14 +201,17 @@ test('[web-client/R20-S7] A message on screen keeps its language until the next 
     'auth/login': () => problem(401, 'INVALID_CREDENTIALS'),
   })
   open('/login')
+  // the form labels follow the language active at the time of the call
   async function submit() {
-    fireEvent.change(await screen.findByLabelText(en.login.email), {
+    fireEvent.change(await screen.findByLabelText(i18next.t('login.email')), {
       target: { value: 'a@example.com' },
     })
-    fireEvent.change(screen.getByLabelText(en.login.password), {
+    fireEvent.change(screen.getByLabelText(i18next.t('login.password')), {
       target: { value: 'secret-pass' },
     })
-    fireEvent.click(screen.getByRole('button', { name: en.login.submit }))
+    fireEvent.click(
+      screen.getByRole('button', { name: i18next.t('login.submit') }),
+    )
   }
   await submit()
   expect(await screen.findByText(en.errors.INVALID_CREDENTIALS)).toBeTruthy()

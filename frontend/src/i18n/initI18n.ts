@@ -1,12 +1,11 @@
-import type { i18n as I18nInstance } from 'i18next'
-import { initReactI18next } from 'react-i18next'
+import type { i18n as I18nInstance, Resource } from 'i18next'
 import { detectLanguage, FALLBACK_LANGUAGE } from './detectLanguage'
 import en from './en.json'
 import ru from './ru.json'
 
 export const LANGUAGE_STORAGE_KEY = 'teachdash.lang'
 
-export const resources = {
+export const resources: Resource = {
   en: { translation: en },
   ru: { translation: ru },
 }
@@ -23,7 +22,7 @@ export type I18nEnv = {
   language: string | undefined
   root: { lang: string }
   // Tests pass their own bundles; the app uses the bundled ones.
-  resources?: typeof resources
+  resources?: Resource
 }
 
 // Reads and writes the stored choice. Every access, including reading the
@@ -60,7 +59,7 @@ export async function initI18n(instance: I18nInstance, env: I18nEnv) {
     env.languages,
     env.language,
   )
-  await instance.use(initReactI18next).init({
+  await instance.init({
     lng,
     fallbackLng: FALLBACK_LANGUAGE,
     resources: bundles,

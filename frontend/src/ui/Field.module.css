@@ -5,6 +5,10 @@
   margin: 0 0 var(--space-2);
 }
 
+.flush {
+  margin: 0;
+}
+
 .label {
   font-weight: 600;
 }

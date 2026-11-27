@@ -146,7 +146,7 @@ test('[web-client/R2-S2] A Russian string is shown when the UI language is Russi
       resources: {
         en: { translation: en },
         ru: { translation: { login: { title: 'Вход' } } },
-      } as never,
+      },
     }),
   )
   renderLogin(instance)
@@ -156,7 +156,17 @@ test('[web-client/R2-S2] A Russian string is shown when the UI language is Russi
 
 test('[web-client/R2-S3] A key missing in Russian shows the English text', async () => {
   const instance = i18next.createInstance()
-  await initI18n(instance, env({ languages: ['ru'], language: 'ru' }))
+  await initI18n(
+    instance,
+    env({
+      languages: ['ru'],
+      language: 'ru',
+      resources: {
+        en: { translation: en },
+        ru: { translation: { uiLanguage: { label: 'Язык' } } },
+      },
+    }),
+  )
   expect(instance.language).toBe('ru')
   renderLogin(instance)
   expect(
