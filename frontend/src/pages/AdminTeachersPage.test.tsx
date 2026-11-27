@@ -1523,3 +1523,42 @@ test('A blank name and a missing language are shown together', async () => {
   expect(screen.getByText(en.fieldErrors.REQUIRED)).toBeTruthy()
   expect(calls('POST')).toHaveLength(0)
 })
+
+test('[web-client/R23-S1] The plus of Add teacher uses the set plus', async () => {
+  // given a logged-in admin on /admin
+  backend({ list: () => json([]) })
+  open()
+
+  // when the Add teacher button is read by role and name
+  const button = await addButton()
+
+  // then its first child is a hidden svg, followed by the label
+  const icon = button.firstElementChild!
+  expect(icon.tagName.toLowerCase()).toBe('svg')
+  expect(icon.getAttribute('aria-hidden')).toBe('true')
+  expect(icon.getAttribute('focusable')).toBe('false')
+  expect(button.textContent).toBe(en.adminTeachers.add)
+  expect(icon.nextSibling?.textContent).toBe(en.adminTeachers.add)
+
+  // and its path is the set's plus
+  expect(icon.querySelector('path')?.getAttribute('d')).toBe('M10 4v12M4 10h12')
+})
+
+test('[web-client/R23-S2] Create teacher and the other dialog buttons have no icon', async () => {
+  // given the Add teacher dialog is open
+  backend({ list: () => json([]) })
+  open()
+  const dialog = await openDialog()
+
+  // when the dialog's buttons are read by role and name
+  const buttons = within(dialog).getAllByRole('button')
+
+  // then none of them contains an svg, and Create teacher is among them
+  expect(buttons.map((button) => button.textContent)).toContain(
+    en.adminTeachers.create.submit,
+  )
+  expect(submitButton().querySelector('svg')).toBeNull()
+  for (const button of buttons) {
+    expect(button.querySelector('svg')).toBeNull()
+  }
+})

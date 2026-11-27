@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode, Ref } from 'react'
 import styles from './Button.module.css'
-import { PlusIcon } from './PlusIcon'
+import { PlusIcon } from './icons'
 
 export function Button({
   children,
