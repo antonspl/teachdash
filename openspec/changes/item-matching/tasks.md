@@ -2,12 +2,12 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add stubs so the tests compile and fail at their THEN step: `MatchingPayload`, `MatchingPair` and `MatchingItemType` (code `matching`; `studentView` and `extraChecks` return a placeholder, each marked STUB); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
-- [ ] 1.2 Add the test helper `items/support/MatchingPayloads` (pair and payload builders, the 25-pair, 100-letter and emoji payloads)
-- [ ] 1.3 Write tests for item-matching R1-S1 to R1-S7 in `items/api/MatchingItemTest` (helpers of `ItemApiTest`: `teacherWithPart`, `body`, `expectValidation`, `expectNotFound`, `assertStoredPayload`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step
-- [ ] 1.4 Write tests for item-matching R1-S8 to R1-S11 in `items/domain/matching/MatchingItemTypeTest` (unit level; R1-S8 and R1-S9 pin the shuffled orders; application JSON mapper for R1-S10); verify each fails at its THEN step
-- [ ] 1.5 Write tests for item-matching R2-S1 to R2-S11 in `items/api/MatchingPayloadTest`; verify each fails at its THEN step
-- [ ] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test whose behaviour is missing fails at its THEN step, not in setup (tests whose behaviour the generic code already provides are expected green on the stubs: generic add/edit/list/scoping R1-S1 to R1-S5 and R1-S7, the accept paths R2-S1, R2-S7, JSON type errors and unknown fields R2-S9, NUL and surrogate R2-S11), and every scenario ID has a test
+- [x] 1.1 Add stubs so the tests compile and fail at their THEN step: `MatchingPayload`, `MatchingPair` and `MatchingItemType` (code `matching`; `studentView` and `extraChecks` return a placeholder, each marked STUB); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
+- [x] 1.2 Add the test helper `items/support/MatchingPayloads` (pair and payload builders, the 25-pair, 100-letter and emoji payloads)
+- [x] 1.3 Write tests for item-matching R1-S1 to R1-S7 in `items/api/MatchingItemTest` (helpers of `ItemApiTest`: `teacherWithPart`, `body`, `expectValidation`, `expectNotFound`, `assertStoredPayload`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step
+- [x] 1.4 Write tests for item-matching R1-S8 to R1-S11 in `items/domain/matching/MatchingItemTypeTest` (unit level; R1-S8 and R1-S9 pin the shuffled orders; application JSON mapper for R1-S10); verify each fails at its THEN step
+- [x] 1.5 Write tests for item-matching R2-S1 to R2-S11 in `items/api/MatchingPayloadTest`; verify each fails at its THEN step
+- [x] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test whose behaviour is missing fails at its THEN step, not in setup (tests whose behaviour the generic code already provides are expected green on the stubs: generic add/edit/list/scoping R1-S1 to R1-S5 and R1-S7, the accept paths R2-S1, R2-S7, JSON type errors and unknown fields R2-S9, NUL and surrogate R2-S11), and every scenario ID has a test
 
 ## 2. Test review
 
