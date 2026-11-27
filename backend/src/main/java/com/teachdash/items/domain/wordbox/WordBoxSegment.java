@@ -1,8 +1,11 @@
 package com.teachdash.items.domain.wordbox;
 
-// STUB: no validation until pass 2 (tasks.md 3.1)
+import jakarta.validation.constraints.Size;
+
 public record WordBoxSegment(
 		String type,
-		String text,
+		@Size(max = MAX_TEXT_LENGTH) String text,
 		String answer) {
+
+	public static final int MAX_TEXT_LENGTH = 500;
 }

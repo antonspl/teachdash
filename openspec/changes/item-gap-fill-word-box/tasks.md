@@ -16,14 +16,14 @@
 
 ## 3. Implementation (backend)
 
-- [ ] 3.1 `WordBoxPayload` and `WordBoxSegment` with the Bean Validation of design D3 (`@NotEmpty @Size(max = 51)` and `List<@Valid WordBoxSegment>`, `@Size(max = 500)` on `text`, `@Size(max = 10)` on `extraWords`). `extraChecks` stays the empty placeholder until 3.2, so in this step the accept scenarios (R1-S4, R2-S1), R2-S2 (a), (b), (e), (h), R2-S3 (e) to (g), R2-S8 (f), R2-S10, R2-S11 (first, fourth and fifth case) and R2-S12 pass because Bean Validation and the JSON reading already give the expected errors, and every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
-- [ ] 3.2 `extraChecks`, segment structure: null segment, `type` rules, the text rule (only "" and missing are `REQUIRED`, not `@NotBlank`), fields of the other segment type (`UNKNOWN_FIELD`), adjacent texts; verify R2-S3 (a) to (c), R2-S7, R2-S8 (a) to (e), R2-S9 pass
-- [ ] 3.3 `extraChecks`, words: missing or blank `answer` (`REQUIRED`), answer length, null or blank extra word, extra-word length; verify R2-S2 (c), (d), (f), (g), R2-S4 and R2-S5 pass
-- [ ] 3.4 `extraChecks`, duplicates: a repeated extra word and an extra word equal to a gap's answer (exact match), the same answer in two gaps allowed; verify R2-S6, the second and third case of R2-S11 and R1-S6 pass (R1-S6 also needs 3.5)
-- [ ] 3.5 `extraChecks`, gap count: more than 25 gaps (`TOO_LONG`) and the gap-less payload (`REQUIRED`); a gap with a missing answer counts as a gap, a null, typeless or unknown-type segment does not; verify R2-S2 (i), R2-S3 (d), R2-S13 and R1-S6 pass
-- [ ] 3.6 `WordBoxItemType.studentView` as an allowlist (design D5): the `{"segments", "wordBox"}` envelope, the sorted and seeded shuffle, throws on corrupt data; verify R1-S8 to R1-S11 pass
-- [ ] 3.7 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no answer or word is logged (constitution section 5)
-- [ ] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `WordBoxPayload` and `WordBoxSegment` with the Bean Validation of design D3 (`@NotEmpty @Size(max = 51)` and `List<@Valid WordBoxSegment>`, `@Size(max = 500)` on `text`, `@Size(max = 10)` on `extraWords`). `extraChecks` stays the empty placeholder until 3.2, so in this step the accept scenarios (R1-S4, R2-S1), R2-S2 (a), (b), (e), (h), R2-S3 (e) to (g), R2-S8 (f), R2-S10, R2-S11 (first, fourth and fifth case) and R2-S12 pass because Bean Validation and the JSON reading already give the expected errors, and every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
+- [x] 3.2 `extraChecks`, segment structure: null segment, `type` rules, the text rule (only "" and missing are `REQUIRED`, not `@NotBlank`), fields of the other segment type (`UNKNOWN_FIELD`), adjacent texts; verify R2-S3 (a) to (c), R2-S7, R2-S8 (a) to (e), R2-S9 pass
+- [x] 3.3 `extraChecks`, words: missing or blank `answer` (`REQUIRED`), answer length, null or blank extra word, extra-word length; verify R2-S2 (c), (d), (f), (g), R2-S4 and R2-S5 pass
+- [x] 3.4 `extraChecks`, duplicates: a repeated extra word and an extra word equal to a gap's answer (exact match), the same answer in two gaps allowed; verify R2-S6, the second and third case of R2-S11 and R1-S6 pass (R1-S6 also needs 3.5)
+- [x] 3.5 `extraChecks`, gap count: more than 25 gaps (`TOO_LONG`) and the gap-less payload (`REQUIRED`); a gap with a missing answer counts as a gap, a null, typeless or unknown-type segment does not; verify R2-S2 (i), R2-S3 (d), R2-S13 and R1-S6 pass
+- [x] 3.6 `WordBoxItemType.studentView` as an allowlist (design D5): the `{"segments", "wordBox"}` envelope, the sorted and seeded shuffle, throws on corrupt data; verify R1-S8 to R1-S11 pass
+- [x] 3.7 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no answer or word is logged (constitution section 5)
+- [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
