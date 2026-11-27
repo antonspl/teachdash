@@ -47,9 +47,13 @@ public class SortItemType implements ItemType<SortPayload> {
 	}
 
 	private void requireComplete(SortColumn column) {
-		if (column == null || column.title() == null || column.words() == null || column.words().stream().anyMatch(Objects::isNull)) {
+		if (column == null || column.title() == null || column.words() == null || hasNullWord(column)) {
 			throw new IllegalStateException("Cannot build a student view for an incomplete sort column");
 		}
+	}
+
+	private boolean hasNullWord(SortColumn column) {
+		return column.words().stream().anyMatch(Objects::isNull);
 	}
 
 	/** The sort makes the shuffle input canonical; the seed depends on the stored order of the words. */

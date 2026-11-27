@@ -20,6 +20,7 @@
 - [x] 3.3 `SortItemType.studentView` as an allowlist with the sort, the seed and the shuffle of design D4, throwing on corrupt data; verify R1-S7, R1-S8, R1-S9 and R1-S10 pass
 - [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S4 and R1-S6); check that the payload records have `@Size` on each list, no `Map` field, and that no title or word is logged (constitution section 5)
 - [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.6 Code-gate fixes: `assertNoEcho` on the R2-S2 (a) and (f) bodies, a `hasNullWord` helper in `SortItemType.requireComplete`, Java escapes for `EMOJI` and the U+FFFD literal in the tests
 
 ## Workflow follow-up
 
