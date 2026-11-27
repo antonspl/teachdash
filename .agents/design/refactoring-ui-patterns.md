@@ -39,7 +39,7 @@ Match input width to the expected content:
 Use the `src/ui/` field components (TextInput, PasswordInput, Select) and their states; don't restyle them in a page.
 
 ```text
-Default:   --color-border border, --color-surface background
+Default:   --color-control-border border, --color-surface background
 Focus:     visible outline in --color-accent (:focus-visible)
 Error:     --color-danger-text border, plus the error text next to the field
 Disabled:  --opacity-disabled
@@ -53,9 +53,8 @@ One primary action per view; everything else is secondary. Use the `src/ui/` But
 
 ```text
 primary:    filled --color-accent, --color-on-accent text
-secondary:  --color-surface with a --color-border border
+secondary:  --color-surface with a --color-control-border border
 danger:     the confirming button of a destructive action
-success:    a positive action that needs its own role
 ```
 
 Buttons sit in a `src/ui/` ButtonRow (`--space-button-gap`) and never touch fields, cards or each other (project rules).
@@ -65,12 +64,12 @@ Buttons sit in a `src/ui/` ButtonRow (`--space-button-gap`) and never touch fiel
 - One column for simple forms.
 - Two columns only when inputs are related (first and last name) and the width allows; at 360 px they stack.
 - Labels above inputs.
-- Group related fields with spacing (`--space-2` within a group, more between groups) or a `src/ui/` Section.
+- Group related fields with spacing (`--space-block` between fields, `--space-section` between groups) or a `src/ui/` Section.
 
 ## Icon usage
 
 - **Sizing:** icons balance with the text next to them: about the height of a capital letter inline, a bit larger in icon-only buttons. Size them in `em` or through a role-named token, so they follow the text.
-- **Pairing:** align the icon centre with the text centre, with a consistent gap (`--space-1`), as the `src/ui/` Button does for its `plus` icon.
+- **Pairing:** align the icon centre with the text centre, with a consistent gap (`--space-adjacent`), as the `src/ui/` Button does for its `plus` icon.
 - **Use icons for:** navigation items; common actions (edit, delete, share); status, always with text (`src/ui/` StatusBadge); feature lists, with caution.
 - **Don't use icons:** to fill space; on buttons with clear text ("Save", "Continue"); as decoration that adds no meaning. When a decorative icon stays, give it `aria-hidden="true"`.
 
@@ -78,7 +77,7 @@ Buttons sit in a `src/ui/` ButtonRow (`--space-button-gap`) and never touch fiel
 
 Every interactive element needs visible state changes.
 
-- **Hover:** a subtle background change, or a shift towards a stronger shade (a hover token, such as `--color-action-success-hover`).
+- **Hover:** a subtle background change, or a shift towards a stronger shade (a hover token, such as `--color-accent-hover`).
 - **Active (pressed):** stronger than hover, with no layout shift.
 - **Focus:** an obvious outline, at least 3:1 against its background; not colour alone; `:focus-visible` for keyboard focus.
 - **Loading:** keep the submit button enabled until the request starts, then disable it and show progress; keep the layout size; announce the result through a `role="status"` message (`src/ui/` StatusMessage).
@@ -86,7 +85,7 @@ Every interactive element needs visible state changes.
 ```css
 /* Example button states, all in tokens */
 .button:hover:not(:disabled) {
-  background: var(--color-action-success-hover);
+  background: var(--color-accent-hover);
 }
 .button:focus-visible {
   outline: var(--border-width) solid var(--color-accent);
@@ -106,10 +105,10 @@ Use colour purposefully, through the role tokens:
 | Role | Association | Tokens |
 |-------|-------------|---------|
 | Accent | Trust, calm | `--color-accent`, `--color-on-accent`: primary actions, links, focus |
-| Success | Success, go | `--color-success-*`, `--color-action-success-*` |
+| Success | Success, go | `--color-success-*` |
 | Danger | Error, destructive | `--color-danger-*`: errors, destructive actions |
 | Neutral | Neutral information | `--color-neutral-*`, `--color-text-muted` |
-| Base | Text, surfaces, borders | `--color-text`, `--color-surface`, `--color-background`, `--color-border` |
+| Base | Text, surfaces, borders | `--color-text`, `--color-surface`, `--color-background`, `--color-control-border`, `--color-divider` |
 
 Avoid: danger colours on non-destructive primary buttons; meaning by colour alone (colour-blind users); low-contrast colours for important actions; a new accent colour where a role token already exists.
 
@@ -162,7 +161,7 @@ Use the native `<dialog>` through `src/ui/Dialog`. It handles focus, Escape and 
 | Form | Up to `--content-width` | Auto |
 | Long content | `--content-width` | Scrolls inside, with `overscroll-behavior: contain` |
 
-On a 360 px screen the dialog keeps a `--space-2` margin on each side.
+On a 360 px screen the dialog keeps a `--space-group` margin on each side.
 
 ```text
 ┌─────────────────────────────────────────────┐
@@ -187,17 +186,17 @@ Prefer a native `<select>` (`src/ui/` Select) for choosing one value. Build a cu
   position: absolute;
   top: 100%;
   left: 0;
-  margin-top: var(--space-1);
+  margin-top: var(--space-inline);
   max-height: 50vh;
   overflow-y: auto;
   background: var(--color-surface);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-overlay);
 }
 
 .menu-item {
   min-height: var(--control-height);
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-group);
 }
 
 .menu-item:hover {
@@ -217,4 +216,4 @@ Prefer a native `<select>` (`src/ui/` Select) for choosing one value. Build a cu
 
 - **Top navigation:** the `src/ui/` AppHeader holds it. It wraps or collapses at 360 px, every item stays reachable by keyboard, and the active item has `aria-current="page"` and a visible state that is not colour alone.
 - **Breadcrumbs** (`Home > Group > Lesson`): every item links except the current page; truncate middle items when too long; show them on nested pages.
-- **Tabs:** an underline in `--color-accent` marks the selected tab (`aria-selected="true"`), on a `--color-border` line; a thicker underline is a new role-named token. Many tabs scroll horizontally at 360 px. Tabs that change the view sync to the URL (checklist, Navigation and state).
+- **Tabs:** an underline in `--color-accent` marks the selected tab (`aria-selected="true"`), on a `--color-divider` line; a thicker underline is a new role-named token. Many tabs scroll horizontally at 360 px. Tabs that change the view sync to the URL (checklist, Navigation and state).

@@ -34,7 +34,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 6. Vendored design docs
 
-- [ ] 6.1 In a separate commit, update the `.agents/design` files (not `design-code.md`, and nothing under `ui-ux-pro-max/`) that name `--shadow-card`, `--color-border`, `--space-1` to `--space-4`, `--color-action-success-*`, the success variant or `--arrow-width`; rewrite passages that would become false to match the design code, as design D8 says
+- [x] 6.1 In a separate commit, update the `.agents/design` files (not `design-code.md`, and nothing under `ui-ux-pro-max/`) that name `--shadow-card`, `--color-border`, `--space-1` to `--space-4`, `--color-action-success-*`, the success variant or `--arrow-width`; rewrite passages that would become false to match the design code, as design D8 says
 
 ## Workflow follow-up
 

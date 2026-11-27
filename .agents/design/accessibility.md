@@ -69,9 +69,9 @@ The code snippets below are examples of the patterns only, not code to copy. In 
 
 All colours are `--color-*` tokens; check the pair a slice uses:
 ```css
-/* ❌ Border token used for text: about 2.5:1 on the surface */
+/* ❌ Divider token used for text: about 1.4:1 on the surface */
 .low-contrast {
-  color: var(--color-border);
+  color: var(--color-divider);
   background: var(--color-surface);
 }
 

@@ -33,7 +33,7 @@ Seven principles for building professional interfaces without a designer.
 
 **Patterns:**
 - Three-level hierarchy: size (`--text-title`, `--text-large`, `--text-base`), weight (bold, medium, normal), colour (`--color-text`, `--color-text-muted`)
-- Button hierarchy: the `src/ui/` Button variants: `primary` (filled), `secondary` (muted), `danger` and `success` for their roles; one primary action per view
+- Button hierarchy: the `src/ui/` Button variants: `primary` (filled), `secondary` (muted) and `danger` for their roles; one primary action per view
 
 **Ethical boundary:** don't use hierarchy tricks to hide important information such as terms, deletions or cancellation options.
 
@@ -46,7 +46,7 @@ See `refactoring-ui-patterns.md` for components beyond static layout: interactio
 **Why it works:** arbitrary spacing creates inconsistency; a fixed scale forces deliberate decisions and harmonious layouts. Generous spacing feels calm; dense feels overwhelming.
 
 **Key insights:**
-- Use the scale: `--space-1`, `--space-2`, `--space-3`, `--space-4`; `--space-button-gap` between buttons
+- Use the role tokens: `--space-adjacent` (0.25rem), `--space-inline` (0.5rem), `--space-group` (0.75rem), `--space-block` (1.25rem), `--space-section` and `--space-page` (2rem); `--space-button-gap` (0.75rem) between buttons
 - Start with too much white space, then remove; you'll almost never remove enough
 - Spacing between groups must exceed spacing within groups
 - Constrain widths: text and forms sit inside `--content-width` (short lines, under about 80 characters); full width is almost never right
@@ -54,10 +54,10 @@ See `refactoring-ui-patterns.md` for components beyond static layout: interactio
 
 | Context | Spacing strategy | Example |
 |---------|-----------------|---------|
-| **Icon + label** | Tight coupling | `--space-1` keeps them connected |
-| **Field to field** | Within a group | `--space-2` |
-| **Card sections** | Section separation | `--space-3` between title, content and actions |
-| **Page sections** | Major sections | `--space-4` |
+| **Icon + label** | Tight coupling | `--space-adjacent` keeps them connected |
+| **Field to field** | Between blocks of a group | `--space-block` |
+| **Box sections** | Inside a group | `--space-group` between title, content and actions |
+| **Page sections** | Major sections | `--space-section` |
 
 ### 3. Typography
 
@@ -79,7 +79,7 @@ See `refactoring-ui-patterns.md` for components beyond static layout: interactio
 
 ### 4. Colour
 
-**Core concept:** colour comes from the role tokens (`--color-text`, `--color-text-muted`, `--color-accent`, `--color-surface`, `--color-background`, `--color-border` and the `neutral`, `success`, `danger` pairs). Check the design in grayscale first.
+**Core concept:** colour comes from the role tokens (`--color-text`, `--color-text-muted`, `--color-accent`, `--color-surface`, `--color-background`, `--color-control-border`, `--color-divider` and the `neutral`, `success`, `danger` pairs). Check the design in grayscale first.
 
 **Why it works:** random colours clash; a fixed set of roles keeps the interface consistent, and each role has one meaning everywhere.
 
@@ -99,13 +99,13 @@ Contrast, focus rings, keyboard use and screen readers are in `accessibility.md`
 
 ### 5. Depth and shadows
 
-**Core concept:** shadow conveys elevation. teachdash has one shadow, `--shadow-card`, and one `--radius`; they are ours, and changing them is an engineer decision (C5).
+**Core concept:** shadow conveys elevation. teachdash has one shadow, `--shadow-overlay`, used on overlays only (dialog, tooltip, menu, picker), and one `--radius`; they are ours, and changing them is an engineer decision (C5).
 
 **Why it works:** the eye reads shadow as height above the page; a consistent shadow makes elevation legible, so people see what is raised, floating or background.
 
 **Key insights:**
-- Cards get `--shadow-card`; the native `<dialog>` (`src/ui/Dialog`) floats above the page through its backdrop
-- Depth without shadows: `--color-surface` on `--color-background`, a `--color-border` line, overlapping elements
+- Shadows only on overlays, through `--shadow-overlay`; a box is a surface fill plus a divider, not a shadow. The native `<dialog>` (`src/ui/Dialog`) also floats above the page through its backdrop
+- Depth without shadows: `--color-surface` on `--color-background`, a `--color-divider` line, overlapping elements
 - Don't overuse: if everything floats, nothing has depth
 
 Motion is in the checklist (Animation) and C6.
@@ -142,7 +142,7 @@ Motion is in the checklist (Animation) and C6.
 | Mistake | Why it fails | Fix |
 |---------|-------------|------|
 | **"Looks amateur"** | Too little white space, unconstrained widths | More white space, constrain content widths |
-| **"Feels flat"** | No depth differentiation | `--color-surface` on `--color-background`, `--shadow-card` on cards |
+| **"Feels flat"** | No depth differentiation | `--color-surface` on `--color-background` with a `--color-divider` edge, no shadow on cards |
 | **"Text is hard to read"** | Poor line height, too wide, low contrast | `--line-height`, `--content-width`, a darker text token |
 | **"Everything looks the same"** | No visual hierarchy | Vary size, weight or colour between primary and secondary |
 | **"Feels cluttered"** | Equal spacing everywhere | Group related items, larger gaps between groups |
@@ -161,7 +161,7 @@ Motion is in the checklist (Animation) and C6.
 | Does spacing use only the `--space-*` tokens? | Arbitrary spacing is visual noise | Replace raw values with tokens |
 | Is text width constrained? | Long lines tire readers | Keep text inside `--content-width` |
 | Do colours have enough contrast? | Accessibility failure | Check against WCAG 2.2 AA; use a darker text token |
-| Is elevation used sparingly? | Elements float at the wrong level | `--shadow-card` on cards only |
+| Is elevation used sparingly? | Elements float at the wrong level | `--shadow-overlay` on overlays only |
 
 ## Further reading
 
