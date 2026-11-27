@@ -16,6 +16,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -254,7 +255,7 @@ class NumericPayloadTest extends ItemApiTest {
 		List<String> answers = List.of(
 				"1,5", "1e3", "1E-3", "+1", " 1", "1 ", "1 000", ".5", "5.", "1/2", "0x10", "NaN", "Infinity",
 				"--1", "1.5.2", "-", "١٢", "1234567890123456", "1.12345678901", "1\n", "abc");
-		Map<String, Response> responses = new java.util.LinkedHashMap<>();
+		Map<String, Response> responses = new LinkedHashMap<>();
 		for (String answer : answers) {
 			responses.put(answer, add(setup, payload(withAnswer(answer))));
 		}

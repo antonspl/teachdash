@@ -136,13 +136,19 @@ class NumericItemTypeTest {
 	void theStudentViewOfCorruptDataThrows() {
 		// given payload records built directly: a null questions list, a null question and a question with a null text
 		var nullList = new NumericPayload(null);
-		var nullQuestion = new NumericPayload(Arrays.asList((NumericQuestion) null));
+		var nullQuestion = new NumericPayload(Arrays.asList(null, question("вопрос-text", "777.123", "5.55", "юнит-unit")));
 		var nullText = new NumericPayload(List.of(question(null, "123.456", "9.87", "секрет-unit")));
 
 		// when studentView is called with each payload
 		// then each call throws IllegalStateException and no message contains a stored value
-		assertThatThrownBy(() -> type.studentView(nullList)).isInstanceOf(IllegalStateException.class);
-		assertThatThrownBy(() -> type.studentView(nullQuestion)).isInstanceOf(IllegalStateException.class);
+		assertThatThrownBy(() -> type.studentView(nullList))
+				.isInstanceOf(IllegalStateException.class)
+				.message()
+				.doesNotContain("123.456", "9.87", "секрет-unit");
+		assertThatThrownBy(() -> type.studentView(nullQuestion))
+				.isInstanceOf(IllegalStateException.class)
+				.message()
+				.doesNotContain("вопрос-text", "777.123", "5.55", "юнит-unit");
 		assertThatThrownBy(() -> type.studentView(nullText))
 				.isInstanceOf(IllegalStateException.class)
 				.message()

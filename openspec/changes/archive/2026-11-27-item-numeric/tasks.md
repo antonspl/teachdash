@@ -21,6 +21,7 @@
 - [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5); check that the payload records have `@Size` on the list and on each text field, no `Map` field, that no shared class changed, and that no question, number or unit is logged (constitution section 5)
 - [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 - [x] 3.6 Code-gate fixes: R1-S1 builds its course explicitly, R1-S5 checks the edit's 404 body for teacher A's text, R2-S8 comment on the echo check
+- [x] 3.7 Code-owner review: Javadoc on null elements, R1-S9 message checks, import
 
 ## Workflow follow-up
 
