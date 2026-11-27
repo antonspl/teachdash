@@ -25,7 +25,7 @@ The type `gap-fill` SHALL have the payload `{segments}` of `{type: "text", text}
 
 #### Scenario: item-gap-fill/R1-S5 Edit a gap-fill item: the payload is replaced, the gaps are numbered anew
 - **GIVEN** a logged-in teacher A with an item of the type `gap-fill` with the segments `[text "She ", gap ["is"], text " a teacher and he ", gap ["is"], text " a doctor."]` and `version` 1
-- **WHEN** teacher A edits it with `version` 1 and the payload `[gap ["She"], text " is a teacher and he ", gap ["is", "'s"], text " a doctor."]` (the first gap is now a different one, and one gap has two answers)
+- **WHEN** teacher A edits it with `version` 1 and the payload `{"segments": [gap ["She"], text " is a teacher and he ", gap ["is", "'s"], text " a doctor."]}` (the first gap is now a different one, and one gap has two answers)
 - **THEN** the response is 200 with the type `gap-fill`, the new payload exactly as sent (replaced, not merged), `version` 2 and the same `position`, and the stored payload has the new segments, so the gap at index 1 now has the answers "is" and "'s"
 
 #### Scenario: item-gap-fill/R1-S6 Editing a gap-fill item follows the gap-fill rules and a bad edit changes nothing
