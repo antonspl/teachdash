@@ -16,7 +16,12 @@ Issue #223. The engineer's decisions, as given:
 | 8 | Student view? | Allowlist `{"mode", "entries": [{"units": [shuffled], "hint"?}]}` (no `hint` key when absent). Per entry: sort the units by `String.compareTo`, `Collections.shuffle(list, new Random(seed))` with seed = `String.join("\u0000", units in stored order).hashCode()`; if the result equals the stored (correct) order, `Collections.rotate(list, -1)`; with at least 2 distinct units the result then never equals the correct order. Concrete orders are pinned in scenarios, including one that hits the rotate case. Throws `IllegalStateException` on corrupt data. |
 | 9 | Out of scope? | Answer checking (#126) and what counts as correct with duplicate units, the student endpoint (#125), the editor, splitting sentences into words automatically, partial credit. |
 
-Recorded from the style of the other item types (no engineer decision): a JSON integer outside the `Integer` range sent where a string is expected is not treated here (the generic fix is PR #238, items R2); `items` stays untouched as for the other item types, so parallel item branches do not conflict.
+| 10 | Is the view a secret? | Accepted: the content seed makes the correct order recoverable by brute force from the view; the view is not a secret boundary. The student endpoint (#125) must shuffle with server-side randomness before serving. The spec says the view "does not show" the correct order. |
+| 11 | Total size? | At most 200 units over all entries (`TOO_LONG` at `payload.entries`, in `extraChecks`); worst case 200 x 500 characters x 6 (escapes) is about 600 KB, under the 1 MB Caddy cap. |
+| 12 | Corrupt data and `hint: null`? | `studentView` also throws `IllegalStateException` for an entry with fewer than 2 distinct units and for empty `units`. `"hint": null` is accepted: no `hint` key is stored and none appears in the view. |
+| 13 | Pointer in `items`? | None: each type lives in its own capability, which avoids conflicts between parallel item branches. |
+
+A JSON integer outside the `Integer` range sent where a string is expected is not treated here (the generic fix is PR #238, items R2).
 
 ## Research angles
 
@@ -28,19 +33,19 @@ The plug-in point, the validation pipeline and the test layout are the same as f
 
 ## Why
 
-Putting words, sentences or letters in order is a common exercise (word order in a sentence, the order of a text, unscrambling a word). The items core holds registered types; this change adds `reorder`: lists of units stored in the correct order, with a student view that shows them shuffled and never the correct order.
+Putting words, sentences or letters in order is a common exercise (word order in a sentence, the order of a text, unscrambling a word). The items core holds registered types; this change adds `reorder`: lists of units stored in the correct order, with a student view that shows them shuffled and not in the correct order.
 
 ## What Changes
 
 - New item type `reorder` with the payload `{mode, entries: [{units, hint?}]}`, added and edited through the existing item endpoints (items R1, R4).
 - Limits and per-type validation (design D2, D3), reported with the existing error codes.
-- `ReorderItemType.studentView`: an allowlist projection with each entry's units in a seeded shuffled order that is never the correct order. No endpoint uses it yet (#125).
+- `ReorderItemType.studentView`: an allowlist projection with each entry's units in a seeded shuffled order that is not the correct order. No endpoint uses it yet (#125).
 - No migration, no new error code, no change to the `items` spec, no change to a shared class.
 
 ## Capabilities
 
 ### New Capabilities
-- `item-reorder`: R1 (a teacher adds and edits a reorder item), R2 (limits and validation of the payload) and R3 (the student view hides the correct order).
+- `item-reorder`: R1 (a teacher adds and edits a reorder item), R2 (limits and validation of the payload) and R3 (the student view does not show the correct order).
 
 ### Modified Capabilities
 None.

@@ -15,7 +15,7 @@ The type `reorder` SHALL have the payload `{mode, entries: [{units, hint?}]}` (`
 
 #### Scenario: item-reorder/R1-S3 Values are stored raw, with no trim, case change or normalisation
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds an item of the type `reorder` with the payload `{"mode": "words", "entries": [{"units": [" Go ", "GO", "go", "é", "é"], "hint": " Order! "}]}` (the fourth unit is "é" composed, the fifth is "e" followed by U+0301, decomposed)
+- **WHEN** teacher A adds an item of the type `reorder` with the payload `{"mode": "words", "entries": [{"units": [" Go ", "GO", "go", "\u00e9", "e\u0301"], "hint": " Order! "}]}` (the fourth unit is "é" composed, the fifth is "e" followed by U+0301, decomposed)
 - **THEN** the response is 201 and the five units are exactly these strings in this order (the spaces kept, "GO" and "go" both kept, the composed and the decomposed "é" both kept as different units), the `hint` is " Order! ", and the stored payload is the same
 
 #### Scenario: item-reorder/R1-S4 Edit a reorder item: the payload is replaced, and the mode may change
@@ -34,17 +34,17 @@ The type `reorder` SHALL have the payload `{mode, entries: [{units, hint?}]}` (`
 - **THEN** both responses are 404, and teacher A's part still has exactly the one item with its payload and `version` unchanged
 
 ### Requirement: R2 A reorder payload follows the limits and structure rules
-A `reorder` payload SHALL follow items R2. `mode`: missing, `null` or blank `REQUIRED`; any value but `words`, `sentences`, `letters` `INVALID_FORMAT`. `entries` 1-25 and `units` 2-25 per entry: missing, `null`, empty `REQUIRED`; too many `TOO_LONG`; one unit `TOO_SHORT`. A `null` entry or blank unit `REQUIRED`; a unit over 100 (words), 500 (sentences), 4 (letters) code units `TOO_LONG`. Fewer than 2 distinct units `INVALID_FORMAT`. `hint`: blank `REQUIRED`, over 100 `TOO_LONG`.
+A `reorder` payload SHALL follow items R2. `mode` missing, `null` or blank `REQUIRED`, not `words`, `sentences` or `letters` `INVALID_FORMAT`. `entries` (1-25, 200 units in all) and `units` (2-25): missing, `null`, empty `REQUIRED`; too many `TOO_LONG`; one unit `TOO_SHORT`. A `null` entry or blank unit `REQUIRED`; a unit over 100 (words), 500 (sentences), 4 (letters) `TOO_LONG`. Under 2 distinct units `INVALID_FORMAT`. `hint` optional: blank `REQUIRED`, over 100 `TOO_LONG`.
 
 #### Scenario: item-reorder/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `reorder` with: (a) mode `words`, one entry of 2 units "a" and "b"; (b) mode `words`, 25 entries `{"units": ["a", "b"]}`; (c) mode `letters`, one entry of 25 units "a" to "y" with a `hint` of 100 Cyrillic letters "Я"; (d) mode `words`, one entry of units "a" and 100 Cyrillic letters "Я"; (e) mode `sentences`, one entry of units "a" and 500 English letters "x"; (f) mode `letters`, one entry of units "ch", "a", and "😀😀" (4 UTF-16 code units), and one of "é" and "a"
-- **THEN** all six responses are 201 with the payload exactly as sent, and the stored payloads equal the sent ones
+- **WHEN** teacher A adds items of the type `reorder` with: (a) mode `words`, one entry of 2 units "a" and "b"; (b) mode `words`, 25 entries `{"units": ["a", "b"]}`; (c) mode `letters`, one entry of 25 units "a" to "y" with a `hint` of 100 Cyrillic letters "Я"; (d) mode `words`, one entry of units "a" and 100 Cyrillic letters "Я"; (e) mode `sentences`, one entry of units "a" and 500 English letters "x"; (f) mode `letters`, one entry of units "ch", "a", and "😀😀" (4 UTF-16 code units), and one of "e\u0301" and "a"; (g) mode `letters` and 8 entries of 25 units "a" to "y" (200 units in all); (h) mode `words`, one entry `{"units": ["a", "b"], "hint": null}`
+- **THEN** all eight responses are 201 with the payload exactly as sent (for (h) without a `hint` property), and the stored payloads equal the sent ones (for (h) no `hint` key)
 
 #### Scenario: item-reorder/R2-S2 A unit, a hint or a list over its limit is too long
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `reorder` with: (a) mode `words` and 26 entries `{"units": ["a", "b"]}`; (b) mode `letters` and one entry of 26 units "a" to "z"; (c) mode `words` and the units "a" and 101 English letters "x"; (d) mode `sentences` and the units "a" and 501 Cyrillic letters "Я"; (e) mode `letters` and the units "a" and "abcde" (5 letters); (f) mode `letters` and the units "a" and "😀😀😀" (6 UTF-16 code units); (g) mode `words`, units "a" and "b" and a `hint` of 101 English letters "h"
-- **THEN** all responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.entries", code: "TOO_LONG"}]` for (a), `[{field: "payload.entries[0].units", code: "TOO_LONG"}]` for (b), `[{field: "payload.entries[0].units[1]", code: "TOO_LONG"}]` for (c) to (f), and `[{field: "payload.entries[0].hint", code: "TOO_LONG"}]` for (g) (no body contains a `rejectedValue` or the sent text), and the part has no item
+- **WHEN** teacher A adds items of the type `reorder` with: (a) mode `words` and 26 entries `{"units": ["a", "b"]}`; (b) mode `letters` and one entry of 26 units "a" to "z"; (c) mode `words` and the units "a" and 101 English letters "x"; (d) mode `sentences` and the units "a" and 501 Cyrillic letters "Я"; (e) mode `letters` and the units "a" and "abcde" (5 letters); (f) mode `letters` and the units "a" and "😀😀😀" (6 UTF-16 code units); (g) mode `words`, units "a" and "b" and a `hint` of 101 English letters "h"; (h) mode `letters`, 7 entries of 25 units "a" to "y" and 2 entries of 13 units "a" to "m" (201 units in all, each entry valid)
+- **THEN** all responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.entries", code: "TOO_LONG"}]` for (a) and (h), `[{field: "payload.entries[0].units", code: "TOO_LONG"}]` for (b), `[{field: "payload.entries[0].units[1]", code: "TOO_LONG"}]` for (c) to (f), and `[{field: "payload.entries[0].hint", code: "TOO_LONG"}]` for (g) (no body contains a `rejectedValue` or the sent text), and the part has no item
 
 #### Scenario: item-reorder/R2-S3 Missing, null or empty entries and units are required, and a single unit is too short
 - **GIVEN** a logged-in teacher A with a part
@@ -68,7 +68,7 @@ A `reorder` payload SHALL follow items R2. `mode`: missing, `null` or blank `REQ
 
 #### Scenario: item-reorder/R2-S7 An entry needs at least 2 distinct units, other duplicates are allowed
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `reorder` with the mode `letters` and: (a) the entries `[{"units": ["a", "b"]}, {"units": ["a", "a"]}]`; (b) the entry `{"units": ["x", "x", "x"]}`; then adds the payloads (c) mode `letters` with the entry `{"units": ["a", "b", "a"]}`; (d) mode `words` with the entry `{"units": ["Go", "go", " go", "go ", "é", "é"]}`
+- **WHEN** teacher A adds items of the type `reorder` with the mode `letters` and: (a) the entries `[{"units": ["a", "b"]}, {"units": ["a", "a"]}]`; (b) the entry `{"units": ["x", "x", "x"]}`; then adds the payloads (c) mode `letters` with the entry `{"units": ["a", "b", "a"]}`; (d) mode `words` with the entry `{"units": ["Go", "go", " go", "go ", "e\u0301", "\u00e9"]}` (U+00E9 and U+0065 U+0301)
 - **THEN** (a) and (b) are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.entries[1].units", code: "INVALID_FORMAT"}]` and `[{field: "payload.entries[0].units", code: "INVALID_FORMAT"}]`, and the part has no item after them; (c) and (d) are 201 with the payloads exactly as sent (the comparison is exact: no trim, no case folding, composed and decomposed "é" differ)
 
 #### Scenario: item-reorder/R2-S8 A value of the wrong JSON type or an unknown property is rejected
@@ -91,7 +91,7 @@ A `reorder` payload SHALL follow items R2. `mode`: missing, `null` or blank `REQ
 - **WHEN** teacher A adds items of the type `reorder` with the payloads `{"mode": "words", "entries": [{"units": ["a\u0000b", "c"]}]}`, `{"mode": "words", "entries": [{"units": ["a", "b\ud800z"]}]}` and `{"mode": "words", "entries": [{"units": ["a", "b"], "hint": "h\ud800"}]}` (JSON escapes: a NUL and a lone high surrogate are characters of the string)
 - **THEN** all responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_FORMAT"}]` (no nested path, not 500), no body contains the rejected value, and the part has no item
 
-### Requirement: R3 The student view shuffles the units and hides the correct order
+### Requirement: R3 The student view shuffles the units and does not show the correct order
 `studentView` SHALL return `{"mode", "entries": [{"units", "hint"?}]}`: per entry the units sorted by `String.compareTo`, then `Collections.shuffle(list, new Random(seed))`, seed = `String.join("\u0000", units in stored order).hashCode()`; if the result equals the stored order, `Collections.rotate(list, -1)`. No student endpoint yet (#125): unit scenarios only.
 
 #### Scenario: item-reorder/R3-S1 The student view shuffles each entry's units with the seeded algorithm, in English and Russian
@@ -110,11 +110,11 @@ A `reorder` payload SHALL follow items R2. `mode`: missing, `null` or blank `REQ
 - **THEN** the three results for `["a", "b"]` are equal, with `units` equal to `["b", "a"]` (seed `93315`, rotated); `["b", "a"]` gives `["a", "b"]` (seed `94275`), a different order from the first; `["a", "b", "a"]` gives `["a", "a", "b"]` (seed `89675812`), with both "a" kept
 
 #### Scenario: item-reorder/R3-S4 The serialised student view has only the allowed properties, in English and Russian
-- **GIVEN** the `reorder` type and two payloads: an English one `{"mode": "words", "entries": [{"units": ["The", "cat", "sat"], "hint": "A short sentence"}, {"units": ["go", "went"]}]}` and a Russian one `{"mode": "letters", "entries": [{"units": ["к", "о", "т"], "hint": "Животное"}]}` (unit level)
+- **GIVEN** the `reorder` type and two payloads: an English one `{"mode": "words", "entries": [{"units": ["The", "cat", "sat"], "hint": "A short sentence"}, {"units": ["go", "went"], "hint": null}]}` and a Russian one `{"mode": "letters", "entries": [{"units": ["к", "о", "т"], "hint": "Животное"}]}` (unit level)
 - **WHEN** each payload's student view is serialised to JSON with the application's JSON mapper
-- **THEN** the JSON of each view is an object with exactly the properties `mode` and `entries`; each entry is an object with exactly the property `units` and, only when the stored entry has a hint, `hint`; each `units` array has the same elements as the stored units (each stored unit appears as often as it is stored) and there is no property name other than these
+- **THEN** the JSON of each view is an object with exactly the properties `mode` and `entries`; each entry is an object with exactly the property `units` and, only when the stored entry has a non-null hint, `hint` (the second English entry has a `null` hint and no `hint` key); each `units` array has the same elements as the stored units (each stored unit appears as often as it is stored) and there is no property name other than these
 
 #### Scenario: item-reorder/R3-S5 The student view of corrupt data fails without echoing the stored values
-- **GIVEN** the `reorder` type and corrupt payloads built in the test, each next to a valid entry with the unit "secret-unit": `mode` `null`, an unknown `mode` "secret-mode", `entries` `null`, a `null` entry, an entry with `units` `null`, an entry with a `null` unit (unit level)
+- **GIVEN** the `reorder` type and corrupt payloads built in the test, each next to a valid entry with the unit "secret-unit": `mode` `null`, an unknown `mode` "secret-mode", `entries` `null`, a `null` entry, an entry with `units` `null`, an entry with a `null` unit, an entry with `units` `[]`, an entry with the units `["x", "x"]` (unit level)
 - **WHEN** `studentView` is called with each payload
-- **THEN** each of the six calls throws `IllegalStateException`, and no message contains "secret-unit", "secret-mode" or any stored value
+- **THEN** each of the eight calls throws `IllegalStateException`, and no message contains "secret-unit", "secret-mode" or any stored value
