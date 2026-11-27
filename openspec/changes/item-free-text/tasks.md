@@ -14,11 +14,11 @@
 
 ## 3. Implementation (backend)
 
-- [ ] 3.1 `FreeTextPayload` with the Bean Validation of design D2 (`@NotBlank @Size(max = 20000)` on `prompt`, `@Min(1) @Max(10000)` on `minLength` and `maxLength`); `FreeTextItemType.extraChecks` stays empty until 3.2. In this step R2-S1 to R2-S5 pass (the Bean Validation errors and the JSON type errors) and R2-S6 passes only for its accept cases, and every scenario that needs the order error (R2-S6 rejects, R2-S7) still fails at its THEN step; verify exactly that
-- [ ] 3.2 `FreeTextItemType.extraChecks`: `minLength > maxLength` gives `maxLength` `INVALID_FORMAT` when both are present (Bean Validation has already passed); verify R2-S6 and R2-S7 pass
-- [ ] 3.3 `FreeTextItemType.studentView` as an allowlist `FreeTextStudentView` with `@JsonInclude(NON_NULL)` (design D4); verify R1-S7 and R1-S8 pass
-- [ ] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S6); check that no prompt is logged (constitution section 5)
-- [ ] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `FreeTextPayload` with the Bean Validation of design D2 (`@NotBlank @Size(max = 20000)` on `prompt`, `@Min(1) @Max(10000)` on `minLength` and `maxLength`); `FreeTextItemType.extraChecks` stays empty until 3.2. In this step R2-S1 to R2-S5 pass (the Bean Validation errors and the JSON type errors) and R2-S6 passes only for its accept cases, and every scenario that needs the order error (R2-S6 rejects, R2-S7) still fails at its THEN step; verify exactly that
+- [x] 3.2 `FreeTextItemType.extraChecks`: `minLength > maxLength` gives `maxLength` `INVALID_FORMAT` when both are present (Bean Validation has already passed); verify R2-S6 and R2-S7 pass
+- [x] 3.3 `FreeTextItemType.studentView` as an allowlist `FreeTextStudentView` with `@JsonInclude(NON_NULL)` (design D4); verify R1-S7 and R1-S8 pass
+- [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S6); check that no prompt is logged (constitution section 5)
+- [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
