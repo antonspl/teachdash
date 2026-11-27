@@ -86,6 +86,9 @@ public final class FieldErrorCodes {
 		while (true) {
 			boolean hasLeft = left.find();
 			boolean hasRight = right.find();
+			if (!hasLeft && !hasRight) {
+				return a.compareTo(b);
+			}
 			if (!hasLeft || !hasRight) {
 				return Boolean.compare(hasLeft, hasRight);
 			}

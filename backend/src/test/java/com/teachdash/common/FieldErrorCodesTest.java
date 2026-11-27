@@ -50,4 +50,22 @@ class FieldErrorCodesTest {
 				"payload.segments[10]",
 				"title");
 	}
+
+	@Test
+	@DisplayName("Distinct paths that differ only in separators or index padding keep separate errors")
+	void distinctPathsKeepSeparateErrors() {
+		List<FieldErrorDetail> details = List.of(
+				new FieldErrorDetail("a[x]", "REQUIRED"),
+				new FieldErrorDetail("a.x", "REQUIRED"),
+				new FieldErrorDetail("a.b", "REQUIRED"),
+				new FieldErrorDetail("a..b", "REQUIRED"),
+				new FieldErrorDetail("a[01]", "REQUIRED"),
+				new FieldErrorDetail("a[1]", "REQUIRED"));
+
+		List<String> fields = FieldErrorCodes.reduce(details).stream()
+				.map(FieldErrorDetail::field)
+				.toList();
+
+		assertThat(fields).containsExactlyInAnyOrder("a[x]", "a.x", "a.b", "a..b", "a[01]", "a[1]");
+	}
 }

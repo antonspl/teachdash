@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.teachdash.common.FieldErrorCodes;
 import com.teachdash.common.FieldErrorDetail;
 import com.teachdash.items.domain.ItemType;
@@ -43,28 +44,36 @@ public class GapFillItemType implements ItemType<GapFillPayload> {
 	private StudentSegment studentSegment(GapFillSegment segment) {
 		String type = segment.type();
 		if (TEXT.equals(type) && segment.text() != null) {
-			return new TextView(TEXT, segment.text());
+			return new TextView(segment.text());
 		}
 		if (GAP.equals(type)) {
-			return new GapView(GAP);
+			return new GapView();
 		}
 		throw new IllegalStateException("Cannot build a student view for a gap-fill segment of type " + type);
 	}
 
-	public record StudentView(
+	record StudentView(
 			List<StudentSegment> segments) {
 	}
 
-	public sealed interface StudentSegment permits TextView, GapView {
+	sealed interface StudentSegment permits TextView, GapView {
 	}
 
-	public record TextView(
-			String type,
+	record TextView(
 			String text) implements StudentSegment {
+
+		@JsonProperty(value = "type", index = 0)
+		public String type() {
+			return TEXT;
+		}
 	}
 
-	public record GapView(
-			String type) implements StudentSegment {
+	record GapView() implements StudentSegment {
+
+		@JsonProperty("type")
+		public String type() {
+			return GAP;
+		}
 	}
 
 	@Override
