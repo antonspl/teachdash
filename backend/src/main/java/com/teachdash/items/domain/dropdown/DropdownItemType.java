@@ -3,6 +3,7 @@ package com.teachdash.items.domain.dropdown;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
@@ -54,7 +55,7 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 		if (TEXT.equals(type) && segment.text() != null) {
 			return new TextView(segment.text());
 		}
-		if (GAP.equals(type) && segment.options() != null) {
+		if (GAP.equals(type) && segment.options() != null && segment.options().stream().noneMatch(Objects::isNull)) {
 			return new GapView(List.copyOf(segment.options()));
 		}
 		throw new IllegalStateException("Cannot build a student view for a corrupt dropdown segment");
@@ -87,6 +88,10 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 
 	@Override
 	public List<FieldErrorDetail> extraChecks(DropdownPayload payload) {
+		List<FieldErrorDetail> limitErrors = checkLimits(payload);
+		if (!limitErrors.isEmpty()) {
+			return limitErrors;
+		}
 		List<FieldErrorDetail> errors = new ArrayList<>();
 		int gaps = 0;
 		boolean previousIsText = false;
@@ -114,6 +119,35 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 		return errors;
 	}
 
+	private List<FieldErrorDetail> checkLimits(DropdownPayload payload) {
+		List<FieldErrorDetail> errors = new ArrayList<>();
+		int gaps = 0;
+		for (int i = 0; i < payload.segments().size(); i++) {
+			DropdownSegment segment = payload.segments().get(i);
+			if (segment == null || !GAP.equals(segment.type())) {
+				continue;
+			}
+			gaps++;
+			checkOptionLengths(segment.options(), "segments[" + i + "]", errors);
+		}
+		if (gaps > MAX_GAPS) {
+			errors.add(new FieldErrorDetail("segments", FieldErrorCodes.TOO_LONG));
+		}
+		return errors;
+	}
+
+	private void checkOptionLengths(List<String> options, String path, List<FieldErrorDetail> errors) {
+		if (options == null) {
+			return;
+		}
+		for (int j = 0; j < options.size(); j++) {
+			String option = options.get(j);
+			if (option != null && option.length() > MAX_OPTION_LENGTH) {
+				errors.add(new FieldErrorDetail(path + ".options[" + j + "]", FieldErrorCodes.TOO_LONG));
+			}
+		}
+	}
+
 	private void checkType(String type, String path, List<FieldErrorDetail> errors) {
 		if (type == null || type.isBlank()) {
 			errors.add(new FieldErrorDetail(path + ".type", FieldErrorCodes.REQUIRED));
@@ -126,9 +160,6 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 	private void checkGapCount(int gaps, List<FieldErrorDetail> errors) {
 		if (gaps == 0) {
 			errors.add(new FieldErrorDetail("segments", FieldErrorCodes.REQUIRED));
-		}
-		else if (gaps > MAX_GAPS) {
-			errors.add(new FieldErrorDetail("segments", FieldErrorCodes.TOO_LONG));
 		}
 	}
 
@@ -174,10 +205,6 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 			String optionPath = path + ".options[" + j + "]";
 			if (option == null || option.isBlank()) {
 				errors.add(new FieldErrorDetail(optionPath, FieldErrorCodes.REQUIRED));
-				valid = false;
-			}
-			else if (option.length() > MAX_OPTION_LENGTH) {
-				errors.add(new FieldErrorDetail(optionPath, FieldErrorCodes.TOO_LONG));
 				valid = false;
 			}
 			else if (!seen.add(option)) {
