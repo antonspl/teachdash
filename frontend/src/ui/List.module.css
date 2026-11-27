@@ -44,7 +44,7 @@
   color: var(--color-text-muted);
 }
 
-.details > * {
+.item .details > * {
   margin: 0;
 }
 
