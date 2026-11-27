@@ -35,14 +35,19 @@ class NumericItemTest extends ItemApiTest {
 	@DisplayName("[item-numeric/R1-S1] Add an English numeric item, it is stored and listed exactly")
 	void addAnEnglishNumericItem() {
 		// given a logged-in teacher A with the course "Physics B1" (instruction "en", target "en") with a part
-		var setup = teacherWithPart();
+		UUID teacher = createTeacher("a@example.com", "teacher-pass-1");
+		UUID course = createCourse(teacher, "Physics B1", "en", "en");
+		UUID lesson = createLesson(teacher, course, "Motion", 1);
+		UUID part = createPart(teacher, lesson, "Warm-up", 1);
+		TestClient client = loggedInAs("a@example.com");
 
 		// when teacher A adds an item of the type numeric and then lists the items of the part
 		var sent = payload(
 				question("A train covers 120 km in 2 hours. How fast is it?", "60", "0.5", "km/h"),
 				question("What is 1/4 as a decimal?", "0.25", "0"));
-		var response = setup.client().post(setup.items(), numeric(sent));
-		var listed = setup.client().get(setup.items());
+		String itemsPath = items(course, lesson, part);
+		var response = client.post(itemsPath, numeric(sent));
+		var listed = client.get(itemsPath);
 
 		// then the add response is 201 with the type numeric, position 1, version 1 and exactly the payload that was sent
 		response.then().statusCode(201)
@@ -149,6 +154,6 @@ class NumericItemTest extends ItemApiTest {
 		assertEquals(1, countItems(setup.part()));
 		assertStoredPayload(item, json(original));
 		assertEquals(1, readItem(item).version());
-		add.then().body(not(containsString("2 + 2?")));
+		editResponse.then().body(not(containsString("2 + 2?")));
 	}
 }

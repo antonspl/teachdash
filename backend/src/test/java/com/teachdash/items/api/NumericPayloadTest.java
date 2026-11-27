@@ -263,7 +263,7 @@ class NumericPayloadTest extends ItemApiTest {
 		assertEquals(21, responses.size());
 		responses.forEach((answer, response) ->
 				expectValidation(response, error("payload.questions[0].answer", "INVALID_FORMAT")));
-		// and no body contains a sent value that is distinctive enough to tell
+		// and no body contains a sent value (only distinctive values are checked: a short one could appear by chance)
 		for (String answer : List.of("1 000", "Infinity", "NaN", "0x10", "1.5.2", "1234567890123456", "1.12345678901", "abc")) {
 			assertNoEcho(responses.get(answer), answer);
 		}

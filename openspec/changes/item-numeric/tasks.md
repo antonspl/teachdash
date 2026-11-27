@@ -11,7 +11,7 @@
 
 ## 2. Test review
 
-- [ ] 2.1 Engineer approves tests in the PR. HARD STOP: no production code before approval
+- [x] 2.1 Engineer approves tests in the PR. HARD STOP: no production code before approval
 
 ## 3. Implementation (backend)
 
@@ -20,6 +20,7 @@
 - [x] 3.3 `NumericItemType.studentView` as an allowlist (design D5): the `{"questions"}` envelope, `unit` only when present, stored order, throws on corrupt data; verify R1-S6 to R1-S9 pass
 - [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S5); check that the payload records have `@Size` on the list and on each text field, no `Map` field, that no shared class changed, and that no question, number or unit is logged (constitution section 5)
 - [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.6 Code-gate fixes: R1-S1 builds its course explicitly, R1-S5 checks the edit's 404 body for teacher A's text, R2-S8 comment on the echo check
 
 ## Workflow follow-up
 
