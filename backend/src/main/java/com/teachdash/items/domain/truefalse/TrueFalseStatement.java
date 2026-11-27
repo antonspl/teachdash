@@ -1,7 +1,11 @@
 package com.teachdash.items.domain.truefalse;
 
-/** STUB: no constraints yet. */
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public record TrueFalseStatement(
-		String text,
-		String answer) {
+		@NotBlank @Size(max = MAX_TEXT_LENGTH) String text,
+		@NotBlank String answer) {
+
+	public static final int MAX_TEXT_LENGTH = 500;
 }

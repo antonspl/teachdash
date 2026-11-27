@@ -14,11 +14,11 @@
 
 ## 3. Implementation (backend)
 
-- [ ] 3.1 `TrueFalsePayload` and `TrueFalseStatement` with the Bean Validation of design D2 (`@NotEmpty @Size(max = 25)` and `List<@Valid TrueFalseStatement>`, `@NotBlank @Size(max = 500)` on `text`, `@NotBlank` on `answer`). `extraChecks` stays the empty placeholder from 1.1 until 3.2, so in this step pass: R2-S2 (all), R2-S3 (a), (b), (c), R2-S4 (a) to (e), R2-S6 (a) to (d), R2-S10 (a) and (c), and R1-S5 second payload; every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
-- [ ] 3.2 `TrueFalseItemType.extraChecks`: the null statement, the exact duplicate text, the answer value and the `not-stated` rule (design D2), all errors together; verify R2-S3 (d), R2-S5, R2-S6 (e) to (k), R2-S7, R2-S10 (b) and R1-S5 first payload pass
-- [ ] 3.3 `TrueFalseItemType.studentView` as an allowlist (design D3); verify R1-S7, R1-S8 and R1-S9 pass
-- [ ] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S6); check that the payload records have `@Size` on the list and the text, no `Map` field, and that no statement text is logged (constitution section 5)
-- [ ] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.1 `TrueFalsePayload` and `TrueFalseStatement` with the Bean Validation of design D2 (`@NotEmpty @Size(max = 25)` and `List<@Valid TrueFalseStatement>`, `@NotBlank @Size(max = 500)` on `text`, `@NotBlank` on `answer`). `extraChecks` stays the empty placeholder from 1.1 until 3.2, so in this step pass: R2-S2 (all), R2-S3 (a), (b), (c), R2-S4 (a) to (e), R2-S6 (a) to (d), R2-S10 (a) and (c), and R1-S5 second payload; every scenario that needs an `extraChecks` error still fails at its THEN step; verify exactly that
+- [x] 3.2 `TrueFalseItemType.extraChecks`: the null statement, the exact duplicate text, the answer value and the `not-stated` rule (design D2), all errors together; verify R2-S3 (d), R2-S5, R2-S6 (e) to (k), R2-S7, R2-S10 (b) and R1-S5 first payload pass
+- [x] 3.3 `TrueFalseItemType.studentView` as an allowlist (design D3); verify R1-S7, R1-S8 and R1-S9 pass
+- [x] 3.4 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S6); check that the payload records have `@Size` on the list and the text, no `Map` field, and that no statement text is logged (constitution section 5)
+- [x] 3.5 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 
