@@ -2,12 +2,12 @@
 
 ## 1. Failing tests
 
-- [ ] 1.1 Add stubs so the tests compile and fail at their THEN step: `GapFillPayload`, `GapFillSegment` and `GapFillItemType` (code `gap-fill`; `studentView` and `extraChecks` return a placeholder, each marked STUB); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
-- [ ] 1.2 Write tests for item-gap-fill R1-S1 to R1-S7 in `items/api/GapFillItemTest` (helpers of `ItemApiTest`: `teacherWithPart`, `body`, `expectValidation`, `expectNotFound`, `assertStoredPayload`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step
-- [ ] 1.3 Write tests for item-gap-fill R1-S8 and R1-S9 in `items/domain/gapfill/GapFillItemTypeTest` (unit level; both assert the `{"segments": [...]}` wrapper; application JSON mapper for the serialisation test); verify each fails at its THEN step
-- [ ] 1.4 Write tests for item-gap-fill R2-S1 to R2-S15 in `items/api/GapFillPayloadTest`; build the large payloads (51 segments, 500-letter texts, 100-letter answers, emoji texts and answers counted in UTF-16 units: 250 and 251 emoji in a text, 50 and 51 in an answer) in test helpers; verify each fails at its THEN step
-- [ ] 1.5 Write one unit test without a scenario ID: the strict mapper still gives `UNKNOWN_FIELD` for an unknown property on `GapFillSegment` (design D2)
-- [ ] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test fails at its THEN step, not in setup, and every scenario ID has a test
+- [x] 1.1 Add stubs so the tests compile and fail at their THEN step: `GapFillPayload`, `GapFillSegment` and `GapFillItemType` (code `gap-fill`; `studentView` and `extraChecks` return a placeholder, each marked STUB); no migration; verify with `./gradlew compileTestJava`. List the stubs (temporary) in the PR description
+- [x] 1.2 Write tests for item-gap-fill R1-S1 to R1-S7 in `items/api/GapFillItemTest` (helpers of `ItemApiTest`: `teacherWithPart`, `body`, `expectValidation`, `expectNotFound`, `assertStoredPayload`) with the scenario ID in `@DisplayName` and `// given`, `// when`, `// then`; verify each fails at its THEN step
+- [x] 1.3 Write tests for item-gap-fill R1-S8 and R1-S9 in `items/domain/gapfill/GapFillItemTypeTest` (unit level; both assert the `{"segments": [...]}` wrapper; application JSON mapper for the serialisation test); verify each fails at its THEN step
+- [x] 1.4 Write tests for item-gap-fill R2-S1 to R2-S15 in `items/api/GapFillPayloadTest`; build the large payloads (51 segments, 500-letter texts, 100-letter answers, emoji texts and answers counted in UTF-16 units: 250 and 251 emoji in a text, 50 and 51 in an answer) in test helpers; verify each fails at its THEN step
+- [x] 1.5 Write one unit test without a scenario ID: the strict mapper still gives `UNKNOWN_FIELD` for an unknown property on `GapFillSegment` (design D2)
+- [x] 1.6 Run `./gradlew test` and `scripts/check-scenario-coverage.sh`; verify every new test fails at its THEN step, not in setup, and every scenario ID has a test
 
 ## 2. Test review
 
