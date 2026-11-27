@@ -24,6 +24,7 @@
 - [x] 3.6 `DropdownItemType.studentView` as an allowlist (design D5); returns the `{"segments": [...]}` envelope, throws on corrupt data; verify R1-S8 and R1-S9 pass
 - [x] 3.7 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no option or text is logged (constitution section 5)
 - [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 3.9 Slice-review fixes: `checkType` and `checkGapCount` helpers extracted from `extraChecks`; the limits are public constants in `DropdownItemType`, also used by the record annotations
 
 ## Workflow follow-up
 

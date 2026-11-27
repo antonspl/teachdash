@@ -19,9 +19,17 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 
 	private static final String GAP = "gap";
 
-	private static final int MAX_GAPS = 25;
+	public static final int MAX_SEGMENTS = 51;
 
-	private static final int MAX_OPTION_LENGTH = 100;
+	public static final int MAX_TEXT_LENGTH = 500;
+
+	public static final int MIN_OPTIONS = 2;
+
+	public static final int MAX_OPTIONS = 5;
+
+	public static final int MAX_GAPS = 25;
+
+	public static final int MAX_OPTION_LENGTH = 100;
 
 	@Override
 	public String code() {
@@ -91,12 +99,7 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 				continue;
 			}
 			String type = segment.type();
-			if (type == null || type.isBlank()) {
-				errors.add(new FieldErrorDetail(path + ".type", FieldErrorCodes.REQUIRED));
-			}
-			else if (!TEXT.equals(type) && !GAP.equals(type)) {
-				errors.add(new FieldErrorDetail(path + ".type", FieldErrorCodes.INVALID_FORMAT));
-			}
+			checkType(type, path, errors);
 			if (GAP.equals(type)) {
 				gaps++;
 				checkGap(segment, path, errors);
@@ -107,13 +110,26 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 			}
 			previousIsText = isText;
 		}
+		checkGapCount(gaps, errors);
+		return errors;
+	}
+
+	private void checkType(String type, String path, List<FieldErrorDetail> errors) {
+		if (type == null || type.isBlank()) {
+			errors.add(new FieldErrorDetail(path + ".type", FieldErrorCodes.REQUIRED));
+		}
+		else if (!TEXT.equals(type) && !GAP.equals(type)) {
+			errors.add(new FieldErrorDetail(path + ".type", FieldErrorCodes.INVALID_FORMAT));
+		}
+	}
+
+	private void checkGapCount(int gaps, List<FieldErrorDetail> errors) {
 		if (gaps == 0) {
 			errors.add(new FieldErrorDetail("segments", FieldErrorCodes.REQUIRED));
 		}
 		else if (gaps > MAX_GAPS) {
 			errors.add(new FieldErrorDetail("segments", FieldErrorCodes.TOO_LONG));
 		}
-		return errors;
 	}
 
 	private void checkText(DropdownSegment segment, String path, boolean previousIsText, List<FieldErrorDetail> errors) {

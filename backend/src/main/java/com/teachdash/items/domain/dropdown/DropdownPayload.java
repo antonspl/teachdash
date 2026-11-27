@@ -7,5 +7,5 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
 public record DropdownPayload(
-		@NotEmpty @Size(max = 51) List<@Valid DropdownSegment> segments) {
+		@NotEmpty @Size(max = DropdownItemType.MAX_SEGMENTS) List<@Valid DropdownSegment> segments) {
 }
