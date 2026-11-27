@@ -37,7 +37,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 6. Design docs (design D11)
 
-- [ ] 6.1 `.agents/design/design-code.md`: the busy-label noun rule in "Copy and languages", the `--button-icon-inset` row and the `--lang-select-width` value in the token tables, the small-items line moved to 4a, the hover line in States (the Loading line stays as it is, Clarification 28); `refactoring-ui-patterns.md:91` and `accessibility-patterns.md:29`, and the stale focus statements of `accessibility.md`, `refactoring-ui-patterns.md:99` and `checklist.md:28`, each with the exact before and after lines of design D11
+- [x] 6.1 `.agents/design/design-code.md`: the busy-label noun rule in "Copy and languages", the `--button-icon-inset` row and the `--lang-select-width` value in the token tables, the small-items line moved to 4a, the hover line in States (the Loading line stays as it is, Clarification 28); `refactoring-ui-patterns.md:91` and `accessibility-patterns.md:29`, and the stale focus statements of `accessibility.md`, `refactoring-ui-patterns.md:99` and `checklist.md:28`, each with the exact before and after lines of design D11
 
 ## Workflow follow-up
 

@@ -94,6 +94,7 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 | `--icon-size` | `1.25rem` | icons |
 | `--icon-size-small` | `1rem` | icons inside badges, tree chevrons, field errors |
 | `--icon-size-rail` | `1.5rem` | rail icons |
+| `--button-icon-inset` | `0.1875rem` | the empty margin inside an icon box; subtracted from the start padding of an icon-led button |
 | `--icon-size-placeholder` | `3rem` | image placeholder |
 
 ### Layout
@@ -113,7 +114,7 @@ All values live in `frontend/src/styles/tokens.css` and are the only place custo
 | `--picker-width` | `20rem` | item type picker |
 | `--menu-width` | `15rem` | profile menu |
 | `--tooltip-max-width` | `16rem` | tooltip |
-| `--lang-select-width` | `9rem` | language select |
+| `--lang-select-width` | `10.5rem` | language select (with its icon) |
 | `--answer-width` | `10ch` | inline answer input |
 | `--type-label-width` | `3rem`; `5.5rem` under `:root:lang(ru)` | the short item type name column (longest name per language) |
 | `--topbar-height` | `3.5rem` | phone title bar, login band |
@@ -188,7 +189,7 @@ Done across all `src/ui` CSS in one PR with before and after screenshots; no ali
 The same grammar for every component.
 
 - Focus: `:focus-visible` shows a `--border-width-strong` outline in `--color-focus-ring` at `--focus-offset`, on every interactive element; `outline: none` is never used. Where a row meets a pane edge the outline is inset so it is not clipped: rail items by `calc(-1 * var(--border-width-strong) - var(--focus-offset))` (that is -(2px + 2px)); menu items, tree lesson names, tree parts and picker items by `calc(-1 * var(--border-width-strong))` (-2px).
-- Hover: one step. Primary goes to `-hover`. Secondary, quiet and row-action controls take the `--color-surface-sunken` fill (links and text controls on a tinted pane too). Input borders go to `--color-text-muted`.
+- Hover: one step. Primary goes to `-hover`. Secondary, quiet and row-action controls take the `--color-surface-sunken` fill (links and text controls on a tinted pane too). Input borders go to `--color-text-muted`. Hover is applied only under `@media (hover: hover)`, so a tap on a touch screen leaves no sticky hover.
 - Active: one more step (`--color-accent-active`, `--color-neutral-background`), with no layout shift.
 - Disabled: see Space and shape.
 - Loading (a request in flight): the button is disabled, its label becomes the progressive form ("Saving…", "Sending…", "Signing in…"), `aria-busy="true"`, and its minimum width is kept so the layout does not jump. Page loading is the text "Loading…" in the page body, with the layout space kept: no spinner or skeleton until lists are real.
@@ -372,6 +373,7 @@ A band at the top (`--color-rail`, `--topbar-height`, divider below): the wordma
 - Russian copy (#103, #102), one rule each:
   - Register: formal «вы» in lower case, neutral tone, sentence case; «Учителя» / «учитель», never «преподаватель»; «» quotes; `…` for the ellipsis («Загрузка…»); a non-breaking space (U+00A0) between a number and its unit («8 символов», «72 байт», «7 дней»); text wraps and is never truncated (see Layout and screens).
   - Verb forms: action buttons are verbs in the infinitive («Сохранить», «Войти»); messages are in the imperative («Обновите список»). The exception: «Отмена», «Новое приглашение» and «Ссылка для сброса пароля» are named by a noun.
+  A busy label on a button is a noun too («Вход…», «Сохранение…», «Создание…», «Смена пароля…», «Деактивация…»): it names the process, and the ellipsis is the single «…».
   - No «пожалуйста», even where the English copy keeps "Please".
   - Glossary: учитель, ученик, администратор, учётная запись, деактивировать, ссылка для сброса пароля, часовой пояс, родной язык, кабинет, профиль; Вход (page title) / Войти (button) / Выйти; email = «Электронная почта»; session = «сеанс»; Reactivate = «Активировать снова».
   - The admin row buttons are «Новое приглашение» (active teacher without a password) and «Ссылка для сброса пароля» (teacher with a password).
@@ -441,8 +443,7 @@ Order of the issues to file after this change. The builder, student home, lesson
 
 Small review items go to the issue that touches the code:
 
-- 3a and 3b: the space before a full stop after a control, the quiet button icon inset, the 2rem row focus ring meeting the border.
-- 4a: a tooltip's text always matches its trigger's current label; a tooltip never covers the row below its trigger's row.
+- 4a: the space before a full stop after a control and the 2rem row focus ring meeting the border (moved from 3a); a tooltip's text always matches its trigger's current label; a tooltip never covers the row below its trigger's row.
 - 5a: the Russian Profile-menu role lowercase.
 - 7: the login subtitle width and break.
 - Builder, #116-#118: the "Item n of N" position, the part actions; the tree's part names wrap within the fixed `14rem` tree width without overlapping the next row; "Hide" sits on its own line above the course name; type labels fit the longest name in each language.

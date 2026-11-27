@@ -25,7 +25,7 @@ reports, the `code-gate-reviewer` on the diff, the `frontend-researcher` at Clar
 
 ### Focus States
 
-- Interactive elements need visible focus: an outline in token values (`--color-accent`; a new width is a new role-named token, C3), or the browser default
+- Interactive elements need visible focus: the global `:focus-visible` outline (`--border-width-strong`, `--color-focus-ring`, `--focus-offset`)
 - Never `outline: none` without focus replacement
 - Use `:focus-visible` over `:focus` (avoid focus ring on click)
 - Group focus with `:focus-within` for compound controls

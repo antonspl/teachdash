@@ -26,7 +26,7 @@ Allows keyboard users to bypass repetitive navigation and jump straight to main 
   transform: translateY(-100%);
   background: var(--color-surface);
   color: var(--color-accent);
-  padding: var(--space-adjacent) var(--space-inline);
+  padding: 0 var(--space-group);
   z-index: 100;
 }
 
