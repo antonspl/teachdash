@@ -16,6 +16,7 @@ Issue #224. The engineer's decisions, as given:
 | 8 | Pointer in `items`, migration, error codes? | No cross-reference in `items`: items R2's pointer names only gap-fill and stays as is; each type has its own capability (this avoids conflicts between parallel item branches). No migration, no new error code. |
 | 9 | Out of scope? | Answer checking (#126), the student endpoint (#125), the editor, a word in several columns, images, partial credit. |
 | 10 | Is the shuffled view a secret? | No. The seed comes from the content, so anyone with the view can brute-force the shuffle and recover the column of each word; the view is not a secret boundary. #125 must re-shuffle with server-side randomness. |
+| 11 | Code-owner review (#250): the seed lets a view holder recover the columns. | Amends 7 and 10. Fix it as on matching (#241): `seed = String.join("\u0000", all words sorted by String.compareTo).hashCode()`, the shuffle input is the sorted words, `Collections.shuffle(list, new Random(seed))`. The view then depends only on the set of words, not on which column holds which word, so trying splits of the words into columns gives nothing. No rotate rule (any rule that depends on the answer leaks it). The brute-force risk of 10 is gone. Pinned orders are recomputed with jshell (R1-S7, R1-S8). |
 
 ## Research angles
 
