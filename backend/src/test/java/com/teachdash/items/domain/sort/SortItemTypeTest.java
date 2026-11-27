@@ -50,13 +50,14 @@ class SortItemTypeTest {
 		assertThat(view.propertyNames()).containsExactly("titles", "words");
 		// and titles are in stored order and words are the seeded shuffle of the sorted words
 		assertThat(strings(view, "titles")).containsExactly("Animals", "Fruits");
-		assertThat(strings(view, "words")).containsExactly("apple", "dog", "pear", "plum", "horse", "cat");
+		assertThat(strings(view, "words")).containsExactly("cat", "horse", "apple", "pear", "dog", "plum");
 	}
 
 	@Test
-	@DisplayName("[item-sort/R1-S8] The shuffled order is the same on every call, in Russian too, and depends on the stored order")
+	@DisplayName("[item-sort/R1-S8] The shuffled order is the same on every call, in Russian too, and does not depend on which column holds which word")
 	void theShuffledOrderIsTheSameOnEveryCall() {
-		// given a payload with three Russian columns, and the same columns with the first one moved last
+		// given a payload with three Russian columns, the same columns with the first one moved last,
+		// and the English payload of R1-S7 where cat and apple swap columns
 		var payload = new SortPayload(List.of(
 				column("Мужской род", "стол", "дом"),
 				column("Женский род", "книга", "лампа"),
@@ -65,22 +66,29 @@ class SortItemTypeTest {
 				column("Женский род", "книга", "лампа"),
 				column("Средний род", "окно", "море"),
 				column("Мужской род", "стол", "дом")));
+		var swapped = new SortPayload(List.of(
+				column("Animals", "apple", "dog", "horse"),
+				column("Fruits", "cat", "pear", "plum")));
 
 		// when studentView is called three times with the payload and once with the reordered one
 		JsonNode first = mapper.valueToTree(type.studentView(payload));
 		JsonNode second = mapper.valueToTree(type.studentView(payload));
 		JsonNode third = mapper.valueToTree(type.studentView(payload));
 		JsonNode reorderedView = mapper.valueToTree(type.studentView(reordered));
+		JsonNode swappedView = mapper.valueToTree(type.studentView(swapped));
 
 		// then the three results are equal
 		assertThat(second).isEqualTo(first);
 		assertThat(third).isEqualTo(first);
 		// and each has the titles in stored order and the words in the seeded order
 		assertThat(strings(first, "titles")).containsExactly("Мужской род", "Женский род", "Средний род");
-		assertThat(strings(first, "words")).containsExactly("лампа", "окно", "стол", "книга", "дом", "море");
-		// and the reordered payload gives its own titles and a different word order
+		assertThat(strings(first, "words")).containsExactly("стол", "лампа", "море", "книга", "дом", "окно");
+		// and the reordered payload gives its own titles and the same words in the same order
 		assertThat(strings(reorderedView, "titles")).containsExactly("Женский род", "Средний род", "Мужской род");
-		assertThat(strings(reorderedView, "words")).containsExactly("стол", "книга", "окно", "дом", "море", "лампа");
+		assertThat(strings(reorderedView, "words")).containsExactly("стол", "лампа", "море", "книга", "дом", "окно");
+		// and the swapped payload gives its own titles and the same words as R1-S7
+		assertThat(strings(swappedView, "titles")).containsExactly("Animals", "Fruits");
+		assertThat(strings(swappedView, "words")).containsExactly("cat", "horse", "apple", "pear", "dog", "plum");
 	}
 
 	@Test

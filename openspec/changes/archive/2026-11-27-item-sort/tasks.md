@@ -24,7 +24,7 @@
 
 ## 4. Code-owner review fixes
 
-- [ ] 4.1 Update the tests of R1-S7 and R1-S8 in `SortItemTypeTest` to the new pinned orders (seed from the sorted words); the reordered-columns case asserts the same words as the original, and add the case where `cat` and `apple` swap columns with the same view; verify each fails at its THEN step on the current code
+- [x] 4.1 Update the tests of R1-S7 and R1-S8 in `SortItemTypeTest` to the new pinned orders (seed from the sorted words); the reordered-columns case asserts the same words as the original, and add the case where `cat` and `apple` swap columns with the same view; verify each fails at its THEN step on the current code
 - [ ] 4.2 Test review: engineer approves the changed tests in the PR. HARD STOP: no production code before approval
 - [ ] 4.3 `SortItemType.shuffledWords`: seed from `String.join("\u0000", sorted words).hashCode()`, shuffle the sorted words; verify R1-S7 and R1-S8 pass
 - [ ] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and coverage holds
