@@ -26,7 +26,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 4. After screenshots
 
-- [ ] 4.1 Take the final set in `frontend/screenshots/ui-design-tokens/`: same states and widths as the before set; check by eye the tightened spacing, header edge, chevron inset, 360 and Russian wrapping, control borders; list unreachable states
+- [x] 4.1 Take the final set in `frontend/screenshots/ui-design-tokens/`: same states and widths as the before set; check by eye the tightened spacing, header edge, chevron inset, 360 and Russian wrapping, control borders; list unreachable states
 
 ## 5. Decorative borders note
 

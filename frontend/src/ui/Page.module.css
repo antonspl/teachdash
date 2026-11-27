@@ -4,6 +4,10 @@
   padding: var(--space-block) var(--space-group);
 }
 
+.page > [role='status'] {
+  margin-bottom: var(--space-block);
+}
+
 @media (min-width: 40rem) {
   .page {
     padding: var(--space-page);
