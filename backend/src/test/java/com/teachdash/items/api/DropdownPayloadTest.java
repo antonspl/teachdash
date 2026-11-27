@@ -234,7 +234,7 @@ class DropdownPayloadTest extends ItemApiTest {
 		// given a logged-in teacher A with a part
 		var setup = teacherWithPart();
 
-		// when teacher A adds the seven payloads (a) to (g) of the scenario
+		// when teacher A adds the eight payloads (a) to (h) of the scenario
 		var gapWithText = addRaw(setup, raw(
 				TEXT_HI,
 				"{\"type\": \"gap\", \"text\": \"go\", \"options\": [\"a\", \"b\"], \"correct\": 0}"));
@@ -262,8 +262,16 @@ class DropdownPayloadTest extends ItemApiTest {
 		assertNoEcho(gapWithId, "seg-7731");
 		// and (g) is TOO_SHORT at payload.segments[0].options, because Bean Validation runs first
 		expectValidation(textWithShortOptions, error("payload.segments[0].options", "TOO_SHORT"));
-		// and the part has no item
+		// and the responses for (a) to (g) leave the part with no item
 		assertEquals(0, countItems(setup.part()));
+		// and (h) is 201 with a stored payload that has no options, correct or text key on those segments
+		var explicitNulls = addRaw(setup, raw(
+				"{\"type\": \"text\", \"text\": \"Hi\", \"options\": null, \"correct\": null}",
+				"{\"type\": \"gap\", \"text\": null, \"options\": [\"a\", \"b\"], \"correct\": 0}"));
+		explicitNulls.then().statusCode(201);
+		assertStoredPayload(
+				UUID.fromString(explicitNulls.jsonPath().getString("id")),
+				"{\"segments\": [{\"type\": \"text\", \"text\": \"Hi\"}, {\"type\": \"gap\", \"options\": [\"a\", \"b\"], \"correct\": 0}]}");
 	}
 
 	@Test
@@ -401,6 +409,7 @@ class DropdownPayloadTest extends ItemApiTest {
 				TEXT_A,
 				"{\"type\": \"gap\", \"options\": [\"a\", \"b\"], \"correct\": 0, \"text\": \"" + "a".repeat(501) + "\"}"));
 		var sixOptionsAndLongOption = add(setup, payload(gap(0, "a".repeat(101), "b", "c", "d", "e", "f")));
+		var longOptionAndAdjacentTexts = add(setup, payload(text("A"), text("B"), gap(0, "a".repeat(101), "b")));
 
 		// then the first has only TOO_LONG on the text, the duplicate not yet reported
 		expectValidation(longTextAndRepeat, error("payload.segments[0].text", "TOO_LONG"));
@@ -417,6 +426,8 @@ class DropdownPayloadTest extends ItemApiTest {
 		expectValidation(gapWithLongText, error("payload.segments[1].text", "TOO_LONG"));
 		// and the fifth has TOO_LONG on options only, the over-long option not yet reported
 		expectValidation(sixOptionsAndLongOption, error("payload.segments[0].options", "TOO_LONG"));
+		// and the sixth has TOO_LONG on the option only, the adjacent texts not yet reported
+		expectValidation(longOptionAndAdjacentTexts, error("payload.segments[2].options[0]", "TOO_LONG"));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}

@@ -1,6 +1,9 @@
 package com.teachdash.items.domain.dropdown;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.Arrays;
 
 import java.util.List;
 
@@ -53,6 +56,17 @@ class DropdownItemTypeTest {
 		assertThat(view).isEqualTo(expected);
 		// and two payloads that differ only in correct give identical views
 		assertThat(otherView).isEqualTo(view);
+	}
+
+	@Test
+	@DisplayName("[item-dropdown/R1-S8] The student view of a corrupt gap with a null option throws IllegalStateException")
+	void theStudentViewOfAGapWithANullOptionThrowsIllegalState() {
+		// given a stored payload whose gap has a null option
+		var payload = new DropdownPayload(List.of(
+				new DropdownSegment("gap", null, Arrays.asList("a", null), 0)));
+
+		// when studentView is called with the payload, then it throws IllegalStateException, not NullPointerException
+		assertThatThrownBy(() -> type.studentView(payload)).isInstanceOf(IllegalStateException.class);
 	}
 
 	@Test
