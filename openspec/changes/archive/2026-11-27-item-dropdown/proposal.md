@@ -22,6 +22,11 @@ Issue #218. The engineer's decisions, as given:
 | 14 | Corrupt gap with a null option? | `studentView` throws `IllegalStateException` also for a gap whose `options` contain a null, not a `NullPointerException` (design D5). |
 | 15 | Explicit `null` of a field of the other segment type? | `"options": null` or `"correct": null` on a text and `"text": null` on a gap are treated as absent: accepted, and the stored payload omits the key (R2-S7 (h)). A non-null value stays `UNKNOWN_FIELD`. |
 | 16 | Integer out of range in a top-level request field? | Consistent with Clarification 12: 400 `VALIDATION_FAILED` with `INVALID_TYPE` at the field, also outside the payload. Items R2-S14 gets an edit with `version` 99999999999999999999 giving `[{field: "version", code: "INVALID_TYPE"}]`. Note: `version` is a `BigInteger` checked by the controller (`bitLength() > 63`), so this case already passes today; the handler fix (`ApiExceptionHandler` also accepts `InputCoercionException` with a path) covers request fields typed `Integer` or `Long`, none exists yet, so its failing test uses a test-only request body (as `QueryParamTestController` does for query parameters). |
+| 17 | Review round 2: what is blank? | Blank means `Character.isWhitespace` only (`String.isBlank`), the same rule as items R5. An option of only U+00A0 or U+200B is accepted. Stated in R2 and covered in R2-S4 (two accepted cases). |
+| 18 | Which shared classes changed? | Four, all for the generic integer-overflow rule (Clarification 12, 16): `JacksonErrors`, `ApiException.fromJackson`, `ApiExceptionHandler.firstWithPath` and the catch of `ItemPayloadValidator`. Design D1, D8, Impact and task 3.7 name all four (they said "no shared class" or named two). |
+| 19 | Corrupt stored data in `studentView`? | The projection throws `IllegalStateException` (never a `NullPointerException`) for exactly these shapes, and enforces them: null or empty segment list; null segment; null or unknown `type`; text with null `text`; gap with null or empty `options` or fewer than 2 options; a null option; `correct` null or outside `0..options-1`. New scenario R1-S10. Limits on length or option count above 5 are not re-checked. |
+| 20 | R2-S7 wording? | The 400 clause covers (a) to (g) only; (h) is 201. |
+| 21 | A rejected edit and "unchanged"? | The test of items R2-S14 (rejected `version` edit) also asserts the stored `rating` and `version` are unchanged; the scenario names them. |
 
 ## Research angles
 
@@ -52,9 +57,9 @@ Gap-fill asks the student to type a word. A dropdown item ("choose the option") 
 
 ## Impact
 
-- Backend: new `items/domain/dropdown/DropdownItemType`, `DropdownPayload` and `DropdownSegment`. No controller, service, repository or registry change; the only shared-class change is the integer-overflow fix (Clarification 12).
-- Tests: `items/api/DropdownItemTest` (REST scenarios R1-S1 to R1-S7), `items/api/DropdownPayloadTest` (REST scenarios R2-S1 to R2-S14), `items/domain/dropdown/DropdownItemTypeTest` (unit scenarios R1-S8, R1-S9) and the helper `items/support/DropdownPayloads`.
-- Shared code, by Clarification 12: `JacksonErrors` and `ApiException.fromJackson` map `InputCoercionException` to `INVALID_TYPE`. Test: items R2-S14 in the items tests.
+- Backend: new `items/domain/dropdown/DropdownItemType`, `DropdownPayload` and `DropdownSegment`. No controller, service, repository or registry change; the only shared-class change is the integer-overflow fix (Clarification 12): `JacksonErrors`, `ApiException.fromJackson`, `ApiExceptionHandler.firstWithPath` and the catch of `ItemPayloadValidator`.
+- Tests: `items/api/DropdownItemTest` (REST scenarios R1-S1 to R1-S7), `items/api/DropdownPayloadTest` (REST scenarios R2-S1 to R2-S14), `items/domain/dropdown/DropdownItemTypeTest` (unit scenarios R1-S8 to R1-S10) and the helper `items/support/DropdownPayloads`.
+- Shared code, by Clarification 12 and 16: `JacksonErrors` and `ApiException.fromJackson` map `InputCoercionException` to `INVALID_TYPE`; `ApiExceptionHandler.firstWithPath` accepts an `InputCoercionException` with a path; the catch of `ItemPayloadValidator` also catches it. Test: items R2-S14 in the items tests.
 - No new dependency, no migration, no new error code, no change to security configuration or Caddy.
 
 ## Out of scope

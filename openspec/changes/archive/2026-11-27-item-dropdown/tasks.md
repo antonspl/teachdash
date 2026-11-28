@@ -22,7 +22,7 @@
 - [x] 3.4 `extraChecks`, `correct`: missing (`REQUIRED`), range (`INVALID_FORMAT`), skipped when the gap's `options` has an error; verify R2-S10 and R1-S6 pass
 - [x] 3.5 `extraChecks`, gap count: more than 25 gaps (`TOO_LONG`) and the gap-less payload (`REQUIRED`); a gap with missing fields counts as a gap, a null, typeless or unknown-type segment does not; verify R2-S2 (g), R2-S3 (d), R2-S12, R2-S13 and R2-S14 pass
 - [x] 3.6 `DropdownItemType.studentView` as an allowlist (design D5); returns the `{"segments": [...]}` envelope, throws on corrupt data; verify R1-S8 and R1-S9 pass
-- [x] 3.7 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed, and that no option or text is logged (constitution section 5)
+- [x] 3.7 Verify add, edit, list and scoping work with no other change (R1-S1 to R1-S7); check that the payload records have `@Size` on each list and text field, no `Map` field, that no shared class changed except the four of the integer-overflow fix (`JacksonErrors`, `ApiException.fromJackson`, `ApiExceptionHandler.firstWithPath`, `ItemPayloadValidator`'s catch; design D1, D8), and that no option or text is logged (constitution section 5)
 - [x] 3.8 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 - [x] 3.9 Slice-review fixes: `checkType` and `checkGapCount` helpers extracted from `extraChecks`; the limits are public constants in `DropdownItemType`, also used by the record annotations
 
@@ -40,6 +40,13 @@
 - [x] 5.2 Engineer approves the tests of 5.1 in the PR. HARD STOP: no production code before approval
 - [x] 5.3 Code: `extraChecks` returns early with the limit errors (option length, gap count) before the structure rules; the `studentView` guard checks `options.contains(null)`; `ApiExceptionHandler.firstWithPath` also accepts an `InputCoercionException` with a path; verify the tests of 5.1 pass
 - [x] 5.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green, coverage is not lower and the approved tests are unchanged
+
+## 6. Review round 2
+
+- [ ] 6.1 Failing tests (verify each fails at its THEN step, not in setup): `DropdownItemTypeTest` item-dropdown R1-S10 (all thirteen corrupt shapes throw `IllegalStateException`, with no stored value in the message); item-dropdown R2-S4 (the two new cases `["\u00A0", "go"]` and `["\u200B", "go"]` give 201, expected green already); item-dropdown R2-S7 (the assertion splits (a) to (g) as 400 and (h) as 201, expected green already); in `ItemPayloadTest` items R2-S14 the rejected `version` edit also asserts the stored `rating` 2147483647 and `version` 1 are unchanged (expected green already)
+- [ ] 6.2 Engineer approves the tests of 6.1 in the PR. HARD STOP: no production code before approval
+- [ ] 6.3 Code: `studentView` rejects the corrupt shapes of design D5 with `IllegalStateException` (empty segment list, a gap with fewer than 2 options, `correct` null or out of range, in addition to the existing guards); verify R1-S10 passes
+- [ ] 6.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green, coverage is not lower and the approved tests are unchanged
 
 ## Workflow follow-up
 
