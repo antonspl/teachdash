@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -97,6 +99,39 @@ class DropdownItemTypeTest {
 		// and every text segment appears exactly
 		assertThat(textsOf(englishJson)).containsExactly("He ", " to school and ", " a book.");
 		assertThat(textsOf(russianJson)).containsExactly("Вот ", " бежит, а там ", " спит.");
+	}
+
+	@Test
+	@DisplayName("[item-dropdown/R1-S10] The student view throws IllegalStateException on corrupt stored data, with no stored value in the message")
+	void theStudentViewThrowsIllegalStateExceptionOnCorruptStoredData() {
+		// given the thirteen corrupt payloads (a) to (m) of the scenario, built with marker values
+		Map<String, DropdownPayload> corrupt = new LinkedHashMap<>();
+		corrupt.put("a segments null", new DropdownPayload(null));
+		corrupt.put("b segments empty", new DropdownPayload(List.of()));
+		corrupt.put("c null segment", new DropdownPayload(Arrays.asList((DropdownSegment) null)));
+		corrupt.put("d image segment", payloadOf(new DropdownSegment("image", "SECRET-IMAGE", null, null)));
+		corrupt.put("e null type", payloadOf(new DropdownSegment(null, "SECRET-TEXT", null, null)));
+		corrupt.put("f text null", payloadOf(new DropdownSegment("text", null, null, null)));
+		corrupt.put("g options null", payloadOf(new DropdownSegment("gap", null, null, 0)));
+		corrupt.put("h options empty", payloadOf(new DropdownSegment("gap", null, List.of(), 0)));
+		corrupt.put("i one option", payloadOf(new DropdownSegment("gap", null, List.of("SECRET-ONE"), 0)));
+		corrupt.put("j null option", payloadOf(new DropdownSegment("gap", null, Arrays.asList("SECRET-A", null), 0)));
+		corrupt.put("k correct null", payloadOf(new DropdownSegment("gap", null, List.of("SECRET-A", "SECRET-B"), null)));
+		corrupt.put("l correct -1", payloadOf(new DropdownSegment("gap", null, List.of("SECRET-A", "SECRET-B"), -1)));
+		corrupt.put("m correct out of range", payloadOf(new DropdownSegment("gap", null, List.of("SECRET-A", "SECRET-B"), 2)));
+
+		// when studentView is called with each payload, then every call throws IllegalStateException
+		// and the message contains no stored text, option or type value
+		corrupt.forEach((name, payload) -> assertThatThrownBy(() -> type.studentView(payload))
+				.as(name)
+				.isExactlyInstanceOf(IllegalStateException.class)
+				.message()
+				.doesNotContain("SECRET")
+				.doesNotContain("image"));
+	}
+
+	private static DropdownPayload payloadOf(DropdownSegment segment) {
+		return new DropdownPayload(List.of(segment));
 	}
 
 	private List<String> textsOf(String json) {

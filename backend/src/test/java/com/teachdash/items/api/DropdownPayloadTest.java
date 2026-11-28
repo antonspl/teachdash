@@ -170,6 +170,8 @@ class DropdownPayloadTest extends ItemApiTest {
 		var emptyOption = addRaw(setup, raw(TEXT_A, gapJson(0, "go", "")));
 		var blankOption = addRaw(setup, raw(TEXT_A, gapJson(0, "  ", "go")));
 		var nullOption = addRaw(setup, raw(TEXT_A, gapJson(0, "go", null)));
+		var noBreakSpace = addRaw(setup, raw(TEXT_A, gapJson(0, "\u00A0", "go")));
+		var zeroWidthSpace = addRaw(setup, raw(TEXT_A, gapJson(0, "\u200B", "go")));
 
 		// then the first two have payload.segments[1].options REQUIRED, with no payload.segments error
 		for (Response response : List.of(noOptions, nullOptions)) {
@@ -183,8 +185,11 @@ class DropdownPayloadTest extends ItemApiTest {
 		expectValidation(emptyOption, error("payload.segments[1].options[1]", "REQUIRED"));
 		expectValidation(blankOption, error("payload.segments[1].options[0]", "REQUIRED"));
 		expectValidation(nullOption, error("payload.segments[1].options[1]", "REQUIRED"));
-		// and the part has no item
-		assertEquals(0, countItems(setup.part()));
+		// and the no-break space and the zero-width space are not blank, so both are 201
+		noBreakSpace.then().statusCode(201);
+		zeroWidthSpace.then().statusCode(201);
+		// and the part has exactly those 2 items
+		assertEquals(2, countItems(setup.part()));
 	}
 
 	@Test
