@@ -90,6 +90,7 @@ the teacher's row is not in the list, the link SHALL be shown above the list. Cl
 - **WHEN** the admin presses the link button in the row of "Bob Brown" and gets a link
 - **THEN** the link for "Bob Brown" is shown in his row
 - **AND** no link box is left in the row of "Anna Smith"
+- **AND** dismissing Bob's link removes it and returns keyboard focus to Bob's issuing action
 
 #### Scenario: web-admin-teachers/R3-S7 Closing the link when its issuing action is unavailable
 - **GIVEN** a link is shown and its issuing action is absent or disabled, for example a Reactivate button replaced by the teacher's active row actions

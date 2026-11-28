@@ -77,7 +77,7 @@ The web client SHALL show each page or form banner with localized text and a dec
 - **AND** activating Try again repeats the failed operation and removes the error after a successful response
 
 #### Scenario: web-client/R31-S5 Startup loading is plain text
-- **GIVEN** a held current-user request on a guarded route, with one run each in English and Russian
+- **GIVEN** a held current-user request on a role cabinet route (for example `/teacher`), `/profile`, `/login` and the root redirect `/`, in separate runs in English and Russian
 - **WHEN** the route starts
 - **THEN** the main page body shows `ui.loading` as “Loading…” or «Загрузка…» in plain text without a banner, spinner or skeleton
 
@@ -88,7 +88,7 @@ The web client SHALL show each page or form banner with localized text and a dec
 
 ### Requirement: R32 Admin modal dialog dismissal and focus
 
-The create and deactivate dialogs SHALL be native modals with their titles as accessible names and a localized header Close button. Initial focus SHALL go to Name in create and Cancel in deactivate. Close, Cancel and Escape SHALL dismiss an idle dialog and restore focus to its opener. The dialogs SHALL stay open during their submit or confirm request, and focus SHALL follow the replacement Reactivate action after successful deactivation if the opener disappeared.
+Admin dialogs SHALL be native modals named by their titles. Focus SHALL start on Name in create and Cancel in deactivate. Localized header Close, Cancel and Escape SHALL dismiss an idle dialog and restore focus to its opener. The dialog SHALL stay open during the action request. When a successful deactivation removes its opener, Reactivate SHALL receive focus if focus was lost or remained on the opener. Failure focus SHALL follow the scenarios.
 
 #### Scenario: web-client/R32-S1 The first field or safe action receives focus
 - **GIVEN** a logged-in admin and an available teacher to deactivate
@@ -109,4 +109,16 @@ The create and deactivate dialogs SHALL be native modals with their titles as ac
 #### Scenario: web-client/R32-S4 The replacement action receives focus after deactivation
 - **GIVEN** a logged-in admin who opened a teacher's deactivate dialog
 - **WHEN** confirmation succeeds and the refreshed row replaces Deactivate with Reactivate
-- **THEN** focus goes to Reactivate if it was lost with the opener and the admin has not moved focus elsewhere
+- **THEN** focus goes to Reactivate if it was lost or was still on Deactivate when it disappeared
+- **AND** if the admin moved focus to another available control before the replacement, that control keeps focus
+
+#### Scenario: web-client/R32-S5 A create error keeps the keyboard flow in the dialog
+- **GIVEN** the admin entered valid values in Add teacher and the request will fail with a form-level error
+- **WHEN** the admin submits the form and the error arrives
+- **THEN** the dialog stays open with its entered values and its localized error alert
+- **AND** keyboard focus is within the dialog and its normal tab order is available again
+
+#### Scenario: web-client/R32-S6 A deactivation error returns focus to the opener
+- **GIVEN** the admin opened the deactivate dialog and the request will fail while the original Deactivate action remains available
+- **WHEN** the admin confirms and the error arrives
+- **THEN** the dialog closes, the localized error appears as an alert in the list feedback area, and focus returns to the original Deactivate action

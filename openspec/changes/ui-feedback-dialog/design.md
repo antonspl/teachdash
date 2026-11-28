@@ -55,11 +55,11 @@ Desktop dialog                          360 px dialog
 | --- | --- |
 | Admin list | Empty copy and available Add teacher. Plain loading text before the first list. List error with separate retry and row action error in the list feedback area. Populated cards show Active, Waiting for password, Deactivated and Just added. Row eligibility and busy labels from #245 continue to apply. |
 | IssuedLink | Idle link, success after Copy, neutral manual-copy state with selection, and standalone link above the list when reloading fails or the teacher is still absent. |
-| Create dialog | Initial Name focus, language-load failure with retry, form-level alert or field error on failure, submitted state with dismissal disabled, success returning to the list and showing the new link. |
-| Deactivate dialog | Initial Cancel focus, submitted state with dismissal disabled, row action error or successful focus handoff once the dialog closes. |
+| Create dialog | Initial Name focus, language-load failure with retry, form-level alert or field error on failure, submitted state with dismissal disabled, success returning to the list and showing the new link. After an ordinary failure, the dialog retains its values and normal keyboard flow. |
+| Deactivate dialog | Initial Cancel focus and submitted state with dismissal disabled. On failure the dialog closes, the list shows the row action error, and focus returns to the available opener. Success can hand focus to the replacement Reactivate action. |
 | Login and set-password | Login reachability alert, neutral session-ended notice, localized form errors and existing busy submit. An incomplete set-password link shows an alert below the title. |
 | Profile and cabinets | Profile form successes and failures next to the relevant form, language retry, existing busy submit and logout errors under the titles of Profile and role cabinets. |
-| Guarded startup | Plain localized loading text while the request is pending. Localized alert and separate retry on failure. The requested route or its existing redirect handles success. |
+| Guarded startup | Plain localized loading text while the request is pending on a role cabinet, Profile, Login or the root redirect. Localized alert and separate retry on failure. The requested route or its existing redirect handles success. |
 
 ### Copy (i18n keys and text)
 
@@ -70,9 +70,9 @@ Desktop dialog                          360 px dialog
 
 ### A11y (focus order, keyboard, aria-*)
 
-The icon-only header button has the localized `aria-label`. Open create on Name and the confirmation on Cancel. Close, Cancel and Escape return to the actual opener while idle. While submitting or confirming, both dismissal buttons are disabled and Escape cannot abandon the visible request. If the browser closes the active modal anyway, recover it. After successful deactivation, let the replacement Reactivate action receive focus when the opener disappeared and the admin has not moved focus elsewhere.
+The icon-only header button has the localized `aria-label`. Open create on Name and the confirmation on Cancel. Close, Cancel and Escape return to the actual opener while idle. While submitting or confirming, both dismissal buttons are disabled and Escape cannot abandon the visible request. If the browser closes the active modal anyway, recover it. After an ordinary create failure, keep focus within the dialog so tabbing can resume. After a failed deactivation, return focus to the available Deactivate opener. When a successful deactivation replaces the opener, focus Reactivate if focus was lost or the opener still had focus. Respect any intervening move to another available control.
 
-Error banners are alerts, success and neutral banners are statuses, and the decorative icons are hidden from assistive technology. Retry stays outside the alert. Keep field descriptions associated with their controls and the focus order for field errors from #245. On failed clipboard access, focus and select the URL. On Close, return focus to the action that issued that link when available, with Add teacher as the fallback.
+Error banners are alerts, success and neutral banners are statuses, and the decorative icons are hidden from assistive technology. Retry stays outside the alert. Keep field descriptions associated with their controls and the focus order for field errors from #245. On failed clipboard access, focus and select the URL. On Close, return focus to the action that issued the currently visible link when available, with Add teacher as the fallback.
 
 ### Components and tokens (reused or new)
 

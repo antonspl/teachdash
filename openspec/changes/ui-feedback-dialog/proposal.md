@@ -35,7 +35,7 @@ The existing shared feedback and admin dialogs predate the visual direction in #
 ## Impact
 
 - React UI components, admin teacher actions, auth guards, form feedback consumers, English and Russian translations, and frontend scenario tests.
-- The PR is based on the #245 branch. Reachability, field-error and profile scenarios keep their existing message guarantees and their tests check the roles defined by the shared feedback requirement.
+- [PR #252](https://github.com/antonspl/teachdash/pull/252) is based on the #245 branch. Reachability, field-error and profile scenarios keep their existing message guarantees and their tests check the roles defined by the shared feedback requirement.
 
 ## Out of Scope
 
