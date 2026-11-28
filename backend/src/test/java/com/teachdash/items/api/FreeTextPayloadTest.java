@@ -44,7 +44,7 @@ class FreeTextPayloadTest extends ItemApiTest {
 		var cyrillic = payload("Я".repeat(20000));
 		var emoji = payload(EMOJI.repeat(10000), 1, 1);
 		var noBreak = payload(" x", 10000, null);
-		var onlyNoBreak = payload(" ");
+		var onlyNoBreak = payload("\u00A0");
 		var responses = List.of(
 				setup.client().post(setup.items(), body("free-text", english)),
 				setup.client().post(setup.items(), body("free-text", cyrillic)),
