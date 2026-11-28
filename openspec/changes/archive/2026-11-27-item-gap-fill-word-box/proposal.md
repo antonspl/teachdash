@@ -16,6 +16,15 @@ Issue #225. The engineer's decisions, as given:
 | 8 | Out of scope? | Answer checking (#126, #127), the student endpoint (#125), the editor, a reusable-word box mode and per-gap points. |
 | 9 | Invisible differences in exact matching? | Keep exact match, consistent with gap-fill's raw rule. The trap (a trailing space, or the composed and decomposed form of a letter, makes two words that look equal differ) is recorded in design Risks. |
 
+### Review round 2 (code owner)
+
+| # | Question | Engineer's answer |
+|---|---|---|
+| 10 | R2-S11 heading says the limits come first and the structure errors come together; is that too strong? | Yes. Bean Validation runs first and the remaining checks of `extraChecks` can report errors together (design D3). Two adjacent texts followed by a gap with a 101-character answer return both `INVALID_FORMAT` and `TOO_LONG`. The heading and text are qualified and a sixth case is added; behaviour is unchanged. |
+| 11 | Student projection of corrupt stored data: `null` or empty `segments`? | Both throw `IllegalStateException` (today an empty list gives an empty view and `null` a `NullPointerException`). R1-S11 lists them as cases (f) and (g); design D5 notes it. |
+| 12 | The message of the `IllegalStateException` for an unknown segment type? | A fixed message with no raw `type` value (it may reach logs once #125 wires the projection). R1 and R1-S11 state that messages contain no stored value; the test asserts it. |
+| 13 | Test and code tidy-ups (no spec change)? | The R1-S8 test also asserts the second view has no "extra". In `wordBox`, the gap answer is added directly instead of the dead `requireWord(segment.answer())` call (`studentSegment` already rejects a null answer). |
+
 ## Research angles
 
 The engineer agreed on these conclusions from the code on `main`:
