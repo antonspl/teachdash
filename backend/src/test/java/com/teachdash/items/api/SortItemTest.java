@@ -84,7 +84,7 @@ class SortItemTest extends ItemApiTest {
 	}
 
 	@Test
-	@DisplayName("[item-sort/R1-S3] Edit a sort item: the payload is replaced; a bad edit changes nothing")
+	@DisplayName("[item-sort/R1-S3] Edit a sort item: the payload is replaced")
 	void editASortItem() {
 		// given a logged-in teacher A with a sort item with two columns and version 1
 		var setup = teacherWithPart();

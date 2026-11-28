@@ -13,7 +13,7 @@ The type `sort` SHALL have the payload `{columns: [{title, words: [...]}]}`, add
 - **WHEN** teacher A adds an item of the type `sort` with the payload `{"columns": [{"title": "Деревья", "words": ["ёлка", "дуб"]}, {"title": "Хвоя", "words": ["елка", "Ёж", "Еж"]}]}`
 - **THEN** the response is 201 and the payload equals the sent one character by character (the words "ёлка" and "елка", "Ёж" and "Еж" as distinct values in this order), and the stored payload has the same columns
 
-#### Scenario: item-sort/R1-S3 Edit a sort item: the payload is replaced; a bad edit changes nothing
+#### Scenario: item-sort/R1-S3 Edit a sort item: the payload is replaced
 - **GIVEN** a logged-in teacher A with an item of the type `sort` with the columns `[{"title": "Cats", "words": ["cat"]}, {"title": "Dogs", "words": ["dog"]}]` and `version` 1
 - **WHEN** teacher A edits it with `version` 1 and the payload `{"columns": [{"title": "Pets", "words": ["dog", "cat"]}, {"title": "Wild", "words": ["wolf", "fox"]}, {"title": "Birds", "words": ["owl"]}]}`
 - **THEN** the response is 200 with the type `sort`, the new payload exactly as sent (replaced, not merged), `version` 2 and the same `position`, and the stored payload has the new three columns
