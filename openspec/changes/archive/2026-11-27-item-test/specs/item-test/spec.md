@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: R1 A teacher adds and edits a test item
-The type `test` SHALL have the payload `{questions: [{text, multiple, options: [{text, correct}]}]}` (`multiple` is optional), added with items R1 and edited with items R4. Texts are plain text, `correct` and `multiple` are booleans; everything is stored as sent (no trim, case change or normalisation; `false` is kept; no property is added). Another teacher's add and edit give 404. The payload rules are in R2, the student view in R3.
+The type `test` SHALL have the payload `{questions: [{text, multiple, options: [{text, correct}]}]}` (`multiple` is optional), added with items R1 and edited with items R4. Texts are plain text, `correct` and `multiple` are booleans; everything is stored as sent (no trim, case change or normalisation; `false` is kept; no property is added, a `null` `multiple` is dropped). Another teacher's add and edit give 404. The payload rules are in R2, the student view in R3.
 
 #### Scenario: item-test/R1-S1 Add an English test item, it is stored and listed exactly
 - **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with a part
@@ -29,7 +29,7 @@ The type `test` SHALL have the payload `{questions: [{text, multiple, options: [
 - **THEN** both responses are 404, and teacher A's part still has exactly the one item with its payload and `version` unchanged
 
 ### Requirement: R2 A test payload follows the limits and structure rules
-A `test` payload SHALL follow items R2. Questions: 1 to 25, text at most 500 (UTF-16), optional `multiple` (missing or `null` is `false`). Options: 2 to 10, text at most 100. Missing, `null` or empty lists, blank texts, null elements, missing `correct`: `REQUIRED`; 1 option `TOO_SHORT`; over a maximum `TOO_LONG`; wrong JSON type `INVALID_TYPE`; a repeated option text `INVALID_FORMAT`; `multiple` not `true` with more than one correct option `INVALID_FORMAT`. Zero correct is allowed.
+A `test` payload SHALL follow items R2. Questions 1 to 25 (text up to 500), options 2 to 10 (up to 100), optional `multiple` (`null` is dropped). Missing or empty lists, blank texts, null elements or `correct`: `REQUIRED`; 1 option `TOO_SHORT`; over a maximum `TOO_LONG`; wrong type `INVALID_TYPE`; repeated option text `INVALID_FORMAT`. Structure rule, after Bean Validation: `multiple` not `true` with several correct options is `INVALID_FORMAT` at `questions[i].options`. Zero correct is allowed.
 
 #### Scenario: item-test/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
@@ -91,15 +91,15 @@ A `test` payload SHALL follow items R2. Questions: 1 to 25, text at most 500 (UT
 - **WHEN** teacher A adds items of the type `test` with one question "Q" whose options are "A" with `"correct": true` and "B" with `"correct"` set to `"true"`, `"TRUE"`, `"false"`, `1`, `0`, `2`, `1.0` and `""`, and one more with `"correct": null`
 - **THEN** the responses for `"true"`, `"TRUE"`, `"false"`, `1`, `0`, `2`, `1.0` and `""` are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].options[1].correct", code: "INVALID_TYPE"}]`, the response for `null` is 400 with `errors` exactly `[{field: "payload.questions[0].options[1].correct", code: "REQUIRED"}]`, and the part has no item
 
-#### Scenario: item-test/R2-S13 `multiple` accepts only a JSON boolean, and a missing or null value is kept as sent
+#### Scenario: item-test/R2-S13 `multiple` accepts only a JSON boolean, and a null value is dropped
 - **GIVEN** a logged-in teacher A with a part
 - **WHEN** teacher A adds items of the type `test` with one question "Q" with the options "A" (correct) and "B" and `multiple` set to `"true"`, `"TRUE"`, `"false"`, `1`, `0`, `2`, `1.0`, `""`, `[]` and `{}`, and then with `multiple` set to `true`, `false` and `null` and with no `multiple`
-- **THEN** the responses for the first ten values are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].multiple", code: "INVALID_TYPE"}]`, and the last four are 201 with the payload exactly as sent (`multiple` is `true`, `false`, `null` and absent), and the part has exactly the last four items
+- **THEN** the responses for the first ten values are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].multiple", code: "INVALID_TYPE"}]`, and the last four are 201: `true` and `false` come back exactly as sent, and the `null` case and the case with no `multiple` come back with no `multiple` key (a `null` is dropped, not stored), and the part has exactly the last four items
 
 #### Scenario: item-test/R2-S14 More than one correct option needs `multiple` true
 - **GIVEN** a logged-in teacher A with a part
 - **WHEN** teacher A adds items of the type `test` with: (a) one question "Q" with the options "A" (correct), "B" (correct) and "C" and no `multiple`; (b) the same question with `"multiple": false`; (c) the same question with `"multiple": null`; (d) a question "Q" with the options "A" and "A", both correct, and no `multiple`; (e) the question of (a) with `"multiple": true`; (f) four payloads of one question each: with `"multiple": true` and no correct option, with `"multiple": true` and all three options correct, with `"multiple": false` and no correct option and with no `multiple` and one correct option
-- **THEN** (a), (b) and (c) are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].options", code: "INVALID_FORMAT"}]`, (d) is 400 with `errors` exactly `[{field: "payload.questions[0].options", code: "INVALID_FORMAT"}, {field: "payload.questions[0].options[1].text", code: "INVALID_FORMAT"}]` (sorted by field, both are structure rules), (e) and (f) are 201 with the payload exactly as sent, and the part has exactly the items of (e) and (f)
+- **THEN** (a), (b) and (c) are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].options", code: "INVALID_FORMAT"}]`, (d) is 400 with `errors` exactly `[{field: "payload.questions[0].options", code: "INVALID_FORMAT"}, {field: "payload.questions[0].options[1].text", code: "INVALID_FORMAT"}]` (sorted by field, both are structure rules), (e) and (f) are 201 with the payload as sent, and the part has exactly five items, those of (e) and (f)
 
 ### Requirement: R3 The student view hides the correct options, and a question may have none
 `studentView` SHALL return `{"questions": [{"text", "multiple", "options": [{"text"}]}]}` as an allowlist in this key order, with options in stored order (not shuffled) and no `correct` key or index; `multiple` is the stored setting (false when absent) and is never computed from `correct`. A question with no correct option, or with all options correct, SHALL be accepted (#126). No student endpoint yet (#125): unit scenarios only.
