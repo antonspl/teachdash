@@ -6,7 +6,7 @@ import java.util.Set;
 import org.springframework.http.HttpStatus;
 
 import jakarta.validation.ConstraintViolation;
-import tools.jackson.databind.DatabindException;
+import tools.jackson.core.JacksonException;
 
 public class ApiException extends RuntimeException {
 
@@ -48,7 +48,7 @@ public class ApiException extends RuntimeException {
 	 * or an unknown property name, because both are user text. Any Jackson error that is not bad input
 	 * (for example a definition problem) is rethrown and surfaces as a logged 500.
 	 */
-	public static ApiException fromJackson(DatabindException exception, String prefix) {
+	public static ApiException fromJackson(JacksonException exception, String prefix) {
 		String code = JacksonErrors.codeOf(exception);
 		if (code == null) {
 			throw exception;

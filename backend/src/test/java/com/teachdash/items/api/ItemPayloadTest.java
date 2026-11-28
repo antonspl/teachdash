@@ -24,6 +24,8 @@ import tools.jackson.databind.json.JsonMapper;
 /** items R2. */
 class ItemPayloadTest extends ItemApiTest {
 
+	private static final String TEST_BODY = "/api/teacher/test-body";
+
 	private static final Map<String, Object> HI = Map.of("text", "Hi");
 
 	private static final JsonMapper EXACT = JsonMapper.builder()
@@ -305,6 +307,62 @@ class ItemPayloadTest extends ItemApiTest {
 		}
 		// and the part has exactly 1 item
 		assertEquals(1, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[items/R2-S14] A JSON integer outside the range of an Integer field is rejected as INVALID_TYPE")
+	void aJsonIntegerOutsideTheRangeOfAnIntegerFieldIsRejectedAsInvalidType() {
+		// given a logged-in teacher A with a part, and the type test-note whose optional rating is an Integer
+		var setup = teacherWithPart();
+
+		// when teacher A adds items of the type test-note with the ratings 2147483648, -2147483649 and 99999999999999999999, and then 2147483647
+		List<Response> overflowing = List.of(
+				setup.client().post(setup.items(), raw("test-note", "{\"text\": \"ok\", \"rating\": 2147483648}")),
+				setup.client().post(setup.items(), raw("test-note", "{\"text\": \"ok\", \"rating\": -2147483649}")),
+				setup.client().post(setup.items(), raw("test-note", "{\"text\": \"ok\", \"rating\": 99999999999999999999}")));
+		var maximum = setup.client().post(setup.items(), raw("test-note", "{\"text\": \"ok\", \"rating\": 2147483647}"));
+		// and then edits that item (version 1) with a version of 99999999999999999999
+		String itemPath = item(setup.course(), setup.lesson(), setup.part(), maximum.jsonPath().getString("id"));
+		var hugeVersion = setup.client().patch(itemPath, editBody("99999999999999999999", "{\"text\": \"New\"}"));
+
+		// then the first three responses are 400 VALIDATION_FAILED with payload.rating INVALID_TYPE only
+		for (Response response : overflowing) {
+			assertValidation(response, error("payload.rating", "INVALID_TYPE"));
+		}
+		// and the last is 201 with rating 2147483647
+		maximum.then().statusCode(201).body("payload.rating", equalTo(2147483647));
+		// and the edit is 400 VALIDATION_FAILED with version INVALID_TYPE only, and the item is unchanged
+		assertValidation(hugeVersion, error("version", "INVALID_TYPE"));
+		assertEquals("ok", storedText(setup.part(), 1));
+		// and the stored rating is still 2147483647 and the version is still 1
+		assertTrue(storedPayloadEquals(UUID.fromString(maximum.jsonPath().getString("id")), "{\"text\": \"ok\", \"rating\": 2147483647}"));
+		long storedVersion = jdbc.sql("select version from items where id = :id")
+				.param("id", UUID.fromString(maximum.jsonPath().getString("id")))
+				.query(Long.class)
+				.single();
+		assertEquals(1L, storedVersion);
+		// and the part has exactly 1 item
+		assertEquals(1, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[items/R2-S14] A JSON integer outside the range of an Integer field of the request body is rejected as INVALID_TYPE")
+	void aJsonIntegerOutsideTheRangeOfARequestBodyFieldIsRejectedAsInvalidType() {
+		// given a logged-in teacher A and a test-only endpoint whose body has an Integer field count
+		var setup = teacherWithPart();
+
+		// when teacher A posts the counts 2147483648, -2147483649 and 99999999999999999999, and then 2147483647
+		List<Response> overflowing = List.of(
+				setup.client().post(TEST_BODY, "{\"count\": 2147483648}"),
+				setup.client().post(TEST_BODY, "{\"count\": -2147483649}"),
+				setup.client().post(TEST_BODY, "{\"count\": 99999999999999999999}"));
+		var maximum = setup.client().post(TEST_BODY, "{\"count\": 2147483647}");
+
+		// then the first three responses are 400 VALIDATION_FAILED with count INVALID_TYPE only, the last is 200
+		for (Response response : overflowing) {
+			assertValidation(response, error("count", "INVALID_TYPE"));
+		}
+		maximum.then().statusCode(200);
 	}
 
 	@Test
