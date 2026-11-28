@@ -16,6 +16,10 @@ Issue #220. The engineer's decisions, as given:
 | 6b | Rotate an aligned order? (code-owner nit on PR #241; declines it) | No. The code-owner nit to rotate an aligned order is declined: with a pairing-independent seed any rule that depends on the stored pairing leaks it (the student computes the shuffle from the shown values; if the view differs, the rule fired and the computed shuffle is the answer key). An aligned order happens by chance and the student cannot tell it is the answer. |
 | 7 | Out of scope? | Answer checking (#126), the student endpoint (#125), the editor, images in pairs, many-to-one matching, partial credit. |
 | 8 | Pointer in `items`? | `items` stays untouched: items R2's pointer names only gap-fill and stays as is. Each type's rules live in its own capability; a pointer list in `items` would make every parallel item branch conflict. |
+| 9 | Review round 2: R1-S9? (code-owner review of PR #241) | Besides the reversed list, add a payload with the lefts in the original order and the same four rights assigned differently (`Москва` with `Germany`, `Париж` with `France`, `Лондон` with `Russia`, `Берлин` with `England`); both complete student views equal the original's. This also catches a reintroduced rotate rule. |
+| 10 | Review round 2: R1-S11? | The surviving sides of the incomplete pairs get distinct marker strings ("secret-right", "secret-left"); the Then states that none of them appears in the exception message. |
+| 11 | Review round 2: composed and decomposed "é" in `MatchingItemTest` R1-S3? | Test-only task, no spec change: the two literals become the escapes `"\u00e9"` and `"e\u0301"`. |
+| 12 | Review round 2: where does `MatchingPayloads` live? | Constitution section 3 now allows feature-only test helpers in `com.teachdash.<feature>.support` (commit 0d556ba), so `MatchingPayloads` stays in `com.teachdash.items.support`. No change. |
 
 ## Research angles
 
