@@ -231,7 +231,7 @@ class FreeTextPayloadTest extends ItemApiTest {
 		expectValidation(nul, error("payload", "INVALID_FORMAT"));
 		expectValidation(surrogate, error("payload", "INVALID_FORMAT"));
 		// and no body contains the rejected value
-		nul.then().body(not(containsString("rejectedValue"))).body(not(containsString("a\u0000b")));
+		nul.then().body(not(containsString("rejectedValue"))).body(not(containsString("a\u0000b"))).body(not(containsString("a\\u0000b")));
 		surrogate.then().body(not(containsString("rejectedValue"))).body(not(containsString("ud800")));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
