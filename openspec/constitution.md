@@ -139,7 +139,8 @@ com/teachdash/
 ```
 
 Classes used across subpackages are `public`. Tests mirror the main packages;
-shared test helpers live in `com.teachdash.support`.
+test helpers shared across features live in `com.teachdash.support`, helpers
+for one feature in `com.teachdash.<feature>.support`.
 
 ## 4. Secrets
 
