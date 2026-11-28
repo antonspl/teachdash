@@ -367,3 +367,48 @@ export function AlertIcon(props: IconProps) {
     </SvgIcon>
   )
 }
+
+export const icons = {
+  plus: PlusIcon,
+  close: CloseIcon,
+  chevDown: ChevDownIcon,
+  chevRight: ChevRightIcon,
+  chevLeft: ChevLeftIcon,
+  arrowUp: ArrowUpIcon,
+  arrowDown: ArrowDownIcon,
+  trash: TrashIcon,
+  pencil: PencilIcon,
+  search: SearchIcon,
+  link: LinkIcon,
+  userOff: UserOffIcon,
+  userCheck: UserCheckIcon,
+  ban: BanIcon,
+  home: HomeIcon,
+  book: BookIcon,
+  people: PeopleIcon,
+  profile: ProfileIcon,
+  logOut: LogOutIcon,
+  globe: GlobeIcon,
+  menu: MenuIcon,
+  sidebar: SidebarIcon,
+  tTheory: TTheoryIcon,
+  tImage: TImageIcon,
+  tPick: TPickIcon,
+  tType: TTypeIcon,
+  tAudio: TAudioIcon,
+  play: PlayIcon,
+  pause: PauseIcon,
+  more: MoreIcon,
+  check: CheckIcon,
+  right: RightIcon,
+  wrong: WrongIcon,
+  clock: ClockIcon,
+  lock: LockIcon,
+  todo: TodoIcon,
+  send: SendIcon,
+  eye: EyeIcon,
+  info: InfoIcon,
+  alert: AlertIcon,
+} as const
+
+export type IconName = keyof typeof icons

@@ -80,8 +80,9 @@ the page is reloaded. On failure the dialog SHALL stay open with the entered val
 
 #### Scenario: web-admin-teachers/R2-S5 The form is not sent twice
 - **GIVEN** a create request is in progress
-- **WHEN** the admin presses the submit button again
+- **WHEN** the admin presses the same submit button again (found, while the request runs, by its busy label, `adminTeachers.create.submitting`, web-client R29)
 - **THEN** no second request is sent
+- **AND** that button and "Cancel" are disabled, and the submit button has `aria-busy="true"`
 
 #### Scenario: web-admin-teachers/R2-S6 Network failure on create
 - **GIVEN** the create request fails without reaching the backend
@@ -186,6 +187,7 @@ be shown (R3). After either action, successful or not, the list SHALL load again
 - **GIVEN** the deactivate dialog for an active teacher is open
 - **WHEN** the admin presses "Confirm" twice quickly
 - **THEN** exactly one deactivate request is sent for that teacher
+- **AND** while it runs, the same button shows its busy label (`adminTeachers.deactivate.confirming`, web-client R29), is disabled and has `aria-busy="true"`, and "Cancel" is disabled
 - **AND** the dialog closes and the teacher's status reads "Deactivated"
 
 #### Scenario: web-admin-teachers/R4-S3 Cancelling changes nothing
@@ -242,8 +244,9 @@ for a row is in progress, none of that row's buttons SHALL send another.
 
 #### Scenario: web-admin-teachers/R5-S4 A row's buttons wait for its request
 - **GIVEN** a link request for a teacher is in progress
-- **WHEN** the admin presses that row's link button again, or its "Deactivate"
+- **WHEN** the admin presses that row's link button again (the same button, now showing its busy label, `adminTeachers.busy.inviteLink` or `adminTeachers.busy.resetLink`, web-client R29), or its "Deactivate"
 - **THEN** no second request is sent and no dialog opens
+- **AND** the pressed button is disabled and has `aria-busy="true"`, and the row's other buttons are disabled and keep their own labels
 
 #### Scenario: web-admin-teachers/R5-S5 A failed link request is reported
 - **GIVEN** the backend answers the reset link request with 403 `CSRF_INVALID`

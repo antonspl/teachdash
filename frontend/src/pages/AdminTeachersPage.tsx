@@ -44,9 +44,12 @@ const statusTone: Record<TeacherStatus, StatusTone> = {
 
 type ShownLink = { id: string; name: string; link: string }
 
+// The action a row's request runs, so only the pressed button shows its busy label.
+type RowAction = 'invite' | 'reset' | 'reactivate' | 'deactivate'
+
 function TeacherRow({
   teacher,
-  busy,
+  busyAction,
   justAdded,
   linkBox,
   refocus,
@@ -56,7 +59,7 @@ function TeacherRow({
   onLink,
 }: {
   teacher: Teacher
-  busy: boolean
+  busyAction: RowAction | undefined
   justAdded: boolean
   linkBox?: ReactNode
   // Put focus on the Reactivate button as soon as the row shows it.
@@ -68,6 +71,8 @@ function TeacherRow({
 }) {
   const { t } = useTranslation()
   const status = teacherStatus(teacher)
+  const busy = busyAction !== undefined
+  const linkAction = teacher.hasPassword ? 'reset' : 'invite'
   const reactivate = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -105,7 +110,13 @@ function TeacherRow({
       actions={
         teacher.active ? (
           <ButtonRow>
-            <Button variant="secondary" disabled={busy} onClick={onLink}>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              busy={busyAction === linkAction}
+              busyLabel={t(`adminTeachers.busy.${linkAction}Link`)}
+              onClick={onLink}
+            >
               {teacher.hasPassword
                 ? t('adminTeachers.actions.resetLink')
                 : t('adminTeachers.actions.inviteLink')}
@@ -124,6 +135,8 @@ function TeacherRow({
               ref={reactivate}
               variant="secondary"
               disabled={busy}
+              busy={busyAction === 'reactivate'}
+              busyLabel={t('adminTeachers.busy.reactivate')}
               onClick={onReactivate}
             >
               {t('adminTeachers.actions.reactivate')}
@@ -296,7 +309,11 @@ function CreateDialog({
           <Button variant="secondary" disabled={submitting} onClick={onCancel}>
             {t('adminTeachers.create.cancel')}
           </Button>
-          <Button type="submit" disabled={submitting}>
+          <Button
+            type="submit"
+            busy={submitting}
+            busyLabel={t('adminTeachers.create.submitting')}
+          >
             {t('adminTeachers.create.submit')}
           </Button>
         </ButtonRow>
@@ -312,7 +329,7 @@ export function AdminTeachersPage() {
   const [shownLink, setShownLink] = useState<ShownLink>()
   const [creating, setCreating] = useState<{ opener: HTMLElement }>()
   const [pinnedId, setPinnedId] = useState<string>()
-  const [busyIds, setBusyIds] = useState<string[]>([])
+  const [busyActions, setBusyActions] = useState<Record<string, RowAction>>({})
   const [confirming, setConfirming] = useState<{
     id: string
     name: string
@@ -322,7 +339,7 @@ export function AdminTeachersPage() {
   const [refocusId, setRefocusId] = useState<string>()
   const [linkCopy, setLinkCopy] = useState<CopyStatus>('idle')
   const linkFocus = useRef<number | null>(null)
-  const busyRef = useRef(new Set<string>())
+  const busyRef = useRef(new Map<string, RowAction>())
   const mounted = useRef(false)
   const loadSeq = useRef(0)
 
@@ -363,16 +380,18 @@ export function AdminTeachersPage() {
 
   const clearRefocus = useCallback(() => setRefocusId(undefined), [])
 
-  // Runs one request for a row: one busy flag per row, reload afterwards either way.
+  // Runs one request for a row: one busy action per row (the one pressed), reload
+  // afterwards either way.
   async function runRowAction(
     teacher: { id: string; name: string },
+    pressed: RowAction,
     action: () => Promise<string | null | void>,
   ): Promise<boolean> {
     if (busyRef.current.has(teacher.id)) {
       return false
     }
-    busyRef.current.add(teacher.id)
-    setBusyIds([...busyRef.current])
+    busyRef.current.set(teacher.id, pressed)
+    setBusyActions(Object.fromEntries(busyRef.current))
     setActionError(undefined)
     setRefocusId(undefined)
     let succeeded = false
@@ -391,7 +410,7 @@ export function AdminTeachersPage() {
     } finally {
       busyRef.current.delete(teacher.id)
       if (mounted.current) {
-        setBusyIds([...busyRef.current])
+        setBusyActions(Object.fromEntries(busyRef.current))
         void load()
       }
     }
@@ -403,7 +422,9 @@ export function AdminTeachersPage() {
       return
     }
     const target = confirming
-    const done = await runRowAction(target, () => deactivateTeacher(target.id))
+    const done = await runRowAction(target, 'deactivate', () =>
+      deactivateTeacher(target.id),
+    )
     if (mounted.current) {
       setConfirming(undefined)
       // The reload swaps Deactivate for Reactivate; focus follows it.
@@ -484,7 +505,7 @@ export function AdminTeachersPage() {
             <TeacherRow
               key={teacher.id}
               teacher={teacher}
-              busy={busyIds.includes(teacher.id)}
+              busyAction={busyActions[teacher.id]}
               justAdded={teacher.id === pinnedId}
               linkBox={
                 shownLink?.id === teacher.id ? linkBox(false) : undefined
@@ -495,10 +516,16 @@ export function AdminTeachersPage() {
                 setConfirming({ id: teacher.id, name: teacher.name, opener })
               }
               onReactivate={() =>
-                void runRowAction(teacher, () => reactivateTeacher(teacher.id))
+                void runRowAction(teacher, 'reactivate', () =>
+                  reactivateTeacher(teacher.id),
+                )
               }
               onLink={() =>
-                void runRowAction(teacher, () => issueResetLink(teacher.id))
+                void runRowAction(
+                  teacher,
+                  teacher.hasPassword ? 'reset' : 'invite',
+                  () => issueResetLink(teacher.id),
+                )
               }
             />
           ))}
@@ -509,13 +536,13 @@ export function AdminTeachersPage() {
           title={t('adminTeachers.deactivate.title', { name: confirming.name })}
           returnFocusTo={confirming.opener}
           onCancel={() => {
-            if (!busyIds.includes(confirming.id)) {
+            if (!(confirming.id in busyActions)) {
               setConfirming(undefined)
             }
           }}
           // The browser closed it anyway: unmount it, or keep it open while the request runs.
           onClose={() => setConfirming(undefined)}
-          busy={busyIds.includes(confirming.id)}
+          busy={confirming.id in busyActions}
         >
           <Text>
             {t('adminTeachers.deactivate.body', { name: confirming.name })}
@@ -523,14 +550,16 @@ export function AdminTeachersPage() {
           <ButtonRow>
             <Button
               variant="secondary"
-              disabled={busyIds.includes(confirming.id)}
+              disabled={confirming.id in busyActions}
               onClick={() => setConfirming(undefined)}
             >
               {t('adminTeachers.deactivate.cancel')}
             </Button>
             <Button
               variant="danger"
-              disabled={busyIds.includes(confirming.id)}
+              disabled={confirming.id in busyActions}
+              busy={busyActions[confirming.id] === 'deactivate'}
+              busyLabel={t('adminTeachers.deactivate.confirming')}
               onClick={() => void onConfirmDeactivate()}
             >
               {t('adminTeachers.deactivate.confirm')}

@@ -259,15 +259,16 @@ test('[web-auth/R1-S4] Form is not sent twice', async () => {
   await submitLogin()
   await waitFor(() => expect(loginCalls()).toHaveLength(1))
 
-  // when
-  fireEvent.click(screen.getByRole('button', { name: en.login.submit }))
-  fireEvent.submit(screen.getByRole('button', { name: en.login.submit }))
+  // when the same button, now named by its busy label, is pressed again
+  const busy = screen.getByRole<HTMLButtonElement>('button', {
+    name: en.login.submitting,
+  })
+  fireEvent.click(busy)
+  fireEvent.submit(busy)
 
   // then
-  expect(
-    (screen.getByRole('button', { name: en.login.submit }) as HTMLButtonElement)
-      .disabled,
-  ).toBe(true)
+  expect(busy.disabled).toBe(true)
+  expect(busy.getAttribute('aria-busy')).toBe('true')
   expect(loginCalls()).toHaveLength(1)
 })
 
@@ -401,4 +402,85 @@ test('[web-client/R17-S2] The login form places a password error under the empti
   expect((password as HTMLInputElement).value).toBe('')
   await waitFor(() => expect(document.activeElement).toBe(password))
   expect(password.closest('form')?.querySelector('[role="status"]')).toBeNull()
+})
+
+test('[web-client/R29-S3] The login button shows its busy label while the request runs and its idle label after a failure', async () => {
+  // given a login request that is held
+  let release: (response: Response) => void = () => undefined
+  backend({
+    'auth/login': () =>
+      new Promise<Response>((resolve) => {
+        release = resolve
+      }),
+  })
+  open('/login')
+  const idle = await screen.findByRole<HTMLButtonElement>('button', {
+    name: en.login.submit,
+  })
+  expect(idle.disabled).toBe(false)
+  expect(idle.getAttribute('aria-busy')).toBeNull()
+
+  // when the form is submitted
+  await submitLogin()
+
+  // then the same button is found by its busy label, disabled and marked busy
+  const busy = await screen.findByRole<HTMLButtonElement>('button', {
+    name: en.login.submitting,
+  })
+  expect(busy).toBe(idle)
+  expect(busy.disabled).toBe(true)
+  expect(busy.getAttribute('aria-busy')).toBe('true')
+  expect(screen.queryByRole('button', { name: en.login.submit })).toBeNull()
+
+  // and when the request fails it is found by its idle label again
+  release(problem(401, 'INVALID_CREDENTIALS'))
+  expect(await screen.findByText(en.errors.INVALID_CREDENTIALS)).toBeTruthy()
+  const again = screen.getByRole<HTMLButtonElement>('button', {
+    name: en.login.submit,
+  })
+  expect(again.disabled).toBe(false)
+  expect(again.getAttribute('aria-busy')).toBeNull()
+})
+
+test('[web-client/R29-S7] Starting a login announces nothing and moves no focus, and a field error then takes the focus', async () => {
+  // given a login request that is held, submitted from the password field
+  let release: (response: Response) => void = () => undefined
+  backend({
+    'auth/login': () =>
+      new Promise<Response>((resolve) => {
+        release = resolve
+      }),
+  })
+  open('/login')
+  fireEvent.change(await screen.findByLabelText(en.login.email), {
+    target: { value: 'a@example.com' },
+  })
+  const password = screen.getByLabelText<HTMLInputElement>(en.login.password)
+  fireEvent.change(password, { target: { value: 'secret-pass' } })
+  password.focus()
+  const announcers = () =>
+    document.querySelectorAll('[role="status"],[role="alert"],[aria-live]')
+  const before = announcers().length
+
+  // when the form is submitted
+  fireEvent.submit(password.closest('form')!)
+  await waitFor(() => expect(loginCalls()).toHaveLength(1))
+  await screen.findByRole('button', { name: en.login.submitting })
+
+  // then nothing was announced and the focus is where it was
+  expect(announcers()).toHaveLength(before)
+  expect(document.activeElement).toBe(password)
+
+  // and a failure with a field error moves the focus to that field
+  release(
+    problem(400, 'VALIDATION_FAILED', [
+      { field: 'password', code: 'REQUIRED' },
+    ]),
+  )
+  expect(await screen.findByText(en.fieldErrors.REQUIRED)).toBeTruthy()
+  await waitFor(() => expect(document.activeElement).toBe(password))
+  expect(
+    screen.getByRole<HTMLButtonElement>('button', { name: en.login.submit })
+      .disabled,
+  ).toBe(false)
 })

@@ -137,12 +137,11 @@ element.addEventListener('keydown', (e) => {
 /* ❌ Never remove focus outlines without a replacement */
 *:focus { outline: none; }
 
-/* ✅ :focus-visible for keyboard focus, in token values (C3); --color-accent is about
-   6.7:1 on the surface. --focus-ring-width and --focus-ring-offset are examples of
-   new role-named tokens. */
+/* ✅ :focus-visible for keyboard focus, in token values (C3); --color-focus-ring is the
+   accent colour (about 6.7:1 on the surface). */
 :focus-visible {
-  outline: var(--focus-ring-width) solid var(--color-accent);
-  outline-offset: var(--focus-ring-offset);
+  outline: var(--border-width-strong) solid var(--color-focus-ring);
+  outline-offset: var(--focus-offset);
 }
 ```
 

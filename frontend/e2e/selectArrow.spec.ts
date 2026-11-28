@@ -1,5 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { build } from 'vite'
 import en from '../src/i18n/en.json' with { type: 'json' }
+import ru from '../src/i18n/ru.json' with { type: 'json' }
 import { createTeacherAndLoginInUi, loginAsAdminInUi } from './accounts'
 
 const LONG_ZONE = 'America/Argentina/ComodRivadavia'
@@ -189,5 +191,177 @@ test('[web-client/R13-S4] Disabled select keeps the arrow', async ({
     release()
     await saved
     await page.unrouteAll({ behavior: 'ignoreErrors' })
+  }
+})
+
+/** Everything R13-S5 reads about an icon-led select, in one page-side pass. */
+function iconSelectShape(select: Locator) {
+  return select.evaluate((element) => {
+    const el = element as HTMLSelectElement
+    const style = getComputedStyle(el)
+    const wrap = el.parentElement!
+    const icon = wrap.querySelector('[data-select-icon]')
+    const arrow = wrap.querySelector('[data-select-arrow]')
+    if (!icon || !arrow) return null
+    const box = el.getBoundingClientRect()
+    const iconBox = icon.querySelector('svg')!.getBoundingClientRect()
+    const arrowBox = arrow.querySelector('svg')!.getBoundingClientRect()
+    const borderLeft = parseFloat(style.borderLeftWidth)
+    const borderRight = parseFloat(style.borderRightWidth)
+    const canvas = document.createElement('canvas').getContext('2d')!
+    canvas.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+    const textWidth = canvas.measureText(
+      el.selectedOptions[0]?.textContent ?? '',
+    ).width
+    return {
+      iconHidden: icon.getAttribute('aria-hidden') === 'true',
+      iconInArrow: arrow.contains(icon),
+      arrowSvgCount: arrow.querySelectorAll('svg').length,
+      iconColour: getComputedStyle(icon).color,
+      arrowColour: getComputedStyle(arrow).color,
+      selectOpacity: style.opacity,
+      iconOpacity: getComputedStyle(icon).opacity,
+      arrowOpacity: getComputedStyle(arrow).opacity,
+      iconGap: iconBox.left - (box.left + borderLeft),
+      arrowGap: box.right - borderRight - arrowBox.right,
+      iconWidth: iconBox.width,
+      paddingLeft: parseFloat(style.paddingLeft),
+      paddingRight: parseFloat(style.paddingRight),
+      textStart: box.left + borderLeft + parseFloat(style.paddingLeft),
+      iconLeft: iconBox.left,
+      arrowLeft: arrowBox.left,
+      textArea:
+        box.width -
+        borderLeft -
+        borderRight -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight),
+      textWidth,
+    }
+  })
+}
+
+async function checkIconSelect(page: Page, label: string) {
+  const select = page.getByLabel(label, { exact: true })
+  await expect(select).toBeVisible()
+  const shape = (await iconSelectShape(select))!
+  expect(shape, 'the select has an icon and an arrow').not.toBeNull()
+
+  // the globe is hidden, outside the arrow, and muted like the arrow; the arrow holds the chevron only
+  expect(shape.iconHidden).toBe(true)
+  expect(shape.iconInArrow).toBe(false)
+  expect(shape.arrowSvgCount).toBe(1)
+  expect(shape.iconColour).toBe(shape.arrowColour)
+
+  // both gaps are the group space (12px), within a pixel
+  expect(Math.abs(shape.iconGap - shape.arrowGap)).toBeLessThanOrEqual(1)
+  expect(Math.abs(shape.iconGap - 12)).toBeLessThanOrEqual(1)
+
+  // the left padding is the group space, the icon and the inline space (8px)
+  expect(
+    Math.abs(shape.paddingLeft - (12 + shape.iconWidth + 8)),
+  ).toBeLessThanOrEqual(1)
+
+  // the language name fits the text area
+  expect(shape.textWidth).toBeLessThanOrEqual(shape.textArea)
+}
+
+test('[web-client/R13-S5] The icon-led language select has equal gaps for the globe and the chevron, in en and ru', async ({
+  page,
+  playwright,
+  baseURL,
+  isMobile,
+}) => {
+  if (isMobile) {
+    await page.setViewportSize({ width: 360, height: 800 })
+  }
+
+  // given the login page, in English and in Russian
+  await page.goto('/login')
+  await checkIconSelect(page, en.uiLanguage.label)
+  await page.evaluate(
+    ([key]) => localStorage.setItem(key, 'ru'),
+    ['teachdash.lang'],
+  )
+  await page.reload()
+  await checkIconSelect(page, ru.uiLanguage.label)
+
+  // and the header of a logged-in teacher, in Russian and in English
+  await page.evaluate(
+    ([key]) => localStorage.removeItem(key),
+    ['teachdash.lang'],
+  )
+  await createTeacherAndLoginInUi(page, playwright, baseURL, 'Anna')
+  await checkIconSelect(page, en.uiLanguage.label)
+  await page.evaluate(
+    ([key]) => localStorage.setItem(key, 'ru'),
+    ['teachdash.lang'],
+  )
+  await page.reload()
+  await checkIconSelect(page, ru.uiLanguage.label)
+})
+
+test('[web-client/R13-S5] A disabled or invalid icon-led Select keeps the icon, text and arrow in place', async ({
+  page,
+  isMobile,
+}) => {
+  if (isMobile) {
+    await page.setViewportSize({ width: 360, height: 800 })
+  }
+
+  // The app uses an enabled UI language select only. Bundle a test-only view
+  // of the real component so the browser can measure the other prop states.
+  const bundle = await build({
+    configFile: false,
+    root: decodeURIComponent(new URL('../', import.meta.url).pathname),
+    define: { 'process.env.NODE_ENV': JSON.stringify('production') },
+    build: {
+      write: false,
+      lib: {
+        entry: decodeURIComponent(
+          new URL('./fixtures/iconSelect.tsx', import.meta.url).pathname,
+        ),
+        name: 'IconSelectFixture',
+        formats: ['iife'],
+      },
+    },
+  })
+  const files = [bundle].flat().flatMap((result) => {
+    if ('output' in result) return result.output
+    throw new Error('Expected a built select fixture')
+  })
+  const styles = files.find(
+    (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+  )
+  const script = files.find((file) => file.type === 'chunk')
+  if (!styles || styles.type !== 'asset' || !script) {
+    throw new Error('Expected select fixture CSS and JavaScript')
+  }
+  await page.addStyleTag({ content: styles.source.toString() })
+  await page.addScriptTag({ content: script.code })
+
+  const enabled = page.getByRole('combobox', { name: 'Enabled language' })
+  const disabled = page.getByRole('combobox', { name: 'Disabled language' })
+  const invalid = page.getByRole('combobox', { name: 'Invalid language' })
+  await expect(enabled).toBeEnabled()
+  await expect(disabled).toBeDisabled()
+  await expect(invalid).toHaveAttribute('aria-invalid', 'true')
+  await expect(invalid).toHaveAccessibleDescription('Choose a language.')
+  await expect(invalid).toHaveCSS('border-top-width', '2px')
+
+  const baseline = (await iconSelectShape(enabled))!
+  const dimmed = (await iconSelectShape(disabled))!
+  expect(Number(dimmed.selectOpacity)).toBeLessThan(1)
+  expect(dimmed.iconOpacity).toBe(dimmed.selectOpacity)
+  expect(dimmed.arrowOpacity).toBe(dimmed.selectOpacity)
+
+  for (const state of [dimmed, (await iconSelectShape(invalid))!]) {
+    expect(Math.abs(state.iconLeft - baseline.iconLeft)).toBeLessThanOrEqual(1)
+    expect(Math.abs(state.textStart - baseline.textStart)).toBeLessThanOrEqual(
+      1,
+    )
+    expect(Math.abs(state.arrowLeft - baseline.arrowLeft)).toBeLessThanOrEqual(
+      1,
+    )
   }
 })

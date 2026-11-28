@@ -104,8 +104,9 @@ user's stored time zone.
 
 #### Scenario: web-profile/R2-S8 A second press while saving sends nothing
 - **GIVEN** a save request is still running
-- **WHEN** "Save" is pressed again
+- **WHEN** the same button, now labelled with its busy label (`profile.saving`, web-client R29), is pressed again
 - **THEN** only one request is sent
+- **AND** that button is disabled and has `aria-busy="true"`
 
 #### Scenario: web-profile/R2-S9 A teacher changes the native language
 - **GIVEN** a logged-in teacher with native language "ru" on `/profile`, and the backend lists the languages "de", "en" and "ru"
@@ -193,8 +194,9 @@ is sending, the other's button SHALL be disabled.
 
 #### Scenario: web-profile/R3-S9 A second press while changing sends nothing
 - **GIVEN** a password change request is still running
-- **WHEN** "Change password" is pressed again
+- **WHEN** the same button, now labelled with its busy label (`profile.changingPassword`, web-client R29), is pressed again
 - **THEN** only one request is sent
+- **AND** that button is disabled and has `aria-busy="true"`
 
 #### Scenario: web-profile/R3-S10 The two forms do not affect each other
 - **GIVEN** the backend answered the password change with status 400, code `WRONG_PASSWORD` and `errors` `[{field: "currentPassword", code: "WRONG_PASSWORD"}]`, so the password form shows the `WRONG_PASSWORD` message under the current password field, and the form holds typed passwords
@@ -206,6 +208,7 @@ is sending, the other's button SHALL be disabled.
 - **GIVEN** a password change request is still running
 - **WHEN** the teacher looks at the profile form, and in a second run a save is running and the teacher looks at the password form
 - **THEN** in both runs the other form's button is disabled until the request ends, and enabled after it
+- **AND** that other button is not marked busy (no `aria-busy="true"`) and keeps its idle label
 
 ### Requirement: R4 Session ended on the profile page
 

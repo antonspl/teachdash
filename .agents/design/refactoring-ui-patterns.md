@@ -88,7 +88,7 @@ Every interactive element needs visible state changes.
   background: var(--color-accent-hover);
 }
 .button:focus-visible {
-  outline: var(--border-width) solid var(--color-accent);
+  outline: var(--border-width-strong) solid var(--color-focus-ring);
 }
 .button:disabled {
   opacity: var(--opacity-disabled);
@@ -96,7 +96,7 @@ Every interactive element needs visible state changes.
 }
 ```
 
-A thicker outline or an offset is a new role-named token (C3).
+The focus ring has its own tokens: `--border-width-strong`, `--color-focus-ring` and `--focus-offset`.
 
 ## Colour roles
 

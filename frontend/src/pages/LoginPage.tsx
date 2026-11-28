@@ -115,7 +115,12 @@ export function LoginPage() {
           }}
         />
         {error ? <StatusMessage tone="danger">{error}</StatusMessage> : null}
-        <Button type="submit" disabled={submitting}>
+        <Button
+          type="submit"
+          busy={submitting}
+          busyLabel={t('login.submitting')}
+          fullWidth
+        >
           {t('login.submit')}
         </Button>
       </Form>

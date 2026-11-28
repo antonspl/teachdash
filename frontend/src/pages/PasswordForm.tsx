@@ -148,7 +148,12 @@ export function PasswordForm({
         <StatusMessage tone={message.tone}>{message.text}</StatusMessage>
       ) : null}
       <ButtonRow>
-        <Button type="submit" disabled={submitting || disabled}>
+        <Button
+          type="submit"
+          disabled={disabled}
+          busy={submitting}
+          busyLabel={t('profile.changingPassword')}
+        >
           {t('profile.changePassword')}
         </Button>
       </ButtonRow>

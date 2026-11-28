@@ -112,3 +112,41 @@ test('[web-client/R28-S3] The arrow of a Select holds only the shared chevron', 
     iconStyles.default,
   )
 })
+
+test('[web-client/R13-S6] A select with an icon renders it outside the arrow, hidden, and only then', () => {
+  // given a select with the globe icon and one without
+  const { unmount } = render(
+    <Select
+      label="Language"
+      value="en"
+      onChange={() => {}}
+      options={['en']}
+      icon="globe"
+    />,
+  )
+  const select = screen.getByLabelText('Language')
+  const wrap = select.parentElement as HTMLElement
+
+  // when the markup is read
+  const icon = wrap.querySelector('[data-select-icon]')!
+  const arrow = wrap.querySelector('[data-select-arrow]')!
+
+  // then the icon is hidden, is not inside the arrow, and holds the globe
+  expect(icon.getAttribute('aria-hidden')).toBe('true')
+  expect(arrow.contains(icon)).toBe(false)
+  expect(icon.querySelectorAll('svg')).toHaveLength(1)
+  expect(icon.querySelector('circle')).not.toBeNull()
+
+  // and the arrow still holds only the chevron and is right after the select
+  expect(arrow.querySelectorAll('svg')).toHaveLength(1)
+  expect(select.nextElementSibling).toBe(arrow)
+
+  // and the select has the icon-led class
+  expect(select.className).toContain(styles.selectWithIcon)
+  unmount()
+
+  // and a select without the prop has no icon and no icon-led class
+  const plain = renderSelect()
+  expect(plain.parentElement?.querySelector('[data-select-icon]')).toBeNull()
+  expect(plain.className).not.toContain(styles.selectWithIcon)
+})

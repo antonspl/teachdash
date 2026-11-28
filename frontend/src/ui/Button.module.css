@@ -8,8 +8,40 @@
   font-family: var(--font-body);
   font-size: var(--text-base);
   font-weight: var(--weight-strong);
+  line-height: var(--line-height-tight);
   border-radius: var(--radius);
   cursor: pointer;
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast),
+    color var(--duration-fast),
+    opacity var(--duration-fast);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}
+
+/* Only while busy: the idle and the busy label share one grid cell and the idle one is
+   hidden, so the button is as wide as the longer label and never narrower than idle. */
+.labels {
+  display: grid;
+  justify-items: center;
+}
+
+.label,
+.inactive {
+  grid-area: 1 / 1;
+}
+
+.inactive {
+  visibility: hidden;
+}
+
+.withIcon {
+  padding-inline-start: calc(var(--space-group) - var(--button-icon-inset));
 }
 
 .primary {
@@ -19,9 +51,27 @@
 }
 
 .secondary {
-  color: var(--color-accent);
+  color: var(--color-text);
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-control-border);
+}
+
+.quiet {
+  color: var(--color-text);
+  background: transparent;
+  border: var(--border-width) solid transparent;
+}
+
+.dangerText {
+  color: var(--color-danger-text);
+  background: transparent;
+  border: var(--border-width) solid transparent;
+}
+
+.muted {
+  color: var(--color-text-muted);
+  background: transparent;
+  border: var(--border-width) solid transparent;
 }
 
 .danger {
@@ -30,7 +80,50 @@
   border: var(--border-width) solid var(--color-danger-action);
 }
 
+@media (hover: hover) {
+  .primary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+  }
+
+  .secondary:hover:not(:disabled),
+  .quiet:hover:not(:disabled) {
+    background: var(--color-surface-sunken);
+  }
+
+  .dangerText:hover:not(:disabled) {
+    background: var(--color-danger-background);
+  }
+
+  .muted:hover:not(:disabled) {
+    color: var(--color-text);
+  }
+
+  .danger:hover:not(:disabled) {
+    background: var(--color-danger-action-hover);
+    border-color: var(--color-danger-action-hover);
+  }
+}
+
+.primary:active:not(:disabled) {
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+}
+
+.secondary:active:not(:disabled),
+.quiet:active:not(:disabled),
+.dangerText:active:not(:disabled),
+.muted:active:not(:disabled) {
+  background: var(--color-neutral-background);
+}
+
 .button:disabled {
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
+}
+
+@media (max-width: 63.999rem) {
+  .fullWidth {
+    width: 100%;
+  }
 }

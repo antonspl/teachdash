@@ -1,6 +1,6 @@
 import { useState, type Ref } from 'react'
 import { useTranslation } from 'react-i18next'
-import styles from './Field.module.css'
+import { Button } from './Button'
 import { TextInput } from './TextInput'
 
 export function PasswordInput({
@@ -36,18 +36,17 @@ export function PasswordInput({
       inputRef={inputRef}
       type={shown ? 'text' : 'password'}
       adornment={
-        <button
-          type="button"
-          className={styles.toggle}
+        <Button
+          variant="secondary"
           disabled={disabled}
-          aria-pressed={shown}
-          aria-label={t(shown ? 'ui.hidePassword' : 'ui.showPassword', {
+          ariaPressed={shown}
+          ariaLabel={t(shown ? 'ui.hidePassword' : 'ui.showPassword', {
             label,
           })}
           onClick={() => setShown((current) => !current)}
         >
           {shown ? t('ui.hide') : t('ui.show')}
-        </button>
+        </Button>
       }
     />
   )

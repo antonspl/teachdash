@@ -59,6 +59,7 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
+    "submitting": "Signing in…",
     "linkHint": "No password, or forgot it? Ask your teacher or administrator for a new link.",
     "sessionEnded": "Your session has ended. Please sign in again.",
     "unreachable": "The server cannot be reached."
@@ -89,6 +90,7 @@
     "password": "New password",
     "confirm": "Repeat the password",
     "submit": "Set password",
+    "submitting": "Setting password…",
     "incompleteLink": "This link is incomplete. Please use the full link you were given or ask for a new one."
   },
   "startup": {
@@ -119,6 +121,7 @@
       "timeZone": "Time zone",
       "nativeLanguage": "Native language",
       "submit": "Create teacher",
+      "submitting": "Creating…",
       "validationFailed": "Some values were not accepted. Please check the name, the email, the time zone and the native language."
     },
     "actions": {
@@ -127,10 +130,16 @@
       "inviteLink": "New invite link",
       "resetLink": "Password reset link"
     },
+    "busy": {
+      "inviteLink": "Creating invite link…",
+      "resetLink": "Creating reset link…",
+      "reactivate": "Reactivating…"
+    },
     "deactivate": {
       "title": "Deactivate {{name}}?",
       "body": "{{name}} will no longer be able to sign in, and their students will be released. The students are not restored if you reactivate the account later.",
       "confirm": "Confirm",
+      "confirming": "Deactivating…",
       "cancel": "Cancel"
     }
   },
@@ -143,6 +152,7 @@
     "timeZone": "Time zone",
     "nativeLanguage": "Native language",
     "save": "Save",
+    "saving": "Saving…",
     "saved": "Saved.",
     "validationFailed": "Some values were not accepted. Please check the name and the time zone.",
     "validationFailedTeacher": "Some values were not accepted. Please check the name, the time zone and the native language.",
@@ -150,6 +160,7 @@
     "newPassword": "New password",
     "repeatPassword": "Repeat the new password",
     "changePassword": "Change password",
+    "changingPassword": "Changing password…",
     "passwordChanged": "Your password has been changed. You were signed out on your other devices.",
     "wrongPassword": "The current password is incorrect. Please try again.",
     "passwordValidationFailed": "The passwords were not accepted. Please check them and try again."

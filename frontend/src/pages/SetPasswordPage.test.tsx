@@ -297,3 +297,39 @@ test.each([
     }
   },
 )
+
+test('[web-client/R29-S3] The set-password button shows its busy label while the request runs and its idle label after a failure', async () => {
+  // given a password-link request that is held
+  let release: (response: Response) => void = () => undefined
+  fetchMock.mockImplementation((url: string) =>
+    url.endsWith('/password-links')
+      ? new Promise<Response>((resolve) => {
+          release = resolve
+        })
+      : Promise.resolve(problem(401, 'UNAUTHENTICATED')),
+  )
+  open('#token=abc')
+  const idle = await screen.findByRole<HTMLButtonElement>('button', {
+    name: en.setPassword.submit,
+  })
+
+  // when the form is submitted
+  await submit('long-enough-1')
+
+  // then the same button is found by its busy label, disabled and marked busy
+  const busy = await screen.findByRole<HTMLButtonElement>('button', {
+    name: en.setPassword.submitting,
+  })
+  expect(busy).toBe(idle)
+  expect(busy.disabled).toBe(true)
+  expect(busy.getAttribute('aria-busy')).toBe('true')
+
+  // and when the request fails it is found by its idle label again
+  release(problem(410, 'LINK_INVALID'))
+  expect(await screen.findByText(en.errors.LINK_INVALID)).toBeTruthy()
+  const again = screen.getByRole<HTMLButtonElement>('button', {
+    name: en.setPassword.submit,
+  })
+  expect(again.disabled).toBe(false)
+  expect(again.getAttribute('aria-busy')).toBeNull()
+})
