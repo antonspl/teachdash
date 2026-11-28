@@ -36,14 +36,8 @@ class ChoiceItemTypeTest {
 		return new TestQuestion(text, null, Arrays.asList(options));
 	}
 
-	/** A question with a stored multiple, read from JSON like the application does (the record has no such field yet). */
-	private TestQuestion questionWith(String text, Boolean multiple, TestOption... options) {
-		return mapper.convertValue(
-				ChoicePayloads.questionWith(
-						text,
-						multiple,
-						Arrays.stream(options).map(o -> ChoicePayloads.option(o.text(), o.correct())).toArray()),
-				TestQuestion.class);
+	private static TestQuestion questionWith(String text, Boolean multiple, TestOption... options) {
+		return new TestQuestion(text, multiple, Arrays.asList(options));
 	}
 
 	private static TestPayload payload(TestQuestion... questions) {

@@ -107,7 +107,7 @@ A `test` payload SHALL follow items R2. Questions 1 to 25 (text up to 500), opti
 - **THEN** (a), (b) and (c) are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].options", code: "INVALID_FORMAT"}]`, (d) is 400 with `errors` exactly `[{field: "payload.questions[0].options", code: "INVALID_FORMAT"}, {field: "payload.questions[0].options[1].text", code: "INVALID_FORMAT"}]` (sorted by field, both are structure rules), (e) and (f) are 201 with the payload as sent, and the part has exactly five items, those of (e) and (f)
 
 ### Requirement: R3 The student view hides the correct options, and a question may have none
-`studentView` SHALL return `{"questions": [{"text", "multiple", "options": [{"text"}]}]}` as an allowlist in this key order, with options in stored order (not shuffled) and no `correct` key or index; `multiple` is the stored setting (false when absent) and is never computed from `correct`. A question with no correct option, or with all options correct, SHALL be accepted (#126). No student endpoint yet (#125): unit scenarios only.
+`studentView` SHALL return `{"questions": [{"text", "multiple", "options": [{"text"}]}]}` as an allowlist in this key order, with options in stored order (not shuffled) and no `correct` key or index; `multiple` is the stored setting (false when absent) and is never computed from `correct`. A question with no correct option, or with `multiple` true and all options correct, SHALL be accepted (#126). No student endpoint yet (#125): unit scenarios only.
 
 #### Scenario: item-test/R3-S1 A question with no correct option and one with all options correct are accepted, `multiple` is kept only where sent
 - **GIVEN** a logged-in teacher A with a part
