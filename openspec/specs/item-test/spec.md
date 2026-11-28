@@ -1,17 +1,17 @@
 # item-test Specification
 
 ## Purpose
-A teacher adds and edits items of the type `test` (multiple choice): questions with options, each option marked correct or not, stored as structured JSON. The student view of the payload carries the question and option texts and whether a question allows several answers, but never which options are correct.
+A teacher adds and edits items of the type `test` (multiple choice): questions with options, each option marked correct or not, stored as structured JSON. The student view of the payload carries the question and option texts and whether a question allows several answers (a setting the teacher stores on the question), but never which options are correct.
 
 ## Requirements
 
 ### Requirement: R1 A teacher adds and edits a test item
-The type `test` SHALL have the payload `{questions: [{text, options: [{text, correct}]}]}`, added with items R1 and edited with items R4. Texts are plain text and `correct` is a boolean; everything is stored as sent (no trim, case change or normalisation; `false` is kept). Another teacher's add and edit give 404. The payload rules are in R2, the student view in R3.
+The type `test` SHALL have the payload `{questions: [{text, multiple, options: [{text, correct}]}]}` (`multiple` is optional), added with items R1 and edited with items R4. Texts are plain text, `correct` and `multiple` are booleans; everything is stored as sent (no trim, case change or normalisation; `false` is kept; no property is added). Another teacher's add and edit give 404. The payload rules are in R2, the student view in R3.
 
 #### Scenario: item-test/R1-S1 Add an English test item, it is stored and listed exactly
 - **GIVEN** a logged-in teacher A with the course "English B1" (instruction "en", target "en") with a part
-- **WHEN** teacher A adds an item of the type `test` with the payload `{"questions": [{"text": "Which word is a verb?", "options": [{"text": "run", "correct": true}, {"text": "table", "correct": false}, {"text": "green", "correct": false}]}, {"text": "Pick the past forms.", "options": [{"text": "went", "correct": true}, {"text": "go", "correct": false}, {"text": "saw", "correct": true}]}]}` and then lists the items of the part
-- **THEN** the add response is 201 with the type `test`, `position` 1, `version` 1 and exactly the payload that was sent (the questions and options in the same order, `"correct": false` kept), no object has a property it was not sent with (no `multiple`, no `null` field), and the stored payload and the listed payload equal the sent one
+- **WHEN** teacher A adds an item of the type `test` with the payload `{"questions": [{"text": "Which word is a verb?", "options": [{"text": "run", "correct": true}, {"text": "table", "correct": false}, {"text": "green", "correct": false}]}, {"text": "Pick the past forms.", "multiple": true, "options": [{"text": "went", "correct": true}, {"text": "go", "correct": false}, {"text": "saw", "correct": true}]}]}` and then lists the items of the part
+- **THEN** the add response is 201 with the type `test`, `position` 1, `version` 1 and exactly the payload that was sent (the questions and options in the same order, `"correct": false` kept), no object has a property it was not sent with (no `multiple` in the first question, no `null` field), the second question keeps `"multiple": true`, and the stored payload and the listed payload equal the sent one
 
 #### Scenario: item-test/R1-S2 Add a Russian test item, Cyrillic and spaces are kept exactly
 - **GIVEN** a logged-in teacher A with the course "Литература 9 класс" (instruction "ru", no target) with a part
@@ -34,11 +34,11 @@ The type `test` SHALL have the payload `{questions: [{text, options: [{text, cor
 - **THEN** both responses are 404, and teacher A's part still has exactly the one item with its payload and `version` unchanged
 
 ### Requirement: R2 A test payload follows the limits and structure rules
-A `test` payload SHALL follow items R2. Questions: 1 to 25, text non-blank, at most 500 (UTF-16). Options: 2 to 10, text non-blank, at most 100, `correct` a JSON `true` or `false`. Missing, `null` or empty lists and blank texts: `REQUIRED`, as a `null` question or option or `correct`; 1 option `TOO_SHORT`; over a maximum `TOO_LONG`; wrong JSON type `INVALID_TYPE`; an exact repeat of an option text `INVALID_FORMAT` at the later `.text`.
+A `test` payload SHALL follow items R2. Questions: 1 to 25, text at most 500 (UTF-16), optional `multiple` (missing or `null` is `false`). Options: 2 to 10, text at most 100. Missing, `null` or empty lists, blank texts, null elements, missing `correct`: `REQUIRED`; 1 option `TOO_SHORT`; over a maximum `TOO_LONG`; wrong JSON type `INVALID_TYPE`; a repeated option text `INVALID_FORMAT`; `multiple` not `true` with more than one correct option `INVALID_FORMAT`. Zero correct is allowed.
 
 #### Scenario: item-test/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `test` with: (a) 25 questions, each with the text "Q" and two options "A" (correct) and "B"; (b) one question with a text of 500 Cyrillic letters ("Я") and 10 options "o1" to "o10", the last one correct; (c) one question with a text of 250 emoji "😀" (500 UTF-16 code units) and two options, "A" (correct) and an option of 50 emoji "😀" (100 UTF-16 code units); (d) one question "Q" with two options of 100 English letters ("a" and "b" repeated, so they differ), both correct, and a second question "Вопрос" with the options "да" (correct) and "нет"
+- **WHEN** teacher A adds items of the type `test` with: (a) 25 questions, each with the text "Q" and two options "A" (correct) and "B"; (b) one question with a text of 500 Cyrillic letters ("Я") and 10 options "o1" to "o10", the last one correct; (c) one question with a text of 250 emoji "😀" (500 UTF-16 code units) and two options, "A" (correct) and an option of 50 emoji "😀" (100 UTF-16 code units); (d) one question "Q" with `"multiple": true` and two options of 100 English letters ("a" and "b" repeated, so they differ), both correct, and a second question "Вопрос" with the options "да" (correct) and "нет"
 - **THEN** all four responses are 201 with the payload exactly as sent, and the stored payloads equal the sent ones
 
 #### Scenario: item-test/R2-S2 A question, an option, a question list or an option list over its limit is too long
@@ -78,7 +78,7 @@ A `test` payload SHALL follow items R2. Questions: 1 to 25, text non-blank, at m
 
 #### Scenario: item-test/R2-S9 An unknown property is rejected without echoing its name
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `test` with a valid payload that also has: (a) the payload property `"timer": 60`; (b) a question with `"multiple": true`; (c) an option with `"id": "opt-7731"`; (d) a question with `"points": 2`
+- **WHEN** teacher A adds items of the type `test` with a valid payload that also has: (a) the payload property `"timer": 60`; (b) a question with `"shuffle": true`; (c) an option with `"id": "opt-7731"`; (d) a question with `"points": 2`
 - **THEN** all four responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "UNKNOWN_FIELD"}]` (the name is not echoed), and the part has no item
 
 #### Scenario: item-test/R2-S10 A NUL in an option and a lone surrogate in a question are rejected as `payload`
@@ -88,7 +88,7 @@ A `test` payload SHALL follow items R2. Questions: 1 to 25, text non-blank, at m
 
 #### Scenario: item-test/R2-S11 Limits are checked first, the structure rules after, and all structure errors come together
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `test` with: (a) a question with a text of 501 English letters ("a") and the options "A", "A"; (b) the questions `[{"text": "Q1", "options": [A, A, null]}, null]` (A is `{"text": "A", "correct": true}`); (c) a question "Q" with the options "A" and "A" (both correct); (d) a question "Q" with the options "A" (correct) and an option with a text of 101 English letters ("a") and `"correct": null`
+- **WHEN** teacher A adds items of the type `test` with: (a) a question with a text of 501 English letters ("a") and the options "A", "A"; (b) the questions `[{"text": "Q1", "options": [A, A, null]}, null]` (A is `{"text": "A", "correct": true}`); (c) a question "Q" with `"multiple": true` and the options "A" and "A" (both correct); (d) a question "Q" with the options "A" (correct) and an option with a text of 101 English letters ("a") and `"correct": null`
 - **THEN** (a) is 400 with `errors` exactly `[{field: "payload.questions[0].text", code: "TOO_LONG"}]` (the duplicate is not reported yet), (b) has `errors` exactly `[{field: "payload.questions[0].options[1].text", code: "INVALID_FORMAT"}, {field: "payload.questions[0].options[2]", code: "REQUIRED"}, {field: "payload.questions[1]", code: "REQUIRED"}]` (sorted by field), (c) has `errors` exactly `[{field: "payload.questions[0].options[1].text", code: "INVALID_FORMAT"}]`, (d) has `errors` exactly `[{field: "payload.questions[0].options[1].correct", code: "REQUIRED"}, {field: "payload.questions[0].options[1].text", code: "TOO_LONG"}]` (both are Bean Validation errors, sorted by field), and the part has no item
 
 #### Scenario: item-test/R2-S12 `correct` accepts only a JSON boolean
@@ -96,30 +96,45 @@ A `test` payload SHALL follow items R2. Questions: 1 to 25, text non-blank, at m
 - **WHEN** teacher A adds items of the type `test` with one question "Q" whose options are "A" with `"correct": true` and "B" with `"correct"` set to `"true"`, `"TRUE"`, `"false"`, `1`, `0`, `2`, `1.0` and `""`, and one more with `"correct": null`
 - **THEN** the responses for `"true"`, `"TRUE"`, `"false"`, `1`, `0`, `2`, `1.0` and `""` are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].options[1].correct", code: "INVALID_TYPE"}]`, the response for `null` is 400 with `errors` exactly `[{field: "payload.questions[0].options[1].correct", code: "REQUIRED"}]`, and the part has no item
 
-### Requirement: R3 The student view hides the correct options, and a question may have none
-`studentView` SHALL return `{"questions": [{"text", "multiple", "options": [{"text"}]}]}` as an allowlist in this key order, with options in stored order (not shuffled) and no `correct` key or index; `multiple` is true when more than one option is correct, else false. A question with no correct option, or with all options correct, SHALL be accepted; none is auto-checked (#126). No student endpoint yet (#125): unit scenarios only.
-
-#### Scenario: item-test/R3-S1 A question with no correct option and one with all options correct are accepted, with no stored `multiple`
+#### Scenario: item-test/R2-S13 `multiple` accepts only a JSON boolean, and a missing or null value is kept as sent
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds an item of the type `test` with the payload `{"questions": [{"text": "What do you think?", "options": [{"text": "Yes", "correct": false}, {"text": "No", "correct": false}]}, {"text": "Pick all.", "options": [{"text": "A", "correct": true}, {"text": "B", "correct": true}, {"text": "C", "correct": true}]}, {"text": "Pick one.", "options": [{"text": "A", "correct": true}, {"text": "B", "correct": false}]}]}` and then edits it with `version` 1 so that the first question's option "Yes" is correct
-- **THEN** the add response is 201 with the payload exactly as sent and the edit response is 200 with `version` 2 and the edited payload exactly as sent, and neither payload, stored or listed, has a `multiple` property in any question
+- **WHEN** teacher A adds items of the type `test` with one question "Q" with the options "A" (correct) and "B" and `multiple` set to `"true"`, `"TRUE"`, `"false"`, `1`, `0`, `2`, `1.0`, `""`, `[]` and `{}`, and then with `multiple` set to `true`, `false` and `null` and with no `multiple`
+- **THEN** the responses for the first ten values are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].multiple", code: "INVALID_TYPE"}]`, and the last four are 201 with the payload exactly as sent (`multiple` is `true`, `false`, `null` and absent), and the part has exactly the last four items
 
-#### Scenario: item-test/R3-S2 The student view marks a question with more than one correct option as multiple
-- **GIVEN** the `test` type and a payload with four questions (unit level: there is no student endpoint yet): "Q1" with the options "A" (correct), "B", "C"; "Q2" with "A" (correct), "B" (correct), "C"; "Q3" with "A", "B" (both not correct); "Q4" with "A" (correct), "B" (correct)
+#### Scenario: item-test/R2-S14 More than one correct option needs `multiple` true
+- **GIVEN** a logged-in teacher A with a part
+- **WHEN** teacher A adds items of the type `test` with: (a) one question "Q" with the options "A" (correct), "B" (correct) and "C" and no `multiple`; (b) the same question with `"multiple": false`; (c) the same question with `"multiple": null`; (d) a question "Q" with the options "A" and "A", both correct, and no `multiple`; (e) the question of (a) with `"multiple": true`; (f) four payloads of one question each: with `"multiple": true` and no correct option, with `"multiple": true` and all three options correct, with `"multiple": false` and no correct option and with no `multiple` and one correct option
+- **THEN** (a), (b) and (c) are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload.questions[0].options", code: "INVALID_FORMAT"}]`, (d) is 400 with `errors` exactly `[{field: "payload.questions[0].options", code: "INVALID_FORMAT"}, {field: "payload.questions[0].options[1].text", code: "INVALID_FORMAT"}]` (sorted by field, both are structure rules), (e) and (f) are 201 with the payload exactly as sent, and the part has exactly the items of (e) and (f)
+
+### Requirement: R3 The student view hides the correct options, and a question may have none
+`studentView` SHALL return `{"questions": [{"text", "multiple", "options": [{"text"}]}]}` as an allowlist in this key order, with options in stored order (not shuffled) and no `correct` key or index; `multiple` is the stored setting (false when absent) and is never computed from `correct`. A question with no correct option, or with all options correct, SHALL be accepted (#126). No student endpoint yet (#125): unit scenarios only.
+
+#### Scenario: item-test/R3-S1 A question with no correct option and one with all options correct are accepted, `multiple` is kept only where sent
+- **GIVEN** a logged-in teacher A with a part
+- **WHEN** teacher A adds an item of the type `test` with the payload `{"questions": [{"text": "What do you think?", "options": [{"text": "Yes", "correct": false}, {"text": "No", "correct": false}]}, {"text": "Pick all.", "multiple": true, "options": [{"text": "A", "correct": true}, {"text": "B", "correct": true}, {"text": "C", "correct": true}]}, {"text": "Pick one.", "options": [{"text": "A", "correct": true}, {"text": "B", "correct": false}]}]}` and then edits it with `version` 1 so that the first question's option "Yes" is correct
+- **THEN** the add response is 201 with the payload exactly as sent and the edit response is 200 with `version` 2 and the edited payload exactly as sent, and neither payload, stored or listed, has a `multiple` property in the first and the third question (only "Pick all." keeps `"multiple": true`)
+
+#### Scenario: item-test/R3-S2 The student view shows `multiple` from the stored setting, not from the correct marks
+- **GIVEN** the `test` type and a payload with five questions (unit level: there is no student endpoint yet): "Q1" with the options "A" (correct), "B", "C" and no `multiple`; "Q2" with `"multiple": true` and "A" (correct), "B" (correct), "C"; "Q3" with `"multiple": true` and "A", "B" (both not correct); "Q4" with `"multiple": false` and "A" (correct), "B"; "Q5" with `"multiple": null` and "A" (correct), "B"
 - **WHEN** `studentView` is called with the payload
-- **THEN** the result is `{"questions": [...]}` with exactly the property `questions` and four entries in the same order, each with exactly the properties `text`, `multiple` and `options`, `multiple` is `false`, `true`, `false` and `true` (one correct, two of three, none, all two), each option has exactly the property `text`, and the options of each question have the stored texts in the stored order
+- **THEN** the result is `{"questions": [...]}` with exactly the property `questions` and five entries in the same order, each with exactly the properties `text`, `multiple` and `options`, `multiple` is `false`, `true`, `true`, `false` and `false` (the stored setting, with absent and `null` as false, whatever the correct marks), each option has exactly the property `text`, and the options of each question have the stored texts in the stored order
 
 #### Scenario: item-test/R3-S3 The options keep their stored order, "all of the above" stays last
-- **GIVEN** the `test` type and the payload with one question "Which are fruits?" and the options "apple" (correct), "pear" (correct), "bread", "all of the above" (in this order) and a second question with the options "c", "a", "b" (all different, "a" correct)
+- **GIVEN** the `test` type and the payload with one question "Which are fruits?" with `"multiple": true` and the options "apple" (correct), "pear" (correct), "bread", "all of the above" (in this order) and a second question with the options "c", "a", "b" (all different, "a" correct)
 - **WHEN** `studentView` is called twice with the payload
 - **THEN** both views are equal, the first question's option texts are exactly `["apple", "pear", "bread", "all of the above"]` and the second's are exactly `["c", "a", "b"]` (not sorted, not shuffled)
 
 #### Scenario: item-test/R3-S4 The serialised student view contains no correct mark, in English and Russian
-- **GIVEN** the `test` type and two payloads: an English one with the questions "Past of go?" (options "went" correct, "goed") and "Pick verbs." (options "run" correct, "walk" correct, "table"), and a Russian one with "Столица России?" (options "Москва" correct, "Ёж") and "Выберите глаголы." (options "бежать" correct, "идти" correct, "стол"), with no text containing the word "correct" or "multiple"
+- **GIVEN** the `test` type and two payloads: an English one with the questions "Past of go?" (options "went" correct, "goed") and "Pick verbs." (with `"multiple": true`, options "run" correct, "walk" correct, "table"), and a Russian one with "Столица России?" (options "Москва" correct, "Ёж") and "Выберите глаголы." (with `"multiple": true`, options "бежать" correct, "идти" correct, "стол"), with no text containing the word "correct" or "multiple"
 - **WHEN** each payload's student view is serialised to JSON with the application's JSON mapper
 - **THEN** the JSON of each view is an object with the property `questions`, each question has the keys `text`, `multiple`, `options` in this order, each option is exactly `{"text": ...}`, the JSON contains no `correct` property name, no `true` or `false` other than the values of `multiple`, and every text appears exactly
 
 #### Scenario: item-test/R3-S5 The student view of corrupt data throws
-- **GIVEN** the `test` type and payload records built directly (not validated): (a) a `null` question; (b) a question with a `null` `text`; (c) a question with `null` `options`; (d) a `null` option; (e) an option with a `null` `text`; (f) an option with a `null` `correct`
+- **GIVEN** the `test` type and payload records built directly (not validated): (a) a `null` question; (b) a question with a `null` `text`; (c) a question with `null` `options`; (d) a `null` option; (e) an option with a `null` `text`; (f) an option with a `null` `correct`; (g) a payload with a `null` `questions` list (`new TestPayload(null)`); (h) a `null` payload (a stored JSON `null`)
 - **WHEN** `studentView` is called with each payload
 - **THEN** each call throws `IllegalStateException` and returns no view, and no message contains a stored text
+
+#### Scenario: item-test/R3-S6 The student view is the same whatever the answer key
+- **GIVEN** the `test` type and three payloads (unit level) with the same question texts, options, order and `multiple`: the question "Which are right?" with `"multiple": true` and the options "A", "B", and the question "Pick one." with `"multiple": false` and the options "A", "B", "C"; and the answer keys: in the first payload "A" and "B" are correct in the first question and "A" in the second, in the second payload only "A" is correct in the first question and "B" in the second, in the third payload no option is correct in the first question and "C" is correct in the second
+- **WHEN** `studentView` is called with each payload and each view is serialised to JSON with the application's JSON mapper
+- **THEN** the three views are equal and the three JSON strings are identical, the first question has `multiple` `true` and the second `false` in all of them, and nothing in a view tells which option is correct, or how many

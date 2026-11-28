@@ -11,11 +11,17 @@ Issue #221. The engineer's decisions, as given:
 | 3 | Number of questions? | 1 to 25. A missing, `null` or empty `questions` is `REQUIRED` at `payload.questions`; more than 25 is `TOO_LONG`. A `null` question is `REQUIRED` at `payload.questions[i]`. |
 | 4 | Question text? | Plain text (rendering is a frontend concern), required, non-blank, at most 500 UTF-16 characters. |
 | 5 | Options? | 2 to 10 options per question: missing, `null` or empty `options` is `REQUIRED`, exactly 1 option is `TOO_SHORT`, more than 10 is `TOO_LONG`. A `null` option is `REQUIRED`. Option `text` is required, non-blank, at most 100. `correct` is required (`Boolean`: missing or `null` is `REQUIRED`, any other value than JSON `true` or `false` is `INVALID_TYPE`, see row 10). A duplicate option text inside one question (exact match) is `INVALID_FORMAT` at the later `.text`; the same text in two questions is allowed. Stored raw. |
-| 6 | Questions with no correct option, or all correct? | A question with no correct option is accepted: it is not auto-checked (the answers work, #126, decides whether it is teacher-checked or a poll). A question whose options are all correct is accepted. For one or more correct options there is no stored `multiple` flag: the number of correct options defines it. |
-| 7 | Student view? | `studentView` is an allowlist `{"questions": [{"text", "multiple": boolean, "options": [{"text"}]}]}`. `multiple` is true when more than one option is correct, so the UI can pick radio buttons or checkboxes (an accepted leak, design Risks). Options keep their stored order and are not shuffled (a teacher may want "all of the above" last). No `correct` key and no index. A question with zero correct options gives `multiple` false. |
+| 6 | Questions with no correct option, or all correct? | A question with no correct option is accepted: it is not auto-checked (the answers work, #126, decides whether it is teacher-checked or a poll). A question whose options are all correct is accepted. For one or more correct options there is no stored `multiple` flag: the number of correct options defines it. Changed in review round 2 (rows 11 to 13). |
+| 7 | Student view? | `studentView` is an allowlist `{"questions": [{"text", "multiple": boolean, "options": [{"text"}]}]}`. `multiple` is true when more than one option is correct, so the UI can pick radio buttons or checkboxes (an accepted leak, design Risks; replaced in review round 2, rows 11 to 13: `multiple` now comes from the stored setting). Options keep their stored order and are not shuffled (a teacher may want "all of the above" last). No `correct` key and no index. A question with zero correct options gives `multiple` false. |
 | 8 | Out of scope? | A timer, points per answer (the issue), answer checking (#126), the student endpoint (#125), the editor, shuffling options and images in options. |
 | 9 | Package and class names (the writer's record, as row 1 allows)? | A package named `test` would sit beside the test helper `TestNoteType` and the `src/test` tree and confuse readers, so the package is `items/domain/choice/` with `TestItemType` (`@Component`, code `test`), `TestPayload`, `TestQuestion` and `TestOption`. Test classes: `items/api/ChoiceItemTest`, `items/api/ChoicePayloadTest`, `items/domain/choice/ChoiceItemTypeTest`, `items/domain/choice/ChoiceMapperTest` and the helper `items/support/ChoicePayloads`. No change to any shared class, no `openspec/specs/items/spec.md` delta, no migration and no new error code (branch independence with parallel item-type branches). |
 | 10 | Boolean coercion? | Make `Boolean` strict like strings and integers: a new `common/StrictBooleanJsonConfig` (mirroring `StrictStringJsonConfig` and `StrictIntegerJsonConfig`) so a `Boolean` or `boolean` field accepts only JSON `true` and `false`; strings, numbers and the empty string give `INVALID_TYPE`. A shared-class change, accepted under the same policy as the existing strict configs. The rule is written in this capability (R2-S12), not as an `items` delta, because PR #238 already modifies items R2. |
+| 11 | Review round 2 (second code owner, blocking): the student view sets `multiple` when more than one option is correct, so with exactly two options `multiple: true` reveals both are correct. What changes? | The view must not depend on the answer key. Each question gets an optional teacher-authored boolean `multiple`: a strict JSON boolean like `correct` (wrong type is `INVALID_TYPE`; missing or `null` is `false`, the same pattern as `allowNotStated` in item-true-false). It is stored exactly as sent: when not sent it is not stored (the "no added property" rule of R1-S1). |
+| 12 | Rule for the correct options? | With `multiple` `false` or absent, at most one option may be correct: more than one is `INVALID_FORMAT` at `payload.questions[i].options`, checked after Bean Validation like the other structure rules. Zero correct stays allowed in both modes (not auto-checked, as now). With `multiple` `true`, any number of correct options is allowed. |
+| 13 | Student view? | `multiple` is shown from the stored setting (`false` when absent), never computed from `correct`. R3 and R3-S2 are updated. |
+| 14 | Regression scenario? | New R3-S6: the same question text, options and `multiple` with different answer keys (two options both correct vs one correct with `multiple` `true`; one correct in different positions with `multiple` `false`) give identical complete student views. |
+| 15 | Existing scenarios? | Every scenario whose payload has more than one correct option without `multiple` sends `"multiple": true` (R1-S1's second question, R2-S1 (d), R2-S11 (c), R3-S1, R3-S3, R3-S4). R1-S1's wording says no property that was not sent. R2-S9 (b) uses `"shuffle": true`, because `multiple` is now a known field. New R2-S13 (`multiple` type and `null`) and R2-S14 (the correct-count rule). |
+| 16 | Test-only items? | The R3-S5 corrupt-data list adds `new TestPayload(null)` and `studentView(null)` (a stored JSON `null` payload), both throwing `IllegalStateException` (D5); `ChoiceMapperTest.aStringCorrectMarkIsInvalidType` asserts the exact field `payload.questions[0].options[0].correct` with `INVALID_TYPE`; the unused `ChoicePayloads.validQuestion()` and its import in `ChoicePayloadTest` are removed. No spec text beyond R3-S5. |
 
 ## Research angles
 
@@ -31,7 +37,7 @@ A teacher needs a multiple-choice question: a question with options of which one
 
 ## What Changes
 
-- New item type `test` with the payload `{questions: [{text, options: [{text, correct}]}]}`, added and edited through the existing item endpoints (items R1, R4).
+- New item type `test` with the payload `{questions: [{text, multiple, options: [{text, correct}]}]}` (`multiple` optional, review round 2), added and edited through the existing item endpoints (items R1, R4).
 - Limits and per-type validation (design D2, D3), reported with the existing error codes.
 - `TestItemType.studentView`: an allowlist projection with `multiple` and no correct marks. No endpoint uses it yet (#125).
 - New `common/StrictBooleanJsonConfig`: a `Boolean` accepts only JSON `true` and `false` (Clarification 10).
@@ -40,7 +46,7 @@ A teacher needs a multiple-choice question: a question with options of which one
 ## Capabilities
 
 ### New Capabilities
-- `item-test`: R1 (a teacher adds and edits a test item), R2 (limits and validation of the payload) and R3 (the student view hides the correct options; a question may have no correct option).
+- `item-test`: R1 (a teacher adds and edits a test item), R2 (limits and validation of the payload) and R3 (the student view hides the correct options and shows the teacher's `multiple` setting; a question may have no correct option).
 
 ### Modified Capabilities
 None.
@@ -48,7 +54,7 @@ None.
 ## Impact
 
 - Backend: new `items/domain/choice/TestItemType`, `TestPayload`, `TestQuestion` and `TestOption`. No controller, service, repository or registry change; one shared class is added, `common/StrictBooleanJsonConfig`.
-- Tests: `items/api/ChoiceItemTest` (REST scenarios R1-S1 to R1-S5 and R3-S1), `items/api/ChoicePayloadTest` (REST scenarios R2-S1 to R2-S12), `items/domain/choice/ChoiceItemTypeTest` (unit scenarios R3-S2 to R3-S5), `ChoiceMapperTest`, a unit test of `StrictBooleanJsonConfig` and the helper `items/support/ChoicePayloads`.
+- Tests: `items/api/ChoiceItemTest` (REST scenarios R1-S1 to R1-S5 and R3-S1), `items/api/ChoicePayloadTest` (REST scenarios R2-S1 to R2-S14), `items/domain/choice/ChoiceItemTypeTest` (unit scenarios R3-S2 to R3-S6), `ChoiceMapperTest`, a unit test of `StrictBooleanJsonConfig` and the helper `items/support/ChoicePayloads`.
 - No new dependency, no migration, no new error code, no change to security configuration or Caddy.
 
 ## Out of scope
