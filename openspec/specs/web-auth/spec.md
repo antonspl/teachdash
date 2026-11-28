@@ -32,8 +32,9 @@ their teacher or administrator for a link.
 
 #### Scenario: web-auth/R1-S4 Form is not sent twice
 - **GIVEN** a login request is in progress
-- **WHEN** the user presses the submit button again
+- **WHEN** the user presses the same submit button again (found, while the request runs, by its busy label, `login.submitting`, web-client R29)
 - **THEN** no second login request is sent
+- **AND** that button is disabled and has `aria-busy="true"`
 
 #### Scenario: web-auth/R1-S5 Page explains how to get a link
 - **WHEN** the login page is rendered, before any login attempt
