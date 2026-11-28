@@ -1,12 +1,15 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator } from '@playwright/test'
 import en from '../src/i18n/en.json' with { type: 'json' }
 
-test('[web-client/R30-S1] Every focused element of the login page has the 2px solid ring at a 2px offset', async ({
+// Playwright runs this test in Node. This is the only Node API it needs.
+declare const process: { platform: string }
+
+test('[web-client/R30-S1] Each login control and the not-found link has a 2px solid keyboard focus ring at a 2px offset', async ({
   page,
   isMobile,
   browserName,
 }) => {
-  // given the login page, with the keyboard moved by Tab
+  // given the login page at the project's width
   if (isMobile) {
     await page.setViewportSize({ width: 360, height: 800 })
   }
@@ -14,44 +17,37 @@ test('[web-client/R30-S1] Every focused element of the login page has the 2px so
   await expect(
     page.getByRole('heading', { name: en.login.title }),
   ).toBeVisible()
-  const email = page.getByLabel(en.login.email)
-  const password = page.getByLabel(en.login.password, { exact: true })
-  const submit = page.getByRole('button', { name: en.login.submit })
-  const toggle = page.getByRole('button', { name: /Show/ })
+  const loginControls = [
+    page.getByRole('combobox', { name: en.uiLanguage.label }),
+    page.getByLabel(en.login.email, { exact: true }),
+    page.getByLabel(en.login.password, { exact: true }),
+    page.getByRole('button', {
+      name: en.ui.showPassword.replace('{{label}}', en.login.password),
+    }),
+    page.getByRole('button', { name: en.login.submit }),
+  ]
 
-  // when each of the focusable elements is focused by the keyboard (WebKit on macOS skips
-  // buttons with a plain Tab, as Safari does; Alt+Tab visits every control there)
-  const tab = browserName === 'webkit' ? 'Alt+Tab' : 'Tab'
-  const rings = []
-  await page.keyboard.press(tab)
-  for (let step = 0; step < 12; step++) {
-    const focused = page.locator(':focus')
-    if (!(await focused.count())) break
-    const known =
-      (await email.evaluate((node) => node === document.activeElement)) ||
-      (await password.evaluate((node) => node === document.activeElement)) ||
-      (await toggle.evaluate((node) => node === document.activeElement)) ||
-      (await submit.evaluate((node) => node === document.activeElement))
-    if (known) {
-      rings.push(
-        await focused.evaluate((node) => {
-          const style = getComputedStyle(node)
-          return [
-            style.outlineWidth,
-            style.outlineStyle,
-            style.outlineOffset,
-          ].join(' ')
-        }),
-      )
-    }
+  // macOS WebKit needs Option+Tab to visit all controls and links.
+  const isMacWebKit = browserName === 'webkit' && process.platform === 'darwin'
+  const tab = isMacWebKit ? 'Alt+Tab' : 'Tab'
+  async function expectRingAfterTab(control: Locator) {
     await page.keyboard.press(tab)
+    await expect(control).toBeFocused()
+    await expect(control).toHaveCSS('outline-width', '2px')
+    await expect(control).toHaveCSS('outline-style', 'solid')
+    await expect(control).toHaveCSS('outline-offset', '2px')
   }
 
-  // then each has a 2 pixel solid outline at an offset of 2 pixels
-  expect(rings.length).toBeGreaterThanOrEqual(4)
-  for (const ring of rings) {
-    expect(ring).toBe('2px solid 2px')
+  // when the keyboard reaches each control, then its computed focus ring is visible
+  for (const control of loginControls) {
+    await expectRingAfterTab(control)
   }
+
+  // then the existing link on the not-found page has the same keyboard focus ring
+  await page.goto('/no-such-page')
+  const homeLink = page.getByRole('link', { name: en.notFound.home })
+  await expect(homeLink).toBeVisible()
+  await expectRingAfterTab(homeLink)
 })
 
 test('[web-client/R27-S9] The login submit fills the form width on a phone and keeps its natural width on desktop', async ({
