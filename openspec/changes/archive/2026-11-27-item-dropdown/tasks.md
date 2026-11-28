@@ -44,7 +44,7 @@
 ## 6. Review round 2
 
 - [x] 6.1 Failing tests (verify each fails at its THEN step, not in setup): `DropdownItemTypeTest` item-dropdown R1-S10 (all thirteen corrupt shapes throw `IllegalStateException`, with no stored value in the message); item-dropdown R2-S4 (the two new cases `["\u00A0", "go"]` and `["\u200B", "go"]` give 201, expected green already); item-dropdown R2-S7 (the assertion splits (a) to (g) as 400 and (h) as 201, expected green already); in `ItemPayloadTest` items R2-S14 the rejected `version` edit also asserts the stored `rating` 2147483647 and `version` 1 are unchanged (expected green already)
-- [ ] 6.2 Engineer approves the tests of 6.1 in the PR. HARD STOP: no production code before approval
+- [x] 6.2 Engineer approves the tests of 6.1 in the PR. HARD STOP: no production code before approval
 - [x] 6.3 Code: `studentView` rejects the corrupt shapes of design D5 with `IllegalStateException` (empty segment list, a gap with fewer than 2 options, `correct` null or out of range, in addition to the existing guards); verify R1-S10 passes
 - [x] 6.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green, coverage is not lower and the approved tests are unchanged
 
