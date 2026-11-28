@@ -33,9 +33,9 @@
 ## 5. Review round 2
 
 - [x] 5.1 Failing tests: add case (i) to R2-S1 (letters unit "\uD83D\uDE42" accepted) and to R2-S2 (letters unit "\uD83D\uDC69\u200D\uD83C\uDFEB", 5 code units, `TOO_LONG` at `payload.entries[0].units[1]`) in `ReorderPayloadTest`; verify they pass or fail at their THEN step as the current code dictates
-- [ ] 5.2 Engineer approves the tests in the PR. HARD STOP: no production code before approval
-- [ ] 5.3 Code: none expected (the limit already counts UTF-16 code units); change only if 5.1 shows a failure
-- [ ] 5.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the coverage script passes
+- [x] 5.2 Engineer approves the tests in the PR. HARD STOP: no production code before approval
+- [x] 5.3 Code: none expected (the limit already counts UTF-16 code units); change only if 5.1 shows a failure (no code needed)
+- [x] 5.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the coverage script passes
 
 ## Workflow follow-up
 
