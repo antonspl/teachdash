@@ -12,10 +12,6 @@ public record TestQuestion(
 		Boolean multiple,
 		@NotEmpty @Size(min = MIN_OPTIONS, max = MAX_OPTIONS) List<@Valid TestOption> options) {
 
-	public TestQuestion(String text, List<TestOption> options) {
-		this(text, null, options);
-	}
-
 	public static final int MAX_TEXT_LENGTH = 500;
 
 	public static final int MIN_OPTIONS = 2;

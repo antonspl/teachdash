@@ -33,7 +33,7 @@ class ChoiceItemTypeTest {
 	}
 
 	private static TestQuestion question(String text, TestOption... options) {
-		return new TestQuestion(text, Arrays.asList(options));
+		return new TestQuestion(text, null, Arrays.asList(options));
 	}
 
 	/** A question with a stored multiple, read from JSON like the application does (the record has no such field yet). */
@@ -207,9 +207,9 @@ class ChoiceItemTypeTest {
 		var good = option("A", true);
 		List<TestPayload> corrupt = Arrays.asList(
 				new TestPayload(Arrays.asList((TestQuestion) null)),
-				payload(new TestQuestion(null, List.of(good, option("B", false)))),
-				payload(new TestQuestion("Secret question", null)),
-				payload(new TestQuestion("Secret question", Arrays.asList(good, null))),
+				payload(new TestQuestion(null, null, List.of(good, option("B", false)))),
+				payload(new TestQuestion("Secret question", null, null)),
+				payload(new TestQuestion("Secret question", null, Arrays.asList(good, null))),
 				payload(question("Secret question", good, new TestOption(null, false))),
 				payload(question("Secret question", good, new TestOption("Secret option", null))),
 				new TestPayload(null),
