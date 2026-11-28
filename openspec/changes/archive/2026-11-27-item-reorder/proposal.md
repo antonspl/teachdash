@@ -1,0 +1,65 @@
+# Proposal
+
+## Clarifications
+
+Issue #223. The engineer's decisions, as given:
+
+| # | Question | Engineer's answer |
+|---|---|---|
+| 1 | Type code and package? | Type code `reorder`; package `items/domain/reorder/` with `ReorderItemType` (`@Component`), `ReorderPayload` and `ReorderEntry`. One generic type for the three modes (the issue). |
+| 2 | Payload shape? | `{mode: "words"\|"sentences"\|"letters", entries: [{units: [string], hint?: string}]}`. `sentences` also covers paragraphs (text order). The units are stored in the correct order. |
+| 3 | `mode`? | A string: missing, `null` or blank is `REQUIRED`, any other value (case-sensitive) is `INVALID_FORMAT`, both at `payload.mode`; a wrong JSON type is `INVALID_TYPE`. |
+| 4 | Number of entries? | 1 to 25: missing, `null` or empty `entries` is `REQUIRED`, more than 25 is `TOO_LONG`, at `payload.entries`. A `null` entry is `REQUIRED` at `payload.entries[i]`. |
+| 5 | `units`? | 2 to 25 per entry: missing, `null` or empty is `REQUIRED`, 1 unit is `TOO_SHORT`, more than 25 is `TOO_LONG`, at `payload.entries[i].units`. Each unit is required and non-blank (`REQUIRED` at `units[j]`) with a maximum length by mode in UTF-16 code units: words 100, sentences 500, letters 4 (a letter or a short letter group: a combining mark, a short emoji, a digraph like "ch"; graphemes are not counted, so "🙂" with 2 units fits and a ZWJ sequence such as "👩‍🏫" with 5 units is `TOO_LONG`); over the limit is `TOO_LONG` at `units[j]`. As the limit depends on `mode`, it is checked in `extraChecks`, and only when the mode is valid; with an invalid mode the unit length check is skipped. |
+| 6 | Duplicates? | An entry with fewer than 2 distinct units (for example all the same) is `INVALID_FORMAT` at `entries[i].units` (nothing to order). Other duplicates are allowed ("a", "b", "a" in letters). The comparison is exact; values are stored raw. |
+| 7 | `hint`? | Optional; when present, non-blank (`REQUIRED`) and at most 100 (`TOO_LONG`). |
+| 8 | Student view? | Allowlist `{"mode", "entries": [{"units": [shuffled], "hint"?}]}` (no `hint` key when absent). Per entry: sort the units by `String.compareTo`, then `Collections.shuffle(list, new Random(seed))` with seed = `String.join("\u0000", sorted units).hashCode()`. The seed uses the sorted units, not the stored order, so the view is the same for every order of the same units and tells nothing about the answer. No rotate rule: with a computable shuffle, rotating only when it matches the correct order would reveal the order (view differs from the computed shuffle, so the shuffle is the answer). A chance match of the correct order is accepted; the student cannot tell. Concrete orders are pinned in scenarios. Throws `IllegalStateException` on corrupt data. |
+| 9 | Out of scope? | Answer checking (#126) and what counts as correct with duplicate units, the student endpoint (#125), the editor, splitting sentences into words automatically, partial credit. |
+| 10 | Is the view a secret? | No secret boundary, but no leak of the answer: the seed is a hash of the sorted units, so the view is the same for every stored order of the same units and a student cannot recover the correct order from it (the brute force on the stored order is gone). The student endpoint (#125) may still shuffle with server-side randomness. The spec says the view "does not depend on" the stored order. |
+| 11 | Total size? | At most 200 units over all entries (`TOO_LONG` at `payload.entries`, in `extraChecks`); worst case 200 x 500 characters x 6 (escapes) is about 600 KB, under the 1 MB Caddy cap. |
+| 12 | Corrupt data and `hint: null`? | `studentView` also throws `IllegalStateException` for an entry with fewer than 2 distinct units and for empty `units`. `"hint": null` is accepted: no `hint` key is stored and none appears in the view. |
+| 13 | Pointer in `items`? | None: each type lives in its own capability, which avoids conflicts between parallel item branches. |
+| 14 | Code-owner review: the seed and the rotate? | Same issue as on `matching` (#241) and `sort` (#250): a seed from the stored order lets a student recover the order by brute force. New rule: seed from the sorted units (Clarification 8), the shuffle input is the sorted units, the rotate rule is dropped (it would reveal the order), a chance match of the correct order is accepted. |
+| 15 | Code-owner review round 2: the letters limit and emoji? | The limit stays 4 UTF-16 code units, like every other limit; graphemes are not counted. The wording is narrowed: a unit in letters mode is at most 4 UTF-16 code units, so a short emoji such as "🙂" (2 units) fits and a ZWJ sequence such as "👩‍🏫" (U+1F469 U+200D U+1F3EB, 5 units) is `TOO_LONG` at `units[j]`. Scenarios R2-S1 and R2-S2 get the two cases. |
+
+A JSON integer outside the `Integer` range sent where a string is expected is not treated here (the generic fix is PR #238, items R2).
+
+## Research angles
+
+The plug-in point, the validation pipeline and the test layout are the same as for `matching` and `gap-fill`; the research conclusions are in the brief for this change:
+
+- **Plug-in point.** A new `@Component` `items/domain/reorder/ReorderItemType` implements `ItemType<ReorderPayload>` (code `reorder`), with the records `ReorderPayload` and `ReorderEntry`. `ItemTypeRegistry` collects it by injection; no controller, service or registry change.
+- **Validation pipeline.** `ItemPayloadValidator` reads the payload with a strict Jackson mapper (unknown property `UNKNOWN_FIELD` at `payload`, wrong JSON type `INVALID_TYPE`, NUL or lone surrogate `INVALID_FORMAT` at `payload`), then Bean Validation, then `extraChecks` only if Bean Validation passed.
+- **Tests.** `items/api/ReorderItemTest` (R1 REST scenarios), `items/api/ReorderPayloadTest` (R2), `items/domain/reorder/ReorderItemTypeTest` (unit scenarios) and the helper `items/support/ReorderPayloads`.
+
+## Why
+
+Putting words, sentences or letters in order is a common exercise (word order in a sentence, the order of a text, unscrambling a word). The items core holds registered types; this change adds `reorder`: lists of units stored in the correct order, with a student view that shows them shuffled and not in the correct order.
+
+## What Changes
+
+- New item type `reorder` with the payload `{mode, entries: [{units, hint?}]}`, added and edited through the existing item endpoints (items R1, R4).
+- Limits and per-type validation (design D2, D3), reported with the existing error codes.
+- `ReorderItemType.studentView`: an allowlist projection with each entry's units in a seeded shuffled order that is the same for every order of the same units. No endpoint uses it yet (#125).
+- No migration, no new error code, no change to the `items` spec, no change to a shared class.
+
+## Capabilities
+
+### New Capabilities
+- `item-reorder`: R1 (a teacher adds and edits a reorder item), R2 (limits and validation of the payload) and R3 (the student view is shuffled the same way for every order of the same units).
+
+### Modified Capabilities
+None.
+
+## Impact
+
+- Backend: new `items/domain/reorder/ReorderItemType`, `ReorderPayload` and `ReorderEntry`. No controller, service, repository or registry change.
+- Tests: `items/api/ReorderItemTest` (R1-S1 to R1-S6), `items/api/ReorderPayloadTest` (R2-S1 to R2-S11), `items/domain/reorder/ReorderItemTypeTest` (unit scenarios R3-S1 to R3-S5) and `items/support/ReorderPayloads`.
+- No new dependency, no migration, no new error code, no change to security configuration or Caddy.
+
+## Out of scope
+
+- Checking a student's answer (#126) and what counts as correct when units repeat; the student read endpoint (#125).
+- The editor for entries.
+- Splitting a sentence into words automatically, and partial credit.
+- Any change to the generic item rules, the item envelope or the other item types.
