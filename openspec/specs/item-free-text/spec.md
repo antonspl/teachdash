@@ -49,7 +49,7 @@ The type `free-text` SHALL have the payload `{prompt, minLength, maxLength}` (th
 - **THEN** the English JSON is an object whose keys are exactly `prompt`, `minLength` and `maxLength`, in this order, with the sent values; the Russian JSON is an object whose keys are exactly `prompt` and `maxLength`, with no `minLength` key and no `null` value anywhere
 
 ### Requirement: R2 A free-text payload follows the limits and validation rules
-A `free-text` payload SHALL follow items R2 (also for NUL or a lone surrogate in `prompt`). `prompt` is required, not blank (`REQUIRED`), at most 20000 characters (`TOO_LONG`, UTF-16). `minLength` and `maxLength` are optional integers 1 to 10000 (outside the range but fits an `int`: `INVALID_FORMAT`; a non-integer or an `int` overflow: `INVALID_TYPE`, needs #238). `minLength` above `maxLength` is `INVALID_FORMAT` at `maxLength`, checked after Bean Validation; equal is allowed.
+A `free-text` payload SHALL follow items R2 (also for NUL or a lone surrogate in `prompt`). `prompt` is required, not blank (`REQUIRED`), at most 20000 characters (`TOO_LONG`, UTF-16). `minLength` and `maxLength` are optional integers 1 to 10000 (outside the range but fits an `int`: `INVALID_FORMAT`; a non-integer or an `int` overflow: `INVALID_TYPE`, as items R2). `minLength` above `maxLength` is `INVALID_FORMAT` at `maxLength`, checked after Bean Validation; equal is allowed.
 
 #### Scenario: item-free-text/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
