@@ -30,9 +30,9 @@
 ## 4. Review round 2
 
 - [x] 4.1 Failing tests: R1-S11 cases (f) `null` and (g) empty `segments`, and the no-stored-value message check for each case, in `WordBoxItemTypeTest`; R2-S11 sixth case in `WordBoxPayloadTest`; R1-S8 also asserts the second view has no "extra"; verify each new test fails at its THEN step (the R2-S11 case and the R1-S8 assertion may already pass)
-- [ ] 4.2 Engineer approves the tests in the PR. HARD STOP: no production code before approval
-- [ ] 4.3 Code: `studentView` throws `IllegalStateException` with a fixed message for a `null` or empty `segments` list and for an unknown type (no raw value in the message); in `wordBox` add the gap answer directly, without `requireWord(segment.answer())`
-- [ ] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 4.2 Engineer approves the tests in the PR. HARD STOP: no production code before approval
+- [x] 4.3 Code: `studentView` throws `IllegalStateException` with a fixed message for a `null` or empty `segments` list and for an unknown type (no raw value in the message); in `wordBox` add the gap answer directly, without `requireWord(segment.answer())`
+- [x] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

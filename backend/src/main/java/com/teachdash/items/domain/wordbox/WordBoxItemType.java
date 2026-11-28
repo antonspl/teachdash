@@ -37,6 +37,9 @@ public class WordBoxItemType implements ItemType<WordBoxPayload> {
 
 	@Override
 	public Object studentView(WordBoxPayload payload) {
+		if (payload.segments() == null || payload.segments().isEmpty()) {
+			throw new IllegalStateException("Cannot build a student view for a word-box item without segments");
+		}
 		List<StudentSegment> segments = payload.segments().stream()
 				.map(this::studentSegment)
 				.toList();
@@ -54,14 +57,14 @@ public class WordBoxItemType implements ItemType<WordBoxPayload> {
 		if (GAP.equals(type) && segment.answer() != null) {
 			return new GapView();
 		}
-		throw new IllegalStateException("Cannot build a student view for a word-box segment of type " + type);
+		throw new IllegalStateException("Cannot build a student view for a word-box segment of an unknown type");
 	}
 
 	private List<String> wordBox(WordBoxPayload payload) {
 		List<String> words = new ArrayList<>();
 		for (WordBoxSegment segment : payload.segments()) {
 			if (GAP.equals(segment.type())) {
-				words.add(requireWord(segment.answer()));
+				words.add(segment.answer());
 			}
 		}
 		if (payload.extraWords() != null) {
