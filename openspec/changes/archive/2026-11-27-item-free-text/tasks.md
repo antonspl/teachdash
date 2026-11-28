@@ -23,7 +23,7 @@
 
 ## 4. Review round 2
 
-- [ ] 4.1 Failing tests: in `FreeTextPayloadTest` add R2-S1 case (e) (prompt of only U+00A0, 201), change R2-S7(b) to `minLength` 10001 and `maxLength` 1 (only `payload.minLength` `INVALID_FORMAT`), add R2-S8 (NUL and lone surrogate in `prompt`, `payload` `INVALID_FORMAT`, no item stored) and drop `blank.get(0)` from the R2-S3 no-echo check; add `json()` to `FreeTextPayloads` and stop importing `GapFillPayloads.json` in `FreeTextItemTest` and `FreeTextPayloadTest`; run each changed test and report which fail at their THEN step (those the generic code already provides are expected green)
+- [x] 4.1 Failing tests: in `FreeTextPayloadTest` add R2-S1 case (e) (prompt of only U+00A0, 201), change R2-S7(b) to `minLength` 10001 and `maxLength` 1 (only `payload.minLength` `INVALID_FORMAT`), add R2-S8 (NUL and lone surrogate in `prompt`, `payload` `INVALID_FORMAT`, no item stored) and drop `blank.get(0)` from the R2-S3 no-echo check; add `json()` to `FreeTextPayloads` and stop importing `GapFillPayloads.json` in `FreeTextItemTest` and `FreeTextPayloadTest`; run each changed test and report which fail at their THEN step (those the generic code already provides are expected green)
 - [ ] 4.2 Engineer approves tests in the PR. HARD STOP: no production code before approval
 - [ ] 4.3 Code, only if a test from 4.1 fails for a behaviour of this type (none expected: the changes are test-side and use existing validation); otherwise note "no code needed"
 - [ ] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and every scenario ID (R2-S8 included) has a test

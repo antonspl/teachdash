@@ -3,12 +3,20 @@ package com.teachdash.items.support;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import tools.jackson.databind.json.JsonMapper;
+
 /** Builders of free-text payloads for the tests. */
 public final class FreeTextPayloads {
 
 	public static final String EMOJI = "😀";
 
+	private static final JsonMapper JSON = JsonMapper.builder().build();
+
 	private FreeTextPayloads() {
+	}
+
+	public static String json(Object value) {
+		return JSON.writeValueAsString(value);
 	}
 
 	/** A payload with the prompt and the limits; a null limit is left out. */

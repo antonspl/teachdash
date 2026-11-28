@@ -1,9 +1,9 @@
 package com.teachdash.items.api;
 
 import static com.teachdash.items.support.FreeTextPayloads.EMOJI;
+import static com.teachdash.items.support.FreeTextPayloads.json;
 import static com.teachdash.items.support.FreeTextPayloads.payload;
 import static com.teachdash.items.support.FreeTextPayloads.raw;
-import static com.teachdash.items.support.GapFillPayloads.json;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
@@ -39,22 +39,25 @@ class FreeTextPayloadTest extends ItemApiTest {
 		// given a logged-in teacher A with a part
 		var setup = teacherWithPart();
 
-		// when teacher A adds items with 20000 English letters and both limits, 20000 Cyrillic letters, 10000 emoji with limits 1 and 1, and a no-break space and "x" with minLength 10000
+		// when teacher A adds items with 20000 English letters and both limits, 20000 Cyrillic letters, 10000 emoji with limits 1 and 1, and a no-break space and "x" with minLength 10000, and only a no-break space
 		var english = payload("a".repeat(20000), 1, 10000);
 		var cyrillic = payload("Я".repeat(20000));
 		var emoji = payload(EMOJI.repeat(10000), 1, 1);
 		var noBreak = payload(" x", 10000, null);
+		var onlyNoBreak = payload(" ");
 		var responses = List.of(
 				setup.client().post(setup.items(), body("free-text", english)),
 				setup.client().post(setup.items(), body("free-text", cyrillic)),
 				setup.client().post(setup.items(), body("free-text", emoji)),
-				setup.client().post(setup.items(), body("free-text", noBreak)));
+				setup.client().post(setup.items(), body("free-text", noBreak)),
+				setup.client().post(setup.items(), body("free-text", onlyNoBreak)));
 
-		// then all four responses are 201 with the payload exactly as sent, and the stored payloads equal the sent ones
+		// then all five responses are 201 with the payload exactly as sent, and the stored payloads equal the sent ones
 		assertCreated(responses.get(0), english);
 		assertCreated(responses.get(1), cyrillic);
 		assertCreated(responses.get(2), emoji);
 		assertCreated(responses.get(3), noBreak);
+		assertCreated(responses.get(4), onlyNoBreak);
 	}
 
 	@Test
@@ -108,7 +111,7 @@ class FreeTextPayloadTest extends ItemApiTest {
 		// and the last has payload UNKNOWN_FIELD
 		expectValidation(unknown, error("payload", "UNKNOWN_FIELD"));
 		// and no body contains "Привет" or "hint"
-		for (Response response : List.of(blank.get(0), wrongType.get(1), unknown)) {
+		for (Response response : List.of(wrongType.get(1), unknown)) {
 			response.then().body(not(containsString("Привет"))).body(not(containsString("hint")));
 		}
 		// and the part has no item
@@ -202,14 +205,34 @@ class FreeTextPayloadTest extends ItemApiTest {
 		// given a logged-in teacher A with a part
 		var setup = teacherWithPart();
 
-		// when teacher A adds items with a blank prompt and minLength above maxLength, and with minLength 20 and maxLength 0
+		// when teacher A adds items with a blank prompt and minLength above maxLength, and with minLength 10001 and maxLength 1
 		var blank = addRaw(setup, "{\"prompt\": \"  \", \"minLength\": 10, \"maxLength\": 5}");
-		var outOfRange = addWith(setup, "\"minLength\": 20", "\"maxLength\": 0");
+		var outOfRange = addWith(setup, "\"minLength\": 10001", "\"maxLength\": 1");
 
 		// then (a) is 400 with only payload.prompt REQUIRED
 		expectValidation(blank, error("payload.prompt", "REQUIRED"));
-		// and (b) is 400 with only payload.maxLength INVALID_FORMAT
-		expectValidation(outOfRange, error("payload.maxLength", "INVALID_FORMAT"));
+		// and (b) is 400 with only payload.minLength INVALID_FORMAT
+		expectValidation(outOfRange, error("payload.minLength", "INVALID_FORMAT"));
+		// and the part has no item
+		assertEquals(0, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[item-free-text/R2-S8] A NUL character or a lone surrogate in the prompt is rejected as payload")
+	void aNulOrALoneSurrogateIsRejected() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+
+		// when teacher A adds items with the JSON escapes \u0000 and \ud800 in the prompt
+		var nul = addRaw(setup, "{\"prompt\": \"a\\u0000b\"}");
+		var surrogate = addRaw(setup, "{\"prompt\": \"a\\ud800b\"}");
+
+		// then both responses are 400 VALIDATION_FAILED with payload INVALID_FORMAT
+		expectValidation(nul, error("payload", "INVALID_FORMAT"));
+		expectValidation(surrogate, error("payload", "INVALID_FORMAT"));
+		// and no body contains the rejected value
+		nul.then().body(not(containsString("rejectedValue"))).body(not(containsString("a\u0000b")));
+		surrogate.then().body(not(containsString("rejectedValue"))).body(not(containsString("ud800")));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}

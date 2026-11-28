@@ -1,7 +1,7 @@
 package com.teachdash.items.api;
 
+import static com.teachdash.items.support.FreeTextPayloads.json;
 import static com.teachdash.items.support.FreeTextPayloads.payload;
-import static com.teachdash.items.support.GapFillPayloads.json;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
