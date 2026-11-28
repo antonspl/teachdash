@@ -44,12 +44,12 @@ The type `free-text` SHALL have the payload `{prompt, minLength, maxLength}` (th
 - **THEN** the English JSON is an object whose keys are exactly `prompt`, `minLength` and `maxLength`, in this order, with the sent values; the Russian JSON is an object whose keys are exactly `prompt` and `maxLength`, with no `minLength` key and no `null` value anywhere
 
 ### Requirement: R2 A free-text payload follows the limits and validation rules
-A `free-text` payload SHALL follow items R2 (also for NUL or a lone surrogate in `prompt`). `prompt` is required, not blank (`REQUIRED`), at most 20000 characters (`TOO_LONG`, UTF-16). `minLength` and `maxLength` are optional integers 1 to 10000 (else `INVALID_FORMAT`; a non-integer is `INVALID_TYPE`). `minLength` above `maxLength` is `INVALID_FORMAT` at `maxLength`, checked after Bean Validation; equal is allowed.
+A `free-text` payload SHALL follow items R2 (also for NUL or a lone surrogate in `prompt`). `prompt` is required, not blank (`REQUIRED`), at most 20000 characters (`TOO_LONG`, UTF-16). `minLength` and `maxLength` are optional integers 1 to 10000 (outside the range but fits an `int`: `INVALID_FORMAT`; a non-integer or an `int` overflow: `INVALID_TYPE`, needs #238). `minLength` above `maxLength` is `INVALID_FORMAT` at `maxLength`, checked after Bean Validation; equal is allowed.
 
 #### Scenario: item-free-text/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `free-text` with: (a) a `prompt` of 20000 English letters ("a"), `minLength` 1 and `maxLength` 10000; (b) a `prompt` of 20000 Cyrillic letters ("Я") and no limits; (c) a `prompt` of 10000 emoji "😀" (20000 UTF-16 code units) and `minLength` 1 and `maxLength` 1; (d) a `prompt` of a no-break space U+00A0 followed by "x" and `minLength` 10000
-- **THEN** all four responses are 201 with the payload exactly as sent, and the stored payloads equal the sent ones
+- **WHEN** teacher A adds items of the type `free-text` with: (a) a `prompt` of 20000 English letters ("a"), `minLength` 1 and `maxLength` 10000; (b) a `prompt` of 20000 Cyrillic letters ("Я") and no limits; (c) a `prompt` of 10000 emoji "😀" (20000 UTF-16 code units) and `minLength` 1 and `maxLength` 1; (d) a `prompt` of a no-break space U+00A0 followed by "x" and `minLength` 10000; (e) a `prompt` of only a no-break space U+00A0 (not blank: `Character.isWhitespace` is false for it)
+- **THEN** all five responses are 201 with the payload exactly as sent, and the stored payloads equal the sent ones
 
 #### Scenario: item-free-text/R2-S2 A prompt over 20000 characters is too long
 - **GIVEN** a logged-in teacher A with a part
@@ -78,5 +78,10 @@ A `free-text` payload SHALL follow items R2 (also for NUL or a lone surrogate in
 
 #### Scenario: item-free-text/R2-S7 The order of the limits is checked only after the other errors are fixed
 - **GIVEN** a logged-in teacher A with a part
-- **WHEN** teacher A adds items of the type `free-text` with: (a) a blank `prompt` "  ", `minLength` 10 and `maxLength` 5; (b) the prompt "Write.", `minLength` 20 and `maxLength` 0
-- **THEN** (a) is 400 with `errors` exactly `[{field: "payload.prompt", code: "REQUIRED"}]`, (b) is 400 with `errors` exactly `[{field: "payload.maxLength", code: "INVALID_FORMAT"}]` (the same error as for a limit out of range, not an order error), and the part has no item
+- **WHEN** teacher A adds items of the type `free-text` with: (a) a blank `prompt` "  ", `minLength` 10 and `maxLength` 5; (b) the prompt "Write.", `minLength` 10001 and `maxLength` 1
+- **THEN** (a) is 400 with `errors` exactly `[{field: "payload.prompt", code: "REQUIRED"}]`, (b) is 400 with `errors` exactly `[{field: "payload.minLength", code: "INVALID_FORMAT"}]` (only the limit out of range: the order check does not run, so there is no `payload.maxLength` error), and the part has no item
+
+#### Scenario: item-free-text/R2-S8 A NUL character or a lone surrogate in the prompt is rejected as `payload`
+- **GIVEN** a logged-in teacher A with a part
+- **WHEN** teacher A adds items of the type `free-text` with the payloads `{"prompt": "a\u0000b"}` and `{"prompt": "a\ud800b"}` (JSON escapes: the NUL and the lone high surrogate are characters of the string)
+- **THEN** both responses are 400 with code `VALIDATION_FAILED` and `errors` exactly `[{field: "payload", code: "INVALID_FORMAT"}]` (as items R2-S5), no body contains the rejected value, and the part has no item

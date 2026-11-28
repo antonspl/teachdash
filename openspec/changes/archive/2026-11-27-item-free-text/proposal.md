@@ -14,6 +14,11 @@ Issue #219. The engineer's decisions, as given:
 | 6 | Out of scope? | Answer submission, the teacher verdict and the result states (#126, #129), the student endpoint (#125), the editor, word-count limits and a rubric. |
 | 7 | Integer overflow? | An out-of-range integer limit (for example `minLength` 2147483648) is covered by the generic fix in #238 (items R2); no scenario here. |
 | 8 | Order of merging? | #238 must merge before this PR: it carries the integer overflow fix (Clarification 7). |
+| 9 | Code-owner review round 2: a prompt of only U+00A0? | Add it to R2-S1 as case (e): 201, because a no-break space is not blank (`Character.isWhitespace` rule). |
+| 10 | NUL or a lone surrogate in `prompt`? | Keep the claim that free-text follows items R2 for them, and add R2-S8: `{"prompt": "a\u0000b"}` and `{"prompt": "a\ud800b"}` give 400 `payload` `INVALID_FORMAT` (as items R2-S5), no item stored. |
+| 11 | Integer limits outside the int range? | The requirement states it: an integer that fits a Java `int` but is outside 1..10000 gives `INVALID_FORMAT`; a value that overflows `int` when bound gives `INVALID_TYPE` (needs #238 merged first; the PR already says merge after #238). No scenario: its test cannot pass on this branch alone. |
+| 12 | R2-S7(b)? | Change to `minLength` 10001 and `maxLength` 1; expect only `payload.minLength` `INVALID_FORMAT`, which shows the order check does not run when a limit fails. |
+| 13 | Test-only fixes? | Drop `blank.get(0)` (the `{}` payload) from the no-echo check in `FreeTextPayloadTest`; add `json()` to `FreeTextPayloads` and stop importing `GapFillPayloads.json` in `FreeTextItemTest` and `FreeTextPayloadTest` (design D1, self-contained). |
 
 ## Research angles
 
@@ -45,7 +50,7 @@ Free writing ("write a few sentences") is a basic exercise type; the teacher rea
 ## Impact
 
 - Backend: new `items/domain/freetext/FreeTextItemType` and `FreeTextPayload` (and the view record). No controller, service, repository or registry change.
-- Tests: `items/api/FreeTextItemTest` (REST scenarios R1-S1 to R1-S6), `items/domain/freetext/FreeTextItemTypeTest` (unit scenarios R1-S7, R1-S8) and `items/api/FreeTextPayloadTest` (REST scenarios R2-S1 to R2-S7).
+- Tests: `items/api/FreeTextItemTest` (REST scenarios R1-S1 to R1-S6), `items/domain/freetext/FreeTextItemTypeTest` (unit scenarios R1-S7, R1-S8) and `items/api/FreeTextPayloadTest` (REST scenarios R2-S1 to R2-S8).
 - No new dependency, no migration, no new error code, no change to security configuration or Caddy.
 
 ## Out of scope
