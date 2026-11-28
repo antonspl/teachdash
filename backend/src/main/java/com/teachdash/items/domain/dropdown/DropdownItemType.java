@@ -44,6 +44,9 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 
 	@Override
 	public Object studentView(DropdownPayload payload) {
+		if (payload.segments() == null || payload.segments().isEmpty()) {
+			throw corrupt();
+		}
 		List<StudentSegment> segments = payload.segments().stream()
 				.map(this::studentSegment)
 				.toList();
@@ -51,14 +54,30 @@ public class DropdownItemType implements ItemType<DropdownPayload> {
 	}
 
 	private StudentSegment studentSegment(DropdownSegment segment) {
+		if (segment == null) {
+			throw corrupt();
+		}
 		String type = segment.type();
 		if (TEXT.equals(type) && segment.text() != null) {
 			return new TextView(segment.text());
 		}
-		if (GAP.equals(type) && segment.options() != null && segment.options().stream().noneMatch(Objects::isNull)) {
+		if (GAP.equals(type) && isCorrectGap(segment)) {
 			return new GapView(List.copyOf(segment.options()));
 		}
-		throw new IllegalStateException("Cannot build a student view for a corrupt dropdown segment");
+		throw corrupt();
+	}
+
+	private boolean isCorrectGap(DropdownSegment gap) {
+		List<String> options = gap.options();
+		if (options == null || options.size() < MIN_OPTIONS || options.stream().anyMatch(Objects::isNull)) {
+			return false;
+		}
+		Integer correct = gap.correct();
+		return correct != null && correct >= 0 && correct < options.size();
+	}
+
+	private IllegalStateException corrupt() {
+		return new IllegalStateException("Cannot build a student view for a corrupt dropdown payload");
 	}
 
 	record StudentView(
