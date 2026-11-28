@@ -18,6 +18,12 @@
     opacity var(--duration-fast);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}
+
 /* Only while busy: the idle and the busy label share one grid cell and the idle one is
    hidden, so the button is as wide as the longer label and never narrower than idle. */
 .labels {

@@ -34,6 +34,7 @@ export function Button({
   ref?: Ref<HTMLButtonElement>
 }) {
   const Icon = icon ? icons[icon] : null
+  const showBusyLabel = busy && busyLabel !== undefined
   const classes = [styles.button, styles[variant]]
   if (Icon) classes.push(styles.withIcon)
   if (fullWidth) classes.push(styles.fullWidth)
@@ -44,12 +45,12 @@ export function Button({
       className={classes.join(' ')}
       disabled={disabled || busy}
       aria-busy={busy ? true : undefined}
-      aria-label={ariaLabel}
+      aria-label={showBusyLabel ? undefined : ariaLabel}
       aria-pressed={ariaPressed}
       onClick={onClick}
     >
       {Icon && <Icon />}
-      {busy && busyLabel !== undefined ? (
+      {showBusyLabel ? (
         <span className={styles.labels}>
           <span className={styles.inactive} aria-hidden="true">
             {children}

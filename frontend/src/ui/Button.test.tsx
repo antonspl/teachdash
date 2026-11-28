@@ -119,17 +119,26 @@ test('[web-client/R29-S1] busy, it is found by its busy label, disabled and aria
 })
 
 test('[web-client/R29-S1] the same button element goes idle to busy and back, and a button without a busy label renders as before', () => {
-  const { rerender } = render(<Button busyLabel="Saving…">Save</Button>)
-  const button = screen.getByRole('button', { name: 'Save' })
+  const ariaLabel = 'Save profile'
+  const { rerender } = render(
+    <Button busyLabel="Saving…" ariaLabel={ariaLabel}>
+      Save
+    </Button>,
+  )
+  const button = screen.getByRole('button', { name: ariaLabel })
   rerender(
-    <Button busy busyLabel="Saving…">
+    <Button busy busyLabel="Saving…" ariaLabel={ariaLabel}>
       Save
     </Button>,
   )
   expect(screen.getByRole('button', { name: 'Saving…' })).toBe(button)
   expect(button.textContent).toBe('SaveSaving…')
-  rerender(<Button busyLabel="Saving…">Save</Button>)
-  expect(screen.getByRole('button', { name: 'Save' })).toBe(button)
+  rerender(
+    <Button busyLabel="Saving…" ariaLabel={ariaLabel}>
+      Save
+    </Button>,
+  )
+  expect(screen.getByRole('button', { name: ariaLabel })).toBe(button)
   expect(button.textContent).toBe('Save')
   expect(button.getAttribute('aria-busy')).toBeNull()
   cleanup()

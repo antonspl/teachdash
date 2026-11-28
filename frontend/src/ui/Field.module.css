@@ -32,6 +32,12 @@
   transition: border-color var(--duration-fast);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
+  }
+}
+
 @media (hover: hover) {
   .input:hover:not(:disabled):not([readonly]):not(.invalid) {
     border-color: var(--color-text-muted);
