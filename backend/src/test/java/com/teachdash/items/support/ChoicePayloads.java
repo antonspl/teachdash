@@ -48,9 +48,13 @@ public final class ChoicePayloads {
 		return payload;
 	}
 
-	/** The question "Q" with the options "A" (correct) and "B". */
-	public static Map<String, Object> validQuestion() {
-		return question("Q", option("A", true), option("B", false));
+	/** A question with the given {@code multiple} (null is sent as a JSON null) and options. */
+	public static Map<String, Object> questionWith(String text, Boolean multiple, Object... options) {
+		Map<String, Object> question = new LinkedHashMap<>();
+		question.put("text", text);
+		question.put("multiple", multiple);
+		question.put("options", Arrays.asList(options));
+		return question;
 	}
 
 	/** Options with the given texts; only the first one is correct. */

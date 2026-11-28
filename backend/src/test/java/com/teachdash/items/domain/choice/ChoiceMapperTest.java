@@ -53,11 +53,11 @@ class ChoiceMapperTest {
 	@Test
 	@DisplayName("The strict mapper gives UNKNOWN_FIELD for an unknown property on a question")
 	void anUnknownPropertyOnAQuestionIsUnknownField() {
-		// given a question with the unknown property multiple
+		// given a question with the unknown property shuffle
 		var payload = Map.<String, Object>of(
 				"questions", List.of(Map.of(
 						"text", "Q",
-						"multiple", true,
+						"shuffle", true,
 						"options", List.of(option("A", true), option("B", false)))));
 
 		// when the payload is validated for the test type
@@ -99,8 +99,8 @@ class ChoiceMapperTest {
 		// when the payload is validated for the test type
 		ApiException error = validate(payload);
 
-		// then the error is INVALID_TYPE, so the strict configs are in effect
-		assertThat(error.errors()).hasSize(1);
-		assertThat(error.errors().get(0).code()).isEqualTo("INVALID_TYPE");
+		// then the error is INVALID_TYPE at the exact field, so the strict configs are in effect
+		assertThat(error.errors()).containsExactly(
+				new FieldErrorDetail("payload.questions[0].options[0].correct", "INVALID_TYPE"));
 	}
 }

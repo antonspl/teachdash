@@ -4,7 +4,10 @@ import static com.teachdash.items.support.ChoicePayloads.json;
 import static com.teachdash.items.support.ChoicePayloads.option;
 import static com.teachdash.items.support.ChoicePayloads.payload;
 import static com.teachdash.items.support.ChoicePayloads.question;
+import static com.teachdash.items.support.ChoicePayloads.questionWith;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.HashMap;
@@ -37,15 +40,16 @@ class ChoiceItemTest extends ItemApiTest {
 		// given a logged-in teacher A with the course "English B1" (instruction "en", target "en") with a part
 		var setup = teacherWithPart();
 
-		// when teacher A adds an item of the type test with two questions and then lists the items of the part
+		// when teacher A adds an item of the type test with two questions (the second with multiple true) and then lists the items of the part
 		var sent = payload(
 				question(
 						"Which word is a verb?",
 						option("run", true),
 						option("table", false),
 						option("green", false)),
-				question(
+				questionWith(
 						"Pick the past forms.",
+						true,
 						option("went", true),
 						option("go", false),
 						option("saw", true)));
@@ -58,7 +62,11 @@ class ChoiceItemTest extends ItemApiTest {
 				.body("position", equalTo(1))
 				.body("version", equalTo(1))
 				.body("payload", equalTo(sent));
-		// and no object has a property it was not sent with, and the stored and listed payloads equal the sent one
+		// and no object has a property it was not sent with (no multiple in the first question, no null field)
+		response.then()
+				.body("payload.questions[0]", not(hasKey("multiple")))
+				.body("payload.questions[1].multiple", equalTo(true));
+		// and the second question keeps multiple true, and the stored and listed payloads equal the sent one
 		assertStoredPayload(UUID.fromString(response.path("id")), json(sent));
 		listed.then().statusCode(200).body("[0].payload", equalTo(sent));
 	}
@@ -158,23 +166,24 @@ class ChoiceItemTest extends ItemApiTest {
 	}
 
 	@Test
-	@DisplayName("[item-test/R3-S1] A question with no correct option and one with all options correct are accepted, with no stored multiple")
+	@DisplayName("[item-test/R3-S1] A question with no correct option and one with all options correct are accepted, multiple is kept only where sent")
 	void noCorrectAndAllCorrectAreAccepted() {
 		// given a logged-in teacher A with a part
 		var setup = teacherWithPart();
 
-		// when teacher A adds an item with a no-correct, an all-correct and a one-correct question
+		// when teacher A adds an item with a no-correct, an all-correct (multiple true) and a one-correct question
 		var sent = payload(
 				question("What do you think?", option("Yes", false), option("No", false)),
-				question("Pick all.", option("A", true), option("B", true), option("C", true)),
+				questionWith("Pick all.", true, option("A", true), option("B", true), option("C", true)),
 				question("Pick one.", option("A", true), option("B", false)));
 		var added = setup.client().post(setup.items(), testItem(sent));
+		added.then().statusCode(201);
 		UUID item = UUID.fromString(added.path("id"));
 
 		// and edits it with version 1 so that the first question's option "Yes" is correct
 		var edited = payload(
 				question("What do you think?", option("Yes", true), option("No", false)),
-				question("Pick all.", option("A", true), option("B", true), option("C", true)),
+				questionWith("Pick all.", true, option("A", true), option("B", true), option("C", true)),
 				question("Pick one.", option("A", true), option("B", false)));
 		var response = setup.client().patch(item(setup.course(), setup.lesson(), setup.part(), item), edit(1, edited));
 		var listed = setup.client().get(setup.items());
@@ -185,9 +194,17 @@ class ChoiceItemTest extends ItemApiTest {
 		response.then().statusCode(200)
 				.body("version", equalTo(2))
 				.body("payload", equalTo(edited));
-		// and neither the stored nor the listed payload has a multiple property in any question
+		// and neither payload, stored or listed, has a multiple property in the first and the third question
 		assertStoredPayload(item, json(edited));
 		listed.then().statusCode(200).body("[0].payload", equalTo(edited));
-		assertEquals(false, readItem(item).payload().contains("multiple"));
+		for (var body : List.of(added, response, listed)) {
+			String prefix = body == listed ? "[0].payload" : "payload";
+			body.then()
+					.body(prefix + ".questions[0]", not(hasKey("multiple")))
+					.body(prefix + ".questions[2]", not(hasKey("multiple")));
+		}
+		// and only "Pick all." keeps "multiple": true
+		response.then().body("payload.questions[1].multiple", equalTo(true));
+		assertEquals(1, readItem(item).payload().split("\"multiple\"", -1).length - 1);
 	}
 }

@@ -7,12 +7,13 @@ import static com.teachdash.items.support.ChoicePayloads.option;
 import static com.teachdash.items.support.ChoicePayloads.optionsOf;
 import static com.teachdash.items.support.ChoicePayloads.payload;
 import static com.teachdash.items.support.ChoicePayloads.question;
+import static com.teachdash.items.support.ChoicePayloads.questionWith;
 import static com.teachdash.items.support.ChoicePayloads.questions;
 import static com.teachdash.items.support.ChoicePayloads.rawQuestion;
 import static com.teachdash.items.support.ChoicePayloads.rawQuestions;
-import static com.teachdash.items.support.ChoicePayloads.validQuestion;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -78,7 +79,7 @@ class ChoicePayloadTest extends ItemApiTest {
 		// given a logged-in teacher A with a part
 		var setup = teacherWithPart();
 
-		// when teacher A adds items with 25 questions, 500 Cyrillic letters and 10 options, emoji at the limits, and 100-letter options with a Russian question
+		// when teacher A adds items with 25 questions, 500 Cyrillic letters and 10 options, emoji at the limits, and 100-letter options (multiple true) with a Russian question
 		var questions25 = payload(questions(25));
 		var longQuestion = payload(question("Я".repeat(500), numberedOptions(10)));
 		var emojiLimits = payload(question(
@@ -86,8 +87,9 @@ class ChoicePayloadTest extends ItemApiTest {
 				option("A", true),
 				option(EMOJI.repeat(50), false)));
 		var longOptions = payload(
-				question(
+				questionWith(
 						"Q",
+						true,
 						option("a".repeat(100), true),
 						option("b".repeat(100), true)),
 				question(
@@ -300,19 +302,19 @@ class ChoicePayloadTest extends ItemApiTest {
 
 		// when teacher A adds items with a valid payload that also has an unknown property on the payload, a question, an option and a question
 		var timer = addRaw(setup, "{\"timer\": 60, \"questions\": [" + VALID_QUESTION + "]}");
-		var multiple = addRaw(setup, rawQuestions(
-				"{\"text\": \"Q\", \"multiple\": true, \"options\": " + VALID_OPTIONS + "}"));
+		var shuffle = addRaw(setup, rawQuestions(
+				"{\"text\": \"Q\", \"shuffle\": true, \"options\": " + VALID_OPTIONS + "}"));
 		var optionId = addOptions(setup, "["
 				+ "{\"text\": \"A\", \"correct\": true, \"id\": \"opt-7731\"}, " + OPTION_B + "]");
 		var points = addRaw(setup, rawQuestions(
 				"{\"text\": \"Q\", \"points\": 2, \"options\": " + VALID_OPTIONS + "}"));
 
 		// then all four responses are 400 with payload UNKNOWN_FIELD, and the name is not echoed
-		for (Response response : List.of(timer, multiple, optionId, points)) {
+		for (Response response : List.of(timer, shuffle, optionId, points)) {
 			expectValidation(response, error("payload", "UNKNOWN_FIELD"));
 		}
 		assertNoEcho(timer, "timer");
-		assertNoEcho(multiple, "multiple");
+		assertNoEcho(shuffle, "shuffle");
 		assertNoEcho(optionId, "opt-7731");
 		assertNoEcho(points, "points");
 		// and the part has no item
@@ -347,9 +349,9 @@ class ChoicePayloadTest extends ItemApiTest {
 		// when teacher A adds items with the four payloads of the scenario
 		var longTextAndRepeat = add(setup, payload(question("a".repeat(501), optionsOf("A", "A"))));
 		var manyStructureErrors = addRaw(setup, rawQuestions(
-				rawQuestion("\"Q1\"", "[" + OPTION_A + ", " + OPTION_A + ", null]"),
+				"{\"text\": \"Q1\", \"multiple\": true, \"options\": [" + OPTION_A + ", " + OPTION_A + ", null]}",
 				"null"));
-		var onlyRepeat = add(setup, payload(question("Q", option("A", true), option("A", true))));
+		var onlyRepeat = add(setup, payload(questionWith("Q", true, option("A", true), option("A", true))));
 		var limitAndRequired = addSecondOption(
 				setup,
 				"{\"text\": \"" + "a".repeat(101) + "\", \"correct\": null}");
@@ -362,7 +364,7 @@ class ChoicePayloadTest extends ItemApiTest {
 				error("payload.questions[0].options[1].text", "INVALID_FORMAT"),
 				error("payload.questions[0].options[2]", "REQUIRED"),
 				error("payload.questions[1]", "REQUIRED"));
-		// and (c) has the repeat only
+		// and (c) with multiple true has the repeat only
 		expectValidation(onlyRepeat, error("payload.questions[0].options[1].text", "INVALID_FORMAT"));
 		// and (d) has the two Bean Validation errors sorted by field
 		expectValidation(
@@ -394,5 +396,94 @@ class ChoicePayloadTest extends ItemApiTest {
 		expectValidation(nullCorrect, error("payload.questions[0].options[1].correct", "REQUIRED"));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[item-test/R2-S13] `multiple` accepts only a JSON boolean, and a null value is dropped")
+	void multipleAcceptsOnlyAJsonBoolean() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+
+		// when teacher A adds items with one question "Q" and multiple set to each non-boolean value
+		List<String> notBooleans = List.of("\"true\"", "\"TRUE\"", "\"false\"", "1", "0", "2", "1.0", "\"\"", "[]", "{}");
+		List<Response> wrongTypes = notBooleans.stream()
+				.map(value -> addRaw(setup, rawQuestions(
+						"{\"text\": \"Q\", \"multiple\": " + value + ", \"options\": " + VALID_OPTIONS + "}")))
+				.toList();
+
+		// and then with multiple true, false, null and no multiple
+		var withTrue = payload(questionWith("Q", true, option("A", true), option("B", false)));
+		var withFalse = payload(questionWith("Q", false, option("A", true), option("B", false)));
+		var withNull = payload(questionWith("Q", null, option("A", true), option("B", false)));
+		var withNone = payload(question("Q", option("A", true), option("B", false)));
+		var acceptedTrue = add(setup, withTrue);
+		var acceptedFalse = add(setup, withFalse);
+		var acceptedNull = add(setup, withNull);
+		var acceptedNone = add(setup, withNone);
+
+		// then the responses for the first ten values are 400 with payload.questions[0].multiple INVALID_TYPE
+		for (Response response : wrongTypes) {
+			expectValidation(response, error("payload.questions[0].multiple", "INVALID_TYPE"));
+		}
+		// and true and false come back exactly as sent
+		assertCreated(acceptedTrue, withTrue, 1);
+		assertCreated(acceptedFalse, withFalse, 2);
+		// and the null case and the case with no multiple come back with no multiple key
+		assertCreated(acceptedNull, withNone, 3);
+		assertCreated(acceptedNone, withNone, 4);
+		acceptedNull.then().body("payload.questions[0]", not(hasKey("multiple")));
+		acceptedNone.then().body("payload.questions[0]", not(hasKey("multiple")));
+		// and the part has exactly the last four items
+		assertEquals(4, countItems(setup.part()));
+	}
+
+	@Test
+	@DisplayName("[item-test/R2-S14] More than one correct option needs `multiple` true")
+	void moreThanOneCorrectOptionNeedsMultipleTrue() {
+		// given a logged-in teacher A with a part
+		var setup = teacherWithPart();
+
+		// when teacher A adds items with two correct options and no multiple, multiple false and multiple null
+		var noMultiple = add(setup, payload(question("Q", option("A", true), option("B", true), option("C", false))));
+		var multipleFalse = add(setup, payload(
+				questionWith("Q", false, option("A", true), option("B", true), option("C", false))));
+		var multipleNull = add(setup, payload(
+				questionWith("Q", null, option("A", true), option("B", true), option("C", false))));
+
+		// and with the options "A" and "A", both correct, and no multiple
+		var repeated = add(setup, payload(question("Q", option("A", true), option("A", true))));
+
+		// and with the same question and multiple true
+		var multipleTrue = payload(questionWith("Q", true, option("A", true), option("B", true), option("C", false)));
+		var acceptedTrue = add(setup, multipleTrue);
+
+		// and with multiple true and no correct option, multiple true and all correct, multiple false and no correct, no multiple and one correct
+		var trueNoCorrect = payload(questionWith("Q", true, option("A", false), option("B", false), option("C", false)));
+		var trueAllCorrect = payload(questionWith("Q", true, option("A", true), option("B", true), option("C", true)));
+		var falseNoCorrect = payload(questionWith("Q", false, option("A", false), option("B", false), option("C", false)));
+		var noneOneCorrect = payload(question("Q", option("A", true), option("B", false), option("C", false)));
+		var acceptedOthers = List.of(
+				add(setup, trueNoCorrect),
+				add(setup, trueAllCorrect),
+				add(setup, falseNoCorrect),
+				add(setup, noneOneCorrect));
+
+		// then the first three are 400 VALIDATION_FAILED with payload.questions[0].options INVALID_FORMAT
+		for (Response response : List.of(noMultiple, multipleFalse, multipleNull)) {
+			expectValidation(response, error("payload.questions[0].options", "INVALID_FORMAT"));
+		}
+		// and the repeated options have both structure errors, sorted by field
+		expectValidation(
+				repeated,
+				error("payload.questions[0].options", "INVALID_FORMAT"),
+				error("payload.questions[0].options[1].text", "INVALID_FORMAT"));
+		// and multiple true and the four other payloads are 201 with the payload as sent
+		assertCreated(acceptedTrue, multipleTrue, 1);
+		assertCreated(acceptedOthers.get(0), trueNoCorrect, 2);
+		assertCreated(acceptedOthers.get(1), trueAllCorrect, 3);
+		assertCreated(acceptedOthers.get(2), falseNoCorrect, 4);
+		assertCreated(acceptedOthers.get(3), noneOneCorrect, 5);
+		// and the part has exactly five items
+		assertEquals(5, countItems(setup.part()));
 	}
 }
