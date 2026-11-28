@@ -75,6 +75,7 @@ class WordBoxItemTypeTest {
 		// and the two word boxes have the same size, and no property marks a word as extra
 		assertThat(wordBox(firstView)).hasSameSizeAs(wordBox(secondView));
 		assertThat(mapper.writeValueAsString(firstView)).doesNotContain("extra");
+		assertThat(mapper.writeValueAsString(secondView)).doesNotContain("extra");
 	}
 
 	@Test
@@ -141,17 +142,36 @@ class WordBoxItemTypeTest {
 	@Test
 	@DisplayName("[item-gap-fill-word-box/R1-S11] The student view of corrupt data throws")
 	void theStudentViewOfCorruptDataThrows() {
-		// given payload records built directly: an unknown segment type, a text without text, a null segment a gap without an answer and a null extra word
+		// given payload records built directly: an unknown segment type, a text without text, a null segment, a gap without an answer, a null extra word, null segments and empty segments
 		var unknownType = new WordBoxPayload(List.of(new WordBoxSegment("image", null, null), gap("go")), null);
+		var otherUnknownType = new WordBoxPayload(List.of(new WordBoxSegment("video", null, null), gap("go")), null);
 		var nullText = new WordBoxPayload(List.of(new WordBoxSegment("text", null, null), gap("go")), null);
 		var nullSegment = new WordBoxPayload(Arrays.asList(gap("go"), null), null);
 		var nullAnswer = new WordBoxPayload(List.of(text("I "), new WordBoxSegment("gap", null, null)), null);
 		var nullExtraWord = new WordBoxPayload(List.of(text("I "), gap("go")), Arrays.asList("x", null));
+		var nullSegments = new WordBoxPayload(null, null);
+		var emptySegments = new WordBoxPayload(List.of(), null);
 
 		// when studentView is called with each payload
-		// then each call throws IllegalStateException
-		for (WordBoxPayload payload : List.of(unknownType, nullText, nullSegment, nullAnswer, nullExtraWord)) {
-			assertThatThrownBy(() -> type.studentView(payload)).isInstanceOf(IllegalStateException.class);
+		// then each call throws IllegalStateException with a message that does not hold the stored value
+		for (WordBoxPayload payload : List.of(unknownType, nullText, nullSegment, nullAnswer, nullExtraWord, nullSegments, emptySegments)) {
+			assertThatThrownBy(() -> type.studentView(payload))
+					.isInstanceOf(IllegalStateException.class)
+					.message().isNotBlank();
 		}
+		assertThatThrownBy(() -> type.studentView(unknownType)).message().doesNotContain("image");
+		// and the message is a fixed text: another unknown type gives the same message
+		String fixedMessage = thrownMessage(unknownType);
+		assertThat(thrownMessage(otherUnknownType)).isEqualTo(fixedMessage);
+	}
+
+	private String thrownMessage(WordBoxPayload payload) {
+		try {
+			type.studentView(payload);
+		}
+		catch (IllegalStateException e) {
+			return e.getMessage();
+		}
+		return null;
 	}
 }

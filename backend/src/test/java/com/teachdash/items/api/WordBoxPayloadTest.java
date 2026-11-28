@@ -381,6 +381,8 @@ class WordBoxPayloadTest extends ItemApiTest {
 				segments(text("A"), gap("a".repeat(101))),
 				elevenExtras.toArray(String[]::new)));
 
+		var adjacentTextsAndLongAnswer = add(setup, payloadWith(segments(text("A"), text("B"), gap("a".repeat(101)))));
+
 		// then the first has only TOO_LONG on the text, the duplicate extra word not yet reported
 		expectValidation(longTextAndRepeat, error("payload.segments[0].text", "TOO_LONG"));
 		// and the second has the five structure errors sorted by field
@@ -397,6 +399,11 @@ class WordBoxPayloadTest extends ItemApiTest {
 		expectValidation(gapWithLongText, error("payload.segments[1].text", "TOO_LONG"));
 		// and the fifth has only TOO_LONG on extraWords, the over-long answer and extra word not yet reported
 		expectValidation(overLimitsAndLongWords, error("payload.extraWords", "TOO_LONG"));
+		// and the sixth reports the adjacent texts and the long answer together
+		expectValidation(
+				adjacentTextsAndLongAnswer,
+				error("payload.segments[1]", "INVALID_FORMAT"),
+				error("payload.segments[2].answer", "TOO_LONG"));
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}
