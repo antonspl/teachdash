@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, expect, test } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 import '../i18n'
 import en from '../i18n/en.json'
 import buttonStyles from './Button.module.css'
@@ -36,18 +36,30 @@ function controls(error?: string) {
   )
 }
 
-test('[web-client/R30-S3] A control with an error is described by its message and has an alert icon', () => {
+test('[web-client/R30-S3] A control with an error is described by its message and has an alert icon', async () => {
   // given the three controls with an error text
-  const fields = controls(MESSAGE)
+  const [name, password, zone] = controls(MESSAGE)
 
-  for (const field of fields) {
-    // when each is read by its label
-    // then it is invalid and described by the message, with no alert role
+  // when each is read by its label, then its accessible description is exact
+  expect(
+    screen.getByRole('textbox', { name: 'Name', description: MESSAGE }),
+  ).toBe(name)
+  expect(
+    screen.getByRole('combobox', { name: 'Zone', description: MESSAGE }),
+  ).toBe(zone)
+  // Password inputs have no implicit ARIA role. Use Testing Library's existing
+  // description algorithm directly for the input found by its label.
+  const { computeAccessibleDescription } = await vi.importActual<{
+    computeAccessibleDescription: (element: Element) => string
+  }>('dom-accessibility-api')
+  expect(computeAccessibleDescription(password)).toBe(MESSAGE)
+
+  for (const field of [name, password, zone]) {
+    // Each field is invalid and points to a message with no alert role.
     expect(field.getAttribute('aria-invalid')).toBe('true')
     const message = document.getElementById(
       field.getAttribute('aria-describedby') ?? '',
     )!
-    expect(message.textContent).toBe(MESSAGE)
     expect(message.getAttribute('role')).toBeNull()
 
     // and the message starts with the hidden small alert icon

@@ -38,7 +38,23 @@ async function sizeOf(button: Locator) {
   return { width: box!.width, height: box!.height }
 }
 
-// Presses `idle`, waits for the busy label on the same button, and checks that it did not shrink.
+function labelWidth(button: Locator, label: string) {
+  return button.evaluate((element, name) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+    for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+      if (text.textContent !== name) continue
+      const range = document.createRange()
+      range.selectNodeContents(text)
+      return Array.from(range.getClientRects()).reduce(
+        (width, line) => width + line.width,
+        0,
+      )
+    }
+    throw new Error(`Button label not found: "${name}"`)
+  }, label)
+}
+
+// Presses the idle button and compares its size with the same button while busy.
 async function expectNotNarrower(
   page: Page,
   idleName: string,
@@ -48,15 +64,23 @@ async function expectNotNarrower(
 ) {
   const idle = within.getByRole('button', { name: idleName, exact: true })
   const before = await sizeOf(idle)
+  const idleWidth = await labelWidth(idle, idleName)
   await idle.click()
   const busy = within.getByRole('button', { name: busyName, exact: true })
   await expect(busy).toBeDisabled()
   await expect(busy).toHaveAttribute('aria-busy', 'true')
   const during = await sizeOf(busy)
+  const busyWidth = await labelWidth(busy, busyName)
   // never narrower; it grows only where the busy label is longer than the idle one
   expect(during.width, `${where}: width`).toBeGreaterThanOrEqual(
     before.width - 0.01,
   )
+  if (busyWidth <= idleWidth) {
+    expect(during.width, `${where}: width with a shorter label`).toBeCloseTo(
+      before.width,
+      1,
+    )
+  }
   expect(during.height, `${where}: height`).toBeCloseTo(before.height, 1)
   expect(
     before.width,

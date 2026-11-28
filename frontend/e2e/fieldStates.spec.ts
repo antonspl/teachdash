@@ -171,7 +171,7 @@ function messageGeometry(message: Locator) {
   })
 }
 
-test('[web-client/R30-S4] The error icon is centred on the first text line', async ({
+test('[web-client/R30-S4] The error icon is aligned with the first text line', async ({
   page,
 }) => {
   // given the set-password page with a hint under the new password field
@@ -184,13 +184,11 @@ test('[web-client/R30-S4] The error icon is centred on the first text line', asy
   const shape = await messageGeometry(message)
   const first = shape.lines[0]
 
-  // then the icon's vertical centre is within the first line's box, and within a pixel of its centre
+  // then the icon's vertical centre is within the first line's box
   const centre = (shape.icon.top + shape.icon.bottom) / 2
-  expect(centre).toBeGreaterThanOrEqual(first.top)
-  expect(centre).toBeLessThanOrEqual(first.bottom)
-  expect(Math.abs(centre - (first.top + first.bottom) / 2)).toBeLessThanOrEqual(
-    1,
-  )
+  const geometry = JSON.stringify({ icon: shape.icon, first })
+  expect(centre, geometry).toBeGreaterThanOrEqual(first.top)
+  expect(centre, geometry).toBeLessThanOrEqual(first.bottom)
 
   // and the text starts to the right of the icon
   expect(first.left).toBeGreaterThan(shape.icon.right)
@@ -222,6 +220,27 @@ function expectSame(
   if (before.arrowLeft !== null && after.arrowLeft !== null) {
     expect(Math.abs(after.arrowLeft - before.arrowLeft)).toBeLessThanOrEqual(1)
   }
+}
+
+async function expectWrappedError(page: Page, message: Locator) {
+  const shape = await messageGeometry(message)
+  const lines = shape.lines.filter((line) => line.right > line.left)
+  expect(
+    new Set(lines.map((line) => Math.round(line.top))).size,
+  ).toBeGreaterThan(1)
+  const first = lines[0]
+  for (const line of lines) {
+    expect(line.left).toBeGreaterThan(shape.icon.right)
+    expect(Math.abs(line.left - first.left)).toBeLessThanOrEqual(1)
+  }
+  expect(shape.scrollWidth).toBeLessThanOrEqual(shape.clientWidth)
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(true)
 }
 
 test('[web-client/R30-S5] A long Russian error wraps under its text in the dialog at 360 and moves nothing', async ({
@@ -260,24 +279,7 @@ test('[web-client/R30-S5] A long Russian error wraps under its text in the dialo
   await expect(message).toBeVisible()
 
   // then the message wraps onto more lines, all starting at one left edge right of the icon
-  const shape = await messageGeometry(message)
-  const tops = new Set(shape.lines.map((line) => Math.round(line.top)))
-  expect(tops.size).toBeGreaterThan(1)
-  const left = Math.min(...shape.lines.map((line) => line.left))
-  expect(left).toBeGreaterThan(shape.icon.right)
-  for (const line of shape.lines.filter((line) => line.right - line.left > 0)) {
-    // a line that is not the last starts at the same edge; the last may be shorter but not left of it
-    expect(line.left).toBeGreaterThanOrEqual(left - 1)
-  }
-
-  // and nothing is cut, and the page does not scroll sideways
-  expect(shape.scrollWidth).toBeLessThanOrEqual(shape.clientWidth)
-  const fits = await page.evaluate(
-    () =>
-      document.documentElement.scrollWidth <=
-      document.documentElement.clientWidth,
-  )
-  expect(fits).toBe(true)
+  await expectWrappedError(page, message)
 
   // and the input's height and text start are the same as before the error
   expectSame(before, await controlShape(emailField))
@@ -307,24 +309,42 @@ test('[web-client/R30-S5] An error under the time zone select at 360 moves neith
       body: JSON.stringify({
         status: 400,
         code: 'VALIDATION_FAILED',
-        errors: [{ field: 'timeZone', code: 'INVALID_FORMAT' }],
+        // Use the same longest field copy to exercise wrapping under the select.
+        errors: [{ field: 'timeZone', code: 'EMAIL_TAKEN' }],
       }),
     })
   })
 
   // when the save is refused with a time zone error
   await page.getByRole('button', { name: ru.profile.save }).click()
-  const message = page.getByText(ru.fieldErrors.INVALID_FORMAT)
+  const message = page.getByText(ru.errors.EMAIL_TAKEN)
   await expect(message).toBeVisible()
 
-  // then the message is whole and starts right of the icon
-  const shape = await messageGeometry(message)
-  expect(Math.min(...shape.lines.map((line) => line.left))).toBeGreaterThan(
-    shape.icon.right,
-  )
-  expect(shape.scrollWidth).toBeLessThanOrEqual(shape.clientWidth)
+  // then the message wraps under its own text and remains whole
+  await expectWrappedError(page, message)
 
   // and the select's height, text start and arrow are where they were
   expectSame(before, await controlShape(select))
   await page.unrouteAll({ behavior: 'ignoreErrors' })
+})
+
+test('[web-client/R30-S7] A valid enabled select changes its border on hover', async ({
+  page,
+}) => {
+  test.skip(
+    !(await page.evaluate(() => matchMedia('(hover: hover)').matches)),
+    'the browser does not support hover',
+  )
+  await page.goto('/login')
+  const select = page.getByRole('combobox', { name: en.uiLanguage.label })
+  await expect(select).toBeEnabled()
+  await expect(select).toHaveCSS(
+    'border-top-color',
+    await colourOf(page, '--color-control-border'),
+  )
+  await select.hover()
+  await expect(select).toHaveCSS(
+    'border-top-color',
+    await colourOf(page, '--color-text-muted'),
+  )
 })

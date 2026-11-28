@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { build } from 'vite'
 import en from '../src/i18n/en.json' with { type: 'json' }
 import ru from '../src/i18n/ru.json' with { type: 'json' }
 import { createTeacherAndLoginInUi, loginAsAdminInUi } from './accounts'
@@ -218,6 +219,7 @@ function iconSelectShape(select: Locator) {
       arrowSvgCount: arrow.querySelectorAll('svg').length,
       iconColour: getComputedStyle(icon).color,
       arrowColour: getComputedStyle(arrow).color,
+      selectOpacity: style.opacity,
       iconOpacity: getComputedStyle(icon).opacity,
       arrowOpacity: getComputedStyle(arrow).opacity,
       iconGap: iconBox.left - (box.left + borderLeft),
@@ -235,11 +237,6 @@ function iconSelectShape(select: Locator) {
         parseFloat(style.paddingLeft) -
         parseFloat(style.paddingRight),
       textWidth,
-      invalidClass: Array.from(document.styleSheets)
-        .flatMap((sheet) => Array.from(sheet.cssRules))
-        .map((rule) => (rule as CSSStyleRule).selectorText ?? '')
-        .map((selector) => /^\.(_?invalid[\w-]*)$/.exec(selector)?.[1])
-        .find((name) => name),
     }
   })
 }
@@ -267,37 +264,6 @@ async function checkIconSelect(page: Page, label: string) {
 
   // the language name fits the text area
   expect(shape.textWidth).toBeLessThanOrEqual(shape.textArea)
-
-  // disabled: the icon and the arrow dim together and nothing moves
-  await select.evaluate((element) => {
-    ;(element as HTMLSelectElement).disabled = true
-  })
-  const disabled = (await iconSelectShape(select))!
-  expect(disabled.iconOpacity).toBe(disabled.arrowOpacity)
-  expect(Number(disabled.iconOpacity)).toBeLessThan(1)
-  expect(Math.abs(disabled.iconLeft - shape.iconLeft)).toBeLessThanOrEqual(1)
-  expect(Math.abs(disabled.textStart - shape.textStart)).toBeLessThanOrEqual(1)
-  await select.evaluate((element) => {
-    ;(element as HTMLSelectElement).disabled = false
-  })
-
-  // invalid: the icon and the text start stay put
-  expect(
-    shape.invalidClass,
-    'the invalid class is in the stylesheet',
-  ).toBeTruthy()
-  await select.evaluate(
-    (element, name) => element.classList.add(name!),
-    shape.invalidClass,
-  )
-  const invalid = (await iconSelectShape(select))!
-  expect(Math.abs(invalid.iconLeft - shape.iconLeft)).toBeLessThanOrEqual(1)
-  expect(Math.abs(invalid.textStart - shape.textStart)).toBeLessThanOrEqual(1)
-  expect(Math.abs(invalid.arrowLeft - shape.arrowLeft)).toBeLessThanOrEqual(1)
-  await select.evaluate(
-    (element, name) => element.classList.remove(name!),
-    shape.invalidClass,
-  )
 }
 
 test('[web-client/R13-S5] The icon-led language select has equal gaps for the globe and the chevron, in en and ru', async ({
@@ -333,4 +299,69 @@ test('[web-client/R13-S5] The icon-led language select has equal gaps for the gl
   )
   await page.reload()
   await checkIconSelect(page, ru.uiLanguage.label)
+})
+
+test('[web-client/R13-S5] A disabled or invalid icon-led Select keeps the icon, text and arrow in place', async ({
+  page,
+  isMobile,
+}) => {
+  if (isMobile) {
+    await page.setViewportSize({ width: 360, height: 800 })
+  }
+
+  // The app uses an enabled UI language select only. Bundle a test-only view
+  // of the real component so the browser can measure the other prop states.
+  const bundle = await build({
+    configFile: false,
+    root: decodeURIComponent(new URL('../', import.meta.url).pathname),
+    define: { 'process.env.NODE_ENV': JSON.stringify('production') },
+    build: {
+      write: false,
+      lib: {
+        entry: decodeURIComponent(
+          new URL('./fixtures/iconSelect.tsx', import.meta.url).pathname,
+        ),
+        name: 'IconSelectFixture',
+        formats: ['iife'],
+      },
+    },
+  })
+  const files = [bundle].flat().flatMap((result) => {
+    if ('output' in result) return result.output
+    throw new Error('Expected a built select fixture')
+  })
+  const styles = files.find(
+    (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+  )
+  const script = files.find((file) => file.type === 'chunk')
+  if (!styles || styles.type !== 'asset' || !script) {
+    throw new Error('Expected select fixture CSS and JavaScript')
+  }
+  await page.addStyleTag({ content: styles.source.toString() })
+  await page.addScriptTag({ content: script.code })
+
+  const enabled = page.getByRole('combobox', { name: 'Enabled language' })
+  const disabled = page.getByRole('combobox', { name: 'Disabled language' })
+  const invalid = page.getByRole('combobox', { name: 'Invalid language' })
+  await expect(enabled).toBeEnabled()
+  await expect(disabled).toBeDisabled()
+  await expect(invalid).toHaveAttribute('aria-invalid', 'true')
+  await expect(invalid).toHaveAccessibleDescription('Choose a language.')
+  await expect(invalid).toHaveCSS('border-top-width', '2px')
+
+  const baseline = (await iconSelectShape(enabled))!
+  const dimmed = (await iconSelectShape(disabled))!
+  expect(Number(dimmed.selectOpacity)).toBeLessThan(1)
+  expect(dimmed.iconOpacity).toBe(dimmed.selectOpacity)
+  expect(dimmed.arrowOpacity).toBe(dimmed.selectOpacity)
+
+  for (const state of [dimmed, (await iconSelectShape(invalid))!]) {
+    expect(Math.abs(state.iconLeft - baseline.iconLeft)).toBeLessThanOrEqual(1)
+    expect(Math.abs(state.textStart - baseline.textStart)).toBeLessThanOrEqual(
+      1,
+    )
+    expect(Math.abs(state.arrowLeft - baseline.arrowLeft)).toBeLessThanOrEqual(
+      1,
+    )
+  }
 })
