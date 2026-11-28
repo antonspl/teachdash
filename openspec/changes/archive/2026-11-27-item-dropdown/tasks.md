@@ -38,7 +38,7 @@
 
 - [x] 5.1 Failing tests (verify each fails at its THEN step, not in setup): item-dropdown R2-S11 (new sixth case: a 101-letter option with two adjacent texts gives only `payload.segments[2].options[0]` `TOO_LONG`), a unit test that `studentView` throws `IllegalStateException` for a gap whose options contain a null (design D5), item-dropdown R2-S7 (h) (explicit `null` of the other type's fields gives 201 and the stored payload has no such key), and a test of the handler for an out-of-range `Integer` body field through a test-only controller (design D9); add the `version` 99999999999999999999 edit case to items R2-S14 (expected green already: `version` is a `BigInteger`)
 - [x] 5.2 Engineer approves the tests of 5.1 in the PR. HARD STOP: no production code before approval
-- [x] 5.3 Code: `extraChecks` returns early with the limit errors (option length, gap count) before the structure rules; the `studentView` guard checks `options.contains(null)`; `ApiExceptionHandler.firstWithPath` also accepts an `InputCoercionException` with a path; verify the tests of 5.1 pass
+- [x] 5.3 Code: `extraChecks` returns early with the limit errors (option length, gap count) before the structure rules; the `studentView` guard rejects a null option (see D5); `ApiExceptionHandler.firstWithPath` also accepts an `InputCoercionException` with a path; verify the tests of 5.1 pass
 - [x] 5.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green, coverage is not lower and the approved tests are unchanged
 
 ## 6. Review round 2
