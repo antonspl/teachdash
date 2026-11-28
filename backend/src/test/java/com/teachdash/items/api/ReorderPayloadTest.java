@@ -63,7 +63,7 @@ class ReorderPayloadTest extends ItemApiTest {
 		// given a logged-in teacher A with a part
 		var setup = teacherWithPart();
 
-		// when teacher A adds the eight payloads (a) to (h) of the scenario
+		// when teacher A adds the nine payloads (a) to (i) of the scenario
 		var twoUnits = payload("words", entry("a", "b"));
 		var twentyFiveEntries = payload("words", pairEntries(25));
 		var twentyFiveUnits = payload("letters", entryWithHint("Я".repeat(100), letters(25)));
@@ -74,6 +74,7 @@ class ReorderPayloadTest extends ItemApiTest {
 				entry("ch", "a", EMOJI.repeat(2)),
 				entry("e\u0301", "a"));
 		var twoHundredUnits = payload("letters", fullEntries(8));
+		var shortEmoji = payload("letters", entry("a", "\uD83D\uDE42"));
 		var responses = List.of(
 				add(setup, twoUnits),
 				add(setup, twentyFiveEntries),
@@ -82,9 +83,10 @@ class ReorderPayloadTest extends ItemApiTest {
 				add(setup, longSentence),
 				add(setup, shortGroups),
 				add(setup, twoHundredUnits),
-				addRaw(setup, rawWords("{\"units\": [\"a\", \"b\"], \"hint\": null}")));
+				addRaw(setup, rawWords("{\"units\": [\"a\", \"b\"], \"hint\": null}")),
+				add(setup, shortEmoji));
 
-		// then all eight responses are 201 with the payload exactly as sent, and the stored payloads equal the sent ones
+		// then all nine responses are 201 with the payload exactly as sent, and the stored payloads equal the sent ones
 		assertCreated(responses.get(0), twoUnits, 1);
 		assertCreated(responses.get(1), twentyFiveEntries, 2);
 		assertCreated(responses.get(2), twentyFiveUnits, 3);
@@ -98,6 +100,8 @@ class ReorderPayloadTest extends ItemApiTest {
 		Map<String, Object> returnedEntry = responses.get(7).path("payload.entries[0]");
 		assertFalse(returnedEntry.containsKey("hint"));
 		assertFalse(readItem(UUID.fromString(responses.get(7).path("id"))).payload().contains("hint"));
+		// and (i) is accepted as sent
+		assertCreated(responses.get(8), shortEmoji, 9);
 	}
 
 	@Test
@@ -106,7 +110,7 @@ class ReorderPayloadTest extends ItemApiTest {
 		// given a logged-in teacher A with a part
 		var setup = teacherWithPart();
 
-		// when teacher A adds the eight payloads (a) to (h) of the scenario
+		// when teacher A adds the nine payloads (a) to (i) of the scenario
 		var entries26 = add(setup, payload("words", pairEntries(26)));
 		var units26 = add(setup, payload("letters", lettersEntry(26)));
 		var longWord = add(setup, payload("words", entry("a", "x".repeat(101))));
@@ -118,6 +122,7 @@ class ReorderPayloadTest extends ItemApiTest {
 		over200.add(lettersEntry(13));
 		over200.add(lettersEntry(13));
 		var units201 = add(setup, payload("letters", over200));
+		var zwjEmoji = add(setup, payload("letters", entry("a", "\uD83D\uDC69\u200D\uD83C\uDFEB")));
 
 		// then the errors are the TOO_LONG errors of the scenario
 		expectValidation(entries26, error("payload.entries", "TOO_LONG"));
@@ -128,6 +133,7 @@ class ReorderPayloadTest extends ItemApiTest {
 		expectValidation(longEmoji, error("payload.entries[0].units[1]", "TOO_LONG"));
 		expectValidation(longHint, error("payload.entries[0].hint", "TOO_LONG"));
 		expectValidation(units201, error("payload.entries", "TOO_LONG"));
+		expectValidation(zwjEmoji, error("payload.entries[0].units[1]", "TOO_LONG"));
 		// and no body contains a rejectedValue or the sent text
 		assertNoEcho(entries26);
 		assertNoEcho(units26);
@@ -137,6 +143,7 @@ class ReorderPayloadTest extends ItemApiTest {
 		assertNoEcho(longEmoji, EMOJI.repeat(3));
 		assertNoEcho(longHint, "hhhhhhhhhh");
 		assertNoEcho(units201);
+		assertNoEcho(zwjEmoji, "\uD83D\uDC69");
 		// and the part has no item
 		assertEquals(0, countItems(setup.part()));
 	}
