@@ -41,7 +41,7 @@ The title of every Vitest or Playwright test for a scenario starts with its
 
 ## 7. Keyboard focus review fix (Clarification 29)
 
-- [ ] 7.1 Update `frontend/e2e/focusRing.spec.ts` to assert keyboard focus and the computed ring on each named login control and the not-found page link (web-client/R30-S1, design D10). Run the test on the configured Playwright projects and verify `phone-safari` on Linux.
+- [x] 7.1 Update `frontend/e2e/focusRing.spec.ts` to assert keyboard focus and the computed ring on each named login control and the not-found page link (web-client/R30-S1, design D10). Run the test on the configured Playwright projects and verify `phone-safari` on Linux.
 
 ## Workflow follow-up
 
