@@ -93,8 +93,8 @@ class MatchingItemTest extends ItemApiTest {
 		var setup = teacherWithPart();
 
 		// when teacher A adds an item with spaces, different case, and a composed and a decomposed "é" as lefts
-		String composed = "é";
-		String decomposed = "é";
+		String composed = "\u00e9";
+		String decomposed = "e\u0301";
 		var sent = payload(
 				pair(" Go ", "идти"),
 				pair("GO", "ехать"),

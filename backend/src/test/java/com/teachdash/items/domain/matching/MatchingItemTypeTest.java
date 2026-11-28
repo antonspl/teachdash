@@ -69,12 +69,18 @@ class MatchingItemTypeTest {
 				pair("Лондон", "England"),
 				pair("Париж", "France"),
 				pair("Москва", "Russia")));
+		var reassigned = new MatchingPayload(List.of(
+				pair("Москва", "Germany"),
+				pair("Париж", "England"),
+				pair("Лондон", "France"),
+				pair("Берлин", "Russia")));
 
-		// when studentView is called three times with the payload and once with the reversed one
+		// when studentView is called three times with the payload and once with each of the others
 		JsonNode first = mapper.valueToTree(type.studentView(payload));
 		JsonNode second = mapper.valueToTree(type.studentView(payload));
 		JsonNode third = mapper.valueToTree(type.studentView(payload));
 		JsonNode reversedView = mapper.valueToTree(type.studentView(reversed));
+		JsonNode reassignedView = mapper.valueToTree(type.studentView(reassigned));
 
 		// then the three results are equal
 		assertThat(second).isEqualTo(first);
@@ -85,6 +91,8 @@ class MatchingItemTypeTest {
 		// and the reversed payload gives the same right order, whatever the pairing
 		assertThat(column(reversedView, "left")).containsExactly("Берлин", "Лондон", "Париж", "Москва");
 		assertThat(column(reversedView, "right")).containsExactly("Germany", "France", "Russia", "England");
+		// and the payload with the same lefts and the rights assigned differently gives a view equal to the first
+		assertThat(reassignedView).isEqualTo(first);
 	}
 
 	@Test
@@ -125,19 +133,19 @@ class MatchingItemTypeTest {
 	@Test
 	@DisplayName("[item-matching/R1-S11] The student view of corrupt data fails without echoing the stored values")
 	void theStudentViewOfCorruptDataFailsWithoutEchoingValues() {
-		// given corrupt payloads: null pairs, a null pair, a null left and a null right, each next to a valid pair with "secret-pair"
-		var secret = pair("secret-pair", "secret-pair");
+		// given corrupt payloads: null pairs, a null pair, a null left and a null right, each next to a valid pair with "secret-left" and "secret-right"
+		var secret = pair("secret-left", "secret-right");
 		var nullPairs = new MatchingPayload(null);
 		var nullPair = new MatchingPayload(Arrays.asList(secret, null));
 		var nullLeft = new MatchingPayload(List.of(secret, pair(null, "b")));
 		var nullRight = new MatchingPayload(List.of(secret, pair("a", null)));
 
 		// when studentView is called with each payload
-		// then each call throws IllegalStateException and no message contains "secret-pair"
+		// then each call throws IllegalStateException and no message contains "secret-left" or "secret-right"
 		for (MatchingPayload payload : List.of(nullPairs, nullPair, nullLeft, nullRight)) {
 			assertThatThrownBy(() -> type.studentView(payload))
 					.isInstanceOf(IllegalStateException.class)
-					.message().isNotNull().doesNotContain("secret-pair");
+					.message().isNotNull().doesNotContain("secret-left", "secret-right");
 		}
 	}
 }
