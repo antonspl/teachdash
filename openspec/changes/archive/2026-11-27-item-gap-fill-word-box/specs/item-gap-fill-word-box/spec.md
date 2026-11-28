@@ -59,7 +59,7 @@ The type `gap-fill-word-box` SHALL have the payload `{segments, extraWords}` of 
 - **THEN** each call throws `IllegalStateException` and returns no view, and the message of each is a fixed text that does not contain the stored value (for case (a), not the word `image`)
 
 ### Requirement: R2 A word-box payload follows the limits and structure rules
-A `gap-fill-word-box` payload SHALL follow items R2. Limits (UTF-16): 51 segments, 25 gaps (`TOO_LONG` at `segments`), 500 per text, 100 per `answer` (`TOO_LONG`), 10 `extraWords` (`TOO_LONG`), 100 per extra word. A gap SHALL have a non-blank `answer`, extra words non-blank (`REQUIRED`). A repeated extra word, or one equal to an answer, is `INVALID_FORMAT` (exact match). Text is `REQUIRED` only if missing, `null` or "". Bean Validation runs first, then `extraChecks`.
+A `gap-fill-word-box` payload SHALL follow items R2. Limits (UTF-16): 51 segments, 25 gaps (`TOO_LONG` at `segments`), 500 per text, 100 per `answer` (`TOO_LONG`), 10 `extraWords` (`TOO_LONG`), 100 per extra word. A gap SHALL have a non-blank `answer`, extra words non-blank (`REQUIRED`). A repeated extra word, or one equal to an answer, is `INVALID_FORMAT` (exact match). Text is `REQUIRED` only if missing, `null` or "". Bean Validation runs first, then `extraChecks`, whose errors come together.
 
 #### Scenario: item-gap-fill-word-box/R2-S1 A payload at every limit is accepted in both languages
 - **GIVEN** a logged-in teacher A with a part
