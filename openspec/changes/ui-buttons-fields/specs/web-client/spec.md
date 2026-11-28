@@ -52,10 +52,10 @@ A button whose request is in flight SHALL be natively disabled, have `aria-busy=
 Every interactive element SHALL show one global `:focus-visible` ring and never `outline: none`. A field with an error SHALL be `aria-invalid` and described by a message under it that has an alert icon and no `role="alert"`, with a `--border-width-strong` danger border that moves nothing; the live hints of web-client R14 take the same path. Fields SHALL have hover, disabled and read-only looks, and the password toggle SHALL be a `Button` (scenarios).
 
 #### Scenario: web-client/R30-S1 One global focus rule, never removed
-- **GIVEN** `base.css` and every `.css` file under `frontend/src`, read as text, and the login page, with the keyboard moved by Tab over its link, input and button
-- **WHEN** the rules and the computed styles are read
+- **GIVEN** `base.css` and every `.css` file under `frontend/src`, and an unauthenticated visitor on the login page and on the not-found page
+- **WHEN** the CSS rules are read and the visitor tabs through the language select, email input, password input, password visibility toggle and sign-in button on the login page, and to the link to the start page on the not-found page
 - **THEN** `base.css` has one `:focus-visible` rule with `outline: var(--border-width-strong) solid var(--color-focus-ring)` and `outline-offset: var(--focus-offset)`, and no CSS file contains `outline: none` or `outline: 0`
-- **AND** each focused element has a computed outline of 2 pixels, solid, at an offset of 2 pixels
+- **AND** each named element receives keyboard focus and has a computed outline of 2 pixels, solid, at an offset of 2 pixels while focused
 
 #### Scenario: web-client/R30-S2 A focused invalid field shows the red border and the ring
 - **GIVEN** the set-password page with "abc" typed in the new password field, which is focused and shows its "at least 8 characters" hint

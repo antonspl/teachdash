@@ -2,7 +2,7 @@
 
 Frontend-only change: tests and code in one pass, reviewed together at the code gate.
 The title of every Vitest or Playwright test for a scenario starts with its
-`[<scenario ID>]`. Groups 1 to 5 touch `frontend/` (each is one slice for the
+`[<scenario ID>]`. Groups 1 to 5 and 7 touch `frontend/` (each is one slice for the
 `frontend-implementer`); group 6 touches `.agents/design` (the `implementer`).
 
 ## 1. Before screenshots
@@ -38,6 +38,10 @@ The title of every Vitest or Playwright test for a scenario starts with its
 ## 6. Design docs (design D11)
 
 - [x] 6.1 `.agents/design/design-code.md`: the busy-label noun rule in "Copy and languages", the `--button-icon-inset` row and the `--lang-select-width` value in the token tables, the small-items line moved to 4a, the hover line in States (the Loading line stays as it is, Clarification 28); `refactoring-ui-patterns.md:91` and `accessibility-patterns.md:29`, and the stale focus statements of `accessibility.md`, `refactoring-ui-patterns.md:99` and `checklist.md:28`, each with the exact before and after lines of design D11
+
+## 7. Keyboard focus review fix (Clarification 29)
+
+- [ ] 7.1 Update `frontend/e2e/focusRing.spec.ts` to assert keyboard focus and the computed ring on each named login control and the not-found page link (web-client/R30-S1, design D10). Run the test on the configured Playwright projects and verify `phone-safari` on Linux.
 
 ## Workflow follow-up
 
