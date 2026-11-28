@@ -27,7 +27,7 @@ public class TestItemType implements ItemType<TestPayload> {
 
 	@Override
 	public Object studentView(TestPayload payload) {
-		if (payload.questions() == null) {
+		if (payload == null || payload.questions() == null) {
 			throw corrupt("question list");
 		}
 		List<StudentQuestion> questions = payload.questions().stream()
@@ -41,15 +41,11 @@ public class TestItemType implements ItemType<TestPayload> {
 			throw corrupt("question");
 		}
 		List<StudentOption> options = new ArrayList<>();
-		int correctOptions = 0;
 		for (TestOption option : question.options()) {
 			requireComplete(option);
 			options.add(new StudentOption(option.text()));
-			if (option.correct()) {
-				correctOptions++;
-			}
 		}
-		return new StudentQuestion(question.text(), correctOptions > 1, options);
+		return new StudentQuestion(question.text(), Boolean.TRUE.equals(question.multiple()), options);
 	}
 
 	private void requireComplete(TestOption option) {
@@ -89,8 +85,18 @@ public class TestItemType implements ItemType<TestPayload> {
 				continue;
 			}
 			checkOptions(question.options(), path + ".options", errors);
+			checkSeveralCorrect(question, path + ".options", errors);
 		}
 		return errors;
+	}
+
+	private void checkSeveralCorrect(TestQuestion question, String path, List<FieldErrorDetail> errors) {
+		long correct = question.options().stream()
+				.filter(option -> option != null && Boolean.TRUE.equals(option.correct()))
+				.count();
+		if (correct > 1 && !Boolean.TRUE.equals(question.multiple())) {
+			errors.add(new FieldErrorDetail(path, FieldErrorCodes.INVALID_FORMAT));
+		}
 	}
 
 	private void checkOptions(List<TestOption> options, String path, List<FieldErrorDetail> errors) {

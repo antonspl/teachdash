@@ -29,9 +29,9 @@
 ## 4. Review round 2
 
 - [x] 4.1 Failing tests for review round 2 (Clarifications 11 to 16). Add `Boolean multiple` to `TestQuestion` as a stub (record component between `text` and `options`; `studentView` still the old count, marked STUB) so the tests compile. Update the tests of R1-S1, R2-S1 (d), R2-S9 (b), R2-S11 (c), R3-S1, R3-S2, R3-S3 and R3-S4 to the changed payloads and wording; add tests for R2-S13, R2-S14 and R3-S6 (the scenario ID in `@DisplayName`, `// given`, `// when`, `// then`); add `new TestPayload(null)` and `studentView(null)` to the corrupt-data test of R3-S5; make `ChoiceMapperTest.aStringCorrectMarkIsInvalidType` assert the exact field `payload.questions[0].options[0].correct` with `INVALID_TYPE`; remove the unused `ChoicePayloads.validQuestion()` and its import in `ChoicePayloadTest`. Verify each new or changed test fails at its THEN step, not in setup
-- [ ] 4.2 Engineer approves the round 2 tests in the PR. HARD STOP: no production code before approval
-- [ ] 4.3 Code: `TestQuestion.multiple` (optional `Boolean`, no `@NotNull`); in `extraChecks`, more than one correct option with `multiple` not `true` is `INVALID_FORMAT` at `questions[i].options` (D2, D4); `studentView` shows `multiple` from the stored setting only, and throws `IllegalStateException` for a `null` payload and a `null` `questions` list (D5); verify R1-S1, R2-S1, R2-S9, R2-S11, R2-S13, R2-S14, R3-S1 to R3-S6 pass
-- [ ] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
+- [x] 4.2 Engineer approves the round 2 tests in the PR. HARD STOP: no production code before approval
+- [x] 4.3 Code: `TestQuestion.multiple` (optional `Boolean`, no `@NotNull`); in `extraChecks`, more than one correct option with `multiple` not `true` is `INVALID_FORMAT` at `questions[i].options` (D2, D4); `studentView` shows `multiple` from the stored setting only, and throws `IllegalStateException` for a `null` payload and a `null` `questions` list (D5); verify R1-S1, R2-S1, R2-S9, R2-S11, R2-S13, R2-S14, R3-S1 to R3-S6 pass
+- [x] 4.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and the approved tests are unchanged
 
 ## Workflow follow-up
 

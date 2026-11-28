@@ -9,7 +9,12 @@ import jakarta.validation.constraints.Size;
 
 public record TestQuestion(
 		@NotBlank @Size(max = MAX_TEXT_LENGTH) String text,
+		Boolean multiple,
 		@NotEmpty @Size(min = MIN_OPTIONS, max = MAX_OPTIONS) List<@Valid TestOption> options) {
+
+	public TestQuestion(String text, List<TestOption> options) {
+		this(text, null, options);
+	}
 
 	public static final int MAX_TEXT_LENGTH = 500;
 
