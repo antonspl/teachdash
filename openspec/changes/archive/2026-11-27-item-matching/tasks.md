@@ -33,9 +33,9 @@
 ## 5. Review round 2
 
 - [x] 5.1 Update the failing tests: `MatchingItemTypeTest` R1-S9 (the payload with the original left order and the rights assigned differently, both views equal to the original's) and R1-S11 (distinct markers "secret-right" and "secret-left", none in any message); `MatchingItemTest` R1-S3 (the two "é" literals become the escapes `"\u00e9"` and `"e\u0301"`); verify each fails at its THEN step, or is green where the code already provides the behaviour
-- [ ] 5.2 Test review stop: the engineer approves the changed tests in the PR. HARD STOP: no production code before approval
-- [ ] 5.3 Code: none expected; fix `studentView` only if a changed test fails on it
-- [ ] 5.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and every scenario ID has a test
+- [x] 5.2 Test review stop: the engineer approves the changed tests in the PR. HARD STOP: no production code before approval
+- [x] 5.3 Code: none expected; fix `studentView` only if a changed test fails on it (no code needed)
+- [x] 5.4 Run `./gradlew cleanTest test` and `scripts/check-scenario-coverage.sh`; verify the full suite is green and every scenario ID has a test
 
 ## Workflow follow-up
 
